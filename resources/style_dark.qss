@@ -1,0 +1,612 @@
+* {
+    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI";
+}
+
+QMainWindow, QDialog {
+    background-color: #1B1D20;
+    color: #E8EAED;
+}
+
+QWidget {
+    color: #E8EAED;
+    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 9pt;
+}
+
+QToolBar#mainToolbar {
+    background: #22252A;
+    border: none;
+    /* 不在 QSS 里给 padding——QToolBar 上 QSS padding 在 rebuildUi 后 polish
+       时机不可靠会失效。垂直走 setContentsMargins、水平走两端 spacer widget，
+       全在 MainWindow::buildUi 里硬写，行为完全可预测。 */
+    spacing: 8px;
+}
+
+/* Qt 的 TextBesideIcon 把文字按基线对齐，视觉上比图标矮一截；
+   CenteredTextStyle 会在样式层把 ButtonText 向上抬 1px 抵消这个偏差。 */
+QToolBar QToolButton {
+    background: transparent;
+    color: #E8EAED;
+    padding: 7px 16px 9px 16px;
+    min-height: 22px;
+    border-radius: 6px;
+    qproperty-iconSize: 16px 16px;
+}
+
+QToolBar QToolButton:hover {
+    background: #2E323A;
+}
+
+QToolBar QToolButton:pressed {
+    background: #3A4049;
+}
+
+/* separator 取一档比 toolbar 底色 (#22252A) 更深的灰，让竖线在深色 toolbar
+   上有明显反差但不刺眼。 */
+QToolBar#mainToolbar::separator {
+    background: #15171A;
+    width: 1px;
+    margin: 6px 4px;
+}
+
+QTabWidget::pane {
+    border: none;
+    background: #1B1D20;
+    padding: 6px 4px 4px 4px;
+    margin-top: 2px;
+}
+
+/* 外层磁盘 TAB：顶部不要圆角、整体贴边。*/
+QTabWidget#mainTabs::pane {
+    border-radius: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    padding: 6px 4px 4px 4px;
+    margin-top: 0;
+}
+
+QTabWidget#mainTabs > QTabBar::tab:first {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+QTabWidget#mainTabs > QTabBar::tab {
+    border-radius: 0;
+}
+
+/* 磁盘页里的"文件排除 / 注册表排除"内层 TAB，顶部也要有 padding。
+   不能用 transparent——透出去会让里面的 QStackedWidget 用 QPalette::Base
+   涂底，而 palette 不会随我们 QSS 主题切换，结果亮 / 暗模式下出现"系统色
+   反向"穿帮（dark 主题里露出系统亮色，light 主题里露出系统暗色）。
+   显式涂同色 #1B1D20 跟外层 pane 对齐即可。 */
+QTabWidget#innerTabs::pane {
+    background: #1B1D20;
+    padding: 14px 0 4px 0;
+    margin-top: 6px;
+}
+
+/* QTabWidget 的 page 实际上挂在内部 QStackedWidget 上。Windows 11 上 Qt
+   默认用 QWindows11Style，它会按"系统主题"决定 QStackedWidget 的底色——系统
+   暗 + 我们 app 切到亮时，style 内部还记着 dark，会用 dark 色画 stacked widget，
+   导致亮主题下 inner tab 内容区露出暗底。光设 ::pane 的 QSS 不够，因为
+   QStackedWidget 是 pane 之外的另一个对象。直接 QSS 选中它强制底色，绕开
+   style 的内部状态。子 widget（ExclusionListWidget 等）默认透明，会让这个
+   bg 自然透出来。 */
+QTabWidget#innerTabs > QStackedWidget {
+    background: #1B1D20;
+}
+
+QTabBar {
+    qproperty-iconSize: 14px 14px;
+}
+
+QTabBar::tab {
+    background: transparent;
+    color: #9AA0A6;
+    padding: 7px 18px 9px 18px;
+    min-height: 18px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-right: 2px;
+}
+
+QTabBar::tab:selected {
+    color: #FFFFFF;
+    border-bottom: 2px solid #4C8BF5;
+}
+
+QTabBar::tab:hover:!selected {
+    color: #E8EAED;
+}
+
+QFrame#statusCard {
+    background: #22252A;
+    border-radius: 10px;
+    border: 1px solid #2E323A;
+}
+
+QLabel#statusSection {
+    color: #4C8BF5;
+    font-weight: bold;
+    font-size: 10.5pt;
+    padding-top: 6px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid #2E323A;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+QLabel#statusKey {
+    color: #9AA0A6;
+    min-width: 120px;
+}
+
+/* 锁定徽标：警告色（琥珀），与右侧禁用控件呼应，hover 时加深。
+   尺寸 18×18，落在 spinbox/combobox 行高内、视觉上对齐。 */
+QLabel#lockedHint {
+    background: rgba(255, 180, 90, 0.18);
+    color: #FFD79E;
+    border: 1px solid #FFB45A;
+    border-radius: 10px;
+    min-width: 18px;
+    max-width: 18px;
+    min-height: 18px;
+    max-height: 18px;
+    font-weight: bold;
+    font-size: 10pt;
+    qproperty-alignment: AlignCenter;
+}
+
+QLabel#lockedHint:hover {
+    background: rgba(255, 180, 90, 0.32);
+    color: #FFFFFF;
+    border-color: #FFD79E;
+}
+
+QLabel#inlineKey {
+    color: #9AA0A6;
+    padding-right: 2px;
+}
+
+QLabel#statusCurLabel {
+    color: #C8CCD2;
+    padding: 0 2px;
+}
+
+QLabel#statusArrow {
+    padding: 0;
+}
+
+QLabel#statusValue {
+    color: #E8EAED;
+    /* YaHei 没有 Medium (500)，去掉这行；emphasis 改靠颜色对比即可。 */
+}
+
+QLabel#statusValue[changed="true"] {
+    background: rgba(255, 180, 90, 0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+QLabel#diskHeading {
+    color: #E8EAED;
+}
+
+QLabel#statusBanner {
+    background: rgba(220, 53, 69, 0.15);
+    border: 1px solid #DC3545;
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: #FFB0B8;
+}
+
+QLabel#statusBanner[level="warn"] {
+    background: rgba(255, 180, 90, 0.12);
+    border: 1px solid #FFB45A;
+    color: #FFD79E;
+}
+
+QLabel#diffSummary {
+    color: #9AA0A6;
+    padding: 4px 2px;
+}
+
+QLabel#usageLegend {
+    color: #9AA0A6;
+    font-size: 9pt;
+    padding: 2px 0 0 0;
+}
+
+QLabel#statusBarLabel {
+    color: #9AA0A6;
+    padding: 0 6px;
+}
+
+QLabel#panelTitle {
+    color: #E8EAED;
+    font-size: 12pt;
+    font-weight: bold;
+    padding: 2px 0 8px 2px;
+}
+
+QLabel#hoverHintBox {
+    background: #1F2226;
+    border: 1px solid #2E323A;
+    border-radius: 8px;
+    color: #9AA0A6;
+    padding: 10px 12px;
+}
+
+QWidget#globalWrap {
+    background: #1B1D20;
+    border-left: 1px solid #2E323A;
+}
+
+QLineEdit, QPlainTextEdit, QListWidget {
+    background: #22252A;
+    border: 1px solid #2E323A;
+    border-radius: 6px;
+    padding: 6px 8px;
+    selection-background-color: #4C8BF5;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:focus, QListWidget:focus, QPlainTextEdit:focus {
+    border-color: #4C8BF5;
+}
+
+QListWidget#exclusionList {
+    /* padding=0：选中/hover 背景从左右边直接顶到容器边框，避免前景周围
+       露出一圈深色底。保留继承自通用规则的 border-radius: 6；
+       首尾 item 的矩形背景越过圆角的问题由代码里给 viewport 打圆角 mask 解决。
+       background: 显式跟外层 QTabWidget::pane 一致——不设的话 viewport 会
+       走 QPalette::Base（系统调色板），跟我们的 QSS 主题不同步，亮 / 暗下
+       会出现"白底配深框"或反过来的反差。 */
+    background: #1B1D20;
+    padding: 0;
+}
+
+QListWidget#exclusionList::item {
+    padding: 6px 10px;
+    border-radius: 0;
+    border-bottom: 1px solid #26292F;
+}
+
+QListWidget#exclusionList::item:last {
+    border-bottom: none;
+}
+
+QListWidget#exclusionList::item:selected {
+    background: rgba(76, 139, 245, 0.28);
+    color: #FFFFFF;
+}
+
+QListWidget#exclusionList::item:hover:!selected {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+QPushButton {
+    background: #2E323A;
+    color: #E8EAED;
+    border: 1px solid #3A4049;
+    border-radius: 6px;
+    padding: 6px 14px;
+}
+
+QPushButton:hover {
+    background: #363B43;
+}
+
+QPushButton#primaryBtn {
+    background: #4C8BF5;
+    border-color: #4C8BF5;
+    color: #FFFFFF;
+}
+
+QPushButton#primaryBtn:hover {
+    background: #5E99F7;
+}
+
+QPushButton#dangerBtn {
+    background: #DC2626;
+    border-color: #DC2626;
+    color: #FFFFFF;
+}
+
+QPushButton#dangerBtn:hover {
+    background: #EF4444;
+    border-color: #EF4444;
+}
+
+QPushButton#dangerBtn:pressed {
+    background: #B91C1C;
+    border-color: #B91C1C;
+}
+
+/* 禁用态：背景压暗、文字淡出、去掉 hover 变亮。必须显式写，否则 Fusion 底座
+   + 深色 QSS 下 disabled 和正常态几乎看不出区别。!important 等价效果靠覆盖
+   规则顺序——这些规则放在所有 QPushButton / #primaryBtn 规则之后即可生效。*/
+QPushButton:disabled {
+    background: #1F2226;
+    color: #5C6168;
+    border-color: #2A2D33;
+}
+
+QPushButton#primaryBtn:disabled {
+    background: #1F2226;
+    color: #5C6168;
+    border-color: #2A2D33;
+}
+
+QStatusBar {
+    background: #22252A;
+    border-top: 1px solid #2E323A;
+}
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    border: none;
+    margin: 0;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 10px;
+    border: none;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #3A4049;
+    border-radius: 4px;
+    min-height: 24px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #3A4049;
+    border-radius: 4px;
+    min-width: 24px;
+}
+
+QScrollBar::handle:vertical:hover,
+QScrollBar::handle:horizontal:hover {
+    background: #4C8BF5;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0;
+    height: 0;
+    background: transparent;
+    border: none;
+}
+
+/* 不显式写透明 add-page/sub-page，Windows 11 原生样式会把 groove 画成点阵纹理；
+   覆盖后滚动条两侧轨道就是纯色透明，只剩滑块本身。 */
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: transparent;
+}
+
+QSplitter::handle {
+    background: #2E323A;
+    margin: 2px 4px;
+    border-radius: 2px;
+}
+
+QSplitter::handle:horizontal {
+    width: 4px;
+}
+
+QSplitter::handle:vertical {
+    height: 4px;
+}
+
+QSplitter::handle:hover {
+    background: #4C8BF5;
+}
+
+QComboBox, QSpinBox {
+    background: #22252A;
+    color: #E8EAED;
+    border: 1px solid #2E323A;
+    border-radius: 6px;
+    padding: 4px 8px;
+    min-height: 26px;
+}
+
+QSpinBox {
+    padding-right: 22px;
+}
+
+QComboBox:focus, QSpinBox:focus {
+    border-color: #4C8BF5;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 18px;
+}
+
+QSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+    width: 18px;
+    border: none;
+    background: transparent;
+    margin-top: 1px;
+    margin-right: 2px;
+}
+
+QSpinBox::up-button:hover {
+    background: rgba(76, 139, 245, 0.15);
+    border-top-right-radius: 5px;
+}
+
+QSpinBox::up-button:pressed {
+    background: rgba(76, 139, 245, 0.30);
+}
+
+QSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+    width: 18px;
+    border: none;
+    background: transparent;
+    margin-bottom: 1px;
+    margin-right: 2px;
+}
+
+QSpinBox::down-button:hover {
+    background: rgba(76, 139, 245, 0.15);
+    border-bottom-right-radius: 5px;
+}
+
+QSpinBox::down-button:pressed {
+    background: rgba(76, 139, 245, 0.30);
+}
+
+QSpinBox::up-arrow {
+    image: url(:/icons/arrow_up_dark.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QSpinBox::down-arrow {
+    image: url(:/icons/arrow_down_dark.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QComboBox QAbstractItemView {
+    background: #22252A;
+    color: #E8EAED;
+    border: 1px solid #3A4049;
+    selection-background-color: #4C8BF5;
+    selection-color: #FFFFFF;
+    outline: 0;
+}
+
+QMenu {
+    background: #22252A;
+    color: #E8EAED;
+    border: 1px solid #2E323A;
+    padding: 4px;
+}
+
+QMenu::item {
+    padding: 6px 18px 6px 26px;
+    border-radius: 4px;
+}
+
+QMenu::item:selected {
+    background: rgba(76, 139, 245, 0.25);
+    color: #FFFFFF;
+}
+
+QMenu::item:disabled {
+    color: #5C6168;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #2E323A;
+    margin: 4px 8px;
+}
+
+QMenu::icon {
+    padding-left: 8px;
+}
+
+/* 覆盖 Win11 原生勾——后者是 16×16 uxtheme 位图，在 125%/150% DPI 下被
+ * 双线性放大成马赛克。换成项目自带的矢量 SVG，按 DPI 矢量光栅化才能锐利。
+ * QMenu::indicator 同时用于 exclusive (radio) 和 non-exclusive (check) 两种
+ * checkable item，全部统一成对勾形态。 */
+QMenu::indicator {
+    width: 14px;
+    height: 14px;
+    margin-left: 6px;
+}
+QMenu::indicator:checked,
+QMenu::indicator:exclusive:checked,
+QMenu::indicator:non-exclusive:checked {
+    image: url(:/icons/check_dark.svg);
+}
+QMenu::indicator:unchecked,
+QMenu::indicator:exclusive:unchecked,
+QMenu::indicator:non-exclusive:unchecked {
+    image: none;
+}
+
+QComboBox[dirty="true"], QSpinBox[dirty="true"] {
+    border: 1px solid #FFB45A;
+    background: rgba(255, 180, 90, 0.10);
+    color: #FFD79E;
+}
+
+/* 禁用态：和 QPushButton:disabled 同思路——背景压暗、文字 / 边框淡出，
+   并把箭头按钮的 hover 高亮关掉，否则鼠标扫过会误以为还能点。 */
+QComboBox:disabled, QSpinBox:disabled {
+    background: #1A1C1F;
+    color: #5C6168;
+    border: 1px solid #2A2D33;
+}
+
+QSpinBox::up-button:disabled, QSpinBox::down-button:disabled {
+    background: transparent;
+}
+
+QSpinBox::up-arrow:disabled, QSpinBox::down-arrow:disabled {
+    /* image 在 disabled 下走 Qt 内置淡化，再叠半透明遮罩进一步降对比度。 */
+    opacity: 0.35;
+}
+
+QComboBox::drop-down:disabled {
+    background: transparent;
+}
+
+QComboBox::down-arrow:disabled {
+    opacity: 0.35;
+}
+
+QLabel#statusValue[dirty="true"] {
+    color: #FFD79E;
+}
+
+QPlainTextEdit#planText, QTextEdit#planText {
+    font-family: "Consolas", "Cascadia Mono", "Microsoft YaHei", monospace;
+    font-size: 10pt;
+    background: #161719;
+    color: #E8EAED;
+    border: 1px solid #2E323A;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+QTableWidget {
+    background: #1B1D20;
+    color: #E8EAED;
+    gridline-color: #2E323A;
+    selection-background-color: rgba(76, 139, 245, 0.28);
+    selection-color: #FFFFFF;
+    border: 1px solid #2E323A;
+    border-radius: 6px;
+}
+
+QTableWidget::item {
+    padding: 4px 6px;
+}
+
+QHeaderView::section {
+    background: #22252A;
+    color: #9AA0A6;
+    padding: 6px 10px;
+    border: none;
+    border-bottom: 1px solid #2E323A;
+    border-right: 1px solid #2E323A;
+}
+
+QHeaderView::section:last {
+    border-right: none;
+}

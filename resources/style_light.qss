@@ -1,0 +1,616 @@
+/* 浅色主题。颜色对照表（参见 style_dark.qss）：
+   主背景       #1B1D20 → #F8F9FA
+   卡片         #22252A → #FFFFFF
+   边框         #2E323A → #DADCE0
+   主文字       #E8EAED → #1F1F1F
+   次文字       #9AA0A6 → #5F6368
+   主蓝         #4C8BF5 → #1A73E8
+   警告         #FFB45A → #F29900
+   危险         #DC3545 → #D93025
+   滚动条 / 把手 #3A4049 → #BDC1C6
+*/
+
+* {
+    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI";
+}
+
+QMainWindow, QDialog {
+    background-color: #F8F9FA;
+    color: #1F1F1F;
+}
+
+QWidget {
+    color: #1F1F1F;
+    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 9pt;
+}
+
+QToolBar#mainToolbar {
+    background: #FFFFFF;
+    border: none;
+    border-bottom: 1px solid #DADCE0;
+    /* 不在 QSS 里给 padding——QToolBar 上 QSS padding 在 rebuildUi 后 polish
+       时机不可靠会失效。垂直走 setContentsMargins、水平走两端 spacer widget，
+       全在 MainWindow::buildUi 里硬写，行为完全可预测。 */
+    spacing: 8px;
+}
+
+QToolBar QToolButton {
+    background: transparent;
+    color: #1F1F1F;
+    padding: 7px 16px 9px 16px;
+    min-height: 22px;
+    border-radius: 6px;
+    qproperty-iconSize: 16px 16px;
+}
+
+QToolBar QToolButton:hover {
+    background: #E8EAED;
+}
+
+QToolBar QToolButton:pressed {
+    background: #DADCE0;
+}
+
+/* 默认 separator 走系统调色板得到一根偏黑的竖线，在白色 toolbar 上很出戏。
+   显式画成与 border 同色的浅灰，纵向缩进留出呼吸位。 */
+QToolBar#mainToolbar::separator {
+    background: #DADCE0;
+    width: 1px;
+    margin: 6px 4px;
+}
+
+QTabWidget::pane {
+    border: none;
+    background: #F8F9FA;
+    padding: 6px 4px 4px 4px;
+    margin-top: 2px;
+}
+
+QTabWidget#mainTabs::pane {
+    border-radius: 0;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    padding: 6px 4px 4px 4px;
+    margin-top: 0;
+}
+
+QTabWidget#mainTabs > QTabBar::tab:first {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+QTabWidget#mainTabs > QTabBar::tab {
+    border-radius: 0;
+}
+
+/* 磁盘页里的"文件排除 / 注册表排除"内层 TAB。
+   不能用 transparent——透出去会让里面的 QStackedWidget 用 QPalette::Base
+   涂底，而 palette 不会随我们 QSS 主题切换，结果亮 / 暗模式下出现"系统色
+   反向"穿帮（dark 主题里露出系统亮色，light 主题里露出系统暗色）。
+   显式涂同色 #F8F9FA 跟外层 pane 对齐即可。 */
+QTabWidget#innerTabs::pane {
+    background: #F8F9FA;
+    padding: 14px 0 4px 0;
+    margin-top: 6px;
+}
+
+/* 见 dark 同名规则的注释：QTabWidget 的 page 挂在内部 QStackedWidget 上，
+   QWindows11Style 会按系统主题决定 QStackedWidget 底色——系统暗 + app 切到
+   亮时，style 内部还记着 dark，会用 dark 色画 stacked widget，导致亮主题下
+   inner tab 内容区出现暗底（用户报告的"白模式下背景消失"）。直接 QSS 强制
+   底色绕开 style 内部状态。子 widget 默认透明，会让这个 bg 自然透出来。 */
+QTabWidget#innerTabs > QStackedWidget {
+    background: #F8F9FA;
+}
+
+/* QTabBar 容器自身要显式 transparent，否则 Fusion 默认会按 palette 涂一层
+   button 色（≈ #F0F0F0），与 mainTabs::pane 的 #F8F9FA 形成一条横向灰条，
+   尤其在内层 innerTabs（"文件排除 / 注册表排除"）上特别明显。 */
+QTabBar {
+    qproperty-iconSize: 14px 14px;
+    background: transparent;
+}
+
+QTabBar::tab {
+    background: transparent;
+    color: #5F6368;
+    padding: 7px 18px 9px 18px;
+    min-height: 18px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-right: 2px;
+}
+
+QTabBar::tab:selected {
+    color: #1A73E8;
+    border-bottom: 2px solid #1A73E8;
+}
+
+QTabBar::tab:hover:!selected {
+    color: #1F1F1F;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+QFrame#statusCard {
+    background: #FFFFFF;
+    border-radius: 10px;
+    border: 1px solid #DADCE0;
+}
+
+QLabel#statusSection {
+    color: #1A73E8;
+    font-weight: bold;
+    font-size: 10.5pt;
+    padding-top: 6px;
+    padding-bottom: 2px;
+    border-bottom: 1px solid #DADCE0;
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+QLabel#statusKey {
+    color: #5F6368;
+    min-width: 120px;
+}
+
+/* 锁定徽标：浅色主题下用更深的琥珀字使其在白底上仍清晰。 */
+QLabel#lockedHint {
+    background: rgba(242, 153, 0, 0.18);
+    color: #B26500;
+    border: 1px solid #F29900;
+    border-radius: 10px;
+    min-width: 18px;
+    max-width: 18px;
+    min-height: 18px;
+    max-height: 18px;
+    font-weight: bold;
+    font-size: 10pt;
+    qproperty-alignment: AlignCenter;
+}
+
+QLabel#lockedHint:hover {
+    background: rgba(242, 153, 0, 0.32);
+    color: #5C2F00;
+    border-color: #B26500;
+}
+
+QLabel#inlineKey {
+    color: #5F6368;
+    padding-right: 2px;
+}
+
+QLabel#statusCurLabel {
+    color: #3C4043;
+    padding: 0 2px;
+}
+
+QLabel#statusArrow {
+    padding: 0;
+}
+
+QLabel#statusValue {
+    color: #1F1F1F;
+    /* YaHei 没有 Medium (500)，去掉这行；emphasis 改靠颜色对比即可。 */
+}
+
+QLabel#statusValue[changed="true"] {
+    background: rgba(242, 153, 0, 0.12);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+QLabel#diskHeading {
+    color: #1F1F1F;
+}
+
+QLabel#statusBanner {
+    background: rgba(217, 48, 37, 0.10);
+    border: 1px solid #D93025;
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: #B71C1C;
+}
+
+QLabel#statusBanner[level="warn"] {
+    background: rgba(242, 153, 0, 0.12);
+    border: 1px solid #F29900;
+    color: #8A4F00;
+}
+
+QLabel#diffSummary {
+    color: #5F6368;
+    padding: 4px 2px;
+}
+
+QLabel#usageLegend {
+    color: #5F6368;
+    font-size: 9pt;
+    padding: 2px 0 0 0;
+}
+
+QLabel#statusBarLabel {
+    color: #5F6368;
+    padding: 0 6px;
+}
+
+QLabel#panelTitle {
+    color: #1F1F1F;
+    font-size: 12pt;
+    font-weight: bold;
+    padding: 2px 0 8px 2px;
+}
+
+QLabel#hoverHintBox {
+    background: #FFFFFF;
+    border: 1px solid #DADCE0;
+    border-radius: 8px;
+    color: #5F6368;
+    padding: 10px 12px;
+}
+
+QWidget#globalWrap {
+    background: #F8F9FA;
+    border-left: 1px solid #DADCE0;
+}
+
+QLineEdit, QPlainTextEdit, QListWidget {
+    background: #FFFFFF;
+    border: 1px solid #DADCE0;
+    border-radius: 6px;
+    padding: 6px 8px;
+    selection-background-color: #1A73E8;
+    selection-color: #FFFFFF;
+}
+
+QLineEdit:focus, QListWidget:focus, QPlainTextEdit:focus {
+    border-color: #1A73E8;
+}
+
+QListWidget#exclusionList {
+    /* 见 dark 同名规则的注释。background 显式 = QTabWidget::pane 的 #F8F9FA，
+       不设的话 viewport 走 QPalette::Base，主题切换时会跟整体颜色背离。 */
+    background: #F8F9FA;
+    padding: 0;
+}
+
+QListWidget#exclusionList::item {
+    padding: 6px 10px;
+    border-radius: 0;
+    border-bottom: 1px solid #E8EAED;
+}
+
+QListWidget#exclusionList::item:last {
+    border-bottom: none;
+}
+
+QListWidget#exclusionList::item:selected {
+    background: rgba(26, 115, 232, 0.18);
+    color: #1F1F1F;
+}
+
+QListWidget#exclusionList::item:hover:!selected {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+QPushButton {
+    background: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #DADCE0;
+    border-radius: 6px;
+    padding: 6px 14px;
+}
+
+QPushButton:hover {
+    background: #F1F3F4;
+}
+
+QPushButton#primaryBtn {
+    background: #2563EB;
+    border-color: #2563EB;
+    color: #FFFFFF;
+}
+
+QPushButton#primaryBtn:hover {
+    background: #3B82F6;
+    border-color: #3B82F6;
+}
+
+QPushButton#primaryBtn:pressed {
+    background: #1D4ED8;
+    border-color: #1D4ED8;
+}
+
+QPushButton#dangerBtn {
+    background: #DC2626;
+    border-color: #DC2626;
+    color: #FFFFFF;
+}
+
+QPushButton#dangerBtn:hover {
+    background: #EF4444;
+    border-color: #EF4444;
+}
+
+QPushButton#dangerBtn:pressed {
+    background: #B91C1C;
+    border-color: #B91C1C;
+}
+
+QPushButton:disabled {
+    background: #F1F3F4;
+    color: #BDC1C6;
+    border-color: #E8EAED;
+}
+
+QPushButton#primaryBtn:disabled {
+    background: #F1F3F4;
+    color: #BDC1C6;
+    border-color: #E8EAED;
+}
+
+QStatusBar {
+    background: #FFFFFF;
+    border-top: 1px solid #DADCE0;
+}
+
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    border: none;
+    margin: 0;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 10px;
+    border: none;
+    margin: 0;
+}
+
+QScrollBar::handle:vertical {
+    background: #BDC1C6;
+    border-radius: 4px;
+    min-height: 24px;
+}
+
+QScrollBar::handle:horizontal {
+    background: #BDC1C6;
+    border-radius: 4px;
+    min-width: 24px;
+}
+
+QScrollBar::handle:vertical:hover,
+QScrollBar::handle:horizontal:hover {
+    background: #1A73E8;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0;
+    height: 0;
+    background: transparent;
+    border: none;
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: transparent;
+}
+
+QSplitter::handle {
+    background: #DADCE0;
+    margin: 2px 4px;
+    border-radius: 2px;
+}
+
+QSplitter::handle:horizontal {
+    width: 4px;
+}
+
+QSplitter::handle:vertical {
+    height: 4px;
+}
+
+QSplitter::handle:hover {
+    background: #1A73E8;
+}
+
+QComboBox, QSpinBox {
+    background: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #DADCE0;
+    border-radius: 6px;
+    padding: 4px 8px;
+    min-height: 26px;
+}
+
+QSpinBox {
+    padding-right: 22px;
+}
+
+QComboBox:focus, QSpinBox:focus {
+    border-color: #1A73E8;
+}
+
+QComboBox::drop-down {
+    border: none;
+    width: 18px;
+}
+
+QSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+    width: 18px;
+    border: none;
+    background: transparent;
+    margin-top: 1px;
+    margin-right: 2px;
+}
+
+QSpinBox::up-button:hover {
+    background: rgba(26, 115, 232, 0.15);
+    border-top-right-radius: 5px;
+}
+
+QSpinBox::up-button:pressed {
+    background: rgba(26, 115, 232, 0.30);
+}
+
+QSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+    width: 18px;
+    border: none;
+    background: transparent;
+    margin-bottom: 1px;
+    margin-right: 2px;
+}
+
+QSpinBox::down-button:hover {
+    background: rgba(26, 115, 232, 0.15);
+    border-bottom-right-radius: 5px;
+}
+
+QSpinBox::down-button:pressed {
+    background: rgba(26, 115, 232, 0.30);
+}
+
+QSpinBox::up-arrow {
+    image: url(:/icons/arrow_up_light.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QSpinBox::down-arrow {
+    image: url(:/icons/arrow_down_light.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QComboBox QAbstractItemView {
+    background: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #DADCE0;
+    selection-background-color: #1A73E8;
+    selection-color: #FFFFFF;
+    outline: 0;
+}
+
+QMenu {
+    background: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #DADCE0;
+    padding: 4px;
+}
+
+QMenu::item {
+    padding: 6px 18px 6px 26px;
+    border-radius: 4px;
+}
+
+QMenu::item:selected {
+    background: rgba(26, 115, 232, 0.18);
+    color: #1F1F1F;
+}
+
+QMenu::item:disabled {
+    color: #BDC1C6;
+}
+
+QMenu::separator {
+    height: 1px;
+    background: #DADCE0;
+    margin: 4px 8px;
+}
+
+QMenu::icon {
+    padding-left: 8px;
+}
+
+/* 覆盖 Win11 原生勾——后者是 16×16 uxtheme 位图，在 125%/150% DPI 下被
+ * 双线性放大成马赛克。换成项目自带的矢量 SVG。 */
+QMenu::indicator {
+    width: 14px;
+    height: 14px;
+    margin-left: 6px;
+}
+QMenu::indicator:checked,
+QMenu::indicator:exclusive:checked,
+QMenu::indicator:non-exclusive:checked {
+    image: url(:/icons/check_light.svg);
+}
+QMenu::indicator:unchecked,
+QMenu::indicator:exclusive:unchecked,
+QMenu::indicator:non-exclusive:unchecked {
+    image: none;
+}
+
+QComboBox[dirty="true"], QSpinBox[dirty="true"] {
+    border: 1px solid #F29900;
+    background: rgba(242, 153, 0, 0.10);
+    color: #8A4F00;
+}
+
+QLabel#statusValue[dirty="true"] {
+    color: #8A4F00;
+}
+
+QComboBox:disabled, QSpinBox:disabled {
+    background: #F1F3F4;
+    color: #BDC1C6;
+    border: 1px solid #E8EAED;
+}
+
+QSpinBox::up-button:disabled, QSpinBox::down-button:disabled {
+    background: transparent;
+}
+
+QSpinBox::up-arrow:disabled, QSpinBox::down-arrow:disabled {
+    opacity: 0.35;
+}
+
+QComboBox::drop-down:disabled {
+    background: transparent;
+}
+
+QComboBox::down-arrow:disabled {
+    opacity: 0.35;
+}
+
+QPlainTextEdit#planText, QTextEdit#planText {
+    font-family: "Consolas", "Cascadia Mono", "Microsoft YaHei", monospace;
+    font-size: 10pt;
+    background: #FFFFFF;
+    color: #1F1F1F;
+    border: 1px solid #DADCE0;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+QTableWidget {
+    background: #FFFFFF;
+    color: #1F1F1F;
+    gridline-color: #DADCE0;
+    selection-background-color: rgba(26, 115, 232, 0.18);
+    selection-color: #1F1F1F;
+    border: 1px solid #DADCE0;
+    border-radius: 6px;
+}
+
+QTableWidget::item {
+    padding: 4px 6px;
+}
+
+QHeaderView::section {
+    background: #F1F3F4;
+    color: #5F6368;
+    padding: 6px 10px;
+    border: none;
+    border-bottom: 1px solid #DADCE0;
+    border-right: 1px solid #DADCE0;
+}
+
+QHeaderView::section:last {
+    border-right: none;
+}

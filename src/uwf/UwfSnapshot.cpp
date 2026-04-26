@@ -1,0 +1,174 @@
+#include "UwfSnapshot.h"
+
+#include <algorithm>
+#include <map>
+
+#include "api/UwfFilter.h"
+#include "api/UwfOverlay.h"
+#include "api/UwfOverlayConfig.h"
+#include "api/UwfRegistryFilter.h"
+#include "api/UwfVolume.h"
+#include "wmi/WmiClient.h"
+#include "wmi/WmiRowUtil.h"
+
+namespace uwf {
+
+using core::DiskSupport;
+
+namespace {
+
+std::string toUpperAscii(std::string s) {
+  std::ranges::transform(s, s.begin(), [](const unsigned char c) { return std::toupper(c); });
+  return s;
+}
+
+core::OverlayConfig toOverlayConfig(const api::OverlayConfigRow& cfg, const uint32_t warningMb, const uint32_t criticalMb) {
+  core::OverlayConfig o;
+  o.type = cfg.type == api::OverlayType::Disk ? core::OverlayType::Disk : core::OverlayType::RAM;
+  o.maximumSizeMb = static_cast<uint32_t>(std::max(0, cfg.maximumSize));
+  o.warningThresholdMb = warningMb;
+  o.criticalThresholdMb = criticalMb;
+  return o;
+}
+
+core::VolumeRecord toVolumeRecord(const api::VolumeRow& v) {
+  core::VolumeRecord r;
+  r.volumeName = v.volumeName;
+  r.driveLetter = v.driveLetter;
+  r.isProtected = v.isProtected;
+  r.bindByDriveLetter = v.bindByDriveLetter;
+  return r;
+}
+
+// 如果卷内相对路径以单反斜杠开头，补上盘符前缀，方便 UI 展示。
+std::string prefixDriveLetter(std::string path, const std::string& drive) {
+  if (drive.empty() || path.empty()) return path;
+  const bool unc = path.size() >= 2 && path[0] == '\\' && path[1] == '\\';
+  if (path.front() == '\\' && !unc) return drive + path;
+  return path;
+}
+
+}  // namespace
+
+core::UwfSnapshot readSnapshot(std::string* error) {
+  core::UwfSnapshot snap;
+  WmiSession s;
+  std::string err;
+  if (!s.connect("root\\standardcimv2\\embedded", &err)) {
+    snap.uwfAvailable = false;
+    snap.rawError = err;
+    if (error) *error = err;
+    return snap;
+  }
+
+  // ── UWF_Filter ───────────────────────────────────────────────
+  if (auto f = UwfFilter{s}.read()) {
+    snap.current.filter.enabled = f->currentEnabled;
+    snap.next.filter.enabled = f->nextEnabled;
+  }
+
+  // ── UWF_Overlay：runtime + 共享的阈值 ────────────────────────
+  // 注意：GetOverlayFiles 很慢（会扫整卷），这里故意不调用；
+  // snap.overlayFiles 保持为空，由调用方按需触发 UwfOverlay::getOverlayFiles()。
+  uint32_t warningMb = 0;
+  uint32_t criticalMb = 0;
+  if (auto o = UwfOverlay{s}.read()) {
+    snap.runtime.currentConsumptionMb = o->overlayConsumption;
+    snap.runtime.availableSpaceMb = o->availableSpace;
+    warningMb = o->warningOverlayThreshold;
+    criticalMb = o->criticalOverlayThreshold;
+  }
+
+  // ── UWF_OverlayConfig：current/next 拆开 ─────────────────────
+  for (const auto& c : UwfOverlayConfig{s}.readAll()) {
+    (c.currentSession ? snap.current.overlay : snap.next.overlay) = toOverlayConfig(c, warningMb, criticalMb);
+  }
+
+  // ── UWF_Volume：按 CurrentSession 归入 current/next ──────────
+  // 注意：fileExclusions 的 key 必须用 volumeName（与 DiskTab::applySnapshot
+  // 保持一致），否则 UI 按 volumeName 查询会拿到空列表。
+  //
+  // 性能：对 *当前会话* 中 isProtected=false 的卷跳过 GetExclusions——UWF
+  // 对未保护卷在当前会话不暂存任何写入，运行时排除列表必然为空。但 *下次
+  // 会话* 行总是要读：用户完全可以在卷尚未受保护时就为下次会话预先添加
+  // 排除项，这时 isProtected=false 但 GetExclusions 会有内容。
+  const UwfVolume volumes{s};
+  for (const auto& v : volumes.readAll()) {
+    auto& session = v.currentSession ? snap.current : snap.next;
+    session.volumes.push_back(toVolumeRecord(v));
+
+    if (v.volumeName.empty()) continue;
+    if (v.currentSession && !v.isProtected) continue;
+
+    auto& bucket = session.fileExclusions[v.volumeName];
+    for (const auto& e : volumes.getExclusions(v)) {
+      if (e.fileName.empty()) continue;
+      bucket.push_back(prefixDriveLetter(e.fileName, v.driveLetter));
+    }
+  }
+
+  // ── UWF_RegistryFilter：current/next 各自的排除列表 ──────────
+  const UwfRegistryFilter rf{s};
+  for (const auto& r : rf.readAll()) {
+    auto& session = r.currentSession ? snap.current : snap.next;
+    for (const auto& [registryKey] : rf.getExclusions(r)) {
+      if (!registryKey.empty()) session.registryExclusions.push_back(registryKey);
+    }
+  }
+
+  snap.uwfAvailable = true;
+  core::sortSnapshot(snap);
+  return snap;
+}
+
+std::vector<core::DiskInfo> enumerateDisks(std::string* error) {
+  std::vector<core::DiskInfo> out;
+  WmiSession cim;
+  if (!cim.connect("root\\cimv2", error)) return out;
+
+  std::string err;
+  const auto rows =
+      cim.query("SELECT DeviceID, FileSystem, VolumeName, Size, FreeSpace, DriveType FROM Win32_LogicalDisk WHERE DriveType = 2 OR DriveType = 3", &err);
+  if (!err.empty() && error) *error = err;
+
+  // Win32_Volume.DeviceID 形如 "\\?\Volume{GUID}\"，是 UWF_Volume
+  // 里的 VolumeName；用 DriveLetter 关联到 Win32_LogicalDisk 的每一行。
+  // 未注册到 UWF 的盘在 UWF_Volume 里查不到，只能从这里取 GUID。
+  std::string volErr;
+  const auto volRows = cim.query("SELECT DeviceID, DriveLetter FROM Win32_Volume", &volErr);
+  std::map<std::string, std::string> driveToGuid;
+  for (const auto& v : volRows) {
+    const std::string dl = rowutil::normalizeDriveLetter(rowutil::getString(v, "DriveLetter"));
+    const std::string id = rowutil::getString(v, "DeviceID");
+    if (!dl.empty() && !id.empty()) driveToGuid[dl] = id;
+  }
+
+  for (const auto& r : rows) {
+    core::DiskInfo d;
+    d.driveLetter = rowutil::normalizeDriveLetter(rowutil::getString(r, "DeviceID"));
+    d.fileSystem = rowutil::getString(r, "FileSystem");
+    d.label = rowutil::getString(r, "VolumeName");
+    d.totalBytes = r.value("Size").toULongLong();
+    d.freeBytes = r.value("FreeSpace").toULongLong();
+    if (auto it = driveToGuid.find(d.driveLetter); it != driveToGuid.end()) {
+      d.volumeName = it->second;
+    }
+
+    const int driveType = rowutil::getInt(r, "DriveType");
+    const std::string fs = toUpperAscii(d.fileSystem);
+    if (driveType != 3) {
+      d.support = DiskSupport::NotFixedLocalDisk;
+    } else if (fs != "NTFS" && fs != "FAT" && fs != "FAT32") {
+      // exFAT / ReFS 等：UWF 文档明确说"可保护卷，但不能加文件排除 /
+      // 提交文件操作"——所以不是完全 unsupported，标 FileSystemLimited
+      // 让 UI 仅禁用文件排除 + commit 部分，protect 开关保持可用。
+      d.support = DiskSupport::FileSystemLimited;
+    } else {
+      d.support = DiskSupport::Supported;
+    }
+    out.push_back(std::move(d));
+  }
+  return out;
+}
+
+}  // namespace uwf
