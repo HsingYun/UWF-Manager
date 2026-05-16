@@ -28,6 +28,13 @@ UWF is the supported successor to the older Enhanced Write Filter (EWF) and File
 - System restart and shutdown
 - In-app log viewer
 
+## Out of scope
+
+- HORM (Hibernate Once / Resume Many)
+- Servicing mode
+- Free-space passthrough, persistent overlay, read-only media mode, swapfile creation
+- Surfacing the domain-secret-key / TSCAL persistence status in the UI
+
 ## Requirements
 
 - Windows 10 / 11 Enterprise, Education, IoT Enterprise, or LTSC variants
