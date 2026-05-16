@@ -164,11 +164,11 @@ CommitFileResult UwfVolume::commitFileDeletion(const api::VolumeRow& row, const 
   return out;
 }
 
-bool UwfVolume::setBindByDriveLetter(const api::VolumeRow& row, bool bBindByVolumeName, std::string* error) const {
+bool UwfVolume::setBindByDriveLetter(const api::VolumeRow& row, bool bBindByDriveLetter, std::string* error) const {
   WmiRow in;
-  in.emplace("bBindByVolumeName", WmiValue::fromBool(bBindByVolumeName));
+  in.emplace("bBindByDriveLetter", WmiValue::fromBool(bBindByDriveLetter));
   const bool ok = invokeSimple(m_session, row.path, "SetBindByDriveLetter", in, error);
-  if (ok) UWF_LOG_I("UWF_Volume") << std::format("SetBindByDriveLetter ok: dl={} bindByVolumeName={}", row.driveLetter, bBindByVolumeName);
+  if (ok) UWF_LOG_I("UWF_Volume") << std::format("SetBindByDriveLetter ok: dl={} bindByDriveLetter={}", row.driveLetter, bBindByDriveLetter);
   return ok;
 }
 

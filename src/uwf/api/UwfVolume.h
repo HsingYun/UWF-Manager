@@ -51,8 +51,9 @@ class UwfVolume {
   // overlay 里没这个删除标记，调用多半会失败）。
   CommitFileResult commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const;
 
-  // bBindByVolumeName=true 表示按卷名绑定（紧密绑定），false 按盘符绑定。
-  bool setBindByDriveLetter(const api::VolumeRow& row, bool bBindByVolumeName, std::string* error = nullptr) const;
+  // 对应 UWF_Volume.SetBindByDriveLetter(boolean bBindByDriveLetter) 官方签名：
+  // bBindByDriveLetter=true 表示按盘符绑定（松绑定），false 表示按卷名绑定（紧绑定）。
+  bool setBindByDriveLetter(const api::VolumeRow& row, bool bBindByDriveLetter, std::string* error = nullptr) const;
 
   bool addExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error = nullptr) const;
   bool removeExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error = nullptr) const;

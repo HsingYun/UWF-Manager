@@ -1425,7 +1425,9 @@ void MainWindow::showPlan() {
         auto v = getOrCreateNextVolume(dl);
         if (!v) continue;
         std::string e;
-        const bool ok = m_volume.setBindByDriveLetter(*v, byVolumeName, &e);
+        // changes 里以"按卷 ID 绑定"为语义（byVolumeName）；UWF_Volume.SetBindByDriveLetter
+        // 的入参 bBindByDriveLetter 语义相反，传参时取反。
+        const bool ok = m_volume.setBindByDriveLetter(*v, !byVolumeName, &e);
         note(ok ? I18n::tr("✓ Volume %1 bind by: %2")
                       .arg(QString::fromStdString(dl), byVolumeName ? I18n::tr("volume ID") : I18n::tr("drive letter"))
                       .toStdString()
