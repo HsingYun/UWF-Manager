@@ -27,6 +27,7 @@ UWF is the supported successor to the older Enhanced Write Filter (EWF) and File
 - Read-only enumeration of overlay file entries
 - System restart and shutdown
 - In-app log viewer
+- Stateless by design — the program keeps no state of its own: it writes no configuration files and no registry keys, and its internal log lives only in an in-memory ring buffer that is discarded when the process exits
 
 ## Out of scope
 
