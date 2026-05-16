@@ -559,6 +559,7 @@ Please verify that the UWF feature is enabled and that this program is running a
     <message><source>✘ Failed to set overlay type: %1</source><translation>✘ 设置覆盖层类型失败：%1</translation></message>
     <message><source>✓ Overlay maximum size set to %1 MB</source><translation>✓ 覆盖层 最大大小设为 %1 MB</translation></message>
     <message><source>✘ Failed to set maximum size: %1</source><translation>✘ 设置最大大小失败：%1</translation></message>
+    <message><source>✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.</source><translation>✘ 最大大小未应用：基于磁盘的覆盖层要求至少 %1 MB。</translation></message>
     <message><source>✘ Failed to read overlay configuration: %1</source><translation>✘ 读取覆盖层配置失败：%1</translation></message>
     <message><source>✘ Volume %1: failed to register with UWF: %2</source><translation>✘ 卷 %1：注册到 UWF 失败：%2</translation></message>
     <message><source>✓ Volume %1 protection: %2</source><translation>✓ 卷 %1 保护：%2</translation></message>

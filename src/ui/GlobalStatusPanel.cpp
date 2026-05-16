@@ -358,22 +358,24 @@ void GlobalStatusPanel::applyTheme() const {
 }
 
 void GlobalStatusPanel::reconfigureRanges() const {
-  // 约束向下传递 —— 每个 spinbox 的上限取决于"更粗一级"的当前值：
-  //   - max  ∈ [0, maxCeiling]
-  //     * RAM 模式  : maxCeiling = 系统总内存 MB
-  //     * Disk 模式 : maxCeiling =
-  //     INT_MAX（物理限制来自目标卷容量，不在这里卡）
+  // 约束向下传递 —— 每个 spinbox 的区间取决于覆盖层类型与"更粗一级"的当前值：
+  //   - max  ∈ [maxFloor, maxCeiling]
+  //     * RAM 模式  : maxFloor = 0；maxCeiling = 系统总内存 MB
+  //     * Disk 模式 : maxFloor = kDiskOverlayMinSizeMb（基于磁盘的覆盖层
+  //       UWF 要求至少 1024 MB）；maxCeiling = INT_MAX（物理上限来自目标卷
+  //       容量，不在这里卡）
   //   - crit ∈ [0, max 当前值]
   //   - warn ∈ [0, crit 当前值]
-  // 下限一律是 0：当前已占用是动态值，不能当下限——否则用户输入偏小值时会被
-  // 吸到 currentConsumption，视觉上像"系统擅自填入了一个无意义的数字"。
-  // setRange 会把超出新区间的 value 自动钳回边界：当 max 下调时 crit 联动下压；
-  // crit 下调时 warn 跟着下压。超过上限的字符由 ClampingSpinBox::fixup() 在
-  // 失焦/回车时吸到 maximum()。
+  // crit / warn 的下限一律是 0：当前已占用是动态值，不能当下限——否则用户输入
+  // 偏小值时会被吸到 currentConsumption，视觉上像"系统擅自填入了无意义的数字"。
+  // setRange 会把超出新区间的 value 自动钳回边界：切到 Disk 时低于 1024 的
+  // max 会被抬到 1024；max 下调时 crit 联动下压、crit 下调时 warn 跟着下压。
+  // 超过上限的字符由 ClampingSpinBox::fixup() 在失焦/回车时吸到 maximum()。
   const bool isRam = OverlayType(m_overlayTypeNext->currentData().toInt()) == OverlayType::RAM;
   const int maxCeiling = (isRam && m_totalRamMb > 0) ? static_cast<int>(std::min<uint32_t>(m_totalRamMb, INT_MAX)) : INT_MAX;
+  const int maxFloor = isRam ? 0 : static_cast<int>(core::kDiskOverlayMinSizeMb);
 
-  m_maxNext->setRange(0, maxCeiling);
+  m_maxNext->setRange(maxFloor, maxCeiling);
   m_critNext->setRange(0, m_maxNext->value());
   m_warnNext->setRange(0, m_critNext->value());
 }
