@@ -20,4 +20,5 @@ CMakePresets.json
 cmake/
 
 # AI knowledge
+.claude/
 knowledge/
