@@ -802,13 +802,11 @@ uwfmgr registry add-exclusion HKLM\Software\MyApp</translation></message>
     <message><source>No uwfmgr commands found in the input.</source><translation>输入中未找到任何 uwfmgr 命令。</translation></message>
     <message><source>Applied: %1</source><translation>已应用：%1</translation></message>
     <message><source>Duplicates: %1</source><translation>重复：%1</translation></message>
-    <message><source>Failed: %1</source><translation>失败：%1</translation></message>
     <message><source>Unsupported: %1</source><translation>不支持：%1</translation></message>
     <message><source>Cumulative after %1 batch(es):</source><translation>累计 %1 批后：</translation></message>
     <message><source>── Batch %1 ──</source><translation>── 第 %1 批 ──</translation></message>
     <message><source>Applied</source><translation>已应用</translation></message>
     <message><source>Duplicate</source><translation>重复</translation></message>
-    <message><source>Failed</source><translation>失败</translation></message>
     <message><source>Unsupported</source><translation>不支持</translation></message>
     <message><source>File too large</source><translation>文件过大</translation></message>
     <message><source>File %1 is larger than 5 MB and was not parsed. Please filter it manually first.</source><translation>文件 %1 超过 5 MB，未被解析；请先手动筛选后再加载。</translation></message>
