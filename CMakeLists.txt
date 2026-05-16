@@ -109,11 +109,18 @@ target_link_libraries(UWF PRIVATE Qt6::Widgets Qt6::Svg)
 
 if(MSVC)
     target_compile_options(UWF PRIVATE /W4 /WX /permissive-)
-    # 静态链接 MSVC 运行时（/MT, Debug 配置走 /MTd），不依赖 VC++ Redistributable。
     set_target_properties(UWF PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-    # app.rc 里已经嵌入
     target_link_options(UWF PRIVATE /MANIFEST:NO)
 else()
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        add_link_options(
+                -static
+                -static-libgcc
+                -static-libstdc++
+                -fuse-ld=lld
+        )
+        add_link_options(-Wl,-Bstatic)
+    endif()
     target_compile_options(UWF PRIVATE
         -Wall -Wextra -Wpedantic
         -Wconversion -Wsign-conversion

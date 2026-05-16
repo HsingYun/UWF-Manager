@@ -1,6 +1,7 @@
 # CMake build directories
 cmake-build-debug/
 CMakeFiles/
+build/
 
 # CLion IDE specific files
 .idea/
@@ -13,3 +14,10 @@ CMakeFiles/
 *.swo
 *.bak
 *.tmp
+
+# Build Tools
+CMakePresets.json
+cmake/
+
+# AI knowledge
+knowledge/
