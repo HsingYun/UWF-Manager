@@ -1382,9 +1382,7 @@ void MainWindow::showPlan() {
             // 改动时，沿用 next 会话的基线类型判断。
             const auto effType = changes.setOverlay.type.value_or(m_snapshot.next.overlay.type);
             if (effType == core::OverlayType::Disk && *v < core::kDiskOverlayMinSizeMb) {
-              note(I18n::tr("✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.")
-                       .arg(core::kDiskOverlayMinSizeMb)
-                       .toStdString());
+              note(I18n::tr("✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.").arg(core::kDiskOverlayMinSizeMb).toStdString());
             } else if (m_overlayConfig.setMaximumSize(*next, *v, &err)) {
               note(I18n::tr("✓ Overlay maximum size set to %1 MB").arg(*v).toStdString());
             } else {
