@@ -28,9 +28,9 @@ bool invokeSimple(const WmiSession& session, const std::string& path, const char
 
 // UWF_Volume 的 AddExclusion / RemoveExclusion / FindExclusion / CommitFile /
 // CommitFileDeletion 的路径参数均不包含驱动器号或卷名（见
-// knowledge/uwf-class.txt:122/127/141）。若用户传入 "C:\foo"，这里在确认与
-// 目标卷匹配后剥掉开头的 "<letter>:"。盘符不匹配直接返回空 optional 并写
-// *error。
+// knowledge/reference/11-uwf-api.html 各方法的参数说明）。若用户传入
+// "C:\foo"，这里在确认与目标卷匹配后剥掉开头的 "<letter>:"。盘符不匹配直接
+// 返回空 optional 并写 *error。
 std::optional<std::string> stripVolumeDriveLetter(const std::string& path, const std::string& volumeDriveLetter, std::string* error) {
   if (path.size() < 2 || !std::isalpha(static_cast<unsigned char>(path[0])) || path[1] != ':') {
     return path;
@@ -114,8 +114,8 @@ CommitFileResult UwfVolume::commitFile(const api::VolumeRow& row, const std::str
   }
 
   WmiRow in;
-  // 实机 WMI schema 的参数名是 FileName，不是 knowledge/uwf-class.txt:122
-  // 里写的 FileFullPath（以 inParams dump 为准）。
+  // 实机 WMI schema 的参数名是 FileName（见
+  // knowledge/reference/11-uwf-api.html 附录 B.1）。
   in.emplace("FileName", WmiValue::fromString(*normalized));
   const auto r = m_session.callMethod(row.path, "CommitFile", in);
   out.hresult = r.hresult;

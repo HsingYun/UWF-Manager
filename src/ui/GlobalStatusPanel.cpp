@@ -269,7 +269,8 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   ++r;
 
   m_maxNext = makeNumSpin("MB");
-  m_maxNext->setToolTip(I18n::tr("Maximum overlay capacity. In RAM mode, capped by total system memory."));
+  m_maxNext->setToolTip(I18n::tr("Maximum overlay capacity. In RAM mode, capped by total system memory. Disk mode requires at least 1024 MB and enough free "
+                                 "space on the system volume."));
   m_maxLabel = makeKey(I18n::tr("Maximum size"));
   m_maxLockedHint = makeLockedHint(lockTip);
   overlayGrid->addWidget(m_maxLabel, r, 0);
@@ -277,9 +278,11 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   ++r;
 
   addNumRow(I18n::tr("Warning threshold"), m_warnNext, "MB");
-  m_warnNext->setToolTip(I18n::tr("Triggers a warning when overlay usage reaches this value. Recommended: 50–70% of maximum size."));
+  m_warnNext->setToolTip(I18n::tr("Triggers a warning-level event-log notification when overlay usage reaches this value. Must be lower than the critical "
+                                  "threshold. Set to 0 to disable this event."));
   addNumRow(I18n::tr("Critical threshold"), m_critNext, "MB");
-  m_critNext->setToolTip(I18n::tr("Triggers a critical warning when overlay usage reaches this value; the system may force a flush or reboot."));
+  m_critNext->setToolTip(I18n::tr("Triggers a critical-level event-log notification when overlay usage reaches this value. Must be higher than the warning "
+                                  "threshold. Set to 0 to disable this event."));
 
   m_totalRamMb = queryTotalPhysMb();
 

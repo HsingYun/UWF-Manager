@@ -59,7 +59,7 @@ struct OverlayConfigRow {
   std::string path;
   bool currentSession = false;
   OverlayType type = OverlayType::RAM;
-  int32_t maximumSize = 0;  // schema 定义为 SInt32
+  int32_t maximumSize = 0;  // 实机 schema 为 UInt32；MB 级数值远小于 INT_MAX
 };
 
 // UWF_RegistryFilter —— 按 CurrentSession 存在 2 个实例。

@@ -120,7 +120,8 @@ bool UwfRegistryFilter::commitRegistry(const api::RegistryFilterRow& row, const 
 bool UwfRegistryFilter::commitRegistryDeletion(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName,
                                                std::string* error) const {
   WmiRow in;
-  // 官方 schema 在此方法名是 "Registrykey"（小写 k），感觉是文档错误。
+  // 实机 schema 的参数名是 "Registrykey"（小写 k）；WMI 参数名大小写不敏感，
+  // 传 "RegistryKey" 同样生效。
   in.emplace("RegistryKey", WmiValue::fromString(registryKey));
   in.emplace("ValueName", WmiValue::fromString(valueName));
   const bool ok = invokeSimple(m_session, row.path, "CommitRegistryDeletion", in, error);

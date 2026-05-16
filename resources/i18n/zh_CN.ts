@@ -106,22 +106,22 @@ Right-click and choose &quot;Run as administrator&quot; to restart it; otherwise
     </message>
     <message><source>Type</source><translation>类型</translation></message>
     <message>
-        <source>Maximum overlay capacity. In RAM mode, capped by total system memory.</source>
-        <translation>覆盖层的最大容量。RAM 模式下受系统总内存限制。</translation>
+        <source>Maximum overlay capacity. In RAM mode, capped by total system memory. Disk mode requires at least 1024 MB and enough free space on the system volume.</source>
+        <translation>覆盖层的最大容量。RAM 模式下受系统总内存限制。Disk 模式要求至少 1024 MB，且系统盘可用空间需大于该值。</translation>
     </message>
     <message><source>Maximum size</source><translation>最大大小</translation></message>
     <message><source>Maximum size · RAM %1</source><translation>最大大小 · RAM %1</translation></message>
     <message><source>Warning threshold</source><translation>警告阈值</translation></message>
     <message>
-        <source>Triggers a warning when overlay usage reaches this value. Recommended: 50–70% of maximum size.</source>
-        <translation>覆盖层占用达到此值时弹出警告。建议设为最大大小的 50%–70%。</translation>
+        <source>Triggers a warning-level event-log notification when overlay usage reaches this value. Must be lower than the critical threshold. Set to 0 to disable this event.</source>
+        <translation>覆盖层占用达到此值时向事件日志写入警告级别通知。必须低于严重阈值。设为 0 可关闭该事件。</translation>
     </message>
     <message><source>Critical threshold</source><translation>严重阈值</translation></message>
     <message>
-        <source>Triggers a critical warning when overlay usage reaches this value; the system may force a flush or reboot.</source>
-        <translation>覆盖层占用达到此值时弹出严重警告，系统可能强制刷盘或重启。</translation>
+        <source>Triggers a critical-level event-log notification when overlay usage reaches this value. Must be higher than the warning threshold. Set to 0 to disable this event.</source>
+        <translation>覆盖层占用达到此值时向事件日志写入严重级别通知。必须高于警告阈值。设为 0 可关闭该事件。</translation>
     </message>
-    <message><source>Used / total</source><translation>已用 / 占用</translation></message>
+    <message><source>Used / total</source><translation>已用 / 总计</translation></message>
     <message><source>Overlay</source><translation>覆盖层</translation></message>
     <message>
         <source>&lt;span style='color:%1'&gt;■&lt;/span&gt; Used &amp;nbsp; &lt;span style='color:%2'&gt;■&lt;/span&gt; Warning &amp;nbsp; &lt;span style='color:%3'&gt;■&lt;/span&gt; Critical</source>
