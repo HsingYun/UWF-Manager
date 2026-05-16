@@ -1743,7 +1743,7 @@ void MainWindow::showAbout() {
                      "LICENSE file shipped with this program.</p>"
                      "<p>This program is free software: you may redistribute it and / or modify it under the terms of the GPL v3. It is provided \"as is\", "
                      "without any warranty.</p>")
-                     .arg("iakext@gmail.com", "https://www.gnu.org/licenses/gpl-3.0.html", "https://github.com/HsingYun/unified-write-filter");
+                     .arg("iakext@gmail.com", "https://www.gnu.org/licenses/gpl-3.0.html", "https://github.com/HsingYun/UWF-Manager");
   const QString linkColor = ThemeManager::instance().color(Sem::Accent).name();
   html.replace(QStringLiteral("<a "), QStringLiteral("<a style=\"color:%1\" ").arg(linkColor));
   body->setText(html);
