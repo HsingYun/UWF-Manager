@@ -167,6 +167,14 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
         out.parseError = ParseError::MissingVolumeArg;
         return out;
       }
+      // 文档里 protect/unprotect 接受 "all"（一次作用于所有卷），但本项目按
+      // 单卷映射到 UI，不支持批量形式；归为 Unsupported，而不是按"盘符非法"
+      // 误报。kind 复位成 Unknown，与其它 Unsupported 命令保持一致。
+      if (toLowerAscii(tokens[2]) == "all") {
+        out.kind = UwfmgrKind::Unknown;
+        out.parseError = ParseError::Unsupported;
+        return out;
+      }
       std::string dl = toUpperAscii(tokens[2]);
       // 用户可能写 "c" 或 "c:"，统一成 "C:"。卷名形式（"\\?\Volume{...}"）
       // 不支持，用户也极少从 uwfmgr CLI 拷出这种参数。
