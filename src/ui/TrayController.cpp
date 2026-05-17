@@ -2,12 +2,16 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QByteArray>
 #include <QCursor>
 #include <QEvent>
-#include <QIcon>
+#include <QFile>
 #include <QLabel>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QPainter>
+#include <QPixmap>
+#include <QSvgRenderer>
 #include <QSystemTrayIcon>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -24,7 +28,34 @@
 
 namespace uwf::ui {
 
-TrayController::TrayController(WmiSession& session, QWidget* ownerWindow) : QObject(ownerWindow), m_session(session) {
+namespace {
+
+// 把 app.svg 的蓝色渐变替换成红色后渲染成图标——UWF 禁用 / 状态不可用时用它，
+// 一眼能看出"没在保护"。保留白色线条与橙点，logo 仍可辨认。失败回退原图标。
+QIcon makeAlertIcon() {
+  QFile f(QStringLiteral(":/icons/app.svg"));
+  if (!f.open(QIODevice::ReadOnly)) return QIcon(QStringLiteral(":/icons/app.svg"));
+  QByteArray svg = f.readAll();
+  svg.replace("#4C8BF5", "#E15A4C");  // 渐变亮端：蓝 → 红
+  svg.replace("#1A5DC7", "#B4271C");  // 渐变暗端：蓝 → 红
+  QSvgRenderer renderer(svg);
+  if (!renderer.isValid()) return QIcon(QStringLiteral(":/icons/app.svg"));
+  QIcon icon;
+  for (const int sz : {16, 20, 24, 32, 48, 64}) {
+    QPixmap pm(sz, sz);
+    pm.fill(Qt::transparent);
+    QPainter p(&pm);
+    renderer.render(&p);
+    p.end();
+    icon.addPixmap(pm);
+  }
+  return icon;
+}
+
+}  // namespace
+
+TrayController::TrayController(WmiSession& session, QWidget* ownerWindow)
+    : QObject(ownerWindow), m_session(session), m_iconNormal(QStringLiteral(":/icons/app.svg")), m_iconAlert(makeAlertIcon()) {
   if (!QSystemTrayIcon::isSystemTrayAvailable()) {
     UWF_LOG_W("ui") << "system tray unavailable; tray icon will not be created";
     return;
@@ -34,7 +65,7 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow) : QObj
   m_menu = new QMenu(ownerWindow);
 
   // 菜单项 1：UWF 启用状态。普通 QAction——自动获得菜单 hover 高亮；文本由
-  // updateUsage 按当前状态刷新；点击 → 展开主窗口。
+  // refreshUsage 按当前状态刷新；点击 → 展开主窗口。
   m_stateAction = m_menu->addAction(QString{});
   connect(m_stateAction, &QAction::triggered, this, &TrayController::activateWindowRequested);
 
@@ -71,9 +102,9 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow) : QObj
   connect(exitAction, &QAction::triggered, qApp, &QApplication::quit);
 
   // 菜单弹出前即时刷新状态与占用。
-  connect(m_menu, &QMenu::aboutToShow, this, &TrayController::updateUsage);
+  connect(m_menu, &QMenu::aboutToShow, this, &TrayController::refreshUsage);
 
-  m_tray = new QSystemTrayIcon(QIcon(":/icons/app.svg"), this);
+  m_tray = new QSystemTrayIcon(m_iconNormal, this);
   m_tray->setToolTip(I18n::tr("Unified Write Filter (UWF) Manager"));
   // 不用 setContextMenu——它在 Windows 上按托盘图标 geometry 定位菜单，而该
   // geometry 常不可靠，菜单会弹到奇怪位置。改为右键时自己按光标位置 popup：
@@ -85,15 +116,12 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow) : QObj
       m_menu->popup(QCursor::pos());    // 右键 → 在光标处弹出菜单
   });
   m_tray->show();
+
+  refreshUsage();  // 启动即按当前 UWF 状态摆正图标颜色与菜单
 }
 
 void TrayController::refreshUsage() {
-  // 仅当右键菜单正在显示时才重读——菜单没开时占用条不可见，刷新无意义。
-  if (m_menu && m_menu->isVisible()) updateUsage();
-}
-
-void TrayController::updateUsage() {
-  if (!m_tray) return;  // 本机无托盘
+  if (!m_tray) return;
 
   // 占用条与其上方的分隔线一起显隐——避免占用条隐藏后剩下两条相邻分隔线。
   const auto setUsageVisible = [this](bool show) {
@@ -101,14 +129,16 @@ void TrayController::updateUsage() {
     m_usageSeparator->setVisible(show);
   };
 
-  // 菜单项 1：UWF 当前会话的启用状态。读不到（命名空间不可用）就只显示这一行。
+  // UWF 当前会话的启用状态——决定托盘图标颜色与状态项文字。
   const auto filter = UwfFilter{m_session}.read();
+  const bool enabled = filter && filter->currentEnabled;
+  m_tray->setIcon(enabled ? m_iconNormal : m_iconAlert);  // 禁用 / 读不到 → 红色图标
+
   if (!filter) {
     m_stateAction->setText(I18n::tr("UWF status unavailable"));
     setUsageVisible(false);
     return;
   }
-  const bool enabled = filter->currentEnabled;
   m_stateAction->setText(enabled ? I18n::tr("UWF: Enabled") : I18n::tr("UWF: Disabled"));
 
   // 菜单项 2：占用条仅在 UWF 已启用时存在；禁用（或读不到 overlay 配置）时隐藏。
