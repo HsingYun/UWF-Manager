@@ -58,6 +58,7 @@
 #include "TableText.h"
 #include "ThemeManager.h"
 #include "TrayController.h"
+#include "uwf_version.h"
 
 namespace uwf::ui {
 
@@ -1160,6 +1161,17 @@ void MainWindow::showAbout() {
   title->setFont(titleFont);
   title->setTextInteractionFlags(Qt::TextSelectableByMouse);
   layout->addWidget(title);
+
+  // 版本号紧贴标题下方、弱化显示。UWF_VER_STRING 由 cmake/GitVersion.cmake
+  // 在构建期注入 git 短哈希（无 git 仓库时回退为 "1.0.0.0"）。用内联 color
+  // 走富文本，理由同 body：避开 QSS / palette 对 QLabel 文字色的干扰。
+  auto* version = new QLabel(&dlg);
+  version->setTextFormat(Qt::RichText);
+  version->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  version->setText(QStringLiteral("<span style=\"color:%1\">%2</span>")
+                       .arg(ThemeManager::instance().color(Sem::FgMuted).name(),
+                            I18n::tr("Version %1").arg(QString::fromLatin1(UWF_VER_STRING))));
+  layout->addWidget(version);
 
   auto* body = new QLabel(&dlg);
   body->setTextFormat(Qt::RichText);

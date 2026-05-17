@@ -75,6 +75,10 @@ set(UWF_SOURCES
 
 qt_add_executable(UWF WIN32 ${UWF_SOURCES})
 
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
+include(tools)
+cc_git_rev(UWF)
+
 qt_add_resources(UWF "app_resources"
     PREFIX "/"
     BASE "${CMAKE_SOURCE_DIR}/resources"

@@ -1,14 +1,9 @@
 #include <winver.h>
+#include "uwf_version.h"
 
 1 ICON "icons/app.ico"
 
 1 24 "manifest.xml"
-
-#define UWF_VER_MAJOR    1
-#define UWF_VER_MINOR    0
-#define UWF_VER_PATCH    0
-#define UWF_VER_BUILD    0
-#define UWF_VER_STRING   "1.0.0.0"
 
 1 VERSIONINFO
 FILEVERSION     UWF_VER_MAJOR,UWF_VER_MINOR,UWF_VER_PATCH,UWF_VER_BUILD
