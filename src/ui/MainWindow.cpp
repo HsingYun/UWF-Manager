@@ -426,6 +426,17 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
   // 触发后用 singleShot 调度，确保首次 rebuild 也在 shown 状态下跑。
 }
 
+void MainWindow::raiseToFront() {
+  // 最小化时先恢复；否则确保可见。再 raise + activate 抢前台——配合启动方
+  // 进程调用的 AllowSetForegroundWindow，能真正前置而非只闪任务栏。
+  if (isMinimized())
+    showNormal();
+  else
+    show();
+  raise();
+  activateWindow();
+}
+
 void MainWindow::buildUi() {
   setWindowTitle(I18n::tr("Unified Write Filter (UWF) Manager"));
   setWindowIcon(QIcon(":/icons/app.svg"));

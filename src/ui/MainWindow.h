@@ -28,6 +28,9 @@ class MainWindow : public QMainWindow {
  public:
   explicit MainWindow(QWidget* parent = nullptr);
 
+  // 由"单实例"机制调用：另一个实例被启动时，把本窗口从最小化恢复并带到前台。
+  void raiseToFront();
+
  public slots:
   void refresh();
   void showPlan();

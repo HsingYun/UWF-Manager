@@ -4,7 +4,7 @@ project(UWF LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 COMPONENTS Widgets Svg LinguistTools REQUIRED)
+find_package(Qt6 COMPONENTS Widgets Svg Network LinguistTools REQUIRED)
 
 qt_standard_project_setup()
 
@@ -111,7 +111,7 @@ if(WIN32)
     target_sources(UWF PRIVATE resources/app.rc)
 endif()
 
-target_link_libraries(UWF PRIVATE Qt6::Widgets Qt6::Svg)
+target_link_libraries(UWF PRIVATE Qt6::Widgets Qt6::Svg Qt6::Network)
 
 if(MSVC)
     target_compile_options(UWF PRIVATE /W4 /WX /permissive-)

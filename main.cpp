@@ -1,4 +1,6 @@
 #include <QApplication>
+#include <QLocalServer>
+#include <QLocalSocket>
 
 #include "src/ui/CenteredTextStyle.h"
 #include "src/ui/I18n.h"
@@ -7,6 +9,31 @@
 #include "src/ui/ThemeManager.h"
 #include "src/util/Log.h"
 #include "src/uwf/SystemCheck.h"
+
+#include <windows.h>
+
+// 单实例机制使用的本地服务名。带当前用户名后缀——单实例限定为"当前用户"
+// 范围，多用户会话 / 快速用户切换下不会把别的登录用户的实例拉过来。
+static QString instanceServerName() {
+  return QStringLiteral("UWFManager.SingleInstance.") + qEnvironmentVariable("USERNAME");
+}
+
+// 尝试连接已在运行的实例并请它把窗口带到前台。确有实例在跑（连接成功）返回
+// true，否则返回 false。底层是 Windows 命名管道——纯内核 IPC，不写磁盘、
+// 不写注册表，进程退出即消失。
+static bool forwardToRunningInstance(const QString& serverName) {
+  QLocalSocket socket;
+  socket.connectToServer(serverName);
+  if (!socket.waitForConnected(300)) return false;
+  // 授予目标进程抢占前台窗口的权限——否则受 Windows 前台锁定限制，已有窗口
+  // 往往只能让任务栏图标闪烁，无法真正前置。
+  AllowSetForegroundWindow(ASFW_ANY);
+  socket.write("raise");
+  socket.flush();
+  socket.waitForBytesWritten(300);
+  socket.disconnectFromServer();
+  return true;
+}
 
 static QString describeCheck(const uwf::SystemCheckResult& r) {
   switch (r.status) {
@@ -31,6 +58,14 @@ int main(int argc, char* argv[]) {
   app.setApplicationName("UWF Manager");
   app.setOrganizationName("UWF");
   app.setWindowIcon(QIcon(":/icons/app.svg"));
+
+  // 单实例：已有实例在运行则切到它并退出，不再启动第二个窗口。放在最前面——
+  // 系统检查等重活之前；若只是把任务转交给已有实例，没必要白做这些。
+  const QString instanceName = instanceServerName();
+  if (forwardToRunningInstance(instanceName)) {
+    UWF_LOG_I("main") << "another instance is already running; activated it and exiting";
+    return 0;
+  }
 
   // 用自定义 QProxyStyle 抵消 QToolButton / QTabBar 文字基线偏下的问题。
   app.setStyle(new uwf::ui::CenteredTextStyle());
@@ -82,7 +117,32 @@ int main(int argc, char* argv[]) {
                                             "otherwise UWF settings cannot be read or modified."));
   }
 
+  // 单实例：本实例已通过系统检查、即将真正运行，注册监听端占住实例名。
+  QLocalServer instanceServer;
+  QLocalServer::removeServer(instanceName);  // 清理可能残留的管道名（防御性）
+  if (!instanceServer.listen(instanceName)) {
+    // probe 与 listen 之间被另一实例抢注（启动竞态）——交给它并退出。
+    if (forwardToRunningInstance(instanceName)) {
+      UWF_LOG_I("main") << "lost single-instance startup race; activated the other instance and exiting";
+      return 0;
+    }
+    UWF_LOG_W("main") << "single-instance server failed to listen: " << instanceServer.errorString().toStdString();
+  }
+
   uwf::ui::MainWindow w;
+
+  // 收到其他实例的连接 → 把本窗口带到前台。
+  if (instanceServer.isListening()) {
+    auto activate = [&instanceServer, &w] {
+      while (QLocalSocket* c = instanceServer.nextPendingConnection()) c->deleteLater();
+      w.raiseToFront();
+    };
+    QObject::connect(&instanceServer, &QLocalServer::newConnection, &w, activate);
+    // 处理在 listen 之后、newConnection 挂上之前（构造 MainWindow 的间隙）
+    // 就已到达的连接。
+    if (instanceServer.hasPendingConnections()) activate();
+  }
+
   w.show();
   return app.exec();
 }
