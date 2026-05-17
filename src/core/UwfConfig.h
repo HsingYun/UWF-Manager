@@ -98,7 +98,7 @@ struct SessionSnapshot {
   FilterState filter;
   OverlayConfig overlay;
   std::vector<VolumeRecord> volumes;
-  std::map<std::string, std::vector<std::string>> fileExclusions;  // key: 盘符
+  std::map<std::string, std::vector<std::string>> fileExclusions;  // key: volumeName（如 \\?\Volume{GUID}\）
   std::vector<std::string> registryExclusions;                     // 注册表排除是全局的，不按卷分
 };
 

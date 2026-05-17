@@ -88,12 +88,12 @@ bool valueToVariant(const WmiValue& src, VARIANT& v) {
       v.lVal = src.toInt();
       return true;
     case WmiValue::Kind::UInt:
-      // WMI 对 CIM_UINT32 入参的 VARIANT 装箱约定是 VT_I4（参见
-      // "CIM to VBScript and COM data type mapping"），传 VT_UI4 会让
-      // IWbemClassObject::Put 退回 WBEM_E_INVALID_PARAMETER (0x80041008)，
-      // 进而 ExecMethod 失败。CIM_UINT32 的最大值（4G-1）超过 LONG 可表示
-      // 的范围，但 UWF 的所有 UInt32 入参（type/size/threshold）都远小于
-      // INT_MAX，cast 安全。
+      // WMI 对 CIM_UINT32 入参的 VARIANT 装箱约定是 VT_I4（参见微软
+      // 文档 "Numbers (WMI)"：learn.microsoft.com/windows/win32/wmisdk/numbers），
+      // 传 VT_UI4 会让 IWbemClassObject::Put 退回
+      // WBEM_E_INVALID_PARAMETER (0x80041008)，进而 ExecMethod 失败。
+      // CIM_UINT32 的最大值（4G-1）超过 LONG 可表示的范围，但 UWF 的所有
+      // UInt32 入参（type/size/threshold）都远小于 INT_MAX，cast 安全。
       v.vt = VT_I4;
       v.lVal = static_cast<LONG>(src.toUInt());
       return true;
