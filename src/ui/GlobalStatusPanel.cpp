@@ -135,17 +135,6 @@ void setComboValue(QComboBox* c, const QVariant& v) {
   }
 }
 
-uint32_t queryTotalPhysMb() {
-#ifdef _WIN32
-  MEMORYSTATUSEX s{};
-  s.dwLength = sizeof(s);
-  if (GlobalMemoryStatusEx(&s)) {
-    return static_cast<uint32_t>(s.ullTotalPhys / (1024ULL * 1024ULL));
-  }
-#endif
-  return 0;
-}
-
 // 把 MB 数值挑到"最紧凑"的单位显示：整除就用整数，否则保留两位小数。
 // 常见 RAM 容量（8/16/32/64 GB）会落到整数分支，输出最短。
 std::string fmtMbAdaptive(uint32_t mb) {
@@ -287,7 +276,7 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
       I18n::tr("Triggers a critical-level event-log notification when overlay usage reaches this value. Must be higher than the warning "
                "threshold. Set to 0 to disable this event."));
 
-  m_totalRamMb = queryTotalPhysMb();
+  m_totalRamMb = systemTotalRamMb();
 
   m_usedLabel = new QLabel("—");
   m_usedLabel->setObjectName("statusCurrent");
@@ -395,9 +384,8 @@ void GlobalStatusPanel::refreshTypeDependentUi() {
   }
 
   if (m_usageBar) {
-    const uint32_t scale = isRam ? m_totalRamMb : 0;
-    m_usageBar->setData(m_currentConsumptionMb, static_cast<uint32_t>(m_warnNext->value()), static_cast<uint32_t>(m_critNext->value()),
-                        static_cast<uint32_t>(m_maxNext->value()), scale);
+    m_usageBar->setOverlayData(m_currentConsumptionMb, static_cast<uint32_t>(m_warnNext->value()), static_cast<uint32_t>(m_critNext->value()),
+                               static_cast<uint32_t>(m_maxNext->value()), isRam);
   }
 }
 
@@ -467,6 +455,14 @@ void GlobalStatusPanel::setData(const core::SessionSnapshot& cur, const core::Se
   refreshTypeDependentUi();
   reconfigureRanges();
   updateDirtyStyle();
+}
+
+void GlobalStatusPanel::updateUsage(const core::OverlayRuntime& rt) {
+  if (!m_available) return;  // 面板不可用（无 UWF）时没有占用可显示
+  m_currentConsumptionMb = rt.currentConsumptionMb;
+  const uint32_t totalMb = rt.availableSpaceMb + rt.currentConsumptionMb;
+  m_usedLabel->setText(QString::fromStdString(std::format("{} / {} MB", rt.currentConsumptionMb, totalMb)));
+  refreshTypeDependentUi();  // 用新的 m_currentConsumptionMb 重新喂占用条
 }
 
 static void markDirty(QWidget* w, bool dirty) {

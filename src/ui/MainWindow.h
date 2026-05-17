@@ -21,6 +21,7 @@ namespace uwf::ui {
 
 class DiskTab;
 class GlobalStatusPanel;
+class TrayController;
 enum class Theme;
 
 class MainWindow : public QMainWindow {
@@ -66,12 +67,17 @@ class MainWindow : public QMainWindow {
   // 不再作为对外的"主题切换刷新"路径——切主题统一走 rebuildUi。
   void refreshThemedUi();
 
+  // 5s 定时器回调：只刷新 Usage 数据——主窗口可见时刷新主面板占用条，
+  // 托盘那半段交给 TrayController。
+  void refreshUsage();
+
   QTabWidget* m_tabs = nullptr;
   GlobalStatusPanel* m_global = nullptr;
   QLabel* m_statusText = nullptr;
   QLabel* m_hoverHint = nullptr;
   QTimer* m_hintTimer = nullptr;
   QTimer* m_hoverClearTimer = nullptr;
+  QTimer* m_usageTimer = nullptr;  // 5s 周期刷新 Usage 数据
   QString m_statusBaseline;
   QString m_hoverHintDefault;
 
@@ -89,6 +95,9 @@ class MainWindow : public QMainWindow {
   // 后续 show 不再重复。让首屏的几何和样式与切换路径完全一致——polish /
   // QStyle 一些计算只有在 widget 真正进入 shown 状态后才稳定。
   bool m_firstShowDone = false;
+
+  // 系统托盘（图标 + 右键菜单）——独立组件，由本窗口编排。
+  TrayController* m_tray = nullptr;
 
   // 所有"写"操作共享同一个 WmiSession。
   WmiSession m_writeSession;

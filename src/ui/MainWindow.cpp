@@ -57,6 +57,7 @@
 #include "MessageDialog.h"
 #include "TableText.h"
 #include "ThemeManager.h"
+#include "TrayController.h"
 
 namespace uwf::ui {
 
@@ -420,6 +421,16 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
   std::string err;
   m_writeSession.connect("root\\standardcimv2\\embedded", &err);
   refresh();
+
+  // 系统托盘（图标 + 右键菜单）——独立组件，由本窗口编排：接它的"激活窗口"信号。
+  m_tray = new TrayController(m_writeSession, this);
+  connect(m_tray, &TrayController::activateWindowRequested, this, &MainWindow::raiseToFront);
+
+  // 每 5s 周期刷新 Usage 数据（占用条）——只读 UWF_Overlay，不做整体 refresh。
+  m_usageTimer = new QTimer(this);
+  m_usageTimer->setInterval(5000);
+  connect(m_usageTimer, &QTimer::timeout, this, &MainWindow::refreshUsage);
+  m_usageTimer->start();
   // 首屏 rebuildUi 不在 ctor 里同步触发——widget 此时还没 show，Qt 一些 polish
   // / 几何计算在 widget 真正进入 shown 状态前结果不稳定，会跟后续"切主题 /
   // 切语言时已 shown 状态下的 rebuildUi"产生差异。改放到 showEvent 第一次
@@ -435,6 +446,20 @@ void MainWindow::raiseToFront() {
     show();
   raise();
   activateWindow();
+}
+
+void MainWindow::refreshUsage() {
+  // 周期更新只动 Usage 数据：主窗口可见时刷新主面板占用条；托盘那半段交给
+  // TrayController（它内部判断右键菜单是否正在显示）。
+  if (isVisible() && m_global) {
+    if (const auto overlay = m_overlay.read()) {
+      core::OverlayRuntime rt;
+      rt.currentConsumptionMb = overlay->overlayConsumption;
+      rt.availableSpaceMb = overlay->availableSpace;
+      m_global->updateUsage(rt);
+    }
+  }
+  if (m_tray) m_tray->refreshUsage();
 }
 
 void MainWindow::buildUi() {

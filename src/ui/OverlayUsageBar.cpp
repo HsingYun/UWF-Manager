@@ -4,6 +4,10 @@
 #include <QPainterPath>
 #include <QPen>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "ThemeManager.h"
 
 namespace uwf::ui {
@@ -25,6 +29,23 @@ void OverlayUsageBar::setData(const uint32_t currentMb, const uint32_t warningMb
   m_max = maximumMb;
   m_scale = scaleMb;
   update();
+}
+
+void OverlayUsageBar::setOverlayData(const uint32_t currentMb, const uint32_t warningMb, const uint32_t criticalMb, const uint32_t maximumMb,
+                                     const bool ramMode) {
+  // RAM 模式以系统总内存为 100% 刻度（查询一次即缓存——运行期不变）；Disk
+  // 模式传 0，由 setData 回落到以 maximumMb 为刻度。
+  static const uint32_t totalRam = systemTotalRamMb();
+  setData(currentMb, warningMb, criticalMb, maximumMb, ramMode ? totalRam : 0);
+}
+
+uint32_t systemTotalRamMb() {
+#ifdef _WIN32
+  MEMORYSTATUSEX s{};
+  s.dwLength = sizeof(s);
+  if (GlobalMemoryStatusEx(&s)) return static_cast<uint32_t>(s.ullTotalPhys / (1024ULL * 1024ULL));
+#endif
+  return 0;
 }
 
 QSize OverlayUsageBar::sizeHint() const { return {240, kBarH}; }

@@ -22,6 +22,10 @@ class GlobalStatusPanel : public QWidget {
   void setData(const core::SessionSnapshot& current, const core::SessionSnapshot& next, const core::OverlayRuntime& runtime);
   void setUnavailable(const QString& reason);
 
+  // 仅刷新覆盖层占用（占用条 + 已用标签）——供 5s 定时器周期更新，不动其他
+  // 控件、不触发 pendingChanged。面板处于不可用状态时为空操作。
+  void updateUsage(const core::OverlayRuntime& runtime);
+
   [[nodiscard]] std::optional<bool> pendingFilterEnabled() const;
   [[nodiscard]] core::OverlayConfigDelta pendingOverlay() const;
 

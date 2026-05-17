@@ -21,6 +21,12 @@ class OverlayUsageBar : public QWidget {
   // 这样 RAM 类型可以把 100% 设为总内存，而 Disk 类型则使用 overlay max。
   void setData(uint32_t currentMb, uint32_t warningMb, uint32_t criticalMb, uint32_t maximumMb, uint32_t scaleMb = 0);
 
+  // RAM / Disk 两种覆盖层类型的统一入口：按 ramMode 自动选定 100% 刻度——
+  // RAM 模式以系统物理内存总量为刻度（overlay 上限之外的区域显示为网格），
+  // Disk 模式以 overlay 上限为刻度。RAM / Disk 的取值差异只此一处，调用方
+  // 不必各自重复判断。等价于 setData(..., ramMode ? systemTotalRamMb() : 0)。
+  void setOverlayData(uint32_t currentMb, uint32_t warningMb, uint32_t criticalMb, uint32_t maximumMb, bool ramMode);
+
   [[nodiscard]] QSize sizeHint() const override;
   [[nodiscard]] QSize minimumSizeHint() const override;
 
@@ -34,5 +40,8 @@ class OverlayUsageBar : public QWidget {
   uint32_t m_max = 0;
   uint32_t m_scale = 0;
 };
+
+// 系统物理内存总量（MB）——RAM 覆盖层占用条的 100% 刻度。查询失败返回 0。
+[[nodiscard]] uint32_t systemTotalRamMb();
 
 }  // namespace uwf::ui

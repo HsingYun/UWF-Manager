@@ -851,5 +851,12 @@ uwfmgr registry add-exclusion HKLM\Software\MyApp</translation></message>
     <message><source>registry exclusion</source><translation>注册表排除</translation></message>
     <message><source>Registry exclusions are only available on the system drive tab, which is not present</source><translation>注册表排除只挂在系统盘 TAB 上，但该 TAB 不存在</translation></message>
     <message><source>Unsupported command</source><translation>不支持的命令</translation></message>
+
+    <!-- System tray -->
+    <message><source>Exit</source><translation>退出</translation></message>
+    <message><source>UWF: Enabled</source><translation>UWF：已启用</translation></message>
+    <message><source>UWF: Disabled</source><translation>UWF：已禁用</translation></message>
+    <message><source>UWF status unavailable</source><translation>UWF 状态不可用</translation></message>
+    <message><source>Used %1 MB / Total %2 MB</source><translation>已用 %1 MB / 总计 %2 MB</translation></message>
 </context>
 </TS>

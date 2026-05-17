@@ -39,6 +39,8 @@ set(UWF_SOURCES
     src/uwf/UwfSnapshot.cpp
     src/ui/MainWindow.h
     src/ui/MainWindow.cpp
+    src/ui/TrayController.h
+    src/ui/TrayController.cpp
     src/ui/ApplyPlanDialog.h
     src/ui/ApplyPlanDialog.cpp
     src/ui/LogViewerDialog.h

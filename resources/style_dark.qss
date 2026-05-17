@@ -505,6 +505,16 @@ QMenu::item:selected {
     color: #FFFFFF;
 }
 
+/* 托盘菜单的占用条菜单项：QWidgetAction 的内嵌控件不会自动获得菜单 hover
+ * 高亮，这里给容器配一条与 QMenu::item:selected 一致的 :hover 规则补上。 */
+#trayUsageItem {
+    background: transparent;
+    border-radius: 4px;
+}
+#trayUsageItem:hover {
+    background: rgba(76, 139, 245, 0.25);
+}
+
 QMenu::item:disabled {
     color: #5C6168;
 }
