@@ -359,12 +359,18 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
       auto* openAct = menu.addAction(tm.icon(":/icons/folder.svg"), I18n::tr("Open containing folder"));
       connect(openAct, &QAction::triggered, this, [this, rel]() { openContainingFolder(rel); });
 
-      // 如果路径在磁盘上真实存在（既存的文件 / 文件夹），就提供"提交
-      // 改动到磁盘"——按文件/文件夹分别用不同文案，最终都走
-      // UWF_Volume.CommitFile（MainWindow 那边收到 absPath 自己判断
-      // 是文件还是目录、是否需要递归）。
+      // "提交改动到磁盘"只在两个条件同时满足时出现：
+      //   1. 路径在磁盘上真实存在（既存的文件 / 文件夹）；
+      //   2. 该条目在当前会话**尚未**被排除（不在 m_current 里）。
+      // 已在当前会话被排除的条目，其写入本就绕过覆盖层直接落盘，覆盖层里
+      // 没有可提交的改动——若仍提供提交项，点击后会被 MainWindow 以"提交
+      // 被拒绝"挡回（见 MainWindow::commitFilePath）。只有下次会话才新增 /
+      // 待应用的排除项当前仍受保护，覆盖层里才有改动可提交。
+      // 按文件/文件夹分别用不同文案，最终都走 UWF_Volume.CommitFile
+      //（MainWindow 那边收到 absPath 自己判断是文件还是目录、是否递归）。
       const QFileInfo fi(abs);
-      if (fi.exists()) {
+      const bool excludedInCurrentSession = m_current.contains(rel, Qt::CaseInsensitive);
+      if (fi.exists() && !excludedInCurrentSession) {
         menu.addSeparator();
         const QString label = fi.isDir() ? I18n::tr("Commit folder changes to disk…") : I18n::tr("Commit file changes to disk…");
         auto* commitAct = menu.addAction(tm.icon(":/icons/commit.svg"), label);
