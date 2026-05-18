@@ -413,7 +413,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
 
     if (!m_session.isConnected()) {
       std::string err;
-      if (!m_session.connect("root\\standardcimv2\\embedded", &err)) {
+      if (!m_session.connect(api::kWmiNamespace, &err)) {
         note(I18n::tr("✘ Failed to connect to the system: %1").arg(QString::fromStdString(err)).toStdString());
         const std::string body = formatBlockPlain(I18n::tr("Applied changes").toStdString(), m_changeCmds) + "\n:: ==== " + I18n::tr("Result").toStdString() +
                                  " ====\n" + joinLines(outcome);

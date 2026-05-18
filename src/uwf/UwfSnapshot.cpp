@@ -54,7 +54,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
   core::UwfSnapshot snap;
   WmiSession s;
   std::string err;
-  if (!s.connect("root\\standardcimv2\\embedded", &err)) {
+  if (!s.connect(api::kWmiNamespace, &err)) {
     snap.uwfAvailable = false;
     snap.rawError = err;
     if (error) *error = err;
@@ -124,7 +124,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
 std::vector<core::DiskInfo> enumerateDisks(std::string* error) {
   std::vector<core::DiskInfo> out;
   WmiSession cim;
-  if (!cim.connect("root\\cimv2", error)) return out;
+  if (!cim.connect(kCimV2Namespace, error)) return out;
 
   std::string err;
   const auto rows =

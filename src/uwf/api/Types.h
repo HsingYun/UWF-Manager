@@ -15,6 +15,9 @@
 
 namespace uwf::api {
 
+// uwf::api 下所有 UWF_* 类所在的 WMI 命名空间；传给 WmiSession::connect()。
+inline constexpr const char* kWmiNamespace = "root\\standardcimv2\\embedded";
+
 // UWF_OverlayConfig.Type / UWF_Overlay.SetType 的枚举。
 enum class OverlayType : uint32_t {
   RAM = 0,   // 基于 RAM 的覆盖层

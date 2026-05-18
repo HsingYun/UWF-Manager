@@ -175,7 +175,7 @@ void OverlayFilesDialog::startLoading() {
     do {
       WmiSession session;
       std::string err;
-      if (!session.connect("root\\standardcimv2\\embedded", &err)) {
+      if (!session.connect(api::kWmiNamespace, &err)) {
         errorOut = QString::fromStdString(err);
         break;
       }

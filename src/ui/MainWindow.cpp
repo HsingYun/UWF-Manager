@@ -409,7 +409,7 @@ MainWindow::MainWindow(const QString& compatibilityNotice, QWidget* parent) : QM
   buildUi();
   // 写会话提前连接一次；读快照时会另起一个独立会话。
   std::string err;
-  m_writeSession.connect("root\\standardcimv2\\embedded", &err);
+  m_writeSession.connect(api::kWmiNamespace, &err);
   refresh();
 
   // 系统托盘（图标 + 右键菜单）——独立组件，由本窗口编排：接它的"激活窗口"信号。
