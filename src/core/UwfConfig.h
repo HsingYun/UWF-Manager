@@ -109,6 +109,7 @@ struct UwfSnapshot {
   OverlayRuntime runtime;
   std::vector<OverlayFileInfo> overlayFiles;  // UWF_Overlay::GetOverlayFiles() 的结果
   bool uwfAvailable = false;                  // UWF 命名空间是否可用
+  bool elevated = false;                      // 当前进程是否以管理员身份运行
   std::string rawError;                       // 读取过程中的错误描述（UTF-8）
 };
 

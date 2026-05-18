@@ -22,6 +22,11 @@ class GlobalStatusPanel : public QWidget {
   void setData(const core::SessionSnapshot& current, const core::SessionSnapshot& next, const core::OverlayRuntime& runtime);
   void setUnavailable(const QString& reason);
 
+  // 在 setData 之后调用，决定滚动区内的控件是否可交互。UWF 可读但进程未提权
+  // 时用它把控件全部置灰——数据照常显示，但不能改。setUnavailable 已自行置灰，
+  // 该路径下再调用为幂等。
+  void setControlsEnabled(bool enabled) const;
+
   // 系统版本不在受支持清单内时调用：在标题下方常驻一条兼容模式警告。
   // 与 setData / setUnavailable 控制的状态横幅相互独立，刷新时不会被清掉。
   void setCompatibilityNotice(const QString& text);

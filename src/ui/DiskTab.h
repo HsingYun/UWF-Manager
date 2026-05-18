@@ -28,6 +28,8 @@ class DiskTab : public QWidget {
  public:
   explicit DiskTab(const core::DiskInfo& disk, QWidget* parent = nullptr);
 
+  // UWF 不可读或进程未提权时，保护开关 / 绑定方式 / 排除列表的增删 / 提交
+  // 按钮一律置灰；列表内容仍可查看、可滚动、可切换 TAB。
   void applySnapshot(const core::UwfSnapshot& snap);
   void markUnsupported() const;
   // 文件系统受限（exFAT 等）的 UI 处理：保护开关 / 绑定方式保持可用，
@@ -80,7 +82,8 @@ class DiskTab : public QWidget {
   // 按当前快照里的两个"当前会话"状态计算"持久化"按钮的可用性：
   //   - globalFilterOn：UWF_Filter.CurrentEnabled。false 则一切持久化都不可能成功。
   //   - thisVolumeProtected：本卷在当前会话是否受保护。false 则文件/目录持久化不可用。
-  // 注册表持久化只看 globalFilterOn，和具体卷无关。
+  // 此外还叠加 m_editable（UWF 可读 + 已提权）：为 false 则一切持久化按钮直接
+  // 置灰。注册表持久化只看 globalFilterOn，和具体卷无关。
   void updateCommitEnablement(bool globalFilterOn, bool thisVolumeProtected) const;
   // 主题切换时刷新菜单 icon + 重新生成 heading 的 RichText（里面带 inline 色）。
   void refreshThemedIcons();
@@ -98,6 +101,10 @@ class DiskTab : public QWidget {
   ExclusionListWidget* m_regs = nullptr;
   QTabWidget* m_infoTabs = nullptr;  // 内层 TAB（文件排除 / 注册表排除）
   bool m_showRegistry = false;
+  // 最近一次 applySnapshot 算出的"可写"（UWF 可读 + 已提权），供
+  // updateCommitEnablement 读取。构造期默认 false：彼时还没有快照，首帧持久化
+  // 按钮一律按"不可写"出。
+  bool m_editable = false;
 };
 
 }  // namespace uwf::ui

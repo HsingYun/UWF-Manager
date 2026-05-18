@@ -924,12 +924,36 @@ void MainWindow::refresh() {
     // 错误，模态框只是重复打扰（且每点一次刷新就再弹一次）。
     UWF_LOG_E("ui") << "readSnapshot failed: uwfAvailable=false err=" << err;
   }
+
+  // uwfAvailable（命名空间可读）与 elevated（进程已提权）外观相近但用途不同，
+  // 各处按需分别判断，不合并成单一标志。
+  const bool uwfAvailable = m_snapshot.uwfAvailable;
+  const bool elevated = m_snapshot.elevated;
+
+  // 工具栏：UWF 不可用时除"日志 / 关于 / 主题 / 语言"外整体禁用。其中"刷新"
+  // 只是重新读取、不写入 UWF，故未提权也允许点——只要 UWF 可读就放开；
+  // 导入 / 预览并应用 / 安全关机 / 安全重启会写入，需同时已提权。
+  if (m_actRefresh) m_actRefresh->setEnabled(uwfAvailable);
+  for (QAction* a : {m_actImport, m_actPlan, m_actShutdown, m_actRestart})
+    if (a) a->setEnabled(uwfAvailable && elevated);
+
+  // Usage 定时器只跟随 UWF 可读性——未提权不影响读取占用，故不停表；
+  // 仅在 UWF 不可用时停掉，避免每 5s 一次徒劳的 UWF_Overlay 读取。
+  if (m_usageTimer) {
+    if (uwfAvailable)
+      m_usageTimer->start();
+    else
+      m_usageTimer->stop();
+  }
+
   rebuildTabs(disks);
-  if (m_snapshot.uwfAvailable) {
+  if (uwfAvailable) {
     m_global->setData(m_snapshot.current, m_snapshot.next, m_snapshot.runtime);
   } else {
     m_global->setUnavailable(err.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(err));
   }
+  // setData 会把滚动区控件全部恢复 enabled——未提权时随即再统一置灰一次。
+  m_global->setControlsEnabled(uwfAvailable && elevated);
   for (auto& t : m_diskTabs)
     if (t) t->applySnapshot(m_snapshot);
   m_statusBaseline = I18n::tr("Refreshed · %1 volumes").arg(disks.size());

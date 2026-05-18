@@ -189,6 +189,7 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   m_commitBtn->setMenu(commitMenu);
   m_status->addTrailingAction(m_commitBtn);
   // 初始一律禁用；等第一次 applySnapshot 带着快照再按实际状态点亮。
+  // 此刻 m_editable 仍是默认的 false，updateCommitEnablement 会全禁。
   updateCommitEnablement(false, false);
 
   // 排除列表 TAB —— 占满剩余空间，但不会被压到看不到内容。
@@ -360,16 +361,17 @@ void DiskTab::markLimitedFileSystem() const {
 }
 
 void DiskTab::updateCommitEnablement(const bool globalFilterOn, const bool thisVolumeProtected) const {
+  // m_editable=false（UWF 不可用 / 未提权）时一切持久化都不可能成功，直接全禁。
   // 文件类提交还要求 FS 支持文件排除——exFAT / ReFS 等 limited 卷上不行。
-  const bool fileOK = globalFilterOn && thisVolumeProtected && canManageExclusions();
-  const bool regOK = globalFilterOn;  // 注册表是全局的，不依赖卷 FS
+  const bool fileOK = m_editable && globalFilterOn && thisVolumeProtected && canManageExclusions();
+  const bool regOK = m_editable && globalFilterOn;  // 注册表是全局的，不依赖卷 FS
 
-  // "查看覆盖层文件" 受三重约束：NTFS（GetOverlayFiles 文档限制）+
+  // "查看覆盖层文件" 受约束：可写 + NTFS（GetOverlayFiles 文档限制）+
   // 全局筛选器开 + 本卷当前会话受保护。任何一项不满足都没有 overlay
   // 可看。
   if (m_overlayBtn) {
     const bool isNtfs = QString::fromStdString(m_disk.fileSystem).compare("NTFS", Qt::CaseInsensitive) == 0;
-    const bool overlayOK = isNtfs && globalFilterOn && thisVolumeProtected;
+    const bool overlayOK = m_editable && isNtfs && globalFilterOn && thisVolumeProtected;
     m_overlayBtn->setEnabled(overlayOK);
     if (!isNtfs) {
       m_overlayBtn->setToolTip(I18n::tr("Overlay file listing is only supported on NTFS volumes."));
@@ -410,6 +412,9 @@ void DiskTab::updateCommitEnablement(const bool globalFilterOn, const bool thisV
 }
 
 void DiskTab::applySnapshot(const core::UwfSnapshot& snap) {
+  // 可写 = UWF 可读且进程已提权。缓存供 updateCommitEnablement 复用（它也会
+  // 在没有快照的构造期被调到），并决定排除列表 / 状态卡是否可交互。
+  m_editable = snap.uwfAvailable && snap.elevated;
   const bool filterOn = snap.current.filter.enabled;
   if (!supported()) {
     markUnsupported();
@@ -421,6 +426,8 @@ void DiskTab::applySnapshot(const core::UwfSnapshot& snap) {
   const auto* cv = findVolume(snap.current, dl);
   const auto* nv = findVolume(snap.next, dl);
   m_status->setData(cv, nv);
+  // setData 按 hasVolume 点亮保护开关 / 绑定方式；这里再叠加可写性统一收口。
+  m_status->setControlsEnabled(m_editable);
 
   const std::string volKey = nv ? nv->volumeName : (cv ? cv->volumeName : std::string{});
   QStringList curFiles, nxtFiles;
@@ -436,10 +443,10 @@ void DiskTab::applySnapshot(const core::UwfSnapshot& snap) {
     m_regs->setBaseline(toQList(snap.current.registryExclusions), toQList(snap.next.registryExclusions));
   }
 
-  // UWF 命名空间连不上时排除列表没有可写入的目标——整列设只读，禁掉添加 /
-  // 删除按钮；恢复可用后再放开（FS 受限卷的文件列表则始终保持只读）。
-  m_files->setReadOnly(!snap.uwfAvailable || !canManageExclusions());
-  if (m_regs) m_regs->setReadOnly(!snap.uwfAvailable);
+  // 不可写（UWF 不可用 / 未提权）时排除列表没有可落地的目标——整列设只读，
+  // 禁掉添加 / 删除按钮；恢复可写后再放开（FS 受限卷的文件列表始终保持只读）。
+  m_files->setReadOnly(!m_editable || !canManageExclusions());
+  if (m_regs) m_regs->setReadOnly(!m_editable);
 
   // 快照里可能补充 volumeName 信息，刷一下标题。
   if (nv && !nv->volumeName.empty() && m_disk.volumeName.empty()) {

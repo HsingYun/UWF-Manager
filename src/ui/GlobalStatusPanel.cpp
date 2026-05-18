@@ -412,6 +412,12 @@ void GlobalStatusPanel::setUnavailable(const QString& reason) {
   if (m_maxLockedHint) m_maxLockedHint->hide();
 }
 
+void GlobalStatusPanel::setControlsEnabled(const bool enabled) const {
+  // 只动滚动区内容宿主——和 setUnavailable 一致：QScrollArea 本身保持可用，
+  // 窗口偏矮时仍能滚动查看被截断的卡片。
+  m_scrollHost->setEnabled(enabled);
+}
+
 void GlobalStatusPanel::setData(const core::SessionSnapshot& cur, const core::SessionSnapshot& nxt, const core::OverlayRuntime& rt) {
   m_available = true;
   m_banner->hide();

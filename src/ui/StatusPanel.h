@@ -20,6 +20,11 @@ class StatusPanel : public QWidget {
 
   void setData(const core::VolumeRecord* currentVol, const core::VolumeRecord* nextVol);
 
+  // 在 setData 之后调用，决定保护开关 / 绑定方式是否可交互。enabled=false
+  // （UWF 不可用或进程未提权）时二者照常显示当前值但置灰不可改。无卷数据时
+  // 二者本就禁用，此调用不会把它们点亮。
+  void setControlsEnabled(bool enabled) const;
+
   void setUnsupported(const QString& reason);
   // 比 setUnsupported 弱：只显示一条警告横幅，不灰化任何控件。
   // 用于"卷可保护但有局部限制"的情况（如 exFAT 不支持文件排除）。

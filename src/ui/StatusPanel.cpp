@@ -165,7 +165,15 @@ void StatusPanel::setData(const core::VolumeRecord* cvol, const core::VolumeReco
     m_bindNext->setEnabled(false);
   }
 
+  // 上面只按"有无卷数据"点亮控件；可写性（提权 + UWF 可用）由调用方紧接着
+  // 用 setControlsEnabled 叠加收口。
   updateDirtyStyle();
+}
+
+void StatusPanel::setControlsEnabled(const bool enabled) const {
+  // 与 m_hasVolume 取与：无卷数据时保护开关 / 绑定方式本就该禁用，可写也不点亮。
+  m_protectNext->setEnabled(enabled && m_hasVolume);
+  m_bindNext->setEnabled(enabled && m_hasVolume);
 }
 
 static void markDirty(QWidget* w, bool dirty) {

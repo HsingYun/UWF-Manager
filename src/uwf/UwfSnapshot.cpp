@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <map>
 
+#include "SystemCheck.h"
 #include "api/UwfFilter.h"
 #include "api/UwfOverlay.h"
 #include "api/UwfOverlayConfig.h"
@@ -52,6 +53,9 @@ std::string prefixDriveLetter(std::string path, const std::string& drive) {
 
 core::UwfSnapshot readSnapshot(std::string* error) {
   core::UwfSnapshot snap;
+  // 提权状态和 uwfAvailable 一样是"本次会话固定"的事实，一并装进快照，
+  // 让拿到快照的 UI 各自按需判断（二者用途不同，不合并成单一标志）。
+  snap.elevated = isElevated();
   WmiSession s;
   std::string err;
   if (!s.connect(api::kWmiNamespace, &err)) {
