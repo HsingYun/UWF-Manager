@@ -26,6 +26,7 @@
 #include <cmath>
 
 #include "../util/DriveLetter.h"
+#include "../util/RegistryKey.h"
 #include "I18n.h"
 #include "MessageDialog.h"
 #include "ThemeManager.h"
@@ -109,12 +110,17 @@ QString forbidExclusionReason(const QString& rawPath, const QString& volumeDl) {
   return {};
 }
 
+// uwf::regkey::normalize 的 QString 包装——把注册表键归一成长写 hive 形式
+// （HKLM\... → HKEY_LOCAL_MACHINE\...）。注册表键的存储 / 展示 / 校验全部先过
+// 这一步，口径才统一。
+QString normRegKey(const QString& key) { return QString::fromStdString(regkey::normalize(key.toStdString())); }
+
 // 注册表排除规则：
 //   1. 路径不得包含非法字符（控制字符、正斜杠、`\\` 空段、引导反斜杠等）；
 //   2. 必须是以下 6 个允许顶层键的子键：
-//        HKLM\BCD00000000 / HKLM\SYSTEM / HKLM\SOFTWARE /
-//        HKLM\SAM         / HKLM\SECURITY / HKLM\COMPONENTS
-//   3. 不得是 HKLM\SECURITY\Policy\Secrets\$MACHINE.ACC（域机器账户密钥）。
+//        HKEY_LOCAL_MACHINE 下的 BCD00000000 / SYSTEM / SOFTWARE /
+//        SAM / SECURITY / COMPONENTS；
+//   3. 不得是 HKEY_LOCAL_MACHINE\SECURITY\Policy\Secrets\$MACHINE.ACC。
 // 命中返回中文原因，否则返回空串。
 QString forbidRegExclusionReason(const QString& rawKey) {
   QString input = rawKey.trimmed();
@@ -122,7 +128,7 @@ QString forbidRegExclusionReason(const QString& rawKey) {
   while (input.size() > 1 && input.endsWith('\\')) input.chop(1);
   if (input.isEmpty()) return I18n::tr("Registry key cannot be empty.");
 
-  // 路径非法字符检查
+  // 路径非法字符检查（在原始输入上做——这些字符归一化不处理）。
   if (input.startsWith('\\')) return I18n::tr("Registry key cannot start with a backslash.");
   if (input.contains("\\\\")) return I18n::tr("The path contains consecutive backslashes; this is not valid.");
   if (input.contains('/')) return I18n::tr("Registry paths use backslash `\\` as the separator; do not use forward slash `/`.");
@@ -130,27 +136,12 @@ QString forbidRegExclusionReason(const QString& rawKey) {
     if (c.unicode() < 0x20) return I18n::tr("The path contains invisible control characters; this is not valid.");
   }
 
-  // 把 HKEY_* 长形式规整成 HK* 简写，便于后续匹配。
-  QString upper = input.toUpper();
-  struct Alias {
-    const char* from;
-    const char* to;
-  };
-  static const Alias aliases[] = {
-      {"HKEY_LOCAL_MACHINE\\", "HKLM\\"}, {"HKEY_CURRENT_USER\\", "HKCU\\"},   {"HKEY_CLASSES_ROOT\\", "HKCR\\"},
-      {"HKEY_USERS\\", "HKU\\"},          {"HKEY_CURRENT_CONFIG\\", "HKCC\\"},
-  };
-  for (const auto& a : aliases) {
-    const QString from = QString::fromLatin1(a.from);
-    if (upper.startsWith(from)) {
-      upper = QString::fromLatin1(a.to) + upper.mid(from.size());
-      break;
-    }
-  }
+  // 归一成长写 hive 后再比对黑 / 白名单——简写 / 长写的口径统一交给 uwf::regkey。
+  const QString upper = normRegKey(input).toUpper();
 
-  // 黑名单：$MACHINE.ACC。放在白名单检查之前——$MACHINE.ACC 在 HKLM\SECURITY
-  // 下能通过白名单，必须先单独挡掉。
-  if (upper == R"(HKLM\SECURITY\POLICY\SECRETS\$MACHINE.ACC)")
+  // 黑名单：$MACHINE.ACC。放在白名单检查之前——它在 SECURITY 下能通过白名单，
+  // 必须先单独挡掉。
+  if (upper == R"(HKEY_LOCAL_MACHINE\SECURITY\POLICY\SECRETS\$MACHINE.ACC)")
     return I18n::tr(
         "HKLM\\SECURITY\\Policy\\Secrets\\$MACHINE.ACC cannot be excluded; this is the domain machine account secret, which UWF documentation explicitly "
         "forbids excluding.");
@@ -158,7 +149,8 @@ QString forbidRegExclusionReason(const QString& rawKey) {
   // 白名单：必须是 6 个允许顶层键的"子键"（不是顶层键本身，所以前缀末尾
   // 的 "\" 之后还得至少有一个字符）。
   static const QStringList allowedPrefixes = {
-      "HKLM\\BCD00000000\\", "HKLM\\SYSTEM\\", "HKLM\\SOFTWARE\\", "HKLM\\SAM\\", "HKLM\\SECURITY\\", "HKLM\\COMPONENTS\\",
+      R"(HKEY_LOCAL_MACHINE\BCD00000000\)", R"(HKEY_LOCAL_MACHINE\SYSTEM\)",   R"(HKEY_LOCAL_MACHINE\SOFTWARE\)",
+      R"(HKEY_LOCAL_MACHINE\SAM\)",         R"(HKEY_LOCAL_MACHINE\SECURITY\)", R"(HKEY_LOCAL_MACHINE\COMPONENTS\)",
   };
   for (const auto& prefix : allowedPrefixes) {
     if (upper.startsWith(prefix) && upper.size() > prefix.size()) {
@@ -457,6 +449,12 @@ void ExclusionListWidget::setDriveLetter(const QString& dl) {
 void ExclusionListWidget::setBaseline(const QStringList& current, const QStringList& next) {
   m_current = current;
   m_next = next;
+  // 注册表 baseline 从 UWF 回读，可能简写 / 长写混杂；统一归一成长写，与用户
+  // 新增项口径一致——展示统一、去重也不会把同一个键的两种写法漏成两条。
+  if (m_kind == Kind::Registry) {
+    for (QString& k : m_current) k = normRegKey(k);
+    for (QString& k : m_next) k = normRegKey(k);
+  }
   sortList(m_current);
   sortList(m_next);
   m_added.clear();
@@ -545,7 +543,9 @@ void ExclusionListWidget::addPendingEntry(const QString& raw) {
       return;
     }
   } else {
-    // Kind::Registry：UWF 文档明确禁止排除的注册表键同样拦掉。
+    // Kind::Registry：先归一成长写（HKEY_*），保证存储 / 展示 / 去重口径统一；
+    // 再做 UWF 文档明确禁止排除项的拦截。
+    p = normRegKey(p);
     const QString regReason = forbidRegExclusionReason(p);
     if (!regReason.isEmpty()) {
       dialogs::warning(this, I18n::tr("Cannot add this exclusion"), regReason);
@@ -575,6 +575,8 @@ ExclusionListWidget::ImportOutcome ExclusionListWidget::importAdd(const QString&
       return ImportOutcome::RejectedForbidden;
     }
   } else {
+    // Kind::Registry：归一成长写后再校验（与 addPendingEntry 同口径）。
+    p = normRegKey(p);
     if (!forbidRegExclusionReason(p).isEmpty()) {
       return ImportOutcome::RejectedForbidden;
     }
@@ -599,7 +601,11 @@ ExclusionListWidget::ImportOutcome ExclusionListWidget::importAdd(const QString&
 ExclusionListWidget::ImportOutcome ExclusionListWidget::importRemove(const QString& raw) {
   QString p = raw.trimmed();
   if (p.isEmpty()) return ImportOutcome::NoOp;
-  if (m_kind == Kind::File) p = QDir::toNativeSeparators(p);
+  // 与录入侧同口径：文件归一分隔符，注册表归一成长写 hive。
+  if (m_kind == Kind::File)
+    p = QDir::toNativeSeparators(p);
+  else
+    p = normRegKey(p);
 
   // 镜像 onRemove 的状态机：若条目还在 m_added → 撤销 add；
   // 否则若它在 m_next 基线里 → 标 removed。其余情况都属于 NoOp。

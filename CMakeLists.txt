@@ -16,6 +16,8 @@ set(UWF_SOURCES
         src/util/Log.cpp
         src/util/DriveLetter.h
         src/util/DriveLetter.cpp
+        src/util/RegistryKey.h
+        src/util/RegistryKey.cpp
         src/core/UwfConfig.h
         src/core/UwfConfig.cpp
         src/uwf/SystemCheck.h
