@@ -406,11 +406,21 @@ std::string findCoveringExclusion(const std::vector<std::string>& excls, const s
 }  // namespace
 
 MainWindow::MainWindow(const QString& compatibilityNotice, QWidget* parent) : QMainWindow(parent), m_compatibilityNotice(compatibilityNotice) {
-  buildUi();
+  // 构造期摆好窗口外壳（标题 / 图标 / 尺寸），并把窗口设为全透明：窗口会以
+  // 透明状态 show 出来——showEvent 照常触发，首屏 rebuildUi() 在 shown 状态下
+  // 建好全部内容、拉完数据后才把不透明度恢复成 1 一次性揭幕。整个 buildUi +
+  // refresh 期间窗口不可见，用户不会看到空窗 / 改尺寸 / 白屏等中间态。
+  setWindowTitle(I18n::tr("Unified Write Filter (UWF) Manager"));
+  setWindowIcon(QIcon(":/icons/app.svg"));
+  resize(1380, 760);
+  setWindowOpacity(0.0);
+
   // 写会话提前连接一次；读快照时会另起一个独立会话。
   std::string err;
   m_writeSession.connect(api::kWmiNamespace, &err);
-  refresh();
+  // 内容控件与首屏数据统一交给 showEvent 调度的 rebuildUi()——它一次 buildUi()
+  // + refresh() 建好。构造期不再 buildUi()/refresh()：那份产出会被 rebuildUi
+  // 整个销毁重建，等于白建一遍 UI、白连一次 WMI、白读一份快照。
 
   // 系统托盘（图标 + 右键菜单）——独立组件，由本窗口编排：接它的"激活窗口"信号。
   m_tray = new TrayController(m_writeSession, this);
@@ -453,9 +463,9 @@ void MainWindow::refreshUsage() {
 }
 
 void MainWindow::buildUi() {
+  // 标题随语言切换重译，故每次 buildUi（含 rebuildUi 路径）都重设一次；
+  // 图标与初始尺寸是一次性窗口外壳设置，已在构造函数里完成，这里不再重复。
   setWindowTitle(I18n::tr("Unified Write Filter (UWF) Manager"));
-  setWindowIcon(QIcon(":/icons/app.svg"));
-  resize(1380, 760);
 
   // QSS 的 `padding` 在 QToolBar 上不可靠（rebuildUi 后 polish 时机问题），
   // 用 spacer widget 给水平方向兜底。垂直方向不再人为加 margin——
@@ -739,12 +749,21 @@ void MainWindow::rebuildUi() {
   buildUi();
   refresh();
 
-  // 配对的 setUpdatesEnabled(true)。各触发入口（主题按钮 click、语言菜单、
-  // 首屏 showEvent）在调度 rebuildUi 前都会先 setUpdatesEnabled(false) 把
-  // 中间所有过渡态（unstyled / 空白 / 重新 layout）的 paint 攒起来不画，
-  // 这里画完最终态再统一放出来——视觉上只有一帧 from 旧到新的硬切，没有闪。
-  // 对原本就 enabled 的情况是 no-op，安全。
+  // 配对的 setUpdatesEnabled(true)。切主题 / 切语言两条入口在调度 rebuildUi
+  // 前会先 setUpdatesEnabled(false)，把中间过渡态（unstyled / 空白 / 重新
+  // layout）的 paint 攒起来不画，这里画完最终态再统一放出来——只有一帧旧到
+  // 新的硬切。首屏 showEvent 不压帧（本就 enabled），这里是 no-op，安全。
   setUpdatesEnabled(true);
+
+  // 揭幕前先把挂起的布局请求与绘制同步跑完——确保恢复不透明的那一刻窗口
+  // 已是完整绘制好的最终形态，不会闪过一帧尚未绘制完的空窗。
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+  repaint();
+
+  // 揭幕：首屏时窗口自构造起就是全透明的（opacity 0），此刻内容 / 数据 / 绘制
+  // 均已就位，恢复成不透明 —— 窗口一次性以完整形态出现，没有任何中间态。
+  // 切主题 / 切语言时窗口本就不透明，这里是 no-op。
+  setWindowOpacity(1.0);
 }
 
 void MainWindow::showTransientHint(const QString& text, const int msec) const {
@@ -753,16 +772,12 @@ void MainWindow::showTransientHint(const QString& text, const int msec) const {
 }
 
 void MainWindow::showEvent(QShowEvent* ev) {
-  // 首次 show 前先压 paint，然后 super::showEvent 触发的所有 paint 事件
-  // 都被攒起来不画。配对的 setUpdatesEnabled(true) 在后续 singleShot →
-  // rebuildUi 末尾，那时画一次最终形态——用户根本看不到中间的"初始
-  // buildUi 状态再被 rebuild 替换"那一帧 flicker。
-  if (!m_firstShowDone) setUpdatesEnabled(false);
   QMainWindow::showEvent(ev);
   if (!m_firstShowDone) {
     m_firstShowDone = true;
-    // 首次 show 之后立刻调度一次 rebuildUi——和"切主题 / 切语言"走完全相同
-    // 的重建路径，让首屏的最终形态走 shown 状态下的 polish。
+    // 首次 show（此时窗口是全透明的）后立刻调度一次 rebuildUi——和"切主题 /
+    // 切语言"走完全相同的重建路径，首屏最终形态在 shown 状态下 polish。
+    // rebuildUi 建完内容、拉完数据后会把不透明度恢复成 1 揭幕。
     QTimer::singleShot(0, this, &MainWindow::rebuildUi);
   }
 }
@@ -905,10 +920,9 @@ void MainWindow::refresh() {
   }
   m_snapshot = uwf::readSnapshot(&err);
   if (!m_snapshot.uwfAvailable) {
+    // 不弹模态框——GlobalStatusPanel::setUnavailable 的横幅已常驻展示这条
+    // 错误，模态框只是重复打扰（且每点一次刷新就再弹一次）。
     UWF_LOG_E("ui") << "readSnapshot failed: uwfAvailable=false err=" << err;
-    const QString body = I18n::tr("Error: %1\n\nPlease verify that the UWF feature is enabled and that this program is running as administrator.")
-                             .arg(QString::fromStdString(err));
-    warning(this, I18n::tr("Failed to read UWF state"), body);
   }
   rebuildTabs(disks);
   if (m_snapshot.uwfAvailable) {
