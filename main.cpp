@@ -5,7 +5,6 @@
 #include "src/ui/CenteredTextStyle.h"
 #include "src/ui/I18n.h"
 #include "src/ui/MainWindow.h"
-#include "src/ui/MessageDialog.h"
 #include "src/ui/ThemeManager.h"
 #include "src/util/Log.h"
 #include "src/uwf/SystemCheck.h"
@@ -91,11 +90,10 @@ int main(int argc, char* argv[]) {
       break;
   }
 
+  // 未提权不再弹模态框拦截——GlobalStatusPanel 会常驻一条红色"需要管理员
+  // 权限"横幅，程序照常启动，可读但不可改。
   if (!uwf::isElevated()) {
     UWF_LOG_W("main") << "process is not elevated; UWF settings cannot be modified";
-    uwf::ui::dialogs::warning(nullptr, uwf::I18n::tr("Administrator privileges required"),
-                              uwf::I18n::tr("This program is not running as administrator.\n\nRight-click and choose \"Run as administrator\" to restart it; "
-                                            "otherwise UWF settings cannot be read or modified."));
   }
 
   // 单实例：本实例已通过系统检查、即将真正运行，注册监听端占住实例名。

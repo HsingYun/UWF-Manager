@@ -22,6 +22,11 @@ class GlobalStatusPanel : public QWidget {
   void setData(const core::SessionSnapshot& current, const core::SessionSnapshot& next, const core::OverlayRuntime& runtime);
   void setUnavailable(const QString& reason);
 
+  // UWF 可读但进程未提权时、在 setData 之后调用：在状态横幅里写一条红色的
+  // "需要管理员权限"提示。UWF 不可用时不要调用——那条不可用横幅优先级更高，
+  // 由 setUnavailable 负责。
+  void showElevationRequired() const;
+
   // 在 setData 之后调用，决定滚动区内的控件是否可交互。UWF 可读但进程未提权
   // 时用它把控件全部置灰——数据照常显示，但不能改。setUnavailable 已自行置灰，
   // 该路径下再调用为幂等。

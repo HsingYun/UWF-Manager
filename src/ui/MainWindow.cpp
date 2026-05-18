@@ -949,6 +949,9 @@ void MainWindow::refresh() {
   rebuildTabs(disks);
   if (uwfAvailable) {
     m_global->setData(m_snapshot.current, m_snapshot.next, m_snapshot.runtime);
+    // UWF 可读但未提权：补一条红色"需要管理员权限"横幅。UWF 不可用时不补——
+    // 那条不可用横幅优先级更高，已由下面的 setUnavailable 占据同一横幅。
+    if (!elevated) m_global->showElevationRequired();
   } else {
     m_global->setUnavailable(err.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(err));
   }

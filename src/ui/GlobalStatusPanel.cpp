@@ -412,6 +412,14 @@ void GlobalStatusPanel::setUnavailable(const QString& reason) {
   if (m_maxLockedHint) m_maxLockedHint->hide();
 }
 
+void GlobalStatusPanel::showElevationRequired() const {
+  // 复用同一条红色状态横幅（statusBanner 默认即红色错误样式）。数据已由
+  // setData 正常填好，这里只补一条横幅说明为何控件全灰、不可改。
+  m_banner->setText("⚠ " + I18n::tr("Administrator privileges are required to change UWF settings. "
+                                    "Restart the program via right-click → \"Run as administrator\"."));
+  m_banner->show();
+}
+
 void GlobalStatusPanel::setControlsEnabled(const bool enabled) const {
   // 只动滚动区内容宿主——和 setUnavailable 一致：QScrollArea 本身保持可用，
   // 窗口偏矮时仍能滚动查看被截断的卡片。
