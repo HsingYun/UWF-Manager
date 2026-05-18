@@ -659,9 +659,15 @@ void ExclusionListWidget::rebuild() {
   for (const auto& s : m_current) pushUnique(s);
   for (const auto& s : m_next) pushUnique(s);
 
-  // 排序规则：所有"有变化"的条目（新增 / 删除，无论是否已应用）排在前排，
+  // 排序规则：所有"带标记"的条目（新增 / 删除，无论是否已应用）排在前排，
   // 后面是"保持不变"的条目；前后两段各自按字母顺序。
-  // "有变化" = 当前会话存在性 ≠ 下次会话最终存在性。
+  // 这里的判定必须和下方 badge 的判定完全一致："带标记" = 有用户改动
+  // (userAdded / userRemoved) 或基线在当前 / 下次会话间本就有增删差异
+  // (inCurrent != inNextBase)。
+  //
+  // 不能用 inCurrent != inNextFinal：删除一个"仅下次会话存在、当前未生效"的
+  // 条目时，inCurrent 与 inNextFinal 同为 false，会被误判成"无变化"沉到
+  // rest——可它明明带着红色删除标记，理应和其它待删项一起排在前排。
   QStringList pending;
   QStringList rest;
   for (const auto& entry : all) {
@@ -669,8 +675,7 @@ void ExclusionListWidget::rebuild() {
     const bool inNextBase = m_next.contains(entry, Qt::CaseInsensitive);
     const bool userAdded = m_added.contains(entry);
     const bool userRemoved = m_removed.contains(entry);
-    const bool inNextFinal = (inNextBase || userAdded) && !userRemoved;
-    if (inCurrent != inNextFinal) {
+    if (userAdded || userRemoved || inCurrent != inNextBase) {
       pending << entry;
     } else {
       rest << entry;
