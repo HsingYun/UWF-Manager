@@ -111,9 +111,9 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow)
   // QMenu::popup 会做屏幕边缘适配，靠近屏幕底部（任务栏在下）时自动向上弹。
   connect(m_tray, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
     if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick)
-      emit activateWindowRequested();   // 单 / 双击托盘图标 → 还原主窗口
+      emit activateWindowRequested();  // 单 / 双击托盘图标 → 还原主窗口
     else if (reason == QSystemTrayIcon::Context)
-      m_menu->popup(QCursor::pos());    // 右键 → 在光标处弹出菜单
+      m_menu->popup(QCursor::pos());  // 右键 → 在光标处弹出菜单
   });
   m_tray->show();
 

@@ -1,11 +1,14 @@
 #include "MainWindow.h"
 
+#include <windows.h>
+
 #include <QAction>
 #include <QActionGroup>
 #include <QApplication>
 #include <QClipboard>
 #include <QCursor>
 #include <QDateTime>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QDirIterator>
 #include <QEvent>
@@ -37,12 +40,6 @@
 #include <chrono>
 #include <format>
 #include <memory>
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
-#include <QDialogButtonBox>
 
 #include "../util/Log.h"
 #include "../uwf/UwfSnapshot.h"
@@ -222,18 +219,15 @@ const api::RegistryFilterRow* findCurrentRegistryFilter(const std::vector<api::R
 }
 
 QString systemDriveLetter() {
-#ifdef _WIN32
   wchar_t buf[MAX_PATH] = {};
   const UINT n = GetWindowsDirectoryW(buf, MAX_PATH);
   if (n >= 2 && buf[1] == L':') {
     QChar c(static_cast<char16_t>(buf[0]));
     return QString(c.toUpper()) + ':';
   }
-#endif
   return QStringLiteral("C:");
 }
 
-#ifdef _WIN32
 // 小工具：读一个字符串型的 REG_SZ / REG_EXPAND_SZ 注册表值。
 QString readRegSz(HKEY root, const wchar_t* subkey, const wchar_t* name) {
   HKEY k = nullptr;
@@ -350,13 +344,11 @@ QString gpuModelText() {
   }
   return {};
 }
-#endif  // _WIN32
 
 // 紧凑排版：一行一个条目；系统/CPU/显卡本身名字就够识别（"Windows 11"、
 // "Intel ..."、"NVIDIA ..."），不再加"系统："之类的 key 标签。
 // 只有"XX GB"这种纯数字单位需要 RAM 前缀才知道是内存总量。
 QString systemInfoHtml() {
-#ifdef _WIN32
   const QString ver = windowsVersionText();
   const QString cpu = cpuModelText();
   const QString ram = totalRamText();
@@ -375,9 +367,6 @@ QString systemInfoHtml() {
   addWithKey("RAM", ram);
   addPlain(gpu);
   return rows.join("<br>");
-#else
-  return {};
-#endif
 }
 
 // 去掉末尾的 \ 和 /；排除项可能写成 "C:\Foo\" 也可能写成 "C:\Foo"，
@@ -1169,8 +1158,7 @@ void MainWindow::showAbout() {
   version->setTextFormat(Qt::RichText);
   version->setTextInteractionFlags(Qt::TextSelectableByMouse);
   version->setText(QStringLiteral("<span style=\"color:%1\">%2</span>")
-                       .arg(ThemeManager::instance().color(Sem::FgMuted).name(),
-                            I18n::tr("Version %1").arg(QString::fromLatin1(UWF_VER_STRING))));
+                       .arg(ThemeManager::instance().color(Sem::FgMuted).name(), I18n::tr("Version %1").arg(QString::fromLatin1(UWF_VER_STRING))));
   layout->addWidget(version);
 
   auto* body = new QLabel(&dlg);

@@ -1,12 +1,10 @@
 #include "OverlayUsageBar.h"
 
+#include <windows.h>
+
 #include <QPainter>
 #include <QPainterPath>
 #include <QPen>
-
-#ifdef _WIN32
-#include <windows.h>
-#endif
 
 #include "ThemeManager.h"
 
@@ -40,11 +38,9 @@ void OverlayUsageBar::setOverlayData(const uint32_t currentMb, const uint32_t wa
 }
 
 uint32_t systemTotalRamMb() {
-#ifdef _WIN32
   MEMORYSTATUSEX s{};
   s.dwLength = sizeof(s);
   if (GlobalMemoryStatusEx(&s)) return static_cast<uint32_t>(s.ullTotalPhys / (1024ULL * 1024ULL));
-#endif
   return 0;
 }
 

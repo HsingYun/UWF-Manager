@@ -29,10 +29,8 @@
 #include "MessageDialog.h"
 #include "ThemeManager.h"
 
-#ifdef _WIN32
 #include <shlobj.h>
 #include <windows.h>
-#endif
 
 namespace uwf::ui {
 
@@ -61,14 +59,12 @@ void setRemoveCI(QSet<QString>& set, const QString& key) {
 
 // 返回系统盘盘符，如 "C:"。用来识别"该路径是否在系统卷"。
 QString systemDriveLetterLocal() {
-#ifdef _WIN32
   wchar_t buf[MAX_PATH] = {};
   const UINT n = GetWindowsDirectoryW(buf, MAX_PATH);
   if (n >= 2 && buf[1] == L':') {
     const QChar c(static_cast<char16_t>(buf[0]));
     return QString(c.toUpper()) + ':';
   }
-#endif
   return QStringLiteral("C:");
 }
 
@@ -389,7 +385,6 @@ void ExclusionListWidget::openContainingFolder(const QString& entry) const {
   if (abs.startsWith('\\')) abs = m_driveLetter + abs;
   abs = QDir::toNativeSeparators(abs);
 
-#ifdef _WIN32
   const QFileInfo fi(abs);
   if (fi.exists()) {
     // 用 Shell API 打开父目录并高亮目标，不走 explorer.exe /select 的命令行
@@ -416,9 +411,6 @@ void ExclusionListWidget::openContainingFolder(const QString& entry) const {
     const std::wstring wf = folder.toStdWString();
     ShellExecuteW(nullptr, L"open", L"explorer.exe", wf.c_str(), nullptr, SW_SHOWNORMAL);
   }
-#else
-  Q_UNUSED(abs);
-#endif
 }
 
 void ExclusionListWidget::refreshThemedIcons() {

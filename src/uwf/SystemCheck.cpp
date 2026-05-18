@@ -1,8 +1,6 @@
 #include "SystemCheck.h"
 
-#ifdef _WIN32
 #include <windows.h>
-#endif
 
 #include <algorithm>
 #include <filesystem>
@@ -12,7 +10,6 @@ namespace uwf {
 
 namespace {
 
-#ifdef _WIN32
 std::string wideToUtf8(const std::wstring& w) {
   if (w.empty()) return {};
   const int size = WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr, nullptr);
@@ -49,7 +46,6 @@ std::string envVar(const wchar_t* name) {
   buf.resize(got);
   return wideToUtf8(buf);
 }
-#endif
 
 std::string toLowerAscii(std::string s) {
   std::ranges::transform(s, s.begin(), [](const unsigned char c) { return std::tolower(c); });
@@ -66,7 +62,6 @@ bool editionSupported(const std::string& editionId) {
 }  // namespace
 
 bool isElevated() {
-#ifdef _WIN32
   BOOL elevated = FALSE;
   HANDLE token = nullptr;
   if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
@@ -78,29 +73,18 @@ bool isElevated() {
     CloseHandle(token);
   }
   return elevated == TRUE;
-#else
-  return false;
-#endif
 }
 
 std::string uwfmgrPath() {
-#ifdef _WIN32
   std::string root = envVar(L"SystemRoot");
   if (root.empty()) root = "C:/Windows";
   const std::string path = root + "/System32/uwfmgr.exe";
   std::error_code ec;
   return std::filesystem::exists(path, ec) ? path : std::string{};
-#else
-  return {};
-#endif
 }
 
 SystemCheckResult runSystemChecks() {
   SystemCheckResult r;
-#ifndef _WIN32
-  r.status = CheckStatus::NotWindows;
-  return r;
-#else
   r.editionId = readRegString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", L"EditionID");
   r.productName = readRegString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", L"ProductName");
 
@@ -114,7 +98,6 @@ SystemCheckResult runSystemChecks() {
   }
   r.status = CheckStatus::Ok;
   return r;
-#endif
 }
 
 }  // namespace uwf

@@ -23,11 +23,7 @@ std::string timestamp() {
   const auto t = system_clock::to_time_t(now);
   const auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
   std::tm tm{};
-#ifdef _WIN32
   localtime_s(&tm, &t);
-#else
-  localtime_r(&t, &tm);
-#endif
   return std::format("{:02}:{:02}:{:02}.{:03}", tm.tm_hour, tm.tm_min, tm.tm_sec, static_cast<int>(ms.count()));
 }
 

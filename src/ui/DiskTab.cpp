@@ -14,10 +14,7 @@
 #include <QSizePolicy>
 #include <QTabWidget>
 #include <format>
-
-#ifdef _WIN32
 #include <windows.h>
-#endif
 
 #include "ExclusionListWidget.h"
 #include "I18n.h"
@@ -63,14 +60,12 @@ QStringList toQList(const std::vector<std::string>& v) {
 // 返回系统盘的盘符（如 "C:"），用于决定哪个 DiskTab 展示注册表排除。
 // 注册表排除在 UWF 中是全局的（不分卷），按系统盘显示最直观。
 QString systemDriveLetter() {
-#ifdef _WIN32
   wchar_t buf[MAX_PATH] = {};
   const UINT n = GetWindowsDirectoryW(buf, MAX_PATH);
   if (n >= 2 && buf[1] == L':') {
     const QChar c(static_cast<char16_t>(buf[0]));
     return QString(c.toUpper()) + ':';
   }
-#endif
   return QStringLiteral("C:");
 }
 

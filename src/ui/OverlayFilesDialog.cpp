@@ -21,11 +21,9 @@
 #include <thread>
 #include <utility>
 
-#ifdef _WIN32
 #include <combaseapi.h>
 #include <shlobj.h>
 #include <windows.h>
-#endif
 
 #include "../uwf/api/UwfOverlay.h"
 #include "../uwf/wmi/WmiClient.h"
@@ -167,10 +165,8 @@ void OverlayFilesDialog::startLoading() {
   const std::string dl = m_driveLetter.toStdString();
 
   std::thread([self, dl]() {
-#ifdef _WIN32
     HRESULT comHr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     const bool ownsCom = SUCCEEDED(comHr);
-#endif
 
     QString errorOut;
     int32_t errorHr = 0;
@@ -205,9 +201,7 @@ void OverlayFilesDialog::startLoading() {
       }
     } while (false);
 
-#ifdef _WIN32
     if (ownsCom) CoUninitialize();
-#endif
 
     // self 是 QPointer——dialog 已被销毁则 lambda 内 self 为 null，直接 no-op。
     QMetaObject::invokeMethod(
@@ -332,7 +326,6 @@ void OverlayFilesDialog::onContextMenu(const QPoint& pos) {
 }
 
 void OverlayFilesDialog::openContainingFolder(const QString& absolutePath) {
-#ifdef _WIN32
   // absolutePath 已经是规范化后的路径（去掉了 ":$DATA" / ":$INDEX_ALLOCATION"
   // 这类 NTFS 流后缀）。带流后缀的路径喂给 ILCreateFromPathW /
   // SHOpenFolderAndSelectItems 会得到奇怪的行为（有的版本会按文件关联
@@ -363,9 +356,6 @@ void OverlayFilesDialog::openContainingFolder(const QString& absolutePath) {
     // 上落到默认文件管理器替身的问题。
     ShellExecuteW(nullptr, L"open", L"explorer.exe", wf.c_str(), nullptr, SW_SHOWNORMAL);
   }
-#else
-  Q_UNUSED(absolutePath);
-#endif
 }
 
 void OverlayFilesDialog::onExportClicked() {

@@ -9,10 +9,7 @@
 #include <QPixmap>
 #include <QStyleHints>
 #include <QSvgRenderer>
-
-#ifdef _WIN32
 #include <windows.h>
-#endif
 
 namespace uwf::ui {
 
@@ -137,7 +134,6 @@ void ThemeManager::apply(Theme t) {
 void ThemeManager::toggle() { apply(m_theme == Theme::Dark ? Theme::Light : Theme::Dark); }
 
 Theme ThemeManager::detectSystemTheme() {
-#ifdef _WIN32
   HKEY hKey = nullptr;
   if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
     DWORD value = 1;
@@ -148,7 +144,6 @@ Theme ThemeManager::detectSystemTheme() {
       return value == 0 ? Theme::Dark : Theme::Light;
     }
   }
-#endif
   return Theme::Dark;
 }
 

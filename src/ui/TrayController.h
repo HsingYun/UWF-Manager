@@ -51,16 +51,16 @@ class TrayController : public QObject {
 
  private:
   WmiSession& m_session;
-  QIcon m_iconNormal;                   // UWF 启用 / 正常态的托盘图标
-  QIcon m_iconAlert;                    // UWF 禁用 / 不可用时的红色托盘图标
-  QSystemTrayIcon* m_tray = nullptr;    // 为空 = 本机无可用托盘
+  QIcon m_iconNormal;                 // UWF 启用 / 正常态的托盘图标
+  QIcon m_iconAlert;                  // UWF 禁用 / 不可用时的红色托盘图标
+  QSystemTrayIcon* m_tray = nullptr;  // 为空 = 本机无可用托盘
   QMenu* m_menu = nullptr;
   QAction* m_stateAction = nullptr;     // 菜单项 1：UWF 启用状态
   QAction* m_usageSeparator = nullptr;  // 状态项与占用条间的分隔线（随占用条显隐）
   QAction* m_usageAction = nullptr;     // 菜单项 2：占用条（UWF 禁用时隐藏）
   QWidget* m_usagePane = nullptr;       // 占用条容器；点击 → 展开主窗口
   OverlayUsageBar* m_usageBar = nullptr;
-  QLabel* m_usageLabel = nullptr;       // 占用条下方的"已用 / 总计"文字
+  QLabel* m_usageLabel = nullptr;  // 占用条下方的"已用 / 总计"文字
 };
 
 }  // namespace uwf::ui

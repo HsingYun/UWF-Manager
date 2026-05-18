@@ -37,8 +37,6 @@ static bool forwardToRunningInstance(const QString& serverName) {
 
 static QString describeCheck(const uwf::SystemCheckResult& r) {
   switch (r.status) {
-    case uwf::CheckStatus::NotWindows:
-      return uwf::I18n::tr("Unified Write Filter (UWF) is only available on Windows.");
     case uwf::CheckStatus::UnsupportedEdition:
       return uwf::I18n::tr("UWF is only supported on Windows Enterprise, Education or IoT Enterprise editions.\n\nCurrent system: %1 (%2)")
           .arg(QString::fromStdString(r.productName), QString::fromStdString(r.editionId));
@@ -95,7 +93,6 @@ int main(int argc, char* argv[]) {
   const auto check = uwf::runSystemChecks();
   const QString detail = describeCheck(check);
   switch (check.status) {
-    case uwf::CheckStatus::NotWindows:
     case uwf::CheckStatus::UnsupportedEdition:
       UWF_LOG_E("main") << "system check failed: status=" << static_cast<int>(check.status) << " product=" << check.productName
                         << " edition=" << check.editionId;

@@ -16,10 +16,6 @@
 #include <climits>
 #include <format>
 
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
 #include "I18n.h"
 #include "OverlayUsageBar.h"
 #include "SwitchButton.h"
