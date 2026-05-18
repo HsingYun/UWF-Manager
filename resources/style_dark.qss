@@ -41,6 +41,14 @@ QToolBar QToolButton:pressed {
     background: #3A4049;
 }
 
+/* 禁用态：文字淡出、底色保持透明。放在 hover/pressed 之后，确保禁用按钮即便
+   被鼠标扫过也不会亮起。不写的话 QSS 着色的 QToolButton 不再走 Fusion 的
+   palette 灰化，禁用和可用几乎看不出区别。 */
+QToolBar QToolButton:disabled {
+    color: #5C6168;
+    background: transparent;
+}
+
 /* separator 取一档比 toolbar 底色 (#22252A) 更深的灰，让竖线在深色 toolbar
    上有明显反差但不刺眼。 */
 QToolBar#mainToolbar::separator {
@@ -255,6 +263,14 @@ QLineEdit:focus, QListWidget:focus, QPlainTextEdit:focus {
     border-color: #4C8BF5;
 }
 
+/* 禁用态：背景压暗、文字 / 边框淡出。QSS 着色的输入类控件不再走 Fusion 的
+   palette 灰化，必须显式写，否则禁用和正常态几乎无区别。 */
+QLineEdit:disabled, QPlainTextEdit:disabled, QListWidget:disabled {
+    background: #1A1C1F;
+    color: #5C6168;
+    border-color: #2A2D33;
+}
+
 QListWidget#exclusionList {
     /* padding=0：选中/hover 背景从左右边直接顶到容器边框，避免前景周围
        露出一圈深色底。保留继承自通用规则的 border-radius: 6；
@@ -283,6 +299,14 @@ QListWidget#exclusionList::item:selected {
 
 QListWidget#exclusionList::item:hover:!selected {
     background: rgba(255, 255, 255, 0.04);
+}
+
+/* 排除列表禁用态：viewport 底色再压暗一档 + 文字淡出。比通用 QListWidget
+   :disabled 更specific（带 #id），用来盖掉 #exclusionList 自己那条 background。
+   内容仍可阅读，但一眼能看出此列表当前不可操作。 */
+QListWidget#exclusionList:disabled {
+    background: #161719;
+    color: #5C6168;
 }
 
 QPushButton {

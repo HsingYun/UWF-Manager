@@ -52,6 +52,13 @@ QToolBar QToolButton:pressed {
     background: #DADCE0;
 }
 
+/* 禁用态：文字淡出、底色保持透明。放在 hover/pressed 之后，确保禁用按钮即便
+   被鼠标扫过也不会亮起。见 dark 同名规则注释。 */
+QToolBar QToolButton:disabled {
+    color: #BDC1C6;
+    background: transparent;
+}
+
 /* 默认 separator 走系统调色板得到一根偏黑的竖线，在白色 toolbar 上很出戏。
    显式画成与 border 同色的浅灰，纵向缩进留出呼吸位。 */
 QToolBar#mainToolbar::separator {
@@ -267,6 +274,13 @@ QLineEdit:focus, QListWidget:focus, QPlainTextEdit:focus {
     border-color: #1A73E8;
 }
 
+/* 禁用态：背景压暗、文字 / 边框淡出。见 dark 同名规则注释。 */
+QLineEdit:disabled, QPlainTextEdit:disabled, QListWidget:disabled {
+    background: #F1F3F4;
+    color: #BDC1C6;
+    border-color: #E8EAED;
+}
+
 QListWidget#exclusionList {
     /* 见 dark 同名规则的注释。background 显式 = QTabWidget::pane 的 #F8F9FA，
        不设的话 viewport 走 QPalette::Base，主题切换时会跟整体颜色背离。 */
@@ -291,6 +305,12 @@ QListWidget#exclusionList::item:selected {
 
 QListWidget#exclusionList::item:hover:!selected {
     background: rgba(0, 0, 0, 0.04);
+}
+
+/* 排除列表禁用态：viewport 底色压暗 + 文字淡出。见 dark 同名规则注释。 */
+QListWidget#exclusionList:disabled {
+    background: #ECEEF0;
+    color: #BDC1C6;
 }
 
 QPushButton {
