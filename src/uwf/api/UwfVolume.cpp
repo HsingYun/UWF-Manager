@@ -45,6 +45,27 @@ std::optional<std::string> stripVolumeDriveLetter(const std::string& path, const
   return path.substr(2);
 }
 
+// 把字符串转义后嵌入 WMI 对象路径的引号键值。WMI 对象路径按 C/C++ 规则解析
+// 引号转义（见 MS 文档 "WMI Object Path Requirements"："embedded quotation
+// marks ... must delimit the quotation mark with escape characters, as in a C
+// or C++ application"），所以 `"` 要写成 `\"`、反斜杠要写成 `\\`。
+//
+// UWF_Volume.VolumeName 的取值是属性原值（getString(o,"VolumeName")），形如
+// \\?\Volume{GUID}\ ——单反斜杠、未转义。它以反斜杠结尾，若不转义直接拼进
+// VolumeName="..."，结尾的 \" 会被路径解析器当成一个转义引号，键值字符串无法
+// 闭合，后续 ExecMethod / DeleteInstance 解析该 __PATH 必然失败。
+// （注：readAll() 里 row.path 取自 __PATH，那是 WMI 自己产出的、已正确转义的
+// 路径，不经过这里；只有本文件 ensureNextSessionEntry 手工拼路径才需要转义。）
+std::string escapeWmiPathValue(const std::string& s) {
+  std::string out;
+  out.reserve(s.size() + 8);
+  for (const char c : s) {
+    if (c == '\\' || c == '"') out += '\\';
+    out += c;
+  }
+  return out;
+}
+
 // CommitFile / CommitFileDeletion 的失败分类：
 //   * WBEM_E_FAILED    ≈ 文件被其它进程占用
 //   * WBEM_E_NOT_FOUND ≈ overlay 里没相关条目（可能已和磁盘一致）
@@ -293,7 +314,8 @@ std::optional<api::VolumeRow> UwfVolume::ensureNextSessionEntry(const std::strin
   row.volumeName = volumeName;
   row.isProtected = false;
   row.bindByDriveLetter = true;
-  row.path = std::format(R"(UWF_Volume.CurrentSession=FALSE,DriveLetter="{}",VolumeName="{}")", driveLetter, volumeName);
+  row.path = std::format(R"(UWF_Volume.CurrentSession=FALSE,DriveLetter="{}",VolumeName="{}")", escapeWmiPathValue(driveLetter),
+                         escapeWmiPathValue(volumeName));
   return row;
 }
 

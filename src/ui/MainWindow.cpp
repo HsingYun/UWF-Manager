@@ -882,6 +882,13 @@ void MainWindow::updatePendingSummary() {
 }
 
 void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
+  // QTabWidget::clear() 只摘掉标签页、不销毁页面控件——上一轮的 DiskTab 会继续
+  // 作为 m_tabs 的子对象存活，每次 refresh 泄漏一组（要到下次 rebuildUi 删掉
+  // m_tabs 才被连带回收）。这里先显式 deleteLater 回收旧的一组。用 deleteLater
+  // 而非 delete：rebuildTabs 可能经由某个 DiskTab 自己的信号回调间接调进来，
+  // 同步 delete 会销毁正在执行回调的对象。
+  for (const auto& t : m_diskTabs)
+    if (t) t->deleteLater();
   m_tabs->clear();
   m_diskTabs.clear();
   const QString sysDl = systemDriveLetter();
