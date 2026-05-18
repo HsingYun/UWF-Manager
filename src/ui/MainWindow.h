@@ -27,9 +27,12 @@ enum class Theme;
 class MainWindow : public QMainWindow {
   Q_OBJECT
  public:
-  // compatibilityNotice 非空时（系统版本不在受支持清单内），在 GlobalStatusPanel
-  // 的信息框常驻显示这条兼容模式提示。
-  explicit MainWindow(const QString& compatibilityNotice = {}, QWidget* parent = nullptr);
+  // compatibilityMode 为 true 时（系统版本不在受支持清单内），在 GlobalStatusPanel
+  // 的信息框常驻显示兼容模式提示。提示文案在 buildUi 里按当前语言翻译，故这里
+  // 只收原始数据（系统名 / 版本 ID），不收已翻译好的字符串——否则切语言后
+  // 文案不会跟着变。
+  explicit MainWindow(bool compatibilityMode = false, const QString& osProductName = {}, const QString& osEditionId = {},
+                      QWidget* parent = nullptr);
 
   // 由"单实例"机制调用：另一个实例被启动时，把本窗口从最小化恢复并带到前台。
   void raiseToFront();
@@ -112,9 +115,11 @@ class MainWindow : public QMainWindow {
   QVector<QPointer<DiskTab>> m_diskTabs;
   core::UwfSnapshot m_snapshot;
 
-  // 兼容模式提示文案（系统版本未通过校验）；空 = 正常模式。rebuildUi 重建
-  // 面板后需要重新灌回，故存为成员。
-  QString m_compatibilityNotice;
+  // 兼容模式标志与系统标识（系统版本未通过校验时为 true）。提示文案每次
+  // buildUi 按当前语言现翻译，故只存原始数据：rebuildUi 重建面板时连带重译。
+  bool m_compatibilityMode = false;
+  QString m_osProductName;
+  QString m_osEditionId;
 };
 
 }  // namespace uwf::ui

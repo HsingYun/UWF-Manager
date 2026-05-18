@@ -408,7 +408,8 @@ std::string findCoveringExclusion(const std::vector<std::string>& excls, const s
 
 }  // namespace
 
-MainWindow::MainWindow(const QString& compatibilityNotice, QWidget* parent) : QMainWindow(parent), m_compatibilityNotice(compatibilityNotice) {
+MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, const QString& osEditionId, QWidget* parent)
+    : QMainWindow(parent), m_compatibilityMode(compatibilityMode), m_osProductName(osProductName), m_osEditionId(osEditionId) {
   // 构造期摆好窗口外壳（标题 / 图标 / 尺寸），并把窗口设为全透明：窗口会以
   // 透明状态 show 出来——showEvent 照常触发，首屏 rebuildUi() 在 shown 状态下
   // 建好全部内容、拉完数据后才把不透明度恢复成 1 一次性揭幕。整个 buildUi +
@@ -641,9 +642,15 @@ void MainWindow::buildUi() {
   globalLayout->setContentsMargins(14, 12, 14, 12);
   globalLayout->setSpacing(10);
   m_global = new GlobalStatusPanel(this);
-  // 系统版本未通过校验时，把兼容模式提示常驻在面板信息框里。rebuildUi 会
-  // 重建 m_global，所以每次 buildUi 都要重新灌一次。
-  if (!m_compatibilityNotice.isEmpty()) m_global->setCompatibilityNotice(m_compatibilityNotice);
+  // 系统版本未通过校验时，把兼容模式提示常驻在面板信息框里。提示文案在此
+  // 现翻译——切语言会重跑 buildUi，文案随之跟着切；rebuildUi 重建 m_global
+  // 后也连带重新灌入。
+  if (m_compatibilityMode) {
+    m_global->setCompatibilityNotice(
+        I18n::tr("The current system \"%1\" (%2) is not a recognized supported edition. UWF Manager is running in compatibility mode "
+                 "and some features may be unavailable.")
+            .arg(m_osProductName, m_osEditionId));
+  }
   // 顶部全局设置拿走所有可拉伸空间，里面的 QScrollArea 会在高度不足时
   // 自己滚动；tips 区用固定高度贴底。
   globalLayout->addWidget(m_global, 1);

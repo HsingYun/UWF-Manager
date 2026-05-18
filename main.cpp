@@ -75,15 +75,13 @@ int main(int argc, char* argv[]) {
   theme.apply(uwf::ui::ThemeManager::detectSystemTheme());
 
   // 系统校验不再是硬性拦截：版本不在受支持清单内时只记一条兼容模式提示，
-  // 程序照常启动，提示通过 GlobalStatusPanel 的信息框告知用户。
+  // 程序照常启动，提示通过 GlobalStatusPanel 的信息框告知用户。提示文案不在
+  // 这里翻译——交给 MainWindow::buildUi 按当前语言现翻译，否则切语言后文案
+  // 不会跟着变（详见 MainWindow 构造函数注释）。
   const auto check = uwf::runSystemChecks();
-  QString compatNotice;
   switch (check.status) {
     case uwf::CheckStatus::UnsupportedEdition:
       UWF_LOG_W("main") << "unsupported edition; running in compatibility mode; product=" << check.productName << " edition=" << check.editionId;
-      compatNotice = uwf::I18n::tr("The current system \"%1\" (%2) is not a recognized supported edition. UWF Manager is running in compatibility mode "
-                                   "and some features may be unavailable.")
-                         .arg(QString::fromStdString(check.productName), QString::fromStdString(check.editionId));
       break;
     case uwf::CheckStatus::Ok:
       UWF_LOG_I("main") << "system check ok: product=" << check.productName << " edition=" << check.editionId;
@@ -108,7 +106,8 @@ int main(int argc, char* argv[]) {
     UWF_LOG_W("main") << "single-instance server failed to listen: " << instanceServer.errorString().toStdString();
   }
 
-  uwf::ui::MainWindow w(compatNotice);
+  uwf::ui::MainWindow w(check.status == uwf::CheckStatus::UnsupportedEdition, QString::fromStdString(check.productName),
+                        QString::fromStdString(check.editionId));
 
   // 收到其他实例的连接 → 把本窗口带到前台。
   if (instanceServer.isListening()) {
