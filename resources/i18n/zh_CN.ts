@@ -29,28 +29,10 @@
     <message><source>By drive letter</source><translation>按盘符</translation></message>
     <message><source>By volume ID</source><translation>按卷 ID</translation></message>
 
-    <!-- main.cpp: SystemCheck 弹窗 -->
-    <message>
-        <source>Unified Write Filter (UWF) is only available on Windows.</source>
-        <translation>统一写入筛选器 (UWF) 仅在 Windows 上可用。</translation>
-    </message>
-    <message>
-        <source>Unified Write Filter (UWF) was not detected. Open &quot;Control Panel → Programs → Turn Windows features on or off&quot;, enable &quot;Device Lockdown → Unified Write Filter&quot;, reboot, and try again.</source>
-        <translation>未检测到统一写入筛选器 (UWF)。请到「控制面板 → 程序 → 启用或关闭 Windows 功能」中勾选「设备锁定 → 统一写入筛选器」，重启后再运行本程序。</translation>
-    </message>
+    <!-- main.cpp: 兼容模式提示 -->
     <message>
         <source>The current system &quot;%1&quot; (%2) is not a recognized supported edition. UWF Manager is running in compatibility mode and some features may be unavailable.</source>
         <translation>当前系统「%1」（%2）不是已知的受支持版本，UWF 管理器正以兼容模式运行，部分功能可能不可用。</translation>
-    </message>
-    <message><source>UWF feature not enabled</source><translation>未启用 UWF 功能</translation></message>
-    <message><source>Administrator privileges required</source><translation>需要管理员权限</translation></message>
-    <message>
-        <source>This program is not running as administrator.
-
-Right-click and choose &quot;Run as administrator&quot; to restart it; otherwise UWF settings cannot be read or modified.</source>
-        <translation>本程序当前未以管理员身份运行。
-
-请右键选择「以管理员身份运行」重新启动本程序，否则无法读取或修改 UWF 设置。</translation>
     </message>
 
     <!-- StatusPanel -->
@@ -123,6 +105,10 @@ Right-click and choose &quot;Run as administrator&quot; to restart it; otherwise
         <translation>&lt;span style='color:%1'&gt;■&lt;/span&gt; 已占用 &amp;nbsp; &lt;span style='color:%2'&gt;■&lt;/span&gt; 警告 &amp;nbsp; &lt;span style='color:%3'&gt;■&lt;/span&gt; 严重</translation>
     </message>
     <message><source>UWF status unavailable: </source><translation>UWF 状态不可用：</translation></message>
+    <message>
+        <source>Administrator privileges are required to change UWF settings. Restart the program via right-click → &quot;Run as administrator&quot;.</source>
+        <translation>需要管理员权限才能修改 UWF 设置。请右键选择「以管理员身份运行」重新启动本程序。</translation>
+    </message>
 
     <!-- DiskTab -->
     <message>
