@@ -14,8 +14,8 @@
 #include <QSizePolicy>
 #include <QTabWidget>
 #include <format>
-#include <windows.h>
 
+#include "../util/DriveLetter.h"
 #include "ExclusionListWidget.h"
 #include "I18n.h"
 #include "OverlayFilesDialog.h"
@@ -55,18 +55,6 @@ QStringList toQList(const std::vector<std::string>& v) {
   out.reserve(static_cast<int>(v.size()));
   for (const auto& s : v) out << QString::fromStdString(s);
   return out;
-}
-
-// 返回系统盘的盘符（如 "C:"），用于决定哪个 DiskTab 展示注册表排除。
-// 注册表排除在 UWF 中是全局的（不分卷），按系统盘显示最直观。
-QString systemDriveLetter() {
-  wchar_t buf[MAX_PATH] = {};
-  const UINT n = GetWindowsDirectoryW(buf, MAX_PATH);
-  if (n >= 2 && buf[1] == L':') {
-    const QChar c(static_cast<char16_t>(buf[0]));
-    return QString(c.toUpper()) + ':';
-  }
-  return QStringLiteral("C:");
 }
 
 // Win32_Volume.DeviceID 形如 "\\?\Volume{GUID}\"，heading 上只想看 GUID，
@@ -150,7 +138,7 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   // （把 UI 上暂存的配置写入 WMI），两者放在一起容易让人搞错。
   // 注册表子项仅在系统盘 TAB 上出现（和注册表排除列表展示口径一致）。
   const QString thisDl = QString::fromStdString(disk.driveLetter).toUpper();
-  m_showRegistry = (thisDl == systemDriveLetter());
+  m_showRegistry = (thisDl == QString::fromStdString(drive::systemLetter()));
 
   const auto& tm = ThemeManager::instance();
 

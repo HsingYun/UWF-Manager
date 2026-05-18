@@ -25,6 +25,7 @@
 #include <shlobj.h>
 #include <windows.h>
 
+#include "../util/DriveLetter.h"
 #include "../uwf/api/UwfOverlay.h"
 #include "../uwf/wmi/WmiClient.h"
 #include "../uwf/wmi/WmiError.h"
@@ -93,9 +94,8 @@ void normalizeOverlayEntry(const QString& driveLetter, OverlayFileEntry& e) {
 
 }  // namespace
 
-OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, QWidget* parent) : QDialog(parent), m_driveLetter(driveLetter.trimmed().toUpper()) {
-  if (m_driveLetter.size() == 1) m_driveLetter += ':';
-
+OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, QWidget* parent)
+    : QDialog(parent), m_driveLetter(QString::fromStdString(drive::normalize(driveLetter.toStdString()))) {
   setWindowTitle(I18n::tr("Overlay files - %1").arg(m_driveLetter));
   resize(760, 540);
 

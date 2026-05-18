@@ -14,6 +14,8 @@ set(UWF_SOURCES
         main.cpp
         src/util/Log.h
         src/util/Log.cpp
+        src/util/DriveLetter.h
+        src/util/DriveLetter.cpp
         src/core/UwfConfig.h
         src/core/UwfConfig.cpp
         src/uwf/SystemCheck.h

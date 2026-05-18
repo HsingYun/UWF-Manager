@@ -6,6 +6,8 @@
 #include <sstream>
 #include <utility>
 
+#include "../../util/DriveLetter.h"
+
 namespace uwf::api {
 
 namespace {
@@ -52,11 +54,6 @@ std::vector<std::string> tokenize(const std::string& line) {
 
 std::string toLowerAscii(std::string s) {
   for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  return s;
-}
-
-std::string toUpperAscii(std::string s) {
-  for (auto& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
   return s;
 }
 
@@ -175,11 +172,10 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
         out.parseError = ParseError::Unsupported;
         return out;
       }
-      std::string dl = toUpperAscii(tokens[2]);
-      // 用户可能写 "c" 或 "c:"，统一成 "C:"。卷名形式（"\\?\Volume{...}"）
-      // 不支持，用户也极少从 uwfmgr CLI 拷出这种参数。
-      if (dl.size() == 1) dl += ':';
-      if (dl.size() != 2 || !std::isalpha(static_cast<unsigned char>(dl[0])) || dl[1] != ':') {
+      // 规范化盘符——接受 "c" / "C:" 等形式；非法输入（含卷名形式
+      // "\\?\Volume{...}"）时 normalize 返回空串。
+      std::string dl = drive::normalize(tokens[2]);
+      if (dl.empty()) {
         out.parseError = ParseError::InvalidVolume;
         out.parseErrorContext = tokens[2];
         return out;

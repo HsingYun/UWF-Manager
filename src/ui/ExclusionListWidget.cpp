@@ -25,6 +25,7 @@
 #include <QVBoxLayout>
 #include <cmath>
 
+#include "../util/DriveLetter.h"
 #include "I18n.h"
 #include "MessageDialog.h"
 #include "ThemeManager.h"
@@ -57,17 +58,6 @@ void setRemoveCI(QSet<QString>& set, const QString& key) {
   }
 }
 
-// 返回系统盘盘符，如 "C:"。用来识别"该路径是否在系统卷"。
-QString systemDriveLetterLocal() {
-  wchar_t buf[MAX_PATH] = {};
-  const UINT n = GetWindowsDirectoryW(buf, MAX_PATH);
-  if (n >= 2 && buf[1] == L':') {
-    const QChar c(static_cast<char16_t>(buf[0]));
-    return QString(c.toUpper()) + ':';
-  }
-  return QStringLiteral("C:");
-}
-
 // UWF 官方文档明确说不能排除的一组路径。命中其中任何一条就返回
 // 面向用户的中文原因；不命中返回空串（允许添加）。
 QString forbidExclusionReason(const QString& rawPath, const QString& volumeDl) {
@@ -90,7 +80,7 @@ QString forbidExclusionReason(const QString& rawPath, const QString& volumeDl) {
     return I18n::tr("The pagefile, swapfile and hibernation file cannot be excluded; UWF itself depends on these system files.");
   }
 
-  const bool isSystemVolume = (volumeDl == systemDriveLetterLocal());
+  const bool isSystemVolume = (volumeDl == QString::fromStdString(drive::systemLetter()));
   if (!isSystemVolume) return {};
 
   // 系统卷：几个关键目录本身不能排除（里面的具体文件可以）。
@@ -460,8 +450,8 @@ void ExclusionListWidget::onItemDoubleClicked(QListWidgetItem* item) {
 }
 
 void ExclusionListWidget::setDriveLetter(const QString& dl) {
-  m_driveLetter = dl.trimmed().toUpper();
-  if (m_driveLetter.size() == 1) m_driveLetter += ':';
+  // 规范化交给 uwf::drive：trim + 大写 + 单个结尾冒号；非法输入（含空串）→ 空串。
+  m_driveLetter = QString::fromStdString(drive::normalize(dl.toStdString()));
 }
 
 void ExclusionListWidget::setBaseline(const QStringList& current, const QStringList& next) {

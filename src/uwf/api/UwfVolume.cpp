@@ -3,6 +3,7 @@
 #include <format>
 #include <optional>
 
+#include "../../util/DriveLetter.h"
 #include "../../util/Log.h"
 #include "../wmi/WmiError.h"
 #include "../wmi/WmiRowUtil.h"
@@ -32,17 +33,15 @@ bool invokeSimple(const WmiSession& session, const std::string& path, const char
 // "C:\foo"，这里在确认与目标卷匹配后剥掉开头的 "<letter>:"。盘符不匹配直接
 // 返回空 optional 并写 *error。
 std::optional<std::string> stripVolumeDriveLetter(const std::string& path, const std::string& volumeDriveLetter, std::string* error) {
-  if (path.size() < 2 || !std::isalpha(static_cast<unsigned char>(path[0])) || path[1] != ':') {
-    return path;
-  }
-  std::string prefix;
-  prefix += static_cast<char>(std::toupper(static_cast<unsigned char>(path[0])));
-  prefix += ':';
-  if (prefix != volumeDriveLetter) {
+  // UWF 的 AddExclusion / CommitFile 等方法收的是"卷内相对路径"（不含盘符）。
+  // 这里把用户给的完整路径按盘符拆开：拆分逻辑统一交给 drive::split。
+  const auto s = drive::split(path);
+  if (s.letter.empty()) return path;  // 无盘符前缀——已是卷内相对路径，原样返回
+  if (s.letter != volumeDriveLetter) {
     if (error) *error = std::format("path \"{}\" drive letter does not match target volume {}", path, volumeDriveLetter);
     return std::nullopt;
   }
-  return path.substr(2);
+  return s.rest;
 }
 
 // 把字符串转义后嵌入 WMI 对象路径的引号键值。WMI 对象路径按 C/C++ 规则解析
@@ -90,7 +89,7 @@ std::vector<api::VolumeRow> UwfVolume::readAll(std::string* error) const {
     api::VolumeRow r;
     r.path = rowutil::getString(o, "__PATH");
     r.currentSession = rowutil::getBool(o, "CurrentSession");
-    r.driveLetter = rowutil::normalizeDriveLetter(rowutil::getString(o, "DriveLetter"));
+    r.driveLetter = drive::normalize(rowutil::getString(o, "DriveLetter"));
     r.volumeName = rowutil::getString(o, "VolumeName");
     r.bindByDriveLetter = rowutil::getBool(o, "BindByDriveLetter", true);
     r.commitPending = rowutil::getBool(o, "CommitPending");

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <map>
 
+#include "../util/DriveLetter.h"
 #include "SystemCheck.h"
 #include "api/UwfFilter.h"
 #include "api/UwfOverlay.h"
@@ -142,14 +143,14 @@ std::vector<core::DiskInfo> enumerateDisks(std::string* error) {
   const auto volRows = cim.query("SELECT DeviceID, DriveLetter FROM Win32_Volume", &volErr);
   std::map<std::string, std::string> driveToGuid;
   for (const auto& v : volRows) {
-    const std::string dl = rowutil::normalizeDriveLetter(rowutil::getString(v, "DriveLetter"));
+    const std::string dl = drive::normalize(rowutil::getString(v, "DriveLetter"));
     const std::string id = rowutil::getString(v, "DeviceID");
     if (!dl.empty() && !id.empty()) driveToGuid[dl] = id;
   }
 
   for (const auto& r : rows) {
     core::DiskInfo d;
-    d.driveLetter = rowutil::normalizeDriveLetter(rowutil::getString(r, "DeviceID"));
+    d.driveLetter = drive::normalize(rowutil::getString(r, "DeviceID"));
     d.fileSystem = rowutil::getString(r, "FileSystem");
     d.label = rowutil::getString(r, "VolumeName");
     d.totalBytes = r.value("Size").toULongLong();

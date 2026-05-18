@@ -41,6 +41,7 @@
 #include <format>
 #include <memory>
 
+#include "../util/DriveLetter.h"
 #include "../util/Log.h"
 #include "../uwf/UwfSnapshot.h"
 #include "../uwf/api/UwfmgrCli.h"
@@ -218,15 +219,17 @@ const api::RegistryFilterRow* findCurrentRegistryFilter(const std::vector<api::R
   return nullptr;
 }
 
-QString systemDriveLetter() {
-  wchar_t buf[MAX_PATH] = {};
-  const UINT n = GetWindowsDirectoryW(buf, MAX_PATH);
-  if (n >= 2 && buf[1] == L':') {
-    QChar c(static_cast<char16_t>(buf[0]));
-    return QString(c.toUpper()) + ':';
-  }
-  return QStringLiteral("C:");
+// 盘符逻辑统一在 uwf::drive（见 src/util/DriveLetter.h）。下面两个 MainWindow
+// 内多处复用的函数只是 QString ↔ std::string 的边界适配，不含任何盘符逻辑。
+// extractDriveLetter 把 fromPath 区分出的"卷 GUID 路径解析失败"写进日志——
+// 调用方只关心拿没拿到盘符，但失败原因值得留痕。
+QString extractDriveLetter(const QString& path) {
+  std::string err;
+  const std::string dl = drive::fromPath(path.toStdString(), &err);
+  if (dl.empty() && !err.empty()) UWF_LOG_W("ui") << "extractDriveLetter: " << err;
+  return QString::fromStdString(dl);
 }
+QString systemDriveLetter() { return QString::fromStdString(drive::systemLetter()); }
 
 // 小工具：读一个字符串型的 REG_SZ / REG_EXPAND_SZ 注册表值。
 QString readRegSz(HKEY root, const wchar_t* subkey, const wchar_t* name) {
@@ -1126,13 +1129,13 @@ void MainWindow::showImport() {
         case api::UwfmgrKind::FileAddExclusion:
         case api::UwfmgrKind::FileRemoveExclusion: {
           const QString native = QDir::toNativeSeparators(a0);
-          // 路径需要至少 "C:" 前缀来路由到对应 DiskTab；缺前缀 → 没办法定位。
-          if (native.size() < 2 || native[1] != QChar(':') || !native[0].isLetter()) {
+          // 路径需要 "<盘符>:" 前缀来路由到对应 DiskTab；缺前缀 → 没办法定位。
+          const QString dl = extractDriveLetter(native);
+          if (dl.isEmpty()) {
             r.status = ImportReportRow::Status::Failed;
             r.detail = I18n::tr("Path %1 has no drive letter; cannot route to a volume tab").arg(native);
             break;
           }
-          QString dl = native.left(2).toUpper();
           auto* tab = findTab(dl);
           if (!tab) {
             r.status = ImportReportRow::Status::Failed;
@@ -1285,8 +1288,8 @@ void MainWindow::commitFilePath(const QString& path) {
   if (path.isEmpty()) return;
 
   // 从路径解析盘符，定位到对应的 next-session VolumeRow。
-  QString dl = path.left(2).toUpper();
-  if (dl.size() < 2 || dl[1] != ':') {
+  const QString dl = extractDriveLetter(path);
+  if (dl.isEmpty()) {
     warning(this, I18n::tr("Commit failed"), I18n::tr("The path has no drive letter; cannot identify the target volume."));
     return;
   }
@@ -1403,8 +1406,8 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
   if (path.isEmpty()) return;
 
   // 盘符解析。
-  QString dl = path.left(2).toUpper();
-  if (dl.size() < 2 || dl[1] != ':') {
+  const QString dl = extractDriveLetter(path);
+  if (dl.isEmpty()) {
     warning(this, I18n::tr("Commit file deletion failed"), I18n::tr("The path has no drive letter; cannot identify the target volume."));
     return;
   }
