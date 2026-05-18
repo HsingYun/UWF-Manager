@@ -1,5 +1,8 @@
 #include "ExclusionListWidget.h"
 
+#include <shlobj.h>
+#include <windows.h>
+
 #include <QAction>
 #include <QApplication>
 #include <QBrush>
@@ -30,9 +33,6 @@
 #include "I18n.h"
 #include "MessageDialog.h"
 #include "ThemeManager.h"
-
-#include <shlobj.h>
-#include <windows.h>
 
 namespace uwf::ui {
 
@@ -345,7 +345,7 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
       // 被拒绝"挡回（见 MainWindow::commitFilePath）。只有下次会话才新增 /
       // 待应用的排除项当前仍受保护，覆盖层里才有改动可提交。
       // 按文件/文件夹分别用不同文案，最终都走 UWF_Volume.CommitFile
-      //（MainWindow 那边收到 absPath 自己判断是文件还是目录、是否递归）。
+      // （MainWindow 那边收到 absPath 自己判断是文件还是目录、是否递归）。
       const QFileInfo fi(abs);
       const bool excludedInCurrentSession = m_current.contains(rel, Qt::CaseInsensitive);
       if (fi.exists() && !excludedInCurrentSession) {

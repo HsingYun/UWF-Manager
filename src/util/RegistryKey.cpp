@@ -38,10 +38,10 @@ std::string normalize(const std::string& key) {
     const char* canonical;  // 归一到的长写
   };
   static constexpr Hive kHives[] = {
-      {"HKLM", "HKEY_LOCAL_MACHINE"}, {"HKEY_LOCAL_MACHINE", "HKEY_LOCAL_MACHINE"},
-      {"HKCU", "HKEY_CURRENT_USER"},  {"HKEY_CURRENT_USER", "HKEY_CURRENT_USER"},
-      {"HKCR", "HKEY_CLASSES_ROOT"},  {"HKEY_CLASSES_ROOT", "HKEY_CLASSES_ROOT"},
-      {"HKU", "HKEY_USERS"},          {"HKEY_USERS", "HKEY_USERS"},
+      {"HKLM", "HKEY_LOCAL_MACHINE"},  {"HKEY_LOCAL_MACHINE", "HKEY_LOCAL_MACHINE"},
+      {"HKCU", "HKEY_CURRENT_USER"},   {"HKEY_CURRENT_USER", "HKEY_CURRENT_USER"},
+      {"HKCR", "HKEY_CLASSES_ROOT"},   {"HKEY_CLASSES_ROOT", "HKEY_CLASSES_ROOT"},
+      {"HKU", "HKEY_USERS"},           {"HKEY_USERS", "HKEY_USERS"},
       {"HKCC", "HKEY_CURRENT_CONFIG"}, {"HKEY_CURRENT_CONFIG", "HKEY_CURRENT_CONFIG"},
   };
   const std::string hiveUpper = toUpper(hive);

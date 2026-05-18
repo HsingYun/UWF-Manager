@@ -313,8 +313,8 @@ std::optional<api::VolumeRow> UwfVolume::ensureNextSessionEntry(const std::strin
   row.volumeName = volumeName;
   row.isProtected = false;
   row.bindByDriveLetter = true;
-  row.path = std::format(R"(UWF_Volume.CurrentSession=FALSE,DriveLetter="{}",VolumeName="{}")", escapeWmiPathValue(driveLetter),
-                         escapeWmiPathValue(volumeName));
+  row.path =
+      std::format(R"(UWF_Volume.CurrentSession=FALSE,DriveLetter="{}",VolumeName="{}")", escapeWmiPathValue(driveLetter), escapeWmiPathValue(volumeName));
   return row;
 }
 

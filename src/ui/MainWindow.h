@@ -31,8 +31,7 @@ class MainWindow : public QMainWindow {
   // 的信息框常驻显示兼容模式提示。提示文案在 buildUi 里按当前语言翻译，故这里
   // 只收原始数据（系统名 / 版本 ID），不收已翻译好的字符串——否则切语言后
   // 文案不会跟着变。
-  explicit MainWindow(bool compatibilityMode = false, const QString& osProductName = {}, const QString& osEditionId = {},
-                      QWidget* parent = nullptr);
+  explicit MainWindow(bool compatibilityMode = false, const QString& osProductName = {}, const QString& osEditionId = {}, QWidget* parent = nullptr);
 
   // 由"单实例"机制调用：另一个实例被启动时，把本窗口从最小化恢复并带到前台。
   void raiseToFront();
