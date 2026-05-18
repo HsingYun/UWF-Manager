@@ -3,8 +3,10 @@
 #include <windows.h>
 
 #include <algorithm>
+#include <charconv>
 #include <filesystem>
 #include <string>
+#include <string_view>
 
 #include "../util/Log.h"
 
@@ -54,6 +56,20 @@ std::string toLowerAscii(std::string s) {
   return s;
 }
 
+// Windows 11 上注册表的 ProductName 仍写着 "Windows 10"——微软从未更新过这个
+// 值。用 CurrentBuildNumber 兜底：>= 22000 即 Windows 11，把名称里的
+// "Windows 10" 改写成 "Windows 11"；解析不出构建号或非 Win11 时原样返回。
+std::string correctWin11Name(std::string productName) {
+  const std::string build = readRegString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", L"CurrentBuildNumber");
+  int buildNum = 0;
+  std::from_chars(build.data(), build.data() + build.size(), buildNum);
+  if (buildNum < 22000) return productName;
+  constexpr std::string_view kWin10 = "Windows 10";
+  const auto pos = productName.find(kWin10);
+  if (pos != std::string::npos) productName.replace(pos, kWin10.size(), "Windows 11");
+  return productName;
+}
+
 bool editionSupported(const std::string& editionId) {
   const std::string e = toLowerAscii(editionId);
   if (e.empty()) return false;
@@ -88,7 +104,7 @@ std::string uwfmgrPath() {
 SystemCheckResult runSystemChecks() {
   SystemCheckResult r;
   r.editionId = readRegString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", L"EditionID");
-  r.productName = readRegString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", L"ProductName");
+  r.productName = correctWin11Name(readRegString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", L"ProductName"));
 
   if (!editionSupported(r.editionId)) {
     r.status = CheckStatus::UnsupportedEdition;
