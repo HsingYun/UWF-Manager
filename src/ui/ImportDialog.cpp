@@ -165,6 +165,10 @@ ImportDialog::ImportDialog(QWidget* parent) : QDialog(parent) {
   auto* loadBtn = btns->addButton(I18n::tr("Load from file…"), QDialogButtonBox::ActionRole);
   m_importBtn = btns->addButton(I18n::tr("Import"), QDialogButtonBox::AcceptRole);
   m_importBtn->setObjectName("primaryBtn");
+  // 文本框为空（或纯空白）时禁用 Import——不可点即不会进 onImportClicked，
+  // 也就无需在那里弹"没有可导入内容"的模态框。
+  m_importBtn->setEnabled(false);
+  connect(m_text, &QPlainTextEdit::textChanged, this, [this]() { m_importBtn->setEnabled(!m_text->toPlainText().trimmed().isEmpty()); });
   btns->addButton(I18n::tr("Close"), QDialogButtonBox::RejectRole);
   connect(btns, &QDialogButtonBox::rejected, this, &QDialog::reject);
   connect(m_importBtn, &QPushButton::clicked, this, &ImportDialog::onImportClicked);
@@ -183,11 +187,8 @@ void ImportDialog::onImportClicked() {
     dialogs::warning(this, I18n::tr("Import failed"), I18n::tr("Internal error: no applier registered."));
     return;
   }
+  // 文本框为空时 Import 按钮已被禁用，到不了这里，无需再判空。
   const QString text = m_text->toPlainText();
-  if (text.trimmed().isEmpty()) {
-    dialogs::warning(this, I18n::tr("Nothing to import"), I18n::tr("The text area is empty."));
-    return;
-  }
 
   // 解析交给 src/uwf/api 的纯 std::string parser；UI 这边只负责 QString
   // ↔ std::string 的桥接和把注释/空行过滤掉。

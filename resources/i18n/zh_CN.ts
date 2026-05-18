@@ -780,7 +780,6 @@ uwfmgr registry add-exclusion HKLM\Software\MyApp</translation></message>
     <message><source>Import failed</source><translation>导入失败</translation></message>
     <message><source>Internal error: no applier registered.</source><translation>内部错误：未注册命令应用器。</translation></message>
     <message><source>Nothing to import</source><translation>没有可导入的内容</translation></message>
-    <message><source>The text area is empty.</source><translation>文本框为空。</translation></message>
     <message><source>No uwfmgr commands found in the input.</source><translation>输入中未找到任何 uwfmgr 命令。</translation></message>
     <message><source>Applied: %1</source><translation>已应用：%1</translation></message>
     <message><source>Duplicates: %1</source><translation>重复：%1</translation></message>
