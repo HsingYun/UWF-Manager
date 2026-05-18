@@ -436,6 +436,11 @@ void DiskTab::applySnapshot(const core::UwfSnapshot& snap) {
     m_regs->setBaseline(toQList(snap.current.registryExclusions), toQList(snap.next.registryExclusions));
   }
 
+  // UWF 命名空间连不上时排除列表没有可写入的目标——整列设只读，禁掉添加 /
+  // 删除按钮；恢复可用后再放开（FS 受限卷的文件列表则始终保持只读）。
+  m_files->setReadOnly(!snap.uwfAvailable || !canManageExclusions());
+  if (m_regs) m_regs->setReadOnly(!snap.uwfAvailable);
+
   // 快照里可能补充 volumeName 信息，刷一下标题。
   if (nv && !nv->volumeName.empty() && m_disk.volumeName.empty()) {
     m_disk.volumeName = nv->volumeName;

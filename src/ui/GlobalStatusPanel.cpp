@@ -184,10 +184,10 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   scroll->setBackgroundRole(QPalette::NoRole);
   scroll->viewport()->setBackgroundRole(QPalette::NoRole);
   scroll->viewport()->setAutoFillBackground(false);
-  auto* scrollHost = new QWidget(scroll);
-  scrollHost->setBackgroundRole(QPalette::NoRole);
-  scrollHost->setAutoFillBackground(false);
-  auto* body = new QVBoxLayout(scrollHost);
+  m_scrollHost = new QWidget(scroll);
+  m_scrollHost->setBackgroundRole(QPalette::NoRole);
+  m_scrollHost->setAutoFillBackground(false);
+  auto* body = new QVBoxLayout(m_scrollHost);
   body->setContentsMargins(0, 0, 6, 0);
   body->setSpacing(10);
 
@@ -309,7 +309,7 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   body->addWidget(makeSection(I18n::tr("Overlay"), overlayGrid));
   body->addStretch(1);
 
-  scroll->setWidget(scrollHost);
+  scroll->setWidget(m_scrollHost);
   outer->addWidget(scroll, 1);
 
   connect(m_filterNext, &QAbstractButton::toggled, this, &GlobalStatusPanel::emitIfChanged);
@@ -404,10 +404,9 @@ void GlobalStatusPanel::setUnavailable(const QString& reason) {
   m_banner->setText("⚠ " + I18n::tr("UWF status unavailable: ") + reason);
   m_banner->setProperty("level", "warn");
   m_banner->show();
-  // 兼容模式横幅是常驻提示，禁用面板时也要保持可读，故一并排除。
-  for (auto* w : findChildren<QWidget*>())
-    if (w != m_banner && w != m_compatBanner) w->setEnabled(false);
-  m_banner->setEnabled(true);
+  // 只禁用滚动区的内容宿主——内部控件全部变灰不可交互，但 QScrollArea
+  // 本身仍可用，窗口偏矮时还能滚动查看被截断的卡片。
+  m_scrollHost->setEnabled(false);
   // UWF 不可用时 ? 徽标无意义，强制隐藏。
   if (m_typeLockedHint) m_typeLockedHint->hide();
   if (m_maxLockedHint) m_maxLockedHint->hide();

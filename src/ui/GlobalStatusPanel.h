@@ -64,6 +64,9 @@ class GlobalStatusPanel : public QWidget {
   QLabel* m_banner = nullptr;
   // 兼容模式警告横幅——独立于 m_banner，一经显示便常驻。
   QLabel* m_compatBanner = nullptr;
+  // 滚动区内容宿主：UWF 不可用时只禁用它（而非整个面板），让 QScrollArea
+  // 本身保持可用，内部控件变灰但仍能滚动查看。
+  QWidget* m_scrollHost = nullptr;
 
   QLabel* m_filterCur = nullptr;
   SwitchButton* m_filterNext = nullptr;
