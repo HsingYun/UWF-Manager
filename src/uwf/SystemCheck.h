@@ -11,7 +11,6 @@ namespace uwf {
 enum class CheckStatus {
   Ok,                  // 一切就绪
   UnsupportedEdition,  // 不是 Enterprise / Education / IoT Enterprise
-  UwfNotInstalled,     // 没装 UWF 功能（找不到 uwfmgr.exe）
 };
 
 struct SystemCheckResult {

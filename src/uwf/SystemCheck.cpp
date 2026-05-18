@@ -6,6 +6,8 @@
 #include <filesystem>
 #include <string>
 
+#include "../util/Log.h"
+
 namespace uwf {
 
 namespace {
@@ -92,9 +94,10 @@ SystemCheckResult runSystemChecks() {
     r.status = CheckStatus::UnsupportedEdition;
     return r;
   }
+  // uwfmgr.exe 的存在性只作为参考记录一条日志——本程序经 WMI 操作 UWF，
+  // 并不调用这个命令行工具，找不到它不影响功能，故不再拦截启动。
   if (uwfmgrPath().empty()) {
-    r.status = CheckStatus::UwfNotInstalled;
-    return r;
+    UWF_LOG_W("syscheck") << "uwfmgr.exe not found under System32; UWF feature may not be installed (continuing anyway)";
   }
   r.status = CheckStatus::Ok;
   return r;

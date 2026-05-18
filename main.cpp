@@ -35,19 +35,6 @@ static bool forwardToRunningInstance(const QString& serverName) {
   return true;
 }
 
-static QString describeCheck(const uwf::SystemCheckResult& r) {
-  switch (r.status) {
-    case uwf::CheckStatus::UwfNotInstalled:
-      return uwf::I18n::tr(
-          "Unified Write Filter (UWF) was not detected. Open \"Control Panel → Programs → Turn Windows features on or off\", enable \"Device Lockdown → "
-          "Unified Write Filter\", reboot, and try again.");
-    case uwf::CheckStatus::UnsupportedEdition:
-    case uwf::CheckStatus::Ok:
-      return {};
-  }
-  return {};
-}
-
 int main(int argc, char* argv[]) {
   QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
   QApplication app(argc, argv);
@@ -99,10 +86,6 @@ int main(int argc, char* argv[]) {
                                    "and some features may be unavailable.")
                          .arg(QString::fromStdString(check.productName), QString::fromStdString(check.editionId));
       break;
-    case uwf::CheckStatus::UwfNotInstalled:
-      UWF_LOG_E("main") << "system check failed: UWF feature not installed; product=" << check.productName << " edition=" << check.editionId;
-      uwf::ui::dialogs::warning(nullptr, uwf::I18n::tr("UWF feature not enabled"), describeCheck(check));
-      return 3;
     case uwf::CheckStatus::Ok:
       UWF_LOG_I("main") << "system check ok: product=" << check.productName << " edition=" << check.editionId;
       break;
