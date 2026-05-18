@@ -27,7 +27,9 @@ enum class Theme;
 class MainWindow : public QMainWindow {
   Q_OBJECT
  public:
-  explicit MainWindow(QWidget* parent = nullptr);
+  // compatibilityNotice 非空时（系统版本不在受支持清单内），在 GlobalStatusPanel
+  // 的信息框常驻显示这条兼容模式提示。
+  explicit MainWindow(const QString& compatibilityNotice = {}, QWidget* parent = nullptr);
 
   // 由"单实例"机制调用：另一个实例被启动时，把本窗口从最小化恢复并带到前台。
   void raiseToFront();
@@ -109,6 +111,10 @@ class MainWindow : public QMainWindow {
 
   QVector<QPointer<DiskTab>> m_diskTabs;
   core::UwfSnapshot m_snapshot;
+
+  // 兼容模式提示文案（系统版本未通过校验）；空 = 正常模式。rebuildUi 重建
+  // 面板后需要重新灌回，故存为成员。
+  QString m_compatibilityNotice;
 };
 
 }  // namespace uwf::ui

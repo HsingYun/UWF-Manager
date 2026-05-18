@@ -35,18 +35,13 @@
         <translation>统一写入筛选器 (UWF) 仅在 Windows 上可用。</translation>
     </message>
     <message>
-        <source>UWF is only supported on Windows Enterprise, Education or IoT Enterprise editions.
-
-Current system: %1 (%2)</source>
-        <translation>统一写入筛选器仅支持 Windows 企业版、教育版或 IoT 企业版。
-
-当前系统版本：%1（%2）</translation>
-    </message>
-    <message>
         <source>Unified Write Filter (UWF) was not detected. Open &quot;Control Panel → Programs → Turn Windows features on or off&quot;, enable &quot;Device Lockdown → Unified Write Filter&quot;, reboot, and try again.</source>
         <translation>未检测到统一写入筛选器 (UWF)。请到「控制面板 → 程序 → 启用或关闭 Windows 功能」中勾选「设备锁定 → 统一写入筛选器」，重启后再运行本程序。</translation>
     </message>
-    <message><source>System version not supported</source><translation>系统版本不支持</translation></message>
+    <message>
+        <source>The current system &quot;%1&quot; (%2) is not a recognized supported edition. UWF Manager is running in compatibility mode and some features may be unavailable.</source>
+        <translation>当前系统「%1」（%2）不是已知的受支持版本，UWF 管理器正以兼容模式运行，部分功能可能不可用。</translation>
+    </message>
     <message><source>UWF feature not enabled</source><translation>未启用 UWF 功能</translation></message>
     <message><source>Administrator privileges required</source><translation>需要管理员权限</translation></message>
     <message>

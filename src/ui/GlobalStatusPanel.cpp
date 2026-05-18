@@ -158,6 +158,15 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   title->setObjectName("panelTitle");
   outer->addWidget(title);
 
+  // 兼容模式警告——放在状态横幅之上，一经 setCompatibilityNotice 显示便常驻，
+  // 不随 setData / setUnavailable 的刷新清除。
+  m_compatBanner = new QLabel(this);
+  m_compatBanner->setObjectName("statusBanner");
+  m_compatBanner->setProperty("level", "warn");
+  m_compatBanner->setWordWrap(true);
+  m_compatBanner->hide();
+  outer->addWidget(m_compatBanner);
+
   m_banner = new QLabel(this);
   m_banner->setObjectName("statusBanner");
   m_banner->setWordWrap(true);
@@ -385,13 +394,19 @@ void GlobalStatusPanel::refreshTypeDependentUi() {
   }
 }
 
+void GlobalStatusPanel::setCompatibilityNotice(const QString& text) {
+  m_compatBanner->setText("⚠ " + text);
+  m_compatBanner->show();
+}
+
 void GlobalStatusPanel::setUnavailable(const QString& reason) {
   m_available = false;
   m_banner->setText("⚠ " + I18n::tr("UWF status unavailable: ") + reason);
   m_banner->setProperty("level", "warn");
   m_banner->show();
+  // 兼容模式横幅是常驻提示，禁用面板时也要保持可读，故一并排除。
   for (auto* w : findChildren<QWidget*>())
-    if (w != m_banner) w->setEnabled(false);
+    if (w != m_banner && w != m_compatBanner) w->setEnabled(false);
   m_banner->setEnabled(true);
   // UWF 不可用时 ? 徽标无意义，强制隐藏。
   if (m_typeLockedHint) m_typeLockedHint->hide();

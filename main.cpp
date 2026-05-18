@@ -37,13 +37,11 @@ static bool forwardToRunningInstance(const QString& serverName) {
 
 static QString describeCheck(const uwf::SystemCheckResult& r) {
   switch (r.status) {
-    case uwf::CheckStatus::UnsupportedEdition:
-      return uwf::I18n::tr("UWF is only supported on Windows Enterprise, Education or IoT Enterprise editions.\n\nCurrent system: %1 (%2)")
-          .arg(QString::fromStdString(r.productName), QString::fromStdString(r.editionId));
     case uwf::CheckStatus::UwfNotInstalled:
       return uwf::I18n::tr(
           "Unified Write Filter (UWF) was not detected. Open \"Control Panel → Programs → Turn Windows features on or off\", enable \"Device Lockdown → "
           "Unified Write Filter\", reboot, and try again.");
+    case uwf::CheckStatus::UnsupportedEdition:
     case uwf::CheckStatus::Ok:
       return {};
   }
@@ -90,17 +88,20 @@ int main(int argc, char* argv[]) {
   auto& theme = uwf::ui::ThemeManager::instance();
   theme.apply(uwf::ui::ThemeManager::detectSystemTheme());
 
+  // 系统校验不再是硬性拦截：版本不在受支持清单内时只记一条兼容模式提示，
+  // 程序照常启动，提示通过 GlobalStatusPanel 的信息框告知用户。
   const auto check = uwf::runSystemChecks();
-  const QString detail = describeCheck(check);
+  QString compatNotice;
   switch (check.status) {
     case uwf::CheckStatus::UnsupportedEdition:
-      UWF_LOG_E("main") << "system check failed: status=" << static_cast<int>(check.status) << " product=" << check.productName
-                        << " edition=" << check.editionId;
-      uwf::ui::dialogs::warning(nullptr, uwf::I18n::tr("System version not supported"), detail);
-      return 2;
+      UWF_LOG_W("main") << "unsupported edition; running in compatibility mode; product=" << check.productName << " edition=" << check.editionId;
+      compatNotice = uwf::I18n::tr("The current system \"%1\" (%2) is not a recognized supported edition. UWF Manager is running in compatibility mode "
+                                   "and some features may be unavailable.")
+                         .arg(QString::fromStdString(check.productName), QString::fromStdString(check.editionId));
+      break;
     case uwf::CheckStatus::UwfNotInstalled:
       UWF_LOG_E("main") << "system check failed: UWF feature not installed; product=" << check.productName << " edition=" << check.editionId;
-      uwf::ui::dialogs::warning(nullptr, uwf::I18n::tr("UWF feature not enabled"), detail);
+      uwf::ui::dialogs::warning(nullptr, uwf::I18n::tr("UWF feature not enabled"), describeCheck(check));
       return 3;
     case uwf::CheckStatus::Ok:
       UWF_LOG_I("main") << "system check ok: product=" << check.productName << " edition=" << check.editionId;
@@ -126,7 +127,7 @@ int main(int argc, char* argv[]) {
     UWF_LOG_W("main") << "single-instance server failed to listen: " << instanceServer.errorString().toStdString();
   }
 
-  uwf::ui::MainWindow w;
+  uwf::ui::MainWindow w(compatNotice);
 
   // 收到其他实例的连接 → 把本窗口带到前台。
   if (instanceServer.isListening()) {

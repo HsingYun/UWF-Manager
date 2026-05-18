@@ -405,7 +405,7 @@ std::string findCoveringExclusion(const std::vector<std::string>& excls, const s
 
 }  // namespace
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+MainWindow::MainWindow(const QString& compatibilityNotice, QWidget* parent) : QMainWindow(parent), m_compatibilityNotice(compatibilityNotice) {
   buildUi();
   // 写会话提前连接一次；读快照时会另起一个独立会话。
   std::string err;
@@ -628,6 +628,9 @@ void MainWindow::buildUi() {
   globalLayout->setContentsMargins(14, 12, 14, 12);
   globalLayout->setSpacing(10);
   m_global = new GlobalStatusPanel(this);
+  // 系统版本未通过校验时，把兼容模式提示常驻在面板信息框里。rebuildUi 会
+  // 重建 m_global，所以每次 buildUi 都要重新灌一次。
+  if (!m_compatibilityNotice.isEmpty()) m_global->setCompatibilityNotice(m_compatibilityNotice);
   // 顶部全局设置拿走所有可拉伸空间，里面的 QScrollArea 会在高度不足时
   // 自己滚动；tips 区用固定高度贴底。
   globalLayout->addWidget(m_global, 1);
