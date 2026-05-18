@@ -44,17 +44,19 @@ std::optional<std::string> stripVolumeDriveLetter(const std::string& path, const
   return s.rest;
 }
 
-// 把字符串转义后嵌入 WMI 对象路径的引号键值。WMI 对象路径按 C/C++ 规则解析
-// 引号转义（见 MS 文档 "WMI Object Path Requirements"："embedded quotation
-// marks ... must delimit the quotation mark with escape characters, as in a C
-// or C++ application"），所以 `"` 要写成 `\"`、反斜杠要写成 `\\`。
+// 把字符串转义后嵌入 WMI 对象路径的引号键值（DriveLetter="..." / VolumeName="..."）。
+// WMI 对象路径按 C/C++ 规则解析引号转义（见 MS 文档 "WMI Object Path
+// Requirements"："embedded quotation marks ... must delimit the quotation mark
+// with escape characters, as in a C or C++ application"），故 `"` 要写成 `\"`、
+// `\` 要写成 `\\`。
 //
-// UWF_Volume.VolumeName 的取值是属性原值（getString(o,"VolumeName")），形如
-// \\?\Volume{GUID}\ ——单反斜杠、未转义。它以反斜杠结尾，若不转义直接拼进
-// VolumeName="..."，结尾的 \" 会被路径解析器当成一个转义引号，键值字符串无法
-// 闭合，后续 ExecMethod / DeleteInstance 解析该 __PATH 必然失败。
-// （注：readAll() 里 row.path 取自 __PATH，那是 WMI 自己产出的、已正确转义的
-// 路径，不经过这里；只有本文件 ensureNextSessionEntry 手工拼路径才需要转义。）
+// 实测：UWF_Volume.VolumeName 是 "Volume{GUID}" 形式（不带 \\?\ 前缀、不带结尾
+// 反斜杠——详见 knowledge/reference/11-uwf-api.html 中 UWF_Volume 的备注），
+// DriveLetter 是 "C:" 形式；两者都不含 `\` 或 `"`，所以此处转义当前其实是空操作。
+// 保留它作为防御——若将来某个 key 值含特殊字符，合成出的 __PATH 仍 correct-
+// by-construction。
+// （注：readAll() 里 row.path 取自 __PATH，是 WMI 自己产出、已正确转义的路径，
+// 不经过这里；只有本文件 ensureNextSessionEntry 手工拼 __PATH 才用到本函数。）
 std::string escapeWmiPathValue(const std::string& s) {
   std::string out;
   out.reserve(s.size() + 8);
