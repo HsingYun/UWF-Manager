@@ -402,7 +402,7 @@ void GlobalStatusPanel::setCompatibilityNotice(const QString& text) {
 void GlobalStatusPanel::setUnavailable(const QString& reason) {
   m_available = false;
   m_banner->setText("⚠ " + I18n::tr("UWF status unavailable: ") + reason);
-  m_banner->setProperty("level", "warn");
+  // 不设 level=warn —— UWF 不可用是硬错误，用默认的 statusBanner 红色错误样式。
   m_banner->show();
   // 只禁用滚动区的内容宿主——内部控件全部变灰不可交互，但 QScrollArea
   // 本身仍可用，窗口偏矮时还能滚动查看被截断的卡片。
