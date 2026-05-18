@@ -399,7 +399,10 @@ bool WmiSession::connect(const std::string& namespacePath, std::string* error) c
   hr = d->locator->ConnectServer(ns, nullptr, nullptr, nullptr, WBEM_FLAG_CONNECT_USE_MAX_WAIT, nullptr, nullptr, &d->services);
   SysFreeString(ns);
   if (FAILED(hr)) {
-    if (error) *error = std::format("ConnectServer({}) failed: {}", namespacePath, hrText(hr));
+    // 命名空间路径只进日志，不进面向用户的 error——UWF 不可用横幅只展示
+    // HRESULT 文本（namespace 对用户无意义，详情查日志即可）。
+    UWF_LOG_E("wmi") << "ConnectServer failed: namespace=" << namespacePath << "; " << hrText(hr);
+    if (error) *error = hrText(hr);
     return false;
   }
 
