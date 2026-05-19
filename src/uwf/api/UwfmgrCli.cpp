@@ -21,8 +21,10 @@ bool parseUInt(const std::string& s, uint64_t& out) {
   out = 0;
   for (char c : s) {
     if (c < '0' || c > '9') return false;
-    if (out > (UINT64_MAX - 9) / 10) return false;  // overflow guard
-    out = out * 10 + static_cast<uint64_t>(c - '0');
+    const uint64_t digit = static_cast<uint64_t>(c - '0');
+    // 阈值随当前位取值——按定值 9 算会把末位较小的 6 个 uint64 上界值误拒。
+    if (out > (UINT64_MAX - digit) / 10) return false;  // overflow guard
+    out = out * 10 + digit;
   }
   return true;
 }
