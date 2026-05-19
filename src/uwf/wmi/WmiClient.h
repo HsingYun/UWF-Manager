@@ -100,6 +100,12 @@ class WmiSession {
   // 执行一条 WQL 查询，返回每一行的属性集合。每行自动包含 "__PATH"。
   std::vector<WmiRow> query(const std::string& wql, std::string* error = nullptr) const;
 
+  // 检查命名空间里是否注册了某个类。GetObject 取的是 CIM 仓库里的类定义、
+  // 不经 provider，故与提权无关。返回 false 仅代表 GetObject 明确报
+  // WBEM_E_INVALID_CLASS（确认不存在）；成功或因其它原因失败一律返回 true，
+  // 避免把"无法确认"误判成"不存在"。
+  [[nodiscard]] bool classExists(const std::string& className) const;
+
   // 调用对象方法。objectPath 可以是：
   //   - 类名（单例或 static 方法）
   //   - 实例的 __PATH（推荐；精确定位一行）

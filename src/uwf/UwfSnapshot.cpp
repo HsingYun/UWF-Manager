@@ -66,6 +66,18 @@ core::UwfSnapshot readSnapshot(std::string* error) {
     return snap;
   }
 
+  // root\standardcimv2\embedded 命名空间由多个 Windows 锁定功能共用（键盘
+  // 筛选器 WEKF_* / Shell Launcher 等），连得上不代表 UWF 已安装。探测
+  // UWF_Filter 类是否注册——UWF 的全部类由同一份 MOF 一次性注册，查一个
+  // 有代表性的类即可判定整体可用性。classExists 只在确认类缺失时返回 false，
+  // 未提权（实例 access-denied 但类存在）不会被误判。
+  if (!s.classExists("UWF_Filter")) {
+    snap.uwfAvailable = false;
+    snap.rawError = "UWF WMI classes are not registered (UWF_Filter not found in root\\standardcimv2\\embedded)";
+    if (error) *error = snap.rawError;
+    return snap;
+  }
+
   // ── UWF_Filter ───────────────────────────────────────────────
   if (auto f = UwfFilter{s}.read()) {
     snap.current.filter.enabled = f->currentEnabled;

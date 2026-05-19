@@ -452,6 +452,28 @@ std::vector<WmiRow> WmiSession::query(const std::string& wql, std::string* error
   return rows;
 }
 
+bool WmiSession::classExists(const std::string& className) const {
+  if (!d->connected) {
+    UWF_LOG_E("wmi") << "classExists rejected: session not connected; class=" << className;
+    return false;
+  }
+  const auto clsW = utf8ToWide(className);
+  BSTR clsBstr = SysAllocString(clsW.c_str());
+  IWbemClassObject* classObj = nullptr;
+  const HRESULT hr = d->services->GetObject(clsBstr, 0, nullptr, &classObj, nullptr);
+  SysFreeString(clsBstr);
+  if (classObj) classObj->Release();
+  if (hr == static_cast<HRESULT>(WBEM_E_INVALID_CLASS)) {
+    UWF_LOG_W("wmi") << "classExists: " << className << " is not registered";
+    return false;
+  }
+  if (FAILED(hr))
+    UWF_LOG_W("wmi") << std::format("classExists({}): GetObject failed ({}); assuming present", className, hrText(hr));
+  else
+    UWF_LOG_D("wmi") << "classExists: " << className << " present";
+  return true;
+}
+
 WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std::string& methodName, const WmiRow& inputs) const {
   WmiMethodResult result;
   UWF_LOG_D("wmi") << "callMethod start: " << methodName << " @ " << objectPath;
