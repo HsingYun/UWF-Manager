@@ -25,6 +25,7 @@ UWF is the supported successor to the older Enhanced Write Filter (EWF) and File
 - Registry exclusion list (system volume)
 - Persist overlay contents back to disk or registry (files, directories, file deletions, registry keys)
 - Read-only enumeration of overlay file entries
+- Import uwfmgr commands — paste or load a command script and stage each line as a pending change
 - System restart and shutdown
 - In-app log viewer
 - Stateless by design — the program keeps no state of its own: it writes no configuration files and no registry keys, and its internal log lives only in an in-memory ring buffer that is discarded when the process exits
@@ -40,9 +41,9 @@ UWF is the supported successor to the older Enhanced Write Filter (EWF) and File
 
 - Windows 10 / 11 Enterprise, Education, IoT Enterprise, or LTSC variants
 - "Unified Write Filter" Windows feature enabled
-- Administrator privileges
+- Administrator privileges — needed to apply changes
 
-These conditions are checked at startup; the program exits with a diagnostic if any is missing.
+Note: the program still starts when these conditions are not met.
 
 ## Build
 
