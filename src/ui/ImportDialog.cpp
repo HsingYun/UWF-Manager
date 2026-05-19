@@ -149,15 +149,16 @@ ImportDialog::ImportDialog(QWidget* parent) : QDialog(parent) {
   m_report->setEditTriggers(QAbstractItemView::NoEditTriggers);
   m_report->setSelectionBehavior(QAbstractItemView::SelectRows);
   m_report->setSelectionMode(QAbstractItemView::ExtendedSelection);
-  m_report->setWordWrap(true);
-  m_report->setTextElideMode(Qt::ElideNone);
+  // 命令、详情都不换行：显示不下即单行右侧截断为 "…"，完整内容由单元格
+  // tooltip 查看。# / Status 两列 ResizeToContents、内容短，恒能完整显示。
+  m_report->setWordWrap(false);
+  m_report->setTextElideMode(Qt::ElideRight);
   m_report->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
   m_report->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
   m_report->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive);
   m_report->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
-  // Interactive 列若不显式设宽，会用 header 默认 section 宽度（~100px），多数
-  // uwfmgr 命令因此被迫换行。给一个够宽的初值，用户仍可拖动；Detail（Stretch）
-  // 吸收剩余宽度。
+  // 命令列给一个够宽的初值（Interactive 默认 section 宽度太小），用户仍可
+  // 拖动；Detail（Stretch）吸收剩余宽度。
   m_report->setColumnWidth(2, 380);
   m_report->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   m_report->setMinimumHeight(160);
