@@ -236,12 +236,22 @@ bool WmiValue::toBool(bool def) const {
 }
 
 int32_t WmiValue::toInt(bool* ok, int32_t def) const {
-  int64_t v = toInt64(ok, def);
+  // toInt64 失败时返回的 def 必落在 int32 范围内，不会误入下面的越界分支；
+  // 此处只拦真正超出 int32 的值——避免静默截断且 ok 仍为 true。
+  const int64_t v = toInt64(ok, def);
+  if (v < INT32_MIN || v > INT32_MAX) {
+    if (ok) *ok = false;
+    return def;
+  }
   return static_cast<int32_t>(v);
 }
 
 uint32_t WmiValue::toUInt(bool* ok, uint32_t def) const {
-  uint64_t v = toULongLong(ok, def);
+  const uint64_t v = toULongLong(ok, def);
+  if (v > UINT32_MAX) {
+    if (ok) *ok = false;
+    return def;
+  }
   return static_cast<uint32_t>(v);
 }
 
