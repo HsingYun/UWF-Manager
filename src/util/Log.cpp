@@ -12,9 +12,19 @@ namespace {
 // 环形缓冲容量上限（字节）。10 MB 够覆盖一次长会话的诊断量，超过时
 // 从最旧的行开始丢弃。100B/行估算 → 大约 10 万行。
 constexpr size_t kCapBytes = 10 * 1024 * 1024;
-std::deque<std::string> g_buffer;
-size_t g_bufferBytes = 0;
-std::mutex g_mutex;
+
+// 环形缓冲、已用字节数与其锁，打包成"故意泄漏、永不析构"的进程级单例。
+// 后台 worker 线程可能在静态析构期（main 返回后）仍调 logLine——若此时
+// 这些对象已被析构即 UB。泄漏一份让 logLine 在任何时刻都安全。
+struct LogState {
+  std::deque<std::string> buffer;
+  size_t bufferBytes = 0;
+  std::mutex mutex;
+};
+LogState& state() {
+  static LogState* const s = new LogState;
+  return *s;
+}
 
 // 格式化为 "HH:MM:SS.mmm" 的时间戳。
 std::string timestamp() {
@@ -30,32 +40,35 @@ std::string timestamp() {
 }  // namespace
 
 void logLine(char level, const std::string& category, const std::string& message) {
-  // 锁纪律：g_mutex 仅在 deque 操作期间持有，且持锁期间不调用任何用户提供
-  // 的回调或可能再次取 g_mutex 的代码（包括 UWF_LOG_*）。这条规则保证
-  // logLine 之间不会自死锁，也不会与外部锁形成 g_mutex ↔ X 的循环。
-  // 维护时如果将来要在持锁期间调任何东西，必须先确认它不会回到这里。
+  // 锁纪律：缓冲锁仅在 deque 操作期间持有，且持锁期间不调用任何用户提供
+  // 的回调或可能再次取该锁的代码（包括 UWF_LOG_*）。这条规则保证 logLine
+  // 之间不会自死锁，也不会与外部锁形成循环。维护时如果将来要在持锁期间调
+  // 任何东西，必须先确认它不会回到这里。
   std::string line = std::format("[{} {} {}] {}", timestamp(), level, category, message);
 
-  std::lock_guard<std::mutex> lk(g_mutex);
-  g_bufferBytes += line.size();
-  g_buffer.push_back(std::move(line));
+  LogState& s = state();
+  std::lock_guard<std::mutex> lk(s.mutex);
+  s.bufferBytes += line.size();
+  s.buffer.push_back(std::move(line));
   // 单行长度可能超过整个上限（极端 case），所以保留至少一行避免 deque
   // 被清空又立刻 push 时反复抖动。
-  while (g_bufferBytes > kCapBytes && g_buffer.size() > 1) {
-    g_bufferBytes -= g_buffer.front().size();
-    g_buffer.pop_front();
+  while (s.bufferBytes > kCapBytes && s.buffer.size() > 1) {
+    s.bufferBytes -= s.buffer.front().size();
+    s.buffer.pop_front();
   }
 }
 
 std::vector<std::string> recentLogLines() {
-  std::lock_guard<std::mutex> lk(g_mutex);
-  return {g_buffer.begin(), g_buffer.end()};
+  LogState& s = state();
+  std::lock_guard<std::mutex> lk(s.mutex);
+  return {s.buffer.begin(), s.buffer.end()};
 }
 
 void clearLogLines() {
-  std::lock_guard<std::mutex> lk(g_mutex);
-  g_buffer.clear();
-  g_bufferBytes = 0;
+  LogState& s = state();
+  std::lock_guard<std::mutex> lk(s.mutex);
+  s.buffer.clear();
+  s.bufferBytes = 0;
 }
 
 }  // namespace uwf
