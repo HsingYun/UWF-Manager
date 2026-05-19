@@ -155,6 +155,10 @@ ImportDialog::ImportDialog(QWidget* parent) : QDialog(parent) {
   m_report->horizontalHeader()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
   m_report->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Interactive);
   m_report->horizontalHeader()->setSectionResizeMode(3, QHeaderView::Stretch);
+  // Interactive 列若不显式设宽，会用 header 默认 section 宽度（~100px），多数
+  // uwfmgr 命令因此被迫换行。给一个够宽的初值，用户仍可拖动；Detail（Stretch）
+  // 吸收剩余宽度。
+  m_report->setColumnWidth(2, 380);
   m_report->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
   m_report->setMinimumHeight(160);
   m_report->hide();
