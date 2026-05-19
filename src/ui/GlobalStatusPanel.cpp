@@ -530,9 +530,10 @@ bool GlobalStatusPanel::importOverlayType(core::OverlayType t) {
 
 bool GlobalStatusPanel::importOverlayMaxMb(uint32_t mb) {
   if (!m_available) return false;
-  // 临时放宽 range 让任意 MB 都能写入（约束链由 reconfigureRanges 在
-  // valueChanged / editingFinished 信号后重新收紧）；不然导入比当前 max
-  // 大的 size 会被 setValue 静默 clamp 到旧上限，看起来"导入成功了但值不对"。
+  // 临时放宽 range 让任意 MB 都能写入，不然导入比当前 max 大的 size 会被
+  // setValue 静默 clamp 到旧上限，看起来"导入成功了但值不对"。约束链不在这里
+  // 收紧——import* 用 setValue 只触发 valueChanged、不触发 editingFinished；
+  // 由 caller 在整批导入结束后调 finishImport() 统一收紧。
   if (uint32_t(m_maxNext->value()) == mb) return false;
   m_maxNext->setRange(0, 1024 * 1024);
   m_maxNext->setValue(static_cast<int>(std::min<uint32_t>(mb, INT_MAX)));
@@ -553,6 +554,15 @@ bool GlobalStatusPanel::importOverlayCritMb(uint32_t mb) {
   m_critNext->setRange(0, 1024 * 1024);
   m_critNext->setValue(static_cast<int>(std::min<uint32_t>(mb, INT_MAX)));
   return true;
+}
+
+void GlobalStatusPanel::finishImport() const {
+  if (!m_available) return;
+  // import* 用 setValue 写入，只触发 valueChanged、不触发 editingFinished，故
+  // 约束链不会自动收紧、range 仍停在导入时放宽的状态。这里收紧 range 并重建
+  // warn ≤ crit ≤ max，超限的现值由 setRange 当场钳回（钳值经 valueChanged
+  // 正常发出 pendingChanged）。
+  reconfigureRanges();
 }
 
 core::OverlayConfigDelta GlobalStatusPanel::pendingOverlay() const {

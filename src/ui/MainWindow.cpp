@@ -1184,6 +1184,12 @@ void MainWindow::showImport() {
       }
       out.append(r);
     }
+
+    // 导入命令逐条 setValue 写入，不触发 spinbox 的 editingFinished，约束链
+    // （warn ≤ crit ≤ max）不会自动收紧、range 也停在导入时放宽的状态。批量
+    // 导入结束补一次收紧，让面板回到自洽——否则之后任意一次无关交互触发
+    // reconfigureRanges 时会静默改写导入值。
+    if (m_global) m_global->finishImport();
     return out;
   });
 

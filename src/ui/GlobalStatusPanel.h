@@ -55,6 +55,12 @@ class GlobalStatusPanel : public QWidget {
   bool importOverlayWarnMb(uint32_t mb);
   bool importOverlayCritMb(uint32_t mb);
 
+  // 一批 import* 调用结束后调用。import* 用 setValue 写入，只触发 valueChanged、
+  // 不触发 editingFinished，约束链不会自动收紧、range 也停在导入时放宽的状态。
+  // 这里补跑一次 reconfigureRanges：收紧 range 并重建 warn ≤ crit ≤ max，让面板
+  // 回到自洽状态，避免之后任意一次无关交互触发收紧时静默改写导入值。
+  void finishImport() const;
+
  signals:
   void pendingChanged();
 
