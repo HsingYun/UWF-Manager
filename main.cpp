@@ -7,6 +7,7 @@
 #include "src/ui/MainWindow.h"
 #include "src/ui/ThemeManager.h"
 #include "src/util/Log.h"
+#include "src/util/PostGate.h"
 #include "src/uwf/SystemCheck.h"
 
 #include <windows.h>
@@ -122,5 +123,9 @@ int main(int argc, char* argv[]) {
   }
 
   w.show();
-  return app.exec();
+  const int rc = app.exec();
+  // 事件循环已退出、QApplication 即将析构——关闭"可投递"门闸，让仍在跑的
+  // 后台 worker 不再向 qApp 投递结果（见 src/util/PostGate.h）。
+  uwf::postgate::close();
+  return rc;
 }

@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "../util/Log.h"
+#include "../util/PostGate.h"
 #include "I18n.h"
 #include "TableText.h"
 
@@ -213,22 +214,26 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
       entries.reserve(raw.size());
       for (auto& line : raw) entries.push_back(parseLine(line));
 
-      QMetaObject::invokeMethod(
-          qApp,
-          [pager, gen, entries = std::move(entries), statusPtr, barPtr, renderPage, totalPages]() mutable {
-            if (pager->generation.load() != gen) return;
-            pager->entries = std::move(entries);
-            const int total = static_cast<int>(pager->entries.size());
-            const int pages = totalPages(total);
-            // 默认跳到最后一页（最新日志）。
-            pager->currentPage = pages > 0 ? pages - 1 : 0;
-            renderPage();
-            if (statusPtr) {
-              statusPtr->setText(total == 0 ? I18n::tr("0 lines") : I18n::tr("%1 lines").arg(total));
-            }
-            if (barPtr) barPtr->hide();
-          },
-          Qt::QueuedConnection);
+      // 经"可投递"门闸投回 UI 线程：app 已关停（main 调过 postgate::close）时
+      // runIfOpen 直接跳过，不会向已销毁的 qApp 投递。详见 src/util/PostGate.h。
+      uwf::postgate::runIfOpen([&]() {
+        QMetaObject::invokeMethod(
+            qApp,
+            [pager, gen, entries = std::move(entries), statusPtr, barPtr, renderPage, totalPages]() mutable {
+              if (pager->generation.load() != gen) return;
+              pager->entries = std::move(entries);
+              const int total = static_cast<int>(pager->entries.size());
+              const int pages = totalPages(total);
+              // 默认跳到最后一页（最新日志）。
+              pager->currentPage = pages > 0 ? pages - 1 : 0;
+              renderPage();
+              if (statusPtr) {
+                statusPtr->setText(total == 0 ? I18n::tr("0 lines") : I18n::tr("%1 lines").arg(total));
+              }
+              if (barPtr) barPtr->hide();
+            },
+            Qt::QueuedConnection);
+      });
     }).detach();
   };
 
