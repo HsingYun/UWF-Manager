@@ -73,7 +73,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
   // 未提权（实例 access-denied 但类存在）不会被误判。
   if (!s.classExists("UWF_Filter")) {
     snap.uwfAvailable = false;
-    snap.rawError = "UWF WMI classes are not registered (UWF_Filter not found in root\\standardcimv2\\embedded)";
+    snap.rawError = "UWF not registered";
     if (error) *error = snap.rawError;
     return snap;
   }
