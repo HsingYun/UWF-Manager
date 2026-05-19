@@ -23,11 +23,15 @@
 #include <QLabel>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QPainter>
 #include <QProgressDialog>
 #include <QPushButton>
 #include <QSet>
 #include <QShortcut>
 #include <QStatusBar>
+#include <QStyle>
+#include <QStyleOption>
+#include <QSvgRenderer>
 #include <QTabBar>
 #include <QTabWidget>
 #include <QTableWidgetItem>
@@ -67,6 +71,31 @@ namespace {
 using uwf::ui::dialogs::confirm;
 using uwf::ui::dialogs::information;
 using uwf::ui::dialogs::warning;
+
+// QToolBar 溢出时最右侧的扩展按钮（qt_toolbar_ext_button）：被 QSS 的
+// `QToolBar QToolButton` 规则命中后转由 QStyleSheetStyle 渲染，后者既不画
+// PE_IndicatorToolBarExtension 雪佛龙、又因该按钮自绘 paintEvent 而忽略 setIcon，
+// 于是只剩一个空白方块。QSS background-image 能补图标，但 SVG 被位图栅格化、
+// 高分屏放大后发糊。这里用事件过滤器接管它的 Paint：先用 PE_Widget 画出 QSS
+// 背景（保留 hover），再用 QSvgRenderer 矢量绘制雪佛龙——任意 DPI 都清晰。
+class ToolbarExtIcon : public QObject {
+ public:
+  using QObject::QObject;
+
+  bool eventFilter(QObject* obj, QEvent* ev) override {
+    if (ev->type() != QEvent::Paint) return QObject::eventFilter(obj, ev);
+    auto* w = qobject_cast<QWidget*>(obj);
+    if (!w) return false;
+    QPainter p(w);
+    QStyleOption opt;
+    opt.initFrom(w);
+    w->style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, w);  // QSS 背景（含 hover）
+    static QSvgRenderer svg{QStringLiteral(":/icons/arrow_right.svg")};
+    constexpr qreal kSide = 14.0;
+    svg.render(&p, QRectF((w->width() - kSide) / 2.0, (w->height() - kSide) / 2.0, kSide, kSide));
+    return true;  // 自己画完，吃掉默认那次空白绘制
+  }
+};
 
 // 批量 CommitFile 结果里单条文件的记录（非 Ok 才进这里）。
 struct CommitReportRow {
@@ -606,6 +635,12 @@ void MainWindow::buildUi() {
     tb->addWidget(rightPad);
   }
 
+  // 给工具栏溢出扩展按钮装上雪佛龙绘制器（见 ToolbarExtIcon 注释）。过滤器对象
+  // parent 设为按钮本身——rebuildUi 重建 toolbar 时随按钮一并回收。
+  if (auto* ext = tb->findChild<QToolButton*>(QStringLiteral("qt_toolbar_ext_button"))) {
+    ext->installEventFilter(new ToolbarExtIcon(ext));
+  }
+
   // 主题切换走和语言切换完全相同的入口：rebuildUi 整体重建 toolbar + 中央
   // widget。两套刷新走同一条路径，避免之前"主题切换只刷 icon、语言切换全
   // 重建"两套机制各自的几何跳变。代价跟语言切换一致——会丢 widget 状态里
@@ -899,6 +934,9 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
   // 同步 delete 会销毁正在执行回调的对象。
   for (const auto& t : m_diskTabs)
     if (t) t->deleteLater();
+  // 重建会把所有标签页摘掉、当前索引重置到第 0 个——记下刷新前选中卷的盘符
+  // （tabText 即盘符），重建后尽量切回，避免 refresh 把用户正看的 TAB 跳走。
+  const QString prevDriveLetter = m_tabs->currentIndex() >= 0 ? m_tabs->tabText(m_tabs->currentIndex()) : QString();
   m_tabs->clear();
   m_diskTabs.clear();
   const QString sysDl = systemDriveLetter();
@@ -923,6 +961,16 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
     connect(tab, &DiskTab::commitFileRequested, this, &MainWindow::commitFilePath);
     connect(tab, &DiskTab::commitFileDeletionRequested, this, &MainWindow::commitFileDeletionPath);
     connect(tab, &DiskTab::commitRegistryRequested, this, &MainWindow::commitRegistryKey);
+  }
+
+  // 切回刷新前选中的卷（按盘符匹配）。该卷若已不在（磁盘被移除）则保持默认第 0 个。
+  if (!prevDriveLetter.isEmpty()) {
+    for (int i = 0; i < m_tabs->count(); ++i) {
+      if (m_tabs->tabText(i) == prevDriveLetter) {
+        m_tabs->setCurrentIndex(i);
+        break;
+      }
+    }
   }
 }
 
@@ -1224,8 +1272,11 @@ void MainWindow::showAbout() {
   auto* version = new QLabel(&dlg);
   version->setTextFormat(Qt::RichText);
   version->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  version->setText(QStringLiteral("<span style=\"color:%1\">%2</span>")
-                       .arg(ThemeManager::instance().color(Sem::FgMuted).name(), I18n::tr("Version %1").arg(QString::fromLatin1(UWF_VER_STRING))));
+  // 应用版本后附运行时 Qt 版本，便于诊断。"powered by Qt …" 不进 tr——它是
+  // Qt 官方品牌标语、版本号也无需翻译，且避免改动既有翻译条目 "Version %1"。
+  const QString verText =
+      I18n::tr("Version %1").arg(QString::fromLatin1(UWF_VER_STRING)) + QStringLiteral(" · powered by Qt %1").arg(QString::fromLatin1(qVersion()));
+  version->setText(QStringLiteral("<span style=\"color:%1\">%2</span>").arg(ThemeManager::instance().color(Sem::FgMuted).name(), verText));
   layout->addWidget(version);
 
   auto* body = new QLabel(&dlg);
