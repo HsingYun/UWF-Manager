@@ -71,11 +71,6 @@ class UwfVolume {
   // 跨命名空间查 Win32_Volume 然后归一化的脏活。
   std::optional<api::VolumeRow> ensureNextSessionEntry(const std::string& driveLetter, std::string* error = nullptr) const;
 
-  // 删除指定的 UWF_Volume 实例（DeleteInstance）。一般在 unprotect 成功且
-  // 该卷没有任何文件排除时使用，把"已注册但什么都不做"的空 next session
-  // 实例从 UWF 数据库里清掉，避免 UWF_Volume 表里堆积无意义记录。
-  bool deleteRow(const api::VolumeRow& row, std::string* error = nullptr) const;
-
  private:
   WmiSession& m_session;
 };

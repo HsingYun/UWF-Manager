@@ -320,12 +320,4 @@ std::optional<api::VolumeRow> UwfVolume::ensureNextSessionEntry(const std::strin
   return row;
 }
 
-bool UwfVolume::deleteRow(const api::VolumeRow& row, std::string* error) const {
-  if (row.path.empty()) {
-    if (error) *error = "UWF_Volume row has empty __PATH; call readAll() first";
-    return false;
-  }
-  return m_session.deleteInstance(row.path, error);
-}
-
 }  // namespace uwf
