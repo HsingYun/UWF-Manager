@@ -44,10 +44,7 @@ QString lowerKey(const QString& s) { return s.toLower(); }
 // 必须走这两个 helper，否则路径大小写差异会导致状态不一致（"先删 C:\Foo
 // 再加 c:\foo" 之类）。
 bool setContainsCI(const QSet<QString>& set, const QString& key) {
-  for (const auto& s : set) {
-    if (QString::compare(s, key, Qt::CaseInsensitive) == 0) return true;
-  }
-  return false;
+  return std::ranges::any_of(set, [&](const QString& s) { return QString::compare(s, key, Qt::CaseInsensitive) == 0; });
 }
 
 void setRemoveCI(QSet<QString>& set, const QString& key) {
@@ -164,7 +161,7 @@ QString forbidRegExclusionReason(const QString& rawKey) {
 }
 
 void sortList(QStringList& list) {
-  std::sort(list.begin(), list.end(), [](const QString& a, const QString& b) { return a.compare(b, Qt::CaseInsensitive) < 0; });
+  std::ranges::sort(list, [](const QString& a, const QString& b) { return a.compare(b, Qt::CaseInsensitive) < 0; });
   list.removeDuplicates();
 }
 
@@ -213,8 +210,8 @@ QIcon composeWithBadge(const QIcon& base, Badge badge) {
     auto& tm = ThemeManager::instance();
     const QColor bg = badge == Badge::Add ? tm.color(Sem::AddOk) : tm.color(Sem::Danger);
     // 徽标直径 7px，右下角贴边；用浮点坐标保证 +/− 严格居中。
-    const qreal kBadge = 7.0;
-    const QRectF br(kLogical - kBadge, kLogical - kBadge, kBadge, kBadge);
+    constexpr qreal kBadge = 7.0;
+    constexpr QRectF br(kLogical - kBadge, kLogical - kBadge, kBadge, kBadge);
     p.setPen(Qt::NoPen);
     p.setBrush(bg);
     p.drawEllipse(br);
@@ -222,8 +219,8 @@ QIcon composeWithBadge(const QIcon& base, Badge badge) {
     QPen sym(Qt::white, 1.2);
     sym.setCapStyle(Qt::RoundCap);
     p.setPen(sym);
-    const qreal cx = br.center().x();
-    const qreal cy = br.center().y();
+    constexpr qreal cx = br.center().x();
+    constexpr qreal cy = br.center().y();
     constexpr qreal half = 1.7;
     p.drawLine(QPointF(cx - half, cy), QPointF(cx + half, cy));
     if (badge == Badge::Add) {

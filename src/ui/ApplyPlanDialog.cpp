@@ -383,7 +383,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       ts << QString::fromStdString(c.cmd) << '\n';
       ++written;
     }
-    if (written > 0 && std::any_of(m_snapshotCmds.begin(), m_snapshotCmds.end(), [](const auto& c) { return !c.cmd.empty(); })) {
+    if (written > 0 && std::ranges::any_of(m_snapshotCmds, [](const auto& c) { return !c.cmd.empty(); })) {
       ts << '\n';
     }
     for (const auto& c : m_snapshotCmds) {

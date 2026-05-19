@@ -15,14 +15,15 @@ namespace uwf {
 
 namespace {
 
-// UTF-16（wchar_t）→ UTF-8。len 为 -1 时要求 ws 以 NUL 结尾，
-// 此时输出尺寸 include 了 NUL，所以最后 resize 掉那一个字节。
-std::string wideToUtf8(const wchar_t* ws, const int len = -1) {
+// UTF-16（wchar_t）→ UTF-8。ws 必须以 NUL 结尾（cchWideChar=-1 让
+// WideCharToMultiByte 自己算长度）。返回的 size 含 NUL，故 string 按 size-1
+// 分配；末尾 NUL 由 WideCharToMultiByte 写进 string 自身的终止符槽位。
+std::string wideToUtf8(const wchar_t* ws) {
   if (!ws) return {};
-  const int size = WideCharToMultiByte(CP_UTF8, 0, ws, len, nullptr, 0, nullptr, nullptr);
+  const int size = WideCharToMultiByte(CP_UTF8, 0, ws, -1, nullptr, 0, nullptr, nullptr);
   if (size <= 0) return {};
-  std::string out(static_cast<size_t>(len == -1 ? size - 1 : size), '\0');
-  WideCharToMultiByte(CP_UTF8, 0, ws, len, out.data(), size, nullptr, nullptr);
+  std::string out(static_cast<size_t>(size - 1), '\0');
+  WideCharToMultiByte(CP_UTF8, 0, ws, -1, out.data(), size, nullptr, nullptr);
   return out;
 }
 

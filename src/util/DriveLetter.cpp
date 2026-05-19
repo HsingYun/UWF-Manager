@@ -59,7 +59,7 @@ std::string volumeNameFromGuidBody(const std::string& body) {
   const size_t brace = body.find('}');
   if (brace == std::string::npos) return {};
   if (brace + 1 >= body.size() || body[brace + 1] != '\\') return {};
-  return "\\\\?\\" + body.substr(0, brace + 2);  // 含结尾反斜杠
+  return R"(\\?\)" + body.substr(0, brace + 2);  // 含结尾反斜杠
 }
 
 // 用 Win32 把卷名 "\\?\Volume{GUID}\\" 解析成挂载的盘符（"C:" / "CC:"）。

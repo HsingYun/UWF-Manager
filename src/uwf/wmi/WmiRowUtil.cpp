@@ -78,7 +78,7 @@ std::string extractFromMof(const std::string& mof, const std::string& propName) 
 }
 
 std::string readExcludedKey(const WmiRow& r, const std::string& propName) {
-  const std::string direct = r.value(propName).toString();
+  std::string direct = r.value(propName).toString();
   if (!direct.empty()) return direct;
   const std::string mof = r.value("__MOF").toString();
   if (!mof.empty()) return extractFromMof(mof, propName);

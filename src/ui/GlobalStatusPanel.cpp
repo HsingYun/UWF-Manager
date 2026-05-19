@@ -73,8 +73,8 @@ class ClampingSpinBox : public QSpinBox {
 
 QComboBox* makeOverlayTypeCombo() {
   auto* c = new QComboBox();
-  c->addItem("RAM", int(OverlayType::RAM));
-  c->addItem("Disk", int(OverlayType::Disk));
+  c->addItem("RAM", static_cast<int>(OverlayType::RAM));
+  c->addItem("Disk", static_cast<int>(OverlayType::Disk));
   return c;
 }
 
@@ -368,7 +368,7 @@ void GlobalStatusPanel::reconfigureRanges() const {
   // setRange 会把超出新区间的 value 自动钳回边界：切到 Disk 时低于 1024 的
   // max 会被抬到 1024；max 下调时 crit 联动下压、crit 下调时 warn 跟着下压。
   // 超过上限的字符由 ClampingSpinBox::fixup() 在失焦/回车时吸到 maximum()。
-  const bool isRam = OverlayType(m_overlayTypeNext->currentData().toInt()) == OverlayType::RAM;
+  const bool isRam = static_cast<OverlayType>(m_overlayTypeNext->currentData().toInt()) == OverlayType::RAM;
   const int maxCeiling = (isRam && m_totalRamMb > 0) ? static_cast<int>(std::min<uint32_t>(m_totalRamMb, INT_MAX)) : INT_MAX;
   const int maxFloor = isRam ? 0 : static_cast<int>(core::kDiskOverlayMinSizeMb);
 
@@ -378,7 +378,7 @@ void GlobalStatusPanel::reconfigureRanges() const {
 }
 
 void GlobalStatusPanel::refreshTypeDependentUi() {
-  const bool isRam = OverlayType(m_overlayTypeNext->currentData().toInt()) == OverlayType::RAM;
+  const bool isRam = static_cast<OverlayType>(m_overlayTypeNext->currentData().toInt()) == OverlayType::RAM;
 
   if (m_maxLabel) {
     if (isRam && m_totalRamMb > 0) {
@@ -461,7 +461,7 @@ void GlobalStatusPanel::setData(const core::SessionSnapshot& cur, const core::Se
   }
 
   m_overlayTypeNext->blockSignals(true);
-  setComboValue(m_overlayTypeNext, int(nxt.overlay.type));
+  setComboValue(m_overlayTypeNext, static_cast<int>(nxt.overlay.type));
   m_overlayTypeNext->blockSignals(false);
 
   auto setNum = [](QSpinBox* ns, uint32_t nxtV) {
@@ -497,10 +497,10 @@ static void markDirty(QWidget* w, bool dirty) {
 
 void GlobalStatusPanel::updateDirtyStyle() {
   markDirty(m_filterNext, m_filterNext->isChecked() != m_baselineFilter.enabled);
-  markDirty(m_overlayTypeNext, OverlayType(m_overlayTypeNext->currentData().toInt()) != m_baselineOverlay.type);
-  markDirty(m_maxNext, uint32_t(m_maxNext->value()) != m_baselineOverlay.maximumSizeMb);
-  markDirty(m_warnNext, uint32_t(m_warnNext->value()) != m_baselineOverlay.warningThresholdMb);
-  markDirty(m_critNext, uint32_t(m_critNext->value()) != m_baselineOverlay.criticalThresholdMb);
+  markDirty(m_overlayTypeNext, static_cast<OverlayType>(m_overlayTypeNext->currentData().toInt()) != m_baselineOverlay.type);
+  markDirty(m_maxNext, static_cast<uint32_t>(m_maxNext->value()) != m_baselineOverlay.maximumSizeMb);
+  markDirty(m_warnNext, static_cast<uint32_t>(m_warnNext->value()) != m_baselineOverlay.warningThresholdMb);
+  markDirty(m_critNext, static_cast<uint32_t>(m_critNext->value()) != m_baselineOverlay.criticalThresholdMb);
 }
 
 void GlobalStatusPanel::emitIfChanged() {
@@ -523,8 +523,8 @@ bool GlobalStatusPanel::importFilterEnabled(bool v) {
 
 bool GlobalStatusPanel::importOverlayType(core::OverlayType t) {
   if (!m_available) return false;
-  if (OverlayType(m_overlayTypeNext->currentData().toInt()) == t) return false;
-  setComboValue(m_overlayTypeNext, int(t));
+  if (static_cast<OverlayType>(m_overlayTypeNext->currentData().toInt()) == t) return false;
+  setComboValue(m_overlayTypeNext, static_cast<int>(t));
   return true;
 }
 
@@ -534,7 +534,7 @@ bool GlobalStatusPanel::importOverlayMaxMb(uint32_t mb) {
   // setValue 静默 clamp 到旧上限，看起来"导入成功了但值不对"。约束链不在这里
   // 收紧——import* 用 setValue 只触发 valueChanged、不触发 editingFinished；
   // 由 caller 在整批导入结束后调 finishImport() 统一收紧。
-  if (uint32_t(m_maxNext->value()) == mb) return false;
+  if (static_cast<uint32_t>(m_maxNext->value()) == mb) return false;
   m_maxNext->setRange(0, 1024 * 1024);
   m_maxNext->setValue(static_cast<int>(std::min<uint32_t>(mb, INT_MAX)));
   return true;
@@ -542,7 +542,7 @@ bool GlobalStatusPanel::importOverlayMaxMb(uint32_t mb) {
 
 bool GlobalStatusPanel::importOverlayWarnMb(uint32_t mb) {
   if (!m_available) return false;
-  if (uint32_t(m_warnNext->value()) == mb) return false;
+  if (static_cast<uint32_t>(m_warnNext->value()) == mb) return false;
   m_warnNext->setRange(0, 1024 * 1024);
   m_warnNext->setValue(static_cast<int>(std::min<uint32_t>(mb, INT_MAX)));
   return true;
@@ -550,7 +550,7 @@ bool GlobalStatusPanel::importOverlayWarnMb(uint32_t mb) {
 
 bool GlobalStatusPanel::importOverlayCritMb(uint32_t mb) {
   if (!m_available) return false;
-  if (uint32_t(m_critNext->value()) == mb) return false;
+  if (static_cast<uint32_t>(m_critNext->value()) == mb) return false;
   m_critNext->setRange(0, 1024 * 1024);
   m_critNext->setValue(static_cast<int>(std::min<uint32_t>(mb, INT_MAX)));
   return true;
@@ -569,11 +569,11 @@ core::OverlayConfigDelta GlobalStatusPanel::pendingOverlay() const {
   core::OverlayConfigDelta d;
   if (!m_available) return d;
   const auto& b = m_baselineOverlay;
-  const auto t = OverlayType(m_overlayTypeNext->currentData().toInt());
+  const auto t = static_cast<OverlayType>(m_overlayTypeNext->currentData().toInt());
   if (t != b.type) d.type = t;
-  if (uint32_t(m_maxNext->value()) != b.maximumSizeMb) d.maximumSizeMb = uint32_t(m_maxNext->value());
-  if (uint32_t(m_warnNext->value()) != b.warningThresholdMb) d.warningThresholdMb = uint32_t(m_warnNext->value());
-  if (uint32_t(m_critNext->value()) != b.criticalThresholdMb) d.criticalThresholdMb = uint32_t(m_critNext->value());
+  if (static_cast<uint32_t>(m_maxNext->value()) != b.maximumSizeMb) d.maximumSizeMb = static_cast<uint32_t>(m_maxNext->value());
+  if (static_cast<uint32_t>(m_warnNext->value()) != b.warningThresholdMb) d.warningThresholdMb = static_cast<uint32_t>(m_warnNext->value());
+  if (static_cast<uint32_t>(m_critNext->value()) != b.criticalThresholdMb) d.criticalThresholdMb = static_cast<uint32_t>(m_critNext->value());
   return d;
 }
 

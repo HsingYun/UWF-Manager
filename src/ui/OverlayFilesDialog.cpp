@@ -1,12 +1,16 @@
 #include "OverlayFilesDialog.h"
 
+#include <combaseapi.h>
+#include <shlobj.h>
+#include <windows.h>
+
 #include <QApplication>
 #include <QDateTime>
 #include <QDir>
 #include <QFileDialog>
 #include <QFileInfo>
-#include <QHash>
 #include <QHBoxLayout>
+#include <QHash>
 #include <QLabel>
 #include <QListWidgetItem>
 #include <QMenu>
@@ -20,10 +24,6 @@
 #include <algorithm>
 #include <thread>
 #include <utility>
-
-#include <combaseapi.h>
-#include <shlobj.h>
-#include <windows.h>
 
 #include "../util/DriveLetter.h"
 #include "../uwf/api/UwfOverlay.h"
@@ -274,8 +274,8 @@ void OverlayFilesDialog::onLoadFinished(QVector<OverlayFileEntry> entries, const
 
   // 路径按字典序排，方便用户定位；同时 size 信息显示到右侧——用
   // QListWidget 的单字段 text，空格对齐够用了。
-  std::sort(entries.begin(), entries.end(),
-            [](const OverlayFileEntry& a, const OverlayFileEntry& b) { return a.absolutePath.compare(b.absolutePath, Qt::CaseInsensitive) < 0; });
+  std::ranges::sort(entries,
+                    [](const OverlayFileEntry& a, const OverlayFileEntry& b) { return a.absolutePath.compare(b.absolutePath, Qt::CaseInsensitive) < 0; });
 
   m_summary->setText(I18n::tr("%1 file(s) in overlay").arg(entries.size()));
 
@@ -308,7 +308,7 @@ void OverlayFilesDialog::onContextMenu(const QPoint& pos) {
   QMenu menu(this);
 
   auto* openAct = menu.addAction(tm.icon(":/icons/folder.svg"), I18n::tr("Open containing folder"));
-  connect(openAct, &QAction::triggered, this, [this, abs]() { openContainingFolder(abs); });
+  connect(openAct, &QAction::triggered, this, [abs]() { openContainingFolder(abs); });
 
   // 系统元数据（basename 以 '$' 起头：$Secure / $130 / $RECYCLE.BIN 之类）
   // 直接不出 commit 项——CommitFile 对它们必然返回 NOT_FOUND，菜单出来只是
@@ -367,8 +367,8 @@ void OverlayFilesDialog::onExportClicked() {
   const QString stamp = QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss");
   const QString suggested = QString("overlay-files-%1-%2.txt").arg(letter, stamp);
 
-  const QString path = QFileDialog::getSaveFileName(this, I18n::tr("Export overlay file list"), QDir::home().filePath(suggested),
-                                                    I18n::tr("Text files (*.txt);;All files (*)"));
+  const QString path =
+      QFileDialog::getSaveFileName(this, I18n::tr("Export overlay file list"), QDir::home().filePath(suggested), I18n::tr("Text files (*.txt);;All files (*)"));
   if (path.isEmpty()) return;
 
   // 用 QSaveFile：先写到临时文件，commit 时原子改名替换目标，避免半截写入
@@ -401,8 +401,7 @@ void OverlayFilesDialog::onExportClicked() {
     return;
   }
 
-  dialogs::information(this, I18n::tr("Export finished"),
-                       I18n::tr("Saved %1 entries to:\n%2").arg(m_entries.size()).arg(QDir::toNativeSeparators(path)));
+  dialogs::information(this, I18n::tr("Export finished"), I18n::tr("Saved %1 entries to:\n%2").arg(m_entries.size()).arg(QDir::toNativeSeparators(path)));
 }
 
 }  // namespace uwf::ui

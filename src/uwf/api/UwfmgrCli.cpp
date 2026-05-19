@@ -138,9 +138,9 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
       }
       const auto t = toLowerAscii(tokens[2]);
       if (t == "ram") {
-        out.args.push_back("RAM");
+        out.args.emplace_back("RAM");
       } else if (t == "disk") {
-        out.args.push_back("Disk");
+        out.args.emplace_back("Disk");
       } else {
         out.parseError = ParseError::UnknownType;
         out.parseErrorContext = tokens[2];

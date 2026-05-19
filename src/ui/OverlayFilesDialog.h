@@ -59,7 +59,8 @@ class OverlayFilesDialog : public QDialog {
   // hresult 0 表示成功；非 0 时按命名常量分支处理（RPC_E_SERVERFAULT
   // / WBEM_E_OUT_OF_MEMORY / WBEM_E_NOT_SUPPORTED 等）。
   void onLoadFinished(QVector<OverlayFileEntry> entries, const QString& error, int32_t hresult);
-  void openContainingFolder(const QString& absolutePath);
+  // absolutePath 已是规范化绝对路径，不依赖任何实例状态，故为 static。
+  static void openContainingFolder(const QString& absolutePath);
 
   QString m_driveLetter;  // 形如 "C:"
   QListWidget* m_list = nullptr;

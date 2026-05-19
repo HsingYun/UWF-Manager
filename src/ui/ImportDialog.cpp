@@ -16,7 +16,6 @@
 #include <QTextStream>
 #include <QVBoxLayout>
 
-
 #include "I18n.h"
 #include "MessageDialog.h"
 #include "ThemeManager.h"
@@ -67,8 +66,7 @@ void appendUwfmgrLinesFromFile(QPlainTextEdit* target, const QString& path) {
     return;
   }
   if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    dialogs::warning(target, I18n::tr("Cannot read file"),
-                     I18n::tr("Could not open file %1: %2").arg(QFileInfo(path).fileName(), f.errorString()));
+    dialogs::warning(target, I18n::tr("Cannot read file"), I18n::tr("Could not open file %1: %2").arg(QFileInfo(path).fileName(), f.errorString()));
     return;
   }
   QTextStream ts(&f);
@@ -103,7 +101,6 @@ void appendUwfmgrLinesFromFile(QPlainTextEdit* target, const QString& path) {
 
 }  // namespace
 
-
 ImportDialog::ImportDialog(QWidget* parent) : QDialog(parent) {
   setWindowTitle(I18n::tr("Import uwfmgr commands"));
   resize(820, 600);
@@ -113,23 +110,23 @@ ImportDialog::ImportDialog(QWidget* parent) : QDialog(parent) {
   auto* desc = new QLabel(this);
   desc->setWordWrap(true);
   desc->setTextFormat(Qt::RichText);
-  desc->setText(I18n::tr(
-      "<p>Paste or type <b>uwfmgr</b> commands below; one command per line. "
-      "Supported categories: <code>filter</code> · <code>overlay</code> · <code>volume</code> · <code>file</code> · <code>registry</code>.</p>"
-      "<p>Use <b>Load from file…</b> to pick any text-like file (logs, scripts, .txt, .bat, .ps1); "
-      "lines containing <code>uwfmgr</code> will be appended to the box.</p>"
-      "<p>Clicking <b>Import</b> turns each command into a pending UI change — <b>nothing is written to the system yet</b>. "
-      "Use <b>Review and apply</b> in the toolbar to commit them.</p>"));
+  desc->setText(
+      I18n::tr("<p>Paste or type <b>uwfmgr</b> commands below; one command per line. "
+               "Supported categories: <code>filter</code> · <code>overlay</code> · <code>volume</code> · <code>file</code> · <code>registry</code>.</p>"
+               "<p>Use <b>Load from file…</b> to pick any text-like file (logs, scripts, .txt, .bat, .ps1); "
+               "lines containing <code>uwfmgr</code> will be appended to the box.</p>"
+               "<p>Clicking <b>Import</b> turns each command into a pending UI change — <b>nothing is written to the system yet</b>. "
+               "Use <b>Review and apply</b> in the toolbar to commit them.</p>"));
   layout->addWidget(desc);
 
   m_text = new QPlainTextEdit(this);
   m_text->setObjectName("importTextEdit");
-  m_text->setPlaceholderText(I18n::tr(
-      "uwfmgr filter enable\n"
-      "uwfmgr overlay set-type RAM\n"
-      "uwfmgr volume protect C:\n"
-      "uwfmgr file add-exclusion \"C:\\Users\\foo\\bar.txt\"\n"
-      "uwfmgr registry add-exclusion HKLM\\Software\\MyApp"));
+  m_text->setPlaceholderText(
+      I18n::tr("uwfmgr filter enable\n"
+               "uwfmgr overlay set-type RAM\n"
+               "uwfmgr volume protect C:\n"
+               "uwfmgr file add-exclusion \"C:\\Users\\foo\\bar.txt\"\n"
+               "uwfmgr registry add-exclusion HKLM\\Software\\MyApp"));
   // 等宽字体：路径 / 注册表键里有大量 \ 和空格，等宽下行对齐更直观。
   QFont mono = m_text->font();
   mono.setFamily(QStringLiteral("Consolas, Cascadia Mono, monospace"));
@@ -220,10 +217,18 @@ void ImportDialog::appendReport(const QList<ImportReportRow>& rows) {
   ++m_batchNo;
   for (const auto& r : rows) {
     switch (r.status) {
-      case ImportReportRow::Status::Success: ++m_totalSuccess; break;
-      case ImportReportRow::Status::Duplicate: ++m_totalDuplicate; break;
-      case ImportReportRow::Status::Failed: ++m_totalFailed; break;
-      case ImportReportRow::Status::Unsupported: ++m_totalUnsupported; break;
+      case ImportReportRow::Status::Success:
+        ++m_totalSuccess;
+        break;
+      case ImportReportRow::Status::Duplicate:
+        ++m_totalDuplicate;
+        break;
+      case ImportReportRow::Status::Failed:
+        ++m_totalFailed;
+        break;
+      case ImportReportRow::Status::Unsupported:
+        ++m_totalUnsupported;
+        break;
     }
   }
 
@@ -232,11 +237,9 @@ void ImportDialog::appendReport(const QList<ImportReportRow>& rows) {
   // summary 直接展示累计数字——用户关心的是"到目前为止整轮导入成果"。
   m_summary->setText(QStringLiteral("<b>%1</b> &nbsp; <span style='color:%2'>%3</span>  ·  <span style='color:%4'>%5</span>  ·  "
                                     "<span style='color:%6'>%7</span>  ·  %8")
-                         .arg(I18n::tr("Cumulative after %1 batch(es):").arg(m_batchNo),
-                              tm.color(Sem::AddOk).name(), I18n::tr("Applied: %1").arg(m_totalSuccess),
-                              tm.color(Sem::FgMuted).name(), I18n::tr("Duplicates: %1").arg(m_totalDuplicate),
-                              tm.color(Sem::Danger).name(), I18n::tr("Failed: %1").arg(m_totalFailed),
-                              I18n::tr("Unsupported: %1").arg(m_totalUnsupported)));
+                         .arg(I18n::tr("Cumulative after %1 batch(es):").arg(m_batchNo), tm.color(Sem::AddOk).name(),
+                              I18n::tr("Applied: %1").arg(m_totalSuccess), tm.color(Sem::FgMuted).name(), I18n::tr("Duplicates: %1").arg(m_totalDuplicate),
+                              tm.color(Sem::Danger).name(), I18n::tr("Failed: %1").arg(m_totalFailed), I18n::tr("Unsupported: %1").arg(m_totalUnsupported)));
   m_summary->show();
 
   m_report->setSortingEnabled(false);

@@ -1,5 +1,7 @@
 #include "ThemeManager.h"
 
+#include <windows.h>
+
 #include <QApplication>
 #include <QByteArray>
 #include <QFile>
@@ -9,7 +11,6 @@
 #include <QPixmap>
 #include <QStyleHints>
 #include <QSvgRenderer>
-#include <windows.h>
 
 namespace uwf::ui {
 
@@ -190,7 +191,7 @@ QIcon ThemeManager::icon(const QString& resourcePath, const QSize&) const {
 
 QIcon ThemeManager::iconWithColor(const QString& resourcePath, const QColor& fg, const QSize&) {
   QFile f(resourcePath);
-  if (!f.open(QIODevice::ReadOnly)) return QIcon();
+  if (!f.open(QIODevice::ReadOnly)) return {};
   QString text = QString::fromUtf8(f.readAll());
   text.replace("#E8EAED", fg.name(QColor::HexRgb), Qt::CaseInsensitive);
 
