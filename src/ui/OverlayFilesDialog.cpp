@@ -22,6 +22,7 @@
 #include <QTextStream>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <mutex>
 #include <thread>
 #include <utility>
 
@@ -156,17 +157,37 @@ OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, QWidget* pare
   startLoading();
 }
 
+OverlayFilesDialog::~OverlayFilesDialog() {
+  // 对话框关闭即取消 worker 仍阻塞着的那次同步 WMI 调用：CoCancelCall 让
+  // ExecMethod 立刻以 RPC_E_CALL_CANCELED 返回，worker 随即收尾，下面的 join
+  // 因而瞬间完成（否则 GetOverlayFiles 可能要跑小时级）。join 保证 worker 不会
+  // 比本对话框（及 qApp / Log 全局）活得久。
+  {
+    std::lock_guard<std::mutex> lk(m_cancelMutex);
+    if (m_workerThreadId != 0) CoCancelCall(m_workerThreadId, 0);
+  }
+  if (m_worker.joinable()) m_worker.join();
+}
+
 void OverlayFilesDialog::startLoading() {
   // worker 线程：自己 CoInitializeEx(MTA) + 起独立 WmiSession（initComOnce
-  // 用 std::call_once 全局只跑一次，所以 worker 线程进不去那段，必须自己
-  // 把 COM 拉起来）。结果用 QMetaObject::invokeMethod 投回 UI 线程，
-  // QPointer 兜底——用户可能在加载完成前关掉 dialog。
+  // 用 std::call_once 全局只跑一次，worker 线程进不去那段，必须自己拉起 COM）。
+  // GetOverlayFiles 可能跑很久（大 overlay 下小时级），所以 worker 启用 COM
+  // 调用取消并发布自己的线程 ID；对话框关闭时析构函数 CoCancelCall 该线程，
+  // 阻塞中的 ExecMethod 立刻返回。结果用 QMetaObject::invokeMethod 投回 UI
+  // 线程——worker 由析构函数 join、不会比对话框活得久，self QPointer 仅用于
+  // 守护延迟派发的那个回调。
   QPointer<OverlayFilesDialog> self(this);
   const std::string dl = m_driveLetter.toStdString();
 
-  std::thread([self, dl]() {
-    HRESULT comHr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+  m_worker = std::thread([this, self, dl]() {
+    const HRESULT comHr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     const bool ownsCom = SUCCEEDED(comHr);
+    CoEnableCallCancellation(nullptr);  // 本线程的同步 COM 调用可被 CoCancelCall 取消
+    {
+      std::lock_guard<std::mutex> lk(m_cancelMutex);
+      m_workerThreadId = GetCurrentThreadId();
+    }
 
     QString errorOut;
     int32_t errorHr = 0;
@@ -201,6 +222,11 @@ void OverlayFilesDialog::startLoading() {
       }
     } while (false);
 
+    // 清掉线程 ID：此后析构函数即便取得锁，也不会再去 CoCancelCall 一个已结束的调用。
+    {
+      std::lock_guard<std::mutex> lk(m_cancelMutex);
+      m_workerThreadId = 0;
+    }
     if (ownsCom) CoUninitialize();
 
     // self 是 QPointer——dialog 已被销毁则 lambda 内 self 为 null，直接 no-op。
@@ -211,7 +237,7 @@ void OverlayFilesDialog::startLoading() {
           self->onLoadFinished(std::move(entries), errorOut, errorHr);
         },
         Qt::QueuedConnection);
-  }).detach();
+  });
 }
 
 void OverlayFilesDialog::onLoadFinished(QVector<OverlayFileEntry> entries, const QString& error, int32_t hresult) {

@@ -4,6 +4,8 @@
 #include <QString>
 #include <QVector>
 #include <cstdint>
+#include <mutex>
+#include <thread>
 
 class QLabel;
 class QListWidget;
@@ -42,6 +44,7 @@ class OverlayFilesDialog : public QDialog {
   Q_OBJECT
  public:
   explicit OverlayFilesDialog(const QString& driveLetter, QWidget* parent = nullptr);
+  ~OverlayFilesDialog() override;
 
  signals:
   // 用户在右键菜单点击"提交文件/文件夹改动到磁盘…"时发出，绝对路径（带盘符）。
@@ -71,6 +74,12 @@ class OverlayFilesDialog : public QDialog {
   // 加载完成后的条目副本（已规范化 + 排序），导出按钮直接读这个，避免再
   // 走一遍 list widget 还原。
   QVector<OverlayFileEntry> m_entries;
+
+  // 后台加载 worker。GetOverlayFiles 可能跑到小时级——worker 启用 COM 调用
+  // 取消，析构时对 m_workerThreadId 调 CoCancelCall 解阻塞，再 join（瞬间完成）。
+  std::thread m_worker;
+  std::mutex m_cancelMutex;            // 保护 m_workerThreadId
+  unsigned long m_workerThreadId = 0;  // worker 线程 ID（DWORD）；0 = 未运行 / 已结束
 };
 
 }  // namespace uwf::ui
