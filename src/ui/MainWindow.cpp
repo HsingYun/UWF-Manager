@@ -72,6 +72,25 @@ using uwf::ui::dialogs::confirm;
 using uwf::ui::dialogs::information;
 using uwf::ui::dialogs::warning;
 
+// 在作用域内暂停一个 QTimer，离开作用域时恢复（仅当它原本就在运行）。给 commit
+// 这类内部会 processEvents 的操作用——防止占用刷新定时器在 WMI 写入半途触发、
+// 对同一个 m_writeSession 发起重入调用（窗口模态拦不住 QTimer 超时）。
+class ScopedTimerPause {
+ public:
+  explicit ScopedTimerPause(QTimer* timer) : m_timer(timer), m_wasActive(timer && timer->isActive()) {
+    if (m_wasActive) m_timer->stop();
+  }
+  ~ScopedTimerPause() {
+    if (m_wasActive && m_timer) m_timer->start();
+  }
+  ScopedTimerPause(const ScopedTimerPause&) = delete;
+  ScopedTimerPause& operator=(const ScopedTimerPause&) = delete;
+
+ private:
+  QTimer* m_timer;
+  bool m_wasActive;
+};
+
 // QToolBar 溢出时最右侧的扩展按钮（qt_toolbar_ext_button）：被 QSS 的
 // `QToolBar QToolButton` 规则命中后转由 QStyleSheetStyle 渲染，后者既不画
 // PE_IndicatorToolBarExtension 雪佛龙、又因该按钮自绘 paintEvent 而忽略 setIcon，
@@ -1350,6 +1369,11 @@ void MainWindow::safeRestart() {
 
 void MainWindow::commitFilePath(const QString& path) {
   if (path.isEmpty()) return;
+
+  // 多文件 commit 的 QProgressDialog::setValue 会 processEvents；占用刷新定时器
+  // 不受窗口模态约束，可能在 commit 半途触发、对同一个 m_writeSession 发起重入
+  // WMI 调用。整段 commit 暂停该定时器，离开作用域自动恢复。
+  const ScopedTimerPause usagePause(m_usageTimer);
 
   // 从路径解析盘符，定位到对应的 next-session VolumeRow。
   const QString dl = extractDriveLetter(path);

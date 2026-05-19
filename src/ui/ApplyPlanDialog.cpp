@@ -399,13 +399,17 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   });
 
   connect(box, &QDialogButtonBox::rejected, this, &QDialog::reject);
-  connect(commitBtn, &QPushButton::clicked, this, [this, text, formatBlockPlain, joinLines]() {
+  connect(commitBtn, &QPushButton::clicked, this, [this, text, commitBtn, formatBlockPlain, joinLines]() {
     // 真实写入前再弹一次二次确认，避免误点。
     const QString warn2 = ThemeManager::instance().color(Sem::Warn).name();
     if (!confirm(this, I18n::tr("Confirm apply"),
                  I18n::tr("These changes will be <span style='color:%1'>written to the system</span>; most take effect after the next reboot.<br><br>Continue?")
                      .arg(warn2)))
       return;
+    // 一个对话框只应用一次：确认后立即禁用 Apply。applied() 会触发宿主 refresh
+    // 重新读快照并改写 m_snapshot（本对话框按引用持有它）；若不禁用，用户再点
+    // 一次会把同一批 m_changes 对着已刷新的快照重放。
+    commitBtn->setEnabled(false);
     std::vector<std::string> outcome;
 
     // 每一步单独收集错误，不因单点失败终止其它写入。

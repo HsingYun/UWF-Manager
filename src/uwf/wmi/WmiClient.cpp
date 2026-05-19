@@ -453,7 +453,14 @@ std::vector<WmiRow> WmiSession::query(const std::string& wql, std::string* error
     IWbemClassObject* obj = nullptr;
     ULONG got = 0;
     hr = enumerator->Next(static_cast<LONG>(WBEM_INFINITE), 1, &obj, &got);
-    if (FAILED(hr) || got == 0 || !obj) break;
+    if (FAILED(hr)) {
+      // 枚举中途失败：rows 里已收集的是不完整结果。记日志并经 error 上报，
+      // 避免截断的结果被调用方当成完整结果（少几行而毫无征兆）。
+      if (error) *error = std::format("enumeration failed after {} row(s): {}", rows.size(), hrText(hr));
+      UWF_LOG_E("wmi") << std::format("query: Next failed after {} row(s); wql={}; {}", rows.size(), wql, hrText(hr));
+      break;
+    }
+    if (got == 0 || !obj) break;  // 正常枚举到底
     rows.push_back(readObjectProps(obj));
     obj->Release();
   }
