@@ -12,6 +12,9 @@ namespace uwf::ui {
 
 namespace {
 constexpr int kBarH = 20;
+// 已用内存非 0 但极小时，给"已占用"色块一个最小可见宽度兜底，按横条全长的
+// 比例换算。实际生效宽度还会被 warning/critical/max 的 50% 封顶（见 paintEvent）。
+constexpr double kMinUsedHintFrac = 0.02;
 }  // namespace
 
 OverlayUsageBar::OverlayUsageBar(QWidget* parent) : QWidget(parent) {
@@ -113,9 +116,17 @@ void OverlayUsageBar::paintEvent(QPaintEvent*) {
   if (m_warning > 0) {
     p.fillRect(QRectF(bar.left(), bar.top(), widthFor(m_warning), bar.height()), cWarn);
   }
-  // 6) 已占用从左填充（蓝）
+  // 6) 已占用从左填充（蓝）。已用内存非 0 但极小时 widthFor 可能不足 1px、
+  //    肉眼不可见——抬到一个最小可见宽度兜底。但这点视觉提示必须"合理"：
+  //    上限取 warning / critical / max 各自宽度的 50%，避免兜底把蓝块撑到
+  //    看起来像占用已逼近某条阈值。自然宽度若本就更大则照旧，不受兜底影响。
   if (m_current > 0) {
-    p.fillRect(QRectF(bar.left(), bar.top(), widthFor(m_current), bar.height()), cUsed);
+    qreal hintW = bar.width() * kMinUsedHintFrac;
+    if (m_warning > 0) hintW = std::min(hintW, widthFor(m_warning) * 0.5);
+    if (m_critical > 0) hintW = std::min(hintW, widthFor(m_critical) * 0.5);
+    if (m_max > 0) hintW = std::min(hintW, widthFor(m_max) * 0.5);
+    const qreal usedW = std::max(widthFor(m_current), hintW);
+    p.fillRect(QRectF(bar.left(), bar.top(), usedW, bar.height()), cUsed);
   }
 }
 
