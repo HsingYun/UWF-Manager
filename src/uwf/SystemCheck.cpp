@@ -80,17 +80,22 @@ bool editionSupported(const std::string& editionId) {
 }  // namespace
 
 bool isElevated() {
-  BOOL elevated = FALSE;
-  HANDLE token = nullptr;
-  if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
-    TOKEN_ELEVATION elevation{};
-    DWORD size = 0;
-    if (GetTokenInformation(token, TokenElevation, &elevation, sizeof(elevation), &size)) {
-      elevated = elevation.TokenIsElevated ? TRUE : FALSE;
+  // 进程的提权级别在创建时即固定——UAC 提权是另起新进程，运行中的进程无法
+  // 就地改变自身主令牌的提权状态。故查一次缓存即可，无需每次重新查令牌。
+  static const bool cached = [] {
+    BOOL elevated = FALSE;
+    HANDLE token = nullptr;
+    if (OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &token)) {
+      TOKEN_ELEVATION elevation{};
+      DWORD size = 0;
+      if (GetTokenInformation(token, TokenElevation, &elevation, sizeof(elevation), &size)) {
+        elevated = elevation.TokenIsElevated ? TRUE : FALSE;
+      }
+      CloseHandle(token);
     }
-    CloseHandle(token);
-  }
-  return elevated == TRUE;
+    return elevated == TRUE;
+  }();
+  return cached;
 }
 
 std::string uwfmgrPath() {
