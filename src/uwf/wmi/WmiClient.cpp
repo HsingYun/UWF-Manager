@@ -462,10 +462,17 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
     return result;
   }
 
-  // 从 objectPath 推导类名：可能是 "UWF_Xxx" 或
-  // "\\\\host\\root\\...:UWF_Xxx.Key=Value,..."。取 ':' 之后、'.' 之前。
+  // 从 objectPath 推导类名。实际到达 callMethod 的 objectPath 只有两种（见各 api 调用方）：
+  //   完整 __PATH  "\\\\host\\root\\...:UWF_Xxx.Key=Val,..." —— read()/readAll() 存的 __PATH
+  //   相对路径     "UWF_Xxx.Key=Val,DriveLetter=\"C:\",..."   —— ensureNextSessionEntry 构造
+  // （header 契约还允许裸类名 "UWF_Xxx" 调 static 方法，当前无调用方走此路；下面逻辑也兼容。）
+  // 只有完整 __PATH（以 "\\" 开头）带 "\\host\\ns:" 前缀，需按命名空间分隔符 ':' 剥掉；
+  // 相对路径不能按 ':' 切——键值里可能含 ':'（如 DriveLetter="C:"），否则类名会被截断成
+  // 垃圾导致 GetObject 失败。剥掉前缀后 '.' 永远是类名与键的分隔符。
   std::string className = objectPath;
-  if (const auto colon = className.find(':'); colon != std::string::npos) className = className.substr(colon + 1);
+  if (className.starts_with("\\\\")) {
+    if (const auto colon = className.find(':'); colon != std::string::npos) className = className.substr(colon + 1);
+  }
   if (const auto dot = className.find('.'); dot != std::string::npos) className.resize(dot);
 
   // GetObject 拿到类 blueprint，用于 GetMethod + SpawnInstance(in-params)。

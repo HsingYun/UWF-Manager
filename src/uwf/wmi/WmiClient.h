@@ -103,6 +103,7 @@ class WmiSession {
   // 调用对象方法。objectPath 可以是：
   //   - 类名（单例或 static 方法）
   //   - 实例的 __PATH（推荐；精确定位一行）
+  //   - 相对路径 "Class.Key=Val,..."（不带命名空间，如 ensureNextSessionEntry 构造的）
   // inputs 中的 WmiValue 会根据 kind 转成对应 VARIANT 写入 in-params。
   [[nodiscard]] WmiMethodResult callMethod(const std::string& objectPath, const std::string& methodName, const WmiRow& inputs = {}) const;
 
