@@ -2,9 +2,11 @@
 
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QFontMetrics>
 #include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
+#include <algorithm>
 
 #include "I18n.h"
 
@@ -23,8 +25,6 @@ struct DialogParts {
 DialogParts build(QWidget* parent, const QString& title, const QString& text) {
   auto* dlg = new QDialog(parent);
   dlg->setWindowTitle(title);
-  // 不固定宽度让 layout 自适应内容；最低宽度避免出现一行很窄的纯文字弹窗。
-  dlg->setMinimumWidth(360);
 
   auto* layout = new QVBoxLayout(dlg);
   layout->setContentsMargins(20, 16, 20, 12);
@@ -36,6 +36,15 @@ DialogParts build(QWidget* parent, const QString& title, const QString& text) {
   body->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
   body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   layout->addWidget(body, 1);
+
+  // 对话框宽度跟随内容：按最宽一行（整行不折所需的宽度）定下限，夹在
+  // [360, 760]。够宽时 wordWrap 自然不折——长注册表路径之类的单行内容因而
+  // 完整显示；只有极长文本才会折到 760 上限，避免对话框宽到溢出屏幕。
+  const QFontMetrics fm(body->fontMetrics());
+  int widest = 0;
+  for (const auto& line : text.split('\n')) widest = std::max(widest, fm.horizontalAdvance(line));
+  const auto margins = layout->contentsMargins();
+  dlg->setMinimumWidth(std::clamp(widest + margins.left() + margins.right(), 360, 760));
 
   auto* btns = new QDialogButtonBox(dlg);
   layout->addWidget(btns);
