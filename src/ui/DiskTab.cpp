@@ -351,20 +351,21 @@ std::optional<std::pair<QString, QString>> DiskTab::promptRegistryTarget(const Q
 }
 
 void DiskTab::onCommitRegistry() {
-  // CommitRegistry 是单值操作——不会带上同键的其它值，更不会递归子键。
-  const auto target = promptRegistryTarget(I18n::tr("Commit registry changes"), I18n::tr("Leave empty to commit the key's default value"),
-                                           I18n::tr("Only the single value above is committed (an empty value name means the key's (Default) value). "
-                                                    "Other values under the key, and any subkeys, are not committed."));
+  // 值名给定 → 只提交该值；值名留空 → 由 MainWindow 递归提交整棵键子树。
+  const auto target = promptRegistryTarget(
+      I18n::tr("Commit registry changes"), I18n::tr("Leave empty to commit the whole key recursively"),
+      I18n::tr("With a value name, only that single value is committed. Leave the value name empty to commit the whole key recursively — "
+               "every value in the key and in all of its subkeys."));
   if (!target) return;
   emit commitRegistryRequested(target->first, target->second);
 }
 
 void DiskTab::onCommitRegistryDelete() {
-  // CommitRegistryDeletion：值名留空 = 删除整个键（含所有值与子键）。
+  // 值名给定 → 只删该值；值名留空 → 由 MainWindow 递归删除整棵键子树。
   const auto target = promptRegistryTarget(
-      I18n::tr("Commit registry deletion"), I18n::tr("Leave empty to delete the entire key, including its subkeys"),
-      I18n::tr("Committing deletes the entry above from both the overlay and the on-disk registry, so it must still exist. "
-               "An empty value name deletes the entire key, including all of its values and subkeys."));
+      I18n::tr("Commit registry deletion"), I18n::tr("Leave empty to delete the whole key recursively"),
+      I18n::tr("With a value name, only that single value is deleted. Leave the value name empty to delete the whole key recursively — "
+               "the key, all of its values, and all of its subkeys."));
   if (!target) return;
   emit commitRegistryDeletionRequested(target->first, target->second);
 }

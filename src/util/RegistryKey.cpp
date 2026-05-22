@@ -1,5 +1,6 @@
 #include "RegistryKey.h"
 
+#include <utility>
 #include <windows.h>
 
 #include "StringUtil.h"
@@ -18,10 +19,8 @@ struct Hive {
   HKEY handle;
 };
 const Hive kHives[] = {
-    {"HKLM", "HKEY_LOCAL_MACHINE", HKEY_LOCAL_MACHINE},
-    {"HKCU", "HKEY_CURRENT_USER", HKEY_CURRENT_USER},
-    {"HKCR", "HKEY_CLASSES_ROOT", HKEY_CLASSES_ROOT},
-    {"HKU", "HKEY_USERS", HKEY_USERS},
+    {"HKLM", "HKEY_LOCAL_MACHINE", HKEY_LOCAL_MACHINE},   {"HKCU", "HKEY_CURRENT_USER", HKEY_CURRENT_USER},
+    {"HKCR", "HKEY_CLASSES_ROOT", HKEY_CLASSES_ROOT},     {"HKU", "HKEY_USERS", HKEY_USERS},
     {"HKCC", "HKEY_CURRENT_CONFIG", HKEY_CURRENT_CONFIG},
 };
 
@@ -93,8 +92,7 @@ std::string readString(std::string_view key, std::string_view valueName) {
   DWORD type = 0;
   DWORD bytes = 0;
   // 先量长度，并确认是字符串型。
-  if (RegQueryValueExW(opened, wideValue.c_str(), nullptr, &type, nullptr, &bytes) == ERROR_SUCCESS &&
-      (type == REG_SZ || type == REG_EXPAND_SZ) && bytes > 0) {
+  if (RegQueryValueExW(opened, wideValue.c_str(), nullptr, &type, nullptr, &bytes) == ERROR_SUCCESS && (type == REG_SZ || type == REG_EXPAND_SZ) && bytes > 0) {
     // 多留 1 个 wchar_t：即使注册表数据未以 NUL 结尾，缓冲区也必有 NUL 收尾。
     std::wstring buf(bytes / sizeof(wchar_t) + 1, L'\0');
     DWORD got = static_cast<DWORD>(buf.size() * sizeof(wchar_t));
@@ -117,6 +115,47 @@ std::uint32_t readDword(std::string_view key, std::string_view valueName) {
   RegQueryValueExW(opened, wideValue.c_str(), nullptr, &type, reinterpret_cast<LPBYTE>(&value), &bytes);
   RegCloseKey(opened);
   return value;
+}
+
+std::vector<std::string> subkeyNames(std::string_view key) {
+  std::vector<std::string> out;
+  HKEY opened = nullptr;
+  if (!openForRead(key, opened)) return out;
+  // 注册表键名上限 255 字符；256 的缓冲含收尾 NUL 足够。
+  wchar_t name[256];
+  for (DWORD i = 0;; ++i) {
+    DWORD len = 256;
+    if (RegEnumKeyExW(opened, i, name, &len, nullptr, nullptr, nullptr, nullptr) != ERROR_SUCCESS) break;
+    out.push_back(wideToUtf8(std::wstring(name, len)));
+  }
+  RegCloseKey(opened);
+  return out;
+}
+
+std::vector<std::string> valueNames(std::string_view key) {
+  std::vector<std::string> out;
+  HKEY opened = nullptr;
+  if (!openForRead(key, opened)) return out;
+  // 注册表值名上限 16383 字符。
+  std::wstring name(16384, L'\0');
+  for (DWORD i = 0;; ++i) {
+    DWORD len = static_cast<DWORD>(name.size());
+    if (RegEnumValueW(opened, i, name.data(), &len, nullptr, nullptr, nullptr, nullptr) != ERROR_SUCCESS) break;
+    out.push_back(wideToUtf8(std::wstring(name.data(), len)));
+  }
+  RegCloseKey(opened);
+  return out;
+}
+
+std::vector<std::string> collectKeyTree(const std::string& key) {
+  std::vector<std::string> out;
+  const std::string norm = normalize(key);
+  // 后序 DFS：先递归收子键、再追加自身——子键天然排在父键之前。
+  for (const auto& child : subkeyNames(norm)) {
+    for (auto& descendant : collectKeyTree(norm + '\\' + child)) out.push_back(std::move(descendant));
+  }
+  out.push_back(norm);
+  return out;
 }
 
 }  // namespace uwf::regkey

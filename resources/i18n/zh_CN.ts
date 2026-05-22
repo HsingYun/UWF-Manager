@@ -205,18 +205,18 @@
     <message><source>Commit file deletion</source><translation>提交文件删除</translation></message>
     <message><source>Commit folder deletion</source><translation>提交文件夹删除</translation></message>
     <message><source>Commit registry changes</source><translation>提交注册表修改</translation></message>
-    <message><source>Leave empty to commit the key's default value</source><translation>留空则提交该键的默认值</translation></message>
+    <message><source>Leave empty to commit the whole key recursively</source><translation>留空则递归提交整棵键子树</translation></message>
     <message>
-        <source>Only the single value above is committed (an empty value name means the key's (Default) value). Other values under the key, and any subkeys, are not committed.</source>
-        <translation>只提交上方指定的这一个值（值名留空表示该键的默认值）。该键下的其它值、以及任何子键，都不会被提交。</translation>
+        <source>With a value name, only that single value is committed. Leave the value name empty to commit the whole key recursively — every value in the key and in all of its subkeys.</source>
+        <translation>填写值名则只提交那一个值；值名留空则递归提交整棵键子树——该键以及它所有子键里的每一个值。</translation>
     </message>
     <message><source>Registry key:</source><translation>注册表键：</translation></message>
     <message><source>Value name:</source><translation>值名：</translation></message>
     <message><source>Commit registry deletion</source><translation>提交注册表删除</translation></message>
-    <message><source>Leave empty to delete the entire key, including its subkeys</source><translation>留空则删除整个键，包括其所有子键</translation></message>
+    <message><source>Leave empty to delete the whole key recursively</source><translation>留空则递归删除整棵键子树</translation></message>
     <message>
-        <source>Committing deletes the entry above from both the overlay and the on-disk registry, so it must still exist. An empty value name deletes the entire key, including all of its values and subkeys.</source>
-        <translation>提交会把上方指定的项从覆盖层和磁盘上的注册表一并删除，因此它当前必须仍存在。值名留空表示删除整个键，包括它的所有值和子键。</translation>
+        <source>With a value name, only that single value is deleted. Leave the value name empty to delete the whole key recursively — the key, all of its values, and all of its subkeys.</source>
+        <translation>填写值名则只删除那一个值；值名留空则递归删除整棵键子树——该键、它的所有值、以及它所有的子键。</translation>
     </message>
 
     <!-- OverlayFilesDialog -->
@@ -735,30 +735,6 @@ Exclusion: %2</source>
 排除项：%2</translation>
     </message>
     <message>
-        <source>Key: %1
-Value: (Default)</source>
-        <translation>键：%1
-值：(Default)</translation>
-    </message>
-    <message>
-        <source>Key: %1
-Value: %2</source>
-        <translation>键：%1
-值：%2</translation>
-    </message>
-    <message>
-        <source>Commit the following registry entry to disk. This action cannot be undone.
-
-%1
-
-Continue?</source>
-        <translation>将把下面的注册表项提交到磁盘，此操作不可撤销：
-
-%1
-
-确定要继续吗？</translation>
-    </message>
-    <message>
         <source>Failed to read registry filter: %1</source>
         <translation>读取注册表筛选器失败：%1</translation>
     </message>
@@ -767,15 +743,53 @@ Continue?</source>
         <translation>找不到当前会话的注册表筛选记录。</translation>
     </message>
     <message>
-        <source>This registry entry does not exist, so there is nothing to commit.
+        <source>This registry value does not exist, so there is nothing to commit.
 
 %1</source>
-        <translation>该注册表项不存在，没有内容可提交。
+        <translation>该注册表值不存在，没有内容可提交。
 
 %1</translation>
     </message>
-    <message><source>Failed to write registry: %1</source><translation>写入注册表失败：%1</translation></message>
-    <message><source>Committed: %1</source><translation>已提交：%1</translation></message>
+    <message>
+        <source>This registry key does not exist, so there is nothing to commit.
+
+%1</source>
+        <translation>该注册表键不存在，没有内容可提交。
+
+%1</translation>
+    </message>
+    <message>
+        <source>This registry key and its subkeys contain no values to commit.
+
+%1</source>
+        <translation>该注册表键及其子键中没有可提交的值。
+
+%1</translation>
+    </message>
+    <message>
+        <source>Commit the registry key below, all its values and all its subkeys recursively to disk — %1 values in total. This action cannot be undone.
+
+%2
+
+Continue?</source>
+        <translation>将把下面的注册表键、它的所有值、以及它所有的子键递归提交到磁盘——共 %1 个值，此操作不可撤销：
+
+%2
+
+确定要继续吗？</translation>
+    </message>
+    <message>
+        <source>Commit the following registry value to disk. This action cannot be undone.
+
+%1
+
+Continue?</source>
+        <translation>将把下面的注册表值提交到磁盘，此操作不可撤销：
+
+%1
+
+确定要继续吗？</translation>
+    </message>
 
     <!-- commitRegistryDeletionKey -->
     <message>
@@ -789,26 +803,40 @@ Exclusion: %2</source>
 排除项：%2</translation>
     </message>
     <message>
-        <source>Key: %1
-Value: (entire key — all values and subkeys)</source>
-        <translation>键：%1
-值：（整个键——所有值与子键）</translation>
-    </message>
-    <message>
-        <source>This registry entry does not exist, so there is nothing to delete.
+        <source>This registry value does not exist, so there is nothing to delete.
 
 %1</source>
-        <translation>该注册表项不存在，没有可删除的内容。
+        <translation>该注册表值不存在，没有可删除的内容。
 
 %1</translation>
     </message>
     <message>
-        <source>Delete the following registry entry and commit the deletion to disk. This action cannot be undone.
+        <source>This registry key does not exist, so there is nothing to delete.
+
+%1</source>
+        <translation>该注册表键不存在，没有可删除的内容。
+
+%1</translation>
+    </message>
+    <message>
+        <source>Delete the registry key below, all its values and all its subkeys recursively — %1 keys in total — and commit the deletions to disk. This action cannot be undone.
+
+%2
+
+Continue?</source>
+        <translation>将把下面的注册表键、它的所有值、以及它所有的子键递归删除——共 %1 个键——并把这些删除一并提交到磁盘，此操作不可撤销：
+
+%2
+
+确定要继续吗？</translation>
+    </message>
+    <message>
+        <source>Delete the following registry value and commit the deletion to disk. This action cannot be undone.
 
 %1
 
 Continue?</source>
-        <translation>将删除下面的注册表项并把删除提交到磁盘，此操作不可撤销：
+        <translation>将删除下面的注册表值并把删除提交到磁盘，此操作不可撤销：
 
 %1
 

@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace uwf::regkey {
 
@@ -38,5 +39,17 @@ std::string normalize(const std::string& key);
 
 // 读取注册表 DWORD 值（REG_DWORD）；键 / 值不存在返回 0。
 [[nodiscard]] std::uint32_t readDword(std::string_view key, std::string_view valueName);
+
+// 列出 key 的直接子键名（仅名字，不含完整路径）。无法识别 hive / 键不存在 → 空。
+[[nodiscard]] std::vector<std::string> subkeyNames(std::string_view key);
+
+// 列出 key 上的全部值名；默认值 (Default) 存在时其名为空串 "" 也会列出。
+// 无法识别 hive / 键不存在 → 空。
+[[nodiscard]] std::vector<std::string> valueNames(std::string_view key);
+
+// 收集 key 子树里的所有键（含 key 自身），后序排列——最深的子键在前、key 在最末，
+// 正好是「递归删除」要的顺序（逐个删时每个键被处理时都已是叶子）。返回归一化后的
+// 长写完整键路径。
+[[nodiscard]] std::vector<std::string> collectKeyTree(const std::string& key);
 
 }  // namespace uwf::regkey

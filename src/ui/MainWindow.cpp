@@ -127,6 +127,13 @@ struct CommitReportRow {
   QString reason;     // 面向普通用户的中文解释
 };
 
+// 一次注册表递归提交 / 删除批处理里的单个目标。
+struct RegCommitTarget {
+  std::string key;        // 归一化后的长写键路径
+  std::string valueName;  // 值名；提交时空串 = (Default) 值，删除时空串 = 该键本身
+  QString display;        // 报告对话框 "路径" 列的展示串
+};
+
 // 把 HRESULT / UWF returnValue 翻译成普通用户看得懂的一句话。
 // 不在这里暴露 "WBEM_E_*" / "ExecMethod" 这些实现术语——那些进日志。
 QString explainCommitFailure(int32_t hresult, uint32_t returnValue) {
@@ -1587,18 +1594,17 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
 void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) {
   if (key.isEmpty()) return;
 
-  // 注册表键先归一成长写 hive 形式（HKLM\… → HKEY_LOCAL_MACHINE\…）。这步不能
-  // 省：UWF 在覆盖层里按规范化的键路径索引改动，排除列表存的也是长写形式。
-  // 而"提交注册表"对话框的占位符给的是简写 HKLM\…——若把用户原样输入直接交给
-  // CommitRegistry，UWF 在覆盖层里匹配不到，即便该键确有待提交改动也会回
-  // WBEM_E_NOT_FOUND；下面的排除命中预检（大小写不敏感、但不认 hive 简写）
-  // 同样会漏判。其余处理注册表键的 UI 一律先经 regkey::normalize。
+  // 多目标提交会弹 QProgressDialog（setValue 内部 processEvents）——暂停占用刷新
+  // 定时器，防止半途重入 m_writeSession。
+  const ScopedTimerPause usagePause(m_usageTimer);
+
+  // 注册表键先归一成长写 hive（HKLM\… → HKEY_LOCAL_MACHINE\…）：UWF 覆盖层、排除
+  // 列表都按长写键路径索引，跳过归一会匹配不到。
   const std::string normKey = regkey::normalize(key.toStdString());
   if (normKey.empty()) return;
   const QString keyText = QString::fromStdString(normKey);
-  const QString desc = valueName.isEmpty() ? I18n::tr("Key: %1\nValue: (Default)").arg(keyText) : I18n::tr("Key: %1\nValue: %2").arg(keyText, valueName);
 
-  // 注册表排除是全局的，直接比对当前运行会话即可。覆盖 = 键相等或为其祖先。
+  // 注册表排除是全局的，比对当前运行会话即可。覆盖 = 键相等或为其祖先。
   const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
   if (!hit.empty()) {
     warning(this, I18n::tr("Commit rejected"),
@@ -1608,16 +1614,42 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     return;
   }
 
-  // 提交目标（valueName 为空时即该键的默认值）是否存在，提交前就查清楚——不存在
-  // 就立刻拒绝，不要等用户在确认框点了"继续"、再走一遍 WMI 才以 NOT_FOUND 失败。
-  if (!regkey::valueExists(normKey, valueName.toStdString())) {
-    warning(this, I18n::tr("Commit rejected"), I18n::tr("This registry entry does not exist, so there is nothing to commit.\n\n%1").arg(desc));
-    return;
+  // 目标清单：值名给定 = 只提交那一个值；值名留空 = 递归整棵键子树的每一个值
+  // （CommitRegistry 只能逐值提交，"提交整键"由这里展开成逐值调用）。
+  QList<RegCommitTarget> targets;
+  if (!valueName.isEmpty()) {
+    if (!regkey::valueExists(normKey, valueName.toStdString())) {
+      warning(this, I18n::tr("Commit rejected"),
+              I18n::tr("This registry value does not exist, so there is nothing to commit.\n\n%1").arg(keyText + " : " + valueName));
+      return;
+    }
+    targets.append({normKey, valueName.toStdString(), keyText + " : " + valueName});
+  } else {
+    if (!regkey::keyExists(normKey)) {
+      warning(this, I18n::tr("Commit rejected"), I18n::tr("This registry key does not exist, so there is nothing to commit.\n\n%1").arg(keyText));
+      return;
+    }
+    for (const auto& k : regkey::collectKeyTree(normKey)) {
+      const QString kText = QString::fromStdString(k);
+      for (const auto& vn : regkey::valueNames(k)) {
+        targets.append({k, vn, vn.empty() ? (kText + " : (Default)") : (kText + " : " + QString::fromStdString(vn))});
+      }
+    }
+    if (targets.isEmpty()) {
+      information(this, I18n::tr("Nothing to commit"), I18n::tr("This registry key and its subkeys contain no values to commit.\n\n%1").arg(keyText));
+      return;
+    }
   }
+  const int total = static_cast<int>(targets.size());
 
-  if (!confirm(this, I18n::tr("Commit to disk"),
-               I18n::tr("Commit the following registry entry to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(desc)))
-    return;
+  const QString prompt = valueName.isEmpty()
+                             ? I18n::tr("Commit the registry key below, all its values and all its subkeys recursively to disk — %1 values in "
+                                        "total. This action cannot be undone.\n\n%2\n\nContinue?")
+                                   .arg(total)
+                                   .arg(keyText)
+                             : I18n::tr("Commit the following registry value to disk. This action cannot be undone.\n\n%1\n\nContinue?")
+                                   .arg(keyText + " : " + valueName);
+  if (!confirm(this, I18n::tr("Commit to disk"), prompt)) return;
 
   std::string err;
   auto filters = m_registry.readAll(&err);
@@ -1630,54 +1662,104 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     warning(this, I18n::tr("Commit failed"), I18n::tr("No current-session registry filter record found."));
     return;
   }
-  const auto res = m_registry.commitRegistry(*row, normKey, valueName.toStdString());
-  switch (res.outcome) {
-    case CommitOutcome::Ok:
-      showTransientHint(I18n::tr("Committed: %1").arg(keyText), 3000);
-      break;
-    // 提交目标的存在性已由上面的 valueExists 预检确认，故走到这里的 Skipped
-    // （NOT_FOUND，例如预检之后该值被并发删除）与 Failed 一样按失败报告。
-    case CommitOutcome::Skipped:
-    case CommitOutcome::Failed:
-      warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to write registry: %1").arg(explainCommitFailure(res.hresult, res.returnValue)));
-      break;
+
+  std::unique_ptr<QProgressDialog> progress;
+  if (total > 1) {
+    progress = std::make_unique<QProgressDialog>(I18n::tr("Committing…"), I18n::tr("Cancel"), 0, total, this);
+    progress->setWindowTitle(I18n::tr("Commit to disk"));
+    progress->setWindowModality(Qt::WindowModal);
+    progress->setMinimumDuration(500);
+    progress->setAutoClose(true);
+    progress->setAutoReset(false);
+    Q_ASSERT(progress->windowModality() == Qt::WindowModal);
   }
+
+  int okCount = 0;
+  bool canceled = false;
+  QList<CommitReportRow> nonOkRows;
+  for (int i = 0; i < total; ++i) {
+    if (progress) {
+      progress->setValue(i);
+      if (progress->wasCanceled()) {
+        canceled = true;
+        break;
+      }
+      const QString& d = targets[i].display;
+      progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(total).arg(d.size() > 80 ? ("…" + d.right(79)) : d));
+    }
+    const auto& t = targets[i];
+    const auto res = m_registry.commitRegistry(*row, t.key, t.valueName);
+    if (res.outcome == CommitOutcome::Ok) {
+      ++okCount;
+    } else {
+      if (!res.detail.empty()) {
+        const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+        UWF_LOG_W("commit") << std::format("CommitRegistry {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
+                                           static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
+      }
+      nonOkRows.append({res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed"), t.display,
+                        formatErrorCode(res.hresult, res.returnValue), explainCommitFailure(res.hresult, res.returnValue)});
+    }
+  }
+  if (progress) {
+    progress->setValue(total);
+    progress->close();
+  }
+  const int untouched = canceled ? (total - okCount - static_cast<int>(nonOkRows.size())) : 0;
+  showCommitReport(this, okCount, nonOkRows, untouched);
 }
 
 void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& valueName) {
   if (key.isEmpty()) return;
 
-  // 同 commitRegistryKey：注册表键先归一成长写 hive（HKLM\… → HKEY_LOCAL_MACHINE\…）。
-  // UWF 覆盖层与排除列表都按长写键路径索引，跳过归一会匹配不到。
+  const ScopedTimerPause usagePause(m_usageTimer);
+
+  // 同 commitRegistryKey：先归一成长写 hive。
   const std::string normKey = regkey::normalize(key.toStdString());
   if (normKey.empty()) return;
   const QString keyText = QString::fromStdString(normKey);
-  // 删除提交里 valueName 留空 = 删除整个键（含所有值与子键）；非空 = 删除该命名值。
-  const QString desc = valueName.isEmpty() ? I18n::tr("Key: %1\nValue: (entire key — all values and subkeys)").arg(keyText)
-                                           : I18n::tr("Key: %1\nValue: %2").arg(keyText, valueName);
 
-  // 注册表排除是全局的，直接比对当前运行会话即可。覆盖 = 键相等或为其祖先。
   const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
   if (!hit.empty()) {
     warning(this, I18n::tr("Commit rejected"),
-            I18n::tr("This key is in the registry exclusion list. UWF does not write it to the overlay, so committing its deletion to disk is neither "
-                     "needed nor possible.\n\nTarget: %1\nExclusion: %2")
+            I18n::tr("This key is in the registry exclusion list. UWF does not write it to the overlay, so committing its deletion to disk is "
+                     "neither needed nor possible.\n\nTarget: %1\nExclusion: %2")
                 .arg(keyText, QString::fromStdString(hit)));
     return;
   }
 
-  // CommitRegistryDeletion 由方法自身执行删除——把目标从覆盖层 + 物理 hive 一并
-  // 删掉，因此调用时目标必须**仍存在**。不存在就没有可删的东西，提交前直接拒绝
-  // （否则 UWF 回 WBEM_E_NOT_FOUND）。
-  const bool exists = valueName.isEmpty() ? regkey::keyExists(normKey) : regkey::valueExists(normKey, valueName.toStdString());
-  if (!exists) {
-    warning(this, I18n::tr("Commit rejected"), I18n::tr("This registry entry does not exist, so there is nothing to delete.\n\n%1").arg(desc));
-    return;
+  // 目标清单：值名给定 = 只删那一个值；值名留空 = 递归整棵键子树。
+  // CommitRegistryDeletion 由方法自身执行删除，目标必须仍存在；它不递归——
+  // CommitRegistryDeletion(key,"") 只能删叶子键，故按 collectKeyTree 的后序
+  // （最深子键在前）逐个删，删到每个键时它都已是叶子。
+  QList<RegCommitTarget> targets;
+  if (!valueName.isEmpty()) {
+    if (!regkey::valueExists(normKey, valueName.toStdString())) {
+      warning(this, I18n::tr("Commit rejected"),
+              I18n::tr("This registry value does not exist, so there is nothing to delete.\n\n%1").arg(keyText + " : " + valueName));
+      return;
+    }
+    targets.append({normKey, valueName.toStdString(), keyText + " : " + valueName});
+  } else {
+    if (!regkey::keyExists(normKey)) {
+      warning(this, I18n::tr("Commit rejected"), I18n::tr("This registry key does not exist, so there is nothing to delete.\n\n%1").arg(keyText));
+      return;
+    }
+    for (const auto& k : regkey::collectKeyTree(normKey)) {
+      targets.append({k, std::string{}, QString::fromStdString(k)});
+    }
   }
+  const int total = static_cast<int>(targets.size());
 
-  if (!confirm(this, I18n::tr("Commit registry deletion"),
-               I18n::tr("Delete the following registry entry and commit the deletion to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(desc)))
-    return;
+  const QString prompt = valueName.isEmpty()
+                             ? I18n::tr("Delete the registry key below, all its values and all its subkeys recursively — %1 keys in total — "
+                                        "and commit the deletions to disk. This action cannot be undone.\n\n%2\n\nContinue?")
+                                   .arg(total)
+                                   .arg(keyText)
+                             : I18n::tr("Delete the following registry value and commit the deletion to disk. This action cannot be "
+                                        "undone.\n\n%1\n\nContinue?")
+                                   .arg(keyText + " : " + valueName);
+  if (!confirm(this, I18n::tr("Commit registry deletion"), prompt)) return;
 
   std::string err;
   auto filters = m_registry.readAll(&err);
@@ -1690,18 +1772,51 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
     warning(this, I18n::tr("Commit failed"), I18n::tr("No current-session registry filter record found."));
     return;
   }
-  const auto res = m_registry.commitRegistryDeletion(*row, normKey, valueName.toStdString());
-  switch (res.outcome) {
-    case CommitOutcome::Ok:
-      showTransientHint(I18n::tr("Committed: %1").arg(keyText), 3000);
-      break;
-    // 目标存在性已由上面的预检确认，走到这里的 Skipped（NOT_FOUND，例如预检后
-    // 目标被并发删除）与 Failed 一样按失败报告。
-    case CommitOutcome::Skipped:
-    case CommitOutcome::Failed:
-      warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to write registry: %1").arg(explainCommitFailure(res.hresult, res.returnValue)));
-      break;
+
+  std::unique_ptr<QProgressDialog> progress;
+  if (total > 1) {
+    progress = std::make_unique<QProgressDialog>(I18n::tr("Committing…"), I18n::tr("Cancel"), 0, total, this);
+    progress->setWindowTitle(I18n::tr("Commit registry deletion"));
+    progress->setWindowModality(Qt::WindowModal);
+    progress->setMinimumDuration(500);
+    progress->setAutoClose(true);
+    progress->setAutoReset(false);
+    Q_ASSERT(progress->windowModality() == Qt::WindowModal);
   }
+
+  int okCount = 0;
+  bool canceled = false;
+  QList<CommitReportRow> nonOkRows;
+  for (int i = 0; i < total; ++i) {
+    if (progress) {
+      progress->setValue(i);
+      if (progress->wasCanceled()) {
+        canceled = true;
+        break;
+      }
+      const QString& d = targets[i].display;
+      progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(total).arg(d.size() > 80 ? ("…" + d.right(79)) : d));
+    }
+    const auto& t = targets[i];
+    const auto res = m_registry.commitRegistryDeletion(*row, t.key, t.valueName);
+    if (res.outcome == CommitOutcome::Ok) {
+      ++okCount;
+    } else {
+      if (!res.detail.empty()) {
+        const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+        UWF_LOG_W("commit") << std::format("CommitRegistryDeletion {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
+                                           static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
+      }
+      nonOkRows.append({res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed"), t.display,
+                        formatErrorCode(res.hresult, res.returnValue), explainCommitFailure(res.hresult, res.returnValue)});
+    }
+  }
+  if (progress) {
+    progress->setValue(total);
+    progress->close();
+  }
+  const int untouched = canceled ? (total - okCount - static_cast<int>(nonOkRows.size())) : 0;
+  showCommitReport(this, okCount, nonOkRows, untouched);
 }
 
 }  // namespace uwf::ui
