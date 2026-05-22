@@ -39,6 +39,7 @@ class TrayController : public QObject {
   TrayController(WmiSession& session, QWidget* ownerWindow);
 
   // 重读 UWF 状态：刷新托盘图标颜色（启用 = 蓝，禁用 / 不可用 = 红）与右键菜单。
+  // 同时重译静态文案（退出项、图标 tooltip），使其随语言切换跟进。
   // 由菜单 aboutToShow 与 MainWindow 的 5s 定时器驱动；构造时也调一次。
   void refreshUsage();
 
@@ -56,6 +57,7 @@ class TrayController : public QObject {
   QSystemTrayIcon* m_tray = nullptr;  // 为空 = 本机无可用托盘
   QMenu* m_menu = nullptr;
   QAction* m_stateAction = nullptr;     // 菜单项 1：UWF 启用状态
+  QAction* m_exitAction = nullptr;      // 菜单项 3：退出（refreshUsage 里重译）
   QAction* m_usageSeparator = nullptr;  // 状态项与占用条间的分隔线（随占用条显隐）
   QAction* m_usageAction = nullptr;     // 菜单项 2：占用条（UWF 禁用时隐藏）
   QWidget* m_usagePane = nullptr;       // 占用条容器；点击 → 展开主窗口

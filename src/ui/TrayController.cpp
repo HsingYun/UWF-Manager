@@ -98,14 +98,14 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow)
   m_menu->addSeparator();
 
   // 菜单项 3：退出。
-  QAction* exitAction = m_menu->addAction(I18n::tr("Exit"));
-  connect(exitAction, &QAction::triggered, qApp, &QApplication::quit);
+  m_exitAction = m_menu->addAction(I18n::tr("Exit"));
+  connect(m_exitAction, &QAction::triggered, qApp, &QApplication::quit);
 
   // 菜单弹出前即时刷新状态与占用。
   connect(m_menu, &QMenu::aboutToShow, this, &TrayController::refreshUsage);
 
   m_tray = new QSystemTrayIcon(m_iconNormal, this);
-  m_tray->setToolTip(I18n::tr("Unified Write Filter (UWF) Manager"));
+  // tooltip 文案由构造末尾的 refreshUsage() 统一设置（它每轮刷新都会重译）。
   // 不用 setContextMenu——它在 Windows 上按托盘图标 geometry 定位菜单，而该
   // geometry 常不可靠，菜单会弹到奇怪位置。改为右键时自己按光标位置 popup：
   // QMenu::popup 会做屏幕边缘适配，靠近屏幕底部（任务栏在下）时自动向上弹。
@@ -122,6 +122,12 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow)
 
 void TrayController::refreshUsage() {
   if (!m_tray) return;
+
+  // 退出项与图标 tooltip 是静态文案：切换语言时 MainWindow 只重建主窗口、
+  // 不重建托盘，故在这里随刷新一并重译——与状态项 / 占用条共用同一刷新周期，
+  // 不另设重译入口。
+  m_exitAction->setText(I18n::tr("Exit"));
+  m_tray->setToolTip(I18n::tr("Unified Write Filter (UWF) Manager"));
 
   // 占用条与其上方的分隔线一起显隐——避免占用条隐藏后剩下两条相邻分隔线。
   const auto setUsageVisible = [this](bool show) {
