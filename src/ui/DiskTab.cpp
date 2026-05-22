@@ -6,7 +6,6 @@
 #include <QFormLayout>
 #include <QHBoxLayout>
 #include <QIcon>
-#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
@@ -168,8 +167,7 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   m_commitDirAct = commitMenu->addAction(tm.icon(":/icons/folder.svg"), I18n::tr("Commit folder changes…"));
   m_commitDirAct->setToolTip(I18n::tr("Pick a folder and commit overlay changes for every file inside it to disk."));
   m_commitFileDeleteAct = commitMenu->addAction(tm.icon(":/icons/file.svg"), I18n::tr("Commit file deletion…"));
-  m_commitFileDeleteAct->setToolTip(
-      I18n::tr("Enter the path of a file that has already been deleted in the current session, and commit the deletion to disk."));
+  m_commitFileDeleteAct->setToolTip(I18n::tr("Pick a file to delete, and commit the deletion to disk."));
   if (m_showRegistry) {
     m_commitRegAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Commit registry changes…"));
     m_commitRegAct->setToolTip(I18n::tr("Enter a registry key (and optional value name) and commit changes to the registry."));
@@ -283,19 +281,12 @@ void DiskTab::onCommitDir() {
 void DiskTab::onCommitFileDelete() {
   if (!supported()) return;
   const QString dl = driveLetter();
-  bool ok = false;
-  // 用人工输入而不是 QFileDialog：该功能的语义本来就是"这个文件现在看不
-  // 到了"——文件选择框只能选到现存文件，和需求矛盾。
-  const QString hint =
-      I18n::tr(
-          "Enter the full path of the file whose deletion you want to commit (e.g. %1\\Users\\xxx\\foo.txt).\n\nThe path must no longer exist in the current "
-          "session — meaning it has already been deleted, leaving only a deletion marker in the overlay waiting to be written to disk.")
-          .arg(dl);
-  QString input = QInputDialog::getText(this, I18n::tr("Commit file deletion"), hint, QLineEdit::Normal, QString(), &ok);
-  if (!ok) return;
-  input = input.trimmed();
-  if (input.isEmpty()) return;
-  emit commitFileDeletionRequested(QDir::toNativeSeparators(input));
+  const QString base = dl.isEmpty() ? QDir::homePath() : dl + "\\";
+  // CommitFileDeletion 删除的是一个**当前仍存在**的文件，所以直接用文件选择框
+  // 挑现存文件即可。
+  const QString path = QFileDialog::getOpenFileName(this, I18n::tr("Select a file whose deletion you want to commit"), base);
+  if (path.isEmpty()) return;
+  emit commitFileDeletionRequested(QDir::toNativeSeparators(path));
 }
 
 std::optional<std::pair<QString, QString>> DiskTab::promptRegistryTarget(const QString& title, const QString& valuePlaceholder, const QString& hintText) {

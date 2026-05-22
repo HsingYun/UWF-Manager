@@ -138,8 +138,8 @@
     </message>
     <message><source>Commit file deletion…</source><translation>提交文件删除…</translation></message>
     <message>
-        <source>Enter the path of a file that has already been deleted in the current session, and commit the deletion to disk.</source>
-        <translation>手动输入一个在当前会话已被删除的文件路径，把这次「删除」操作提交到磁盘。</translation>
+        <source>Pick a file to delete, and commit the deletion to disk.</source>
+        <translation>选择一个要删除的文件，把这次删除提交到磁盘。</translation>
     </message>
     <message><source>Commit registry changes…</source><translation>提交注册表修改…</translation></message>
     <message>
@@ -190,12 +190,8 @@
         <translation>选择要提交到磁盘的目录</translation>
     </message>
     <message>
-        <source>Enter the full path of the file whose deletion you want to commit (e.g. %1\Users\xxx\foo.txt).
-
-The path must no longer exist in the current session — meaning it has already been deleted, leaving only a deletion marker in the overlay waiting to be written to disk.</source>
-        <translation>输入要提交「删除」操作的完整文件路径（例如 %1\Users\xxx\foo.txt）。
-
-该路径在当前会话中应该已经不存在——即在本次会话里已经把它删掉，覆盖层里只剩一个删除标记，等待写入磁盘。</translation>
+        <source>Select a file whose deletion you want to commit</source>
+        <translation>选择要提交删除的文件</translation>
     </message>
     <message><source>Commit file deletion</source><translation>提交文件删除</translation></message>
     <message><source>Commit registry changes</source><translation>提交注册表修改</translation></message>
@@ -674,22 +670,13 @@ Continue?</source>
 
     <!-- commitFileDeletionPath -->
     <message><source>Commit file deletion failed</source><translation>提交文件删除失败</translation></message>
-    <message><source>Path still exists</source><translation>该路径仍然存在</translation></message>
     <message>
-        <source>Commit file deletion requires the path to no longer exist in the current session — that is, the file has already been deleted in this session, leaving only a deletion marker in the overlay waiting to be written to disk.
+        <source>This file does not exist, so there is nothing to delete.
 
-However, the following path is still visible:
+%1</source>
+        <translation>该文件不存在，没有可删除的内容。
 
-%1
-
-If you want to delete a currently visible file and commit the deletion, delete it in File Explorer first, then return here to commit the deletion.</source>
-        <translation>「提交文件删除」要求该路径在当前会话中已经不存在（即在本次会话里已经把它删掉，覆盖层里只剩一个删除标记，等着写入磁盘）。
-
-但下面这个路径现在还能看到：
-
-%1
-
-如果你是想把已经看得到的文件删掉并提交，请先在资源管理器里把它删掉，再来这里提交删除。</translation>
+%1</translation>
     </message>
     <message>
         <source>This path is in the file exclusion list. UWF does not track its deletion in the overlay, so committing the deletion is meaningless.
@@ -702,12 +689,12 @@ Exclusion: %2</source>
 排除项：%2</translation>
     </message>
     <message>
-        <source>Commit the deletion of the following file to disk. This action cannot be undone.
+        <source>Delete the following file and commit the deletion to disk. This action cannot be undone.
 
 %1
 
 Continue?</source>
-        <translation>将把下面文件的「删除」操作提交到磁盘，此操作不可撤销：
+        <translation>将删除下面的文件并把删除提交到磁盘，此操作不可撤销：
 
 %1
 

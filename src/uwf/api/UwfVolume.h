@@ -29,12 +29,9 @@ class UwfVolume {
 
   CommitResult commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const;
 
-  // 语义：把 overlay 里"删除"这个动作提交到物理盘。典型流程：
-  //   1. 用户在受保护卷上删了某文件 → overlay 记下删除标记；
-  //   2. 从 OS 视角看文件已不存在；物理盘上还在；
-  //   3. CommitFileDeletion 同步物理盘，让两边一致。
-  // 因此调用方应该先校验"该路径在当前 OS 视角下确实不存在"（否则说明
-  // overlay 里没这个删除标记，调用多半会失败）。
+  // 语义：删除一个**当前仍存在**的受保护文件——CommitFileDeletion 由方法自身把
+  // 该文件从覆盖层与物理卷一并删除，并非"提交一个已发生的删除"。因此调用方应先
+  // 校验"该路径当前确实存在"（文件不存在时方法回 WBEM_E_NOT_FOUND）。
   CommitResult commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const;
 
   // 对应 UWF_Volume.SetBindByDriveLetter(boolean bBindByDriveLetter) 官方签名：

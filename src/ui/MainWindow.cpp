@@ -1472,16 +1472,11 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
     return;
   }
 
-  // 核心校验：该文件在当前 OS 视角下**不应存在**；如果还存在，说明 overlay
-  // 里并没有删除它，调用 CommitFileDeletion 没意义。
-  if (QFileInfo::exists(path)) {
-    warning(
-        this, I18n::tr("Path still exists"),
-        I18n::tr(
-            "Commit file deletion requires the path to no longer exist in the current session — that is, the file has already been deleted in this session, "
-            "leaving only a deletion marker in the overlay waiting to be written to disk.\n\nHowever, the following path is still visible:\n\n%1\n\nIf you "
-            "want to delete a currently visible file and commit the deletion, delete it in File Explorer first, then return here to commit the deletion.")
-            .arg(path));
+  // 核心校验：CommitFileDeletion 由方法自身执行删除——把文件从覆盖层与物理卷
+  // 一并删掉，因此调用时文件必须**仍存在**。不存在就没有可删的东西，提交前直接
+  // 拒绝（否则 UWF 回 WBEM_E_NOT_FOUND）。
+  if (!QFileInfo::exists(path)) {
+    warning(this, I18n::tr("Commit rejected"), I18n::tr("This file does not exist, so there is nothing to delete.\n\n%1").arg(path));
     return;
   }
 
@@ -1511,7 +1506,7 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
   }
 
   if (!confirm(this, I18n::tr("Commit file deletion"),
-               I18n::tr("Commit the deletion of the following file to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(path)))
+               I18n::tr("Delete the following file and commit the deletion to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(path)))
     return;
 
   const auto [outcome, hresult, returnValue, detail] = m_volume.commitFileDeletion(*row, path.toStdString());
