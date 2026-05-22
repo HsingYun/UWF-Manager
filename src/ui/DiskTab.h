@@ -78,6 +78,7 @@ class DiskTab : public QWidget {
   void onCommitFile();
   void onCommitDir();
   void onCommitFileDelete();
+  void onCommitFolderDelete();
   void onCommitRegistry();
   void onCommitRegistryDelete();
 
@@ -102,6 +103,7 @@ class DiskTab : public QWidget {
   QAction* m_commitFileAct = nullptr;
   QAction* m_commitDirAct = nullptr;
   QAction* m_commitFileDeleteAct = nullptr;
+  QAction* m_commitFolderDeleteAct = nullptr;
   QAction* m_commitRegAct = nullptr;        // 仅系统盘 TAB 上创建
   QAction* m_commitRegDeleteAct = nullptr;  // 仅系统盘 TAB 上创建
   StatusPanel* m_status = nullptr;

@@ -141,6 +141,11 @@
         <source>Pick a file to delete, and commit the deletion to disk.</source>
         <translation>选择一个要删除的文件，把这次删除提交到磁盘。</translation>
     </message>
+    <message><source>Commit folder deletion…</source><translation>提交文件夹删除…</translation></message>
+    <message>
+        <source>Pick a folder to delete (recursively, with everything inside it) and commit the deletions to disk.</source>
+        <translation>选择一个要删除的文件夹（连同其内部所有内容一并递归删除），把这些删除提交到磁盘。</translation>
+    </message>
     <message><source>Commit registry changes…</source><translation>提交注册表修改…</translation></message>
     <message>
         <source>Enter a registry key (and optional value name) and commit changes to the registry.</source>
@@ -193,7 +198,12 @@
         <source>Select a file whose deletion you want to commit</source>
         <translation>选择要提交删除的文件</translation>
     </message>
+    <message>
+        <source>Select a folder whose deletion you want to commit</source>
+        <translation>选择要提交删除的文件夹</translation>
+    </message>
     <message><source>Commit file deletion</source><translation>提交文件删除</translation></message>
+    <message><source>Commit folder deletion</source><translation>提交文件夹删除</translation></message>
     <message><source>Commit registry changes</source><translation>提交注册表修改</translation></message>
     <message><source>Leave empty to commit the key's default value</source><translation>留空则提交该键的默认值</translation></message>
     <message>
@@ -447,7 +457,7 @@ Pending change: %3</source>
         <source>%1 succeeded; %2 skipped; %3 failed.</source>
         <translation>成功 %1 个；跳过 %2 个；失败 %3 个。</translation>
     </message>
-    <message><source>%1 files committed successfully.</source><translation>已成功提交 %1 个文件。</translation></message>
+    <message><source>%1 items committed successfully.</source><translation>已成功提交 %1 项。</translation></message>
     <message>
         <source>
 Canceled by user; %1 entries not processed.</source>
@@ -671,10 +681,10 @@ Continue?</source>
     <!-- commitFileDeletionPath -->
     <message><source>Commit file deletion failed</source><translation>提交文件删除失败</translation></message>
     <message>
-        <source>This file does not exist, so there is nothing to delete.
+        <source>This path does not exist, so there is nothing to delete.
 
 %1</source>
-        <translation>该文件不存在，没有可删除的内容。
+        <translation>该路径不存在，没有可删除的内容。
 
 %1</translation>
     </message>
@@ -697,6 +707,18 @@ Continue?</source>
         <translation>将删除下面的文件并把删除提交到磁盘，此操作不可撤销：
 
 %1
+
+确定要继续吗？</translation>
+    </message>
+    <message>
+        <source>Delete the folder below and everything inside it — %1 files and %2 subfolders — and commit the deletions to disk. This action cannot be undone.
+
+%3
+
+Continue?</source>
+        <translation>将删除下面的文件夹及其内部全部内容——%1 个文件、%2 个子文件夹——并把这些删除一并提交到磁盘，此操作不可撤销：
+
+%3
 
 确定要继续吗？</translation>
     </message>

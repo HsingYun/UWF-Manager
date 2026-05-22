@@ -168,6 +168,8 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   m_commitDirAct->setToolTip(I18n::tr("Pick a folder and commit overlay changes for every file inside it to disk."));
   m_commitFileDeleteAct = commitMenu->addAction(tm.icon(":/icons/file.svg"), I18n::tr("Commit file deletion…"));
   m_commitFileDeleteAct->setToolTip(I18n::tr("Pick a file to delete, and commit the deletion to disk."));
+  m_commitFolderDeleteAct = commitMenu->addAction(tm.icon(":/icons/folder.svg"), I18n::tr("Commit folder deletion…"));
+  m_commitFolderDeleteAct->setToolTip(I18n::tr("Pick a folder to delete (recursively, with everything inside it) and commit the deletions to disk."));
   if (m_showRegistry) {
     m_commitRegAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Commit registry changes…"));
     m_commitRegAct->setToolTip(I18n::tr("Enter a registry key (and optional value name) and commit changes to the registry."));
@@ -216,6 +218,7 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   connect(m_commitFileAct, &QAction::triggered, this, &DiskTab::onCommitFile);
   connect(m_commitDirAct, &QAction::triggered, this, &DiskTab::onCommitDir);
   connect(m_commitFileDeleteAct, &QAction::triggered, this, &DiskTab::onCommitFileDelete);
+  connect(m_commitFolderDeleteAct, &QAction::triggered, this, &DiskTab::onCommitFolderDelete);
   if (m_commitRegAct) {
     connect(m_commitRegAct, &QAction::triggered, this, &DiskTab::onCommitRegistry);
   }
@@ -242,6 +245,7 @@ void DiskTab::refreshThemedIcons() {
   if (m_commitFileAct) m_commitFileAct->setIcon(tm.icon(":/icons/file.svg"));
   if (m_commitDirAct) m_commitDirAct->setIcon(tm.icon(":/icons/folder.svg"));
   if (m_commitFileDeleteAct) m_commitFileDeleteAct->setIcon(tm.icon(":/icons/file.svg"));
+  if (m_commitFolderDeleteAct) m_commitFolderDeleteAct->setIcon(tm.icon(":/icons/folder.svg"));
   if (m_commitRegAct) m_commitRegAct->setIcon(tm.icon(":/icons/registry.svg"));
   if (m_commitRegDeleteAct) m_commitRegDeleteAct->setIcon(tm.icon(":/icons/registry.svg"));
   if (m_infoTabs) {
@@ -285,6 +289,17 @@ void DiskTab::onCommitFileDelete() {
   // CommitFileDeletion 删除的是一个**当前仍存在**的文件，所以直接用文件选择框
   // 挑现存文件即可。
   const QString path = QFileDialog::getOpenFileName(this, I18n::tr("Select a file whose deletion you want to commit"), base);
+  if (path.isEmpty()) return;
+  emit commitFileDeletionRequested(QDir::toNativeSeparators(path));
+}
+
+void DiskTab::onCommitFolderDelete() {
+  if (!supported()) return;
+  const QString dl = driveLetter();
+  const QString base = dl.isEmpty() ? QDir::homePath() : dl + "\\";
+  // 文件夹删除同样作用于"当前存在"的目录——用文件夹选择器挑现存目录；递归删除
+  // （子文件 / 子目录 / 目录本身）交给 MainWindow::commitFileDeletionPath。
+  const QString path = QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder whose deletion you want to commit"), base);
   if (path.isEmpty()) return;
   emit commitFileDeletionRequested(QDir::toNativeSeparators(path));
 }
@@ -401,6 +416,7 @@ void DiskTab::updateCommitEnablement(const bool globalFilterOn, const bool thisV
   if (m_commitFileAct) m_commitFileAct->setEnabled(fileOK);
   if (m_commitDirAct) m_commitDirAct->setEnabled(fileOK);
   if (m_commitFileDeleteAct) m_commitFileDeleteAct->setEnabled(fileOK);
+  if (m_commitFolderDeleteAct) m_commitFolderDeleteAct->setEnabled(fileOK);
   if (m_commitRegAct) m_commitRegAct->setEnabled(regOK);
   if (m_commitRegDeleteAct) m_commitRegDeleteAct->setEnabled(regOK);
   // 文件列表右键"提交改动到磁盘"和上面的 commit 菜单同一套门槛：本卷当前会话

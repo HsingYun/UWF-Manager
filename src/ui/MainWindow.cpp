@@ -179,7 +179,7 @@ void showCommitReport(QWidget* parent, int okCount, const QList<CommitReportRow>
   if (hasRows) {
     summaryText = I18n::tr("%1 succeeded; %2 skipped; %3 failed.").arg(okCount).arg(skipN).arg(failN);
   } else {
-    summaryText = I18n::tr("%1 files committed successfully.").arg(okCount);
+    summaryText = I18n::tr("%1 items committed successfully.").arg(okCount);
   }
   if (canceledRemaining > 0) {
     summaryText += I18n::tr("\nCanceled by user; %1 entries not processed.").arg(canceledRemaining);
@@ -1465,18 +1465,21 @@ void MainWindow::commitFilePath(const QString& path) {
 void MainWindow::commitFileDeletionPath(const QString& path) {
   if (path.isEmpty()) return;
 
-  // 盘符解析。
+  // 多目标删除会弹 QProgressDialog（setValue 内部 processEvents）——和 commitFilePath
+  // 同理，整段暂停占用刷新定时器，防止半途重入 m_writeSession。
+  const ScopedTimerPause usagePause(m_usageTimer);
+
   const QString dl = extractDriveLetter(path);
   if (dl.isEmpty()) {
     warning(this, I18n::tr("Commit file deletion failed"), I18n::tr("The path has no drive letter; cannot identify the target volume."));
     return;
   }
 
-  // 核心校验：CommitFileDeletion 由方法自身执行删除——把文件从覆盖层与物理卷
-  // 一并删掉，因此调用时文件必须**仍存在**。不存在就没有可删的东西，提交前直接
-  // 拒绝（否则 UWF 回 WBEM_E_NOT_FOUND）。
-  if (!QFileInfo::exists(path)) {
-    warning(this, I18n::tr("Commit rejected"), I18n::tr("This file does not exist, so there is nothing to delete.\n\n%1").arg(path));
+  // 核心校验：CommitFileDeletion 由方法自身执行删除，目标（文件或目录）必须**仍
+  // 存在**。不存在就没有可删的东西，提交前直接拒绝。
+  const QFileInfo fi(path);
+  if (!fi.exists()) {
+    warning(this, I18n::tr("Commit rejected"), I18n::tr("This path does not exist, so there is nothing to delete.\n\n%1").arg(path));
     return;
   }
 
@@ -1492,8 +1495,7 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
     return;
   }
 
-  // 和 CommitFile 一样：如果该路径落在文件排除列表里，UWF 根本不会在
-  // overlay 里维护它的删除，提交删除注定失败，早点告诉用户。
+  // 落在文件排除列表里的路径，UWF 不在覆盖层维护，提交删除无意义。
   if (auto it = m_snapshot.current.fileExclusions.find(row->volumeName); it != m_snapshot.current.fileExclusions.end()) {
     const std::string hit = findCoveringExclusion(it->second, path.toStdString());
     if (!hit.empty()) {
@@ -1505,26 +1507,81 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
     }
   }
 
-  if (!confirm(this, I18n::tr("Commit file deletion"),
-               I18n::tr("Delete the following file and commit the deletion to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(path)))
-    return;
-
-  const auto [outcome, hresult, returnValue, detail] = m_volume.commitFileDeletion(*row, path.toStdString());
-  if (!detail.empty()) {
-    const char* kind = outcome == CommitOutcome::Skipped ? "skipped" : "failed";
-    UWF_LOG_W("commit") << std::format("CommitFileDeletion {}: file={} hr=0x{:08x} rv={} detail={}", kind, path.toStdString(), static_cast<uint32_t>(hresult),
-                                       returnValue, detail);
-  }
-
-  QList<CommitReportRow> nonOkRows;
-  int okCount = 0;
-  if (outcome == CommitOutcome::Ok) {
-    okCount = 1;
+  // CommitFileDeletion 不接受非空目录、也不递归——目录删除 = 把子文件、子目录、
+  // 目录本身按"最深的先删"收齐，逐个调用；删到某目录时其内容已清空。
+  const bool isDir = fi.isDir();
+  QStringList targets;
+  int fileCount = 0;
+  int subdirCount = 0;
+  if (isDir) {
+    QDirIterator fileIt(path, QDir::Files | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (fileIt.hasNext()) targets << QDir::toNativeSeparators(fileIt.next());
+    fileCount = static_cast<int>(targets.size());
+    QDirIterator dirIt(path, QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (dirIt.hasNext()) targets << QDir::toNativeSeparators(dirIt.next());
+    subdirCount = static_cast<int>(targets.size()) - fileCount;
+    targets << QDir::toNativeSeparators(path);  // 目录本身——排序后最浅、最后删
+    std::sort(targets.begin(), targets.end(), [](const QString& a, const QString& b) { return a.count('\\') > b.count('\\'); });
   } else {
-    nonOkRows.append({outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed"), path, formatErrorCode(hresult, returnValue),
-                      explainCommitFailure(hresult, returnValue)});
+    targets << path;
   }
-  showCommitReport(this, okCount, nonOkRows);
+
+  const QString title = isDir ? I18n::tr("Commit folder deletion") : I18n::tr("Commit file deletion");
+  const QString prompt =
+      isDir ? I18n::tr("Delete the folder below and everything inside it — %1 files and %2 subfolders — and commit the deletions to disk. "
+                       "This action cannot be undone.\n\n%3\n\nContinue?")
+                  .arg(fileCount)
+                  .arg(subdirCount)
+                  .arg(path)
+            : I18n::tr("Delete the following file and commit the deletion to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(path);
+  if (!confirm(this, title, prompt)) return;
+
+  std::unique_ptr<QProgressDialog> progress;
+  if (targets.size() > 1) {
+    progress = std::make_unique<QProgressDialog>(I18n::tr("Committing…"), I18n::tr("Cancel"), 0, static_cast<int>(targets.size()), this);
+    progress->setWindowTitle(title);
+    progress->setWindowModality(Qt::WindowModal);
+    progress->setMinimumDuration(500);
+    progress->setAutoClose(true);
+    progress->setAutoReset(false);
+    Q_ASSERT(progress->windowModality() == Qt::WindowModal);
+  }
+
+  int okCount = 0;
+  bool canceled = false;
+  QList<CommitReportRow> nonOkRows;
+  for (int i = 0; i < targets.size(); ++i) {
+    if (progress) {
+      progress->setValue(i);
+      if (progress->wasCanceled()) {
+        canceled = true;
+        break;
+      }
+      const QString& cur = targets[i];
+      const QString shown = cur.size() > 80 ? ("…" + cur.right(79)) : cur;
+      progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(targets.size()).arg(shown));
+    }
+    const QString& f = targets[i];
+    const auto res = m_volume.commitFileDeletion(*row, f.toStdString());
+    if (res.outcome == CommitOutcome::Ok) {
+      ++okCount;
+    } else {
+      if (!res.detail.empty()) {
+        const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+        UWF_LOG_W("commit") << std::format("CommitFileDeletion {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(),
+                                           static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
+      }
+      nonOkRows.append({res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed"), f, formatErrorCode(res.hresult, res.returnValue),
+                        explainCommitFailure(res.hresult, res.returnValue)});
+    }
+  }
+  if (progress) {
+    progress->setValue(static_cast<int>(targets.size()));
+    progress->close();
+  }
+
+  const int untouched = canceled ? (static_cast<int>(targets.size()) - okCount - static_cast<int>(nonOkRows.size())) : 0;
+  showCommitReport(this, okCount, nonOkRows, untouched);
 }
 
 void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) {
