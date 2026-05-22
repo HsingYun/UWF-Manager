@@ -43,8 +43,8 @@ inline constexpr std::string_view kProductNameWin10Token = "Windows 10";
 inline constexpr std::string_view kProductNameWin11Token = "Windows 11";
 
 // 注册表中 OS 版本信息（ProductName / EditionID / CurrentBuildNumber / UBR）
-// 所在的项。
-inline constexpr const wchar_t* kRegPathWindowsCurrentVersion = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+// 所在项的完整键路径（含 hive）。
+inline constexpr std::string_view kRegPathWindowsCurrentVersion = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
 
 // 支持 UWF 的 Windows 版本——EditionID 里只要（不分大小写）包含其中任一关键字
 // 即视为受支持。小写存储，调用方先把 EditionID 转小写再做子串匹配。

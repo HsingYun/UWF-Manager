@@ -282,31 +282,6 @@ QString extractDriveLetter(const QString& path) {
 }
 QString systemDriveLetter() { return QString::fromStdString(drive::systemLetter()); }
 
-// 小工具：读一个字符串型的 REG_SZ / REG_EXPAND_SZ 注册表值。
-QString readRegSz(HKEY root, const wchar_t* subkey, const wchar_t* name) {
-  HKEY k = nullptr;
-  if (RegOpenKeyExW(root, subkey, 0, KEY_READ | KEY_WOW64_64KEY, &k) != ERROR_SUCCESS) {
-    return {};
-  }
-  wchar_t buf[256] = {};
-  DWORD sz = sizeof(buf), type = 0;
-  const LONG r = RegQueryValueExW(k, name, nullptr, &type, reinterpret_cast<LPBYTE>(buf), &sz);
-  RegCloseKey(k);
-  if (r != ERROR_SUCCESS) return {};
-  return QString::fromWCharArray(buf).trimmed();
-}
-
-DWORD readRegDword(HKEY root, const wchar_t* subkey, const wchar_t* name) {
-  HKEY k = nullptr;
-  if (RegOpenKeyExW(root, subkey, 0, KEY_READ | KEY_WOW64_64KEY, &k) != ERROR_SUCCESS) {
-    return 0;
-  }
-  DWORD val = 0, sz = sizeof(val), type = 0;
-  RegQueryValueExW(k, name, nullptr, &type, reinterpret_cast<LPBYTE>(&val), &sz);
-  RegCloseKey(k);
-  return val;
-}
-
 // RtlGetVersion 是唯一一个在 Windows 8.1+ 上仍返回真实版本号（而不是被
 // 应用兼容性"撒谎"成 Windows 8）的接口。动态加载避免对 ntdll 的直接 link。
 // 版本型号则从 CurrentVersion\ProductName / EditionID 里取——Windows 11 的
@@ -320,10 +295,10 @@ QString windowsVersionText() {
   v.dwOSVersionInfoSize = sizeof(v);
   if (!fn || fn(&v) != 0) return QStringLiteral("Windows");
 
-  constexpr const wchar_t* kCur = config::kRegPathWindowsCurrentVersion;
-  const DWORD ubr = readRegDword(HKEY_LOCAL_MACHINE, kCur, L"UBR");
-  const QString productName = readRegSz(HKEY_LOCAL_MACHINE, kCur, L"ProductName");
-  const QString editionId = readRegSz(HKEY_LOCAL_MACHINE, kCur, L"EditionID");
+  constexpr std::string_view kCur = config::kRegPathWindowsCurrentVersion;
+  const auto ubr = regkey::readDword(kCur, "UBR");
+  const QString productName = QString::fromStdString(regkey::readString(kCur, "ProductName")).trimmed();
+  const QString editionId = QString::fromStdString(regkey::readString(kCur, "EditionID")).trimmed();
 
   // 家族名（Windows 10 / 11 共享 Major=10，靠 build ≥ 22000 区分）。
   QString family = QStringLiteral("Windows");
@@ -355,18 +330,10 @@ QString windowsVersionText() {
 }
 
 QString cpuModelText() {
-  HKEY k = nullptr;
-  if (RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", 0, KEY_READ, &k) != ERROR_SUCCESS) {
-    return {};
-  }
-  wchar_t buf[256] = {};
-  DWORD sz = sizeof(buf), type = 0;
-  const LONG r = RegQueryValueExW(k, L"ProcessorNameString", nullptr, &type, reinterpret_cast<LPBYTE>(buf), &sz);
-  RegCloseKey(k);
-  if (r != ERROR_SUCCESS) return {};
-  QString s = QString::fromWCharArray(buf);
+  const QString name =
+      QString::fromStdString(regkey::readString(R"(HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0)", "ProcessorNameString"));
   // BIOS 厂商常常在名字里塞大量尾随空格，去一下。
-  return s.trimmed().simplified();
+  return name.trimmed().simplified();
 }
 
 QString totalRamText() {

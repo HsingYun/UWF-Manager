@@ -12,6 +12,8 @@
 #include <QStyleHints>
 #include <QSvgRenderer>
 
+#include "../util/RegistryKey.h"
+
 namespace uwf::ui {
 
 namespace {
@@ -135,17 +137,11 @@ void ThemeManager::apply(Theme t) {
 void ThemeManager::toggle() { apply(m_theme == Theme::Dark ? Theme::Light : Theme::Dark); }
 
 Theme ThemeManager::detectSystemTheme() {
-  HKEY hKey = nullptr;
-  if (RegOpenKeyExW(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", 0, KEY_READ, &hKey) == ERROR_SUCCESS) {
-    DWORD value = 1;
-    DWORD size = sizeof(value);
-    const LSTATUS rs = RegQueryValueExW(hKey, L"AppsUseLightTheme", nullptr, nullptr, reinterpret_cast<BYTE*>(&value), &size);
-    RegCloseKey(hKey);
-    if (rs == ERROR_SUCCESS) {
-      return value == 0 ? Theme::Dark : Theme::Light;
-    }
-  }
-  return Theme::Dark;
+  // AppsUseLightTheme：0 = 深色应用主题，非 0 / 缺失 = 浅色。读不到该值
+  // （注册表项不存在等）时 readDword 返回 0——与"未配置时回退深色"一致。
+  return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", "AppsUseLightTheme") == 0
+             ? Theme::Dark
+             : Theme::Light;
 }
 
 QColor ThemeManager::color(Sem s) const {
