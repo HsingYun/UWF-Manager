@@ -44,7 +44,9 @@
 #include <chrono>
 #include <format>
 #include <memory>
+#include <string_view>
 
+#include "../core/Config.h"
 #include "../util/DriveLetter.h"
 #include "../util/Log.h"
 #include "../uwf/UwfSnapshot.h"
@@ -317,7 +319,7 @@ QString windowsVersionText() {
   v.dwOSVersionInfoSize = sizeof(v);
   if (!fn || fn(&v) != 0) return QStringLiteral("Windows");
 
-  constexpr const wchar_t* kCur = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  constexpr const wchar_t* kCur = config::kRegPathWindowsCurrentVersion;
   const DWORD ubr = readRegDword(HKEY_LOCAL_MACHINE, kCur, L"UBR");
   const QString productName = readRegSz(HKEY_LOCAL_MACHINE, kCur, L"ProductName");
   const QString editionId = readRegSz(HKEY_LOCAL_MACHINE, kCur, L"EditionID");
@@ -325,7 +327,7 @@ QString windowsVersionText() {
   // 家族名（Windows 10 / 11 共享 Major=10，靠 build ≥ 22000 区分）。
   QString family = QStringLiteral("Windows");
   if (v.dwMajorVersion == 10) {
-    family = v.dwBuildNumber >= 22000 ? QStringLiteral("Windows 11") : QStringLiteral("Windows 10");
+    family = v.dwBuildNumber >= static_cast<DWORD>(config::kWindows11MinBuildNumber) ? QStringLiteral("Windows 11") : QStringLiteral("Windows 10");
   }
 
   // 从 ProductName 去掉"Windows 10/11 "前缀拿型号（Pro / Enterprise / Home /
@@ -341,7 +343,8 @@ QString windowsVersionText() {
   // LTSC / LTSB 变体：EditionID = EnterpriseS / EnterpriseSN / IoTEnterpriseS …
   // ProductName 并不总是把 "LTSC" 写出来，需要自己补上。
   const QString ed = editionId.toLower();
-  const bool isLtsc = ed == "enterprises" || ed == "enterprisesn" || ed == "iotenterprises" || ed == "iotenterprisesn";
+  const bool isLtsc = std::ranges::any_of(config::kLtscEditionIds,
+                                          [&ed](std::string_view id) { return ed == QLatin1String(id.data(), static_cast<qsizetype>(id.size())); });
   if (isLtsc && !edition.contains("LTSC", Qt::CaseInsensitive) && !edition.contains("LTSB", Qt::CaseInsensitive)) {
     edition = edition.isEmpty() ? QStringLiteral("LTSC") : (edition + QStringLiteral(" LTSC"));
   }
@@ -469,7 +472,7 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
 
   // 写会话提前连接一次；读快照时会另起一个独立会话。
   std::string err;
-  m_writeSession.connect(api::kWmiNamespace, &err);
+  m_writeSession.connect(config::kWmiNamespaceEmbedded, &err);
   // 内容控件与首屏数据统一交给 showEvent 调度的 rebuildUi()——它一次 buildUi()
   // + refresh() 建好。构造期不再 buildUi()/refresh()：那份产出会被 rebuildUi
   // 整个销毁重建，等于白建一遍 UI、白连一次 WMI、白读一份快照。

@@ -29,6 +29,7 @@
 #include <thread>
 #include <utility>
 
+#include "../core/Config.h"
 #include "../util/DriveLetter.h"
 #include "../uwf/api/UwfOverlay.h"
 #include "../uwf/wmi/WmiClient.h"
@@ -260,7 +261,7 @@ void OverlayFilesDialog::startLoading() {
     do {
       WmiSession session;
       std::string err;
-      if (!session.connect(api::kWmiNamespace, &err)) {
+      if (!session.connect(config::kWmiNamespaceEmbedded, &err)) {
         errorOut = QString::fromStdString(err);
         break;
       }

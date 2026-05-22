@@ -27,7 +27,9 @@
 #include <QSizePolicy>
 #include <QVBoxLayout>
 #include <cmath>
+#include <string_view>
 
+#include "../core/Config.h"
 #include "../util/DriveLetter.h"
 #include "../util/RegistryKey.h"
 #include "I18n.h"
@@ -38,6 +40,10 @@ namespace uwf::ui {
 
 namespace {
 QString lowerKey(const QString& s) { return s.toLower(); }
+
+// uwf::config 里的黑 / 白名单常量是纯 ASCII 的 std::string_view；包成
+// QLatin1String 即可与已大写归一的 QString 直接做（区分大小写的）比较。
+QLatin1String l1(std::string_view sv) { return QLatin1String(sv.data(), static_cast<qsizetype>(sv.size())); }
 
 // QSet 没有自带的大小写不敏感 contains/remove；用户填进去的 m_added /
 // m_removed 通常只有几十条，O(n) 扫描完全够。所有用到这两个集合的地方
@@ -74,32 +80,32 @@ QString forbidExclusionReason(const QString& rawPath, const QString& volumeDl) {
   while (rel.size() > 1 && rel.endsWith("\\")) rel.chop(1);
 
   // 分页/交换/休眠文件——放在卷根上的系统文件；任何卷都禁。
-  if (rel == "\\PAGEFILE.SYS" || rel == "\\SWAPFILE.SYS" || rel == "\\HIBERFIL.SYS") {
-    return I18n::tr("The pagefile, swapfile and hibernation file cannot be excluded; UWF itself depends on these system files.");
+  for (const auto f : config::kForbiddenVolumeRootFiles) {
+    if (rel == l1(f)) {
+      return I18n::tr("The pagefile, swapfile and hibernation file cannot be excluded; UWF itself depends on these system files.");
+    }
   }
 
   const bool isSystemVolume = (volumeDl == QString::fromStdString(drive::systemLetter()));
   if (!isSystemVolume) return {};
 
   // 系统卷：几个关键目录本身不能排除（里面的具体文件可以）。
-  if (rel == "\\WINDOWS") return I18n::tr("The entire \\Windows directory cannot be excluded.");
-  if (rel == "\\WINDOWS\\SYSTEM32") return I18n::tr("The entire \\Windows\\System32 directory cannot be excluded.");
-  if (rel == R"(\WINDOWS\SYSTEM32\DRIVERS)") return I18n::tr(R"(The entire \Windows\System32\Drivers directory cannot be excluded.)");
+  if (rel == l1(config::kForbiddenDirWindows)) return I18n::tr("The entire \\Windows directory cannot be excluded.");
+  if (rel == l1(config::kForbiddenDirWindowsSystem32)) return I18n::tr("The entire \\Windows\\System32 directory cannot be excluded.");
+  if (rel == l1(config::kForbiddenDirWindowsDrivers)) return I18n::tr(R"(The entire \Windows\System32\Drivers directory cannot be excluded.)");
 
   // 系统卷：几个关键文件（注册表蜂巢 / 引导统计）。
-  static const QStringList fixedBlocklist = {
-      R"(\WINDOWS\SYSTEM32\CONFIG\DEFAULT)", R"(\WINDOWS\SYSTEM32\CONFIG\SAM)", R"(\WINDOWS\SYSTEM32\CONFIG\SECURITY)", R"(\WINDOWS\SYSTEM32\CONFIG\SOFTWARE)",
-      R"(\WINDOWS\SYSTEM32\CONFIG\SYSTEM)",  "\\WINDOWS\\BOOTSTAT.DAT",         R"(\EFI\MICROSOFT\BOOT\BOOTSTAT.DAT)",  "\\BOOT\\BOOTSTAT.DAT",
-  };
-  for (const auto& b : fixedBlocklist) {
-    if (rel == b) return I18n::tr("This critical system file cannot be excluded: %1").arg(b.toLower());
+  for (const auto f : config::kForbiddenSystemFiles) {
+    if (rel == l1(f)) return I18n::tr("This critical system file cannot be excluded: %1").arg(l1(f).toString().toLower());
   }
 
   // 每个用户的 NTUSER.DAT：\Users\<User Name>\NTUSER.DAT，用户名任意但
   // 只有一层。
-  if (rel.startsWith("\\USERS\\") && rel.endsWith("\\NTUSER.DAT")) {
+  const QString usersDir = l1(config::kUsersDirName).toString();
+  const QString ntuserDat = l1(config::kPerUserRegistryHive).toString();
+  if (rel.startsWith('\\' + usersDir + '\\') && rel.endsWith('\\' + ntuserDat)) {
     const auto parts = rel.split('\\', Qt::SkipEmptyParts);
-    if (parts.size() == 3 && parts[0] == "USERS" && parts[2] == "NTUSER.DAT") {
+    if (parts.size() == 3 && parts[0] == usersDir && parts[2] == ntuserDat) {
       return I18n::tr("The per-user registry file NTUSER.DAT cannot be excluded.");
     }
   }
@@ -138,19 +144,16 @@ QString forbidRegExclusionReason(const QString& rawKey) {
 
   // 黑名单：$MACHINE.ACC。放在白名单检查之前——它在 SECURITY 下能通过白名单，
   // 必须先单独挡掉。
-  if (upper == R"(HKEY_LOCAL_MACHINE\SECURITY\POLICY\SECRETS\$MACHINE.ACC)")
+  if (upper == l1(config::kForbiddenRegistryKeyMachineAccount))
     return I18n::tr(
         "HKLM\\SECURITY\\Policy\\Secrets\\$MACHINE.ACC cannot be excluded; this is the domain machine account secret, which UWF documentation explicitly "
         "forbids excluding.");
 
   // 白名单：必须是 6 个允许顶层键的"子键"（不是顶层键本身，所以前缀末尾
   // 的 "\" 之后还得至少有一个字符）。
-  static const QStringList allowedPrefixes = {
-      R"(HKEY_LOCAL_MACHINE\BCD00000000\)", R"(HKEY_LOCAL_MACHINE\SYSTEM\)",   R"(HKEY_LOCAL_MACHINE\SOFTWARE\)",
-      R"(HKEY_LOCAL_MACHINE\SAM\)",         R"(HKEY_LOCAL_MACHINE\SECURITY\)", R"(HKEY_LOCAL_MACHINE\COMPONENTS\)",
-  };
-  for (const auto& prefix : allowedPrefixes) {
-    if (upper.startsWith(prefix) && upper.size() > prefix.size()) {
+  for (const auto prefix : config::kAllowedRegistryRootPrefixes) {
+    const QLatin1String p = l1(prefix);
+    if (upper.startsWith(p) && upper.size() > p.size()) {
       return {};  // 合法
     }
   }

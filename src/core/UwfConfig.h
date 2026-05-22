@@ -27,10 +27,6 @@ enum class OverlayType : int {
   Disk = 1,      // 覆盖层放在磁盘上
 };
 
-// 基于磁盘的覆盖层，UWF 要求其最大大小至少为 1024 MB（见 UWF_OverlayConfig
-// 的 SetMaximumSize / SetType 生效条件）；RAM 覆盖层无此下限。
-inline constexpr uint32_t kDiskOverlayMinSizeMb = 1024;
-
 // 筛选器总开关的状态，对应 UWF_Filter.CurrentEnabled / NextEnabled。
 struct FilterState {
   bool enabled = false;

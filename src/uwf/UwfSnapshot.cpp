@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <map>
 
+#include "../core/Config.h"
 #include "../util/DriveLetter.h"
 #include "SystemCheck.h"
 #include "api/UwfFilter.h"
@@ -59,7 +60,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
   snap.elevated = isElevated();
   WmiSession s;
   std::string err;
-  if (!s.connect(api::kWmiNamespace, &err)) {
+  if (!s.connect(config::kWmiNamespaceEmbedded, &err)) {
     snap.uwfAvailable = false;
     snap.rawError = err;
     if (error) *error = err;
@@ -141,7 +142,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
 std::vector<core::DiskInfo> enumerateDisks(std::string* error) {
   std::vector<core::DiskInfo> out;
   WmiSession cim;
-  if (!cim.connect(kCimV2Namespace, error)) return out;
+  if (!cim.connect(config::kWmiNamespaceCimv2, error)) return out;
 
   std::string err;
   const auto rows =
@@ -173,9 +174,10 @@ std::vector<core::DiskInfo> enumerateDisks(std::string* error) {
 
     const int driveType = rowutil::getInt(r, "DriveType");
     const std::string fs = toUpperAscii(d.fileSystem);
-    if (driveType != 3) {
+    const bool fullySupportedFs = std::ranges::find(config::kFullySupportedFileSystems, fs) != config::kFullySupportedFileSystems.end();
+    if (driveType != config::kDriveTypeFixedLocalDisk) {
       d.support = DiskSupport::NotFixedLocalDisk;
-    } else if (fs != "NTFS" && fs != "FAT" && fs != "FAT32") {
+    } else if (!fullySupportedFs) {
       // exFAT / ReFS 等：UWF 文档明确说"可保护卷，但不能加文件排除 /
       // 提交文件操作"——所以不是完全 unsupported，标 FileSystemLimited
       // 让 UI 仅禁用文件排除 + commit 部分，protect 开关保持可用。

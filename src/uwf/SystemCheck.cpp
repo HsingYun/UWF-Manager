@@ -8,6 +8,7 @@
 #include <string>
 #include <string_view>
 
+#include "../core/Config.h"
 #include "../util/Log.h"
 
 namespace uwf {
@@ -60,21 +61,22 @@ std::string toLowerAscii(std::string s) {
 // 值。用 CurrentBuildNumber 兜底：>= 22000 即 Windows 11，把名称里的
 // "Windows 10" 改写成 "Windows 11"；解析不出构建号或非 Win11 时原样返回。
 std::string correctWin11Name(std::string productName) {
-  const std::string build = readRegString(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", L"CurrentBuildNumber");
+  const std::string build = readRegString(HKEY_LOCAL_MACHINE, config::kRegPathWindowsCurrentVersion, L"CurrentBuildNumber");
   int buildNum = 0;
   std::from_chars(build.data(), build.data() + build.size(), buildNum);
-  if (buildNum < 22000) return productName;
-  constexpr std::string_view kWin10 = "Windows 10";
-  const auto pos = productName.find(kWin10);
-  if (pos != std::string::npos) productName.replace(pos, kWin10.size(), "Windows 11");
+  if (buildNum < config::kWindows11MinBuildNumber) return productName;
+  const auto pos = productName.find(config::kProductNameWin10Token);
+  if (pos != std::string::npos) productName.replace(pos, config::kProductNameWin10Token.size(), config::kProductNameWin11Token);
   return productName;
 }
 
 bool editionSupported(const std::string& editionId) {
   const std::string e = toLowerAscii(editionId);
   if (e.empty()) return false;
-  return e.find("enterprise") != std::string::npos || e.find("education") != std::string::npos || e.find("iotenterprise") != std::string::npos ||
-         e.find("enterpriseg") != std::string::npos;
+  for (const auto keyword : config::kSupportedEditionKeywords) {
+    if (e.find(keyword) != std::string::npos) return true;
+  }
+  return false;
 }
 
 }  // namespace

@@ -20,10 +20,6 @@
 
 namespace uwf {
 
-// 标准 Windows CIM 命名空间，Win32_* 类（逻辑磁盘、卷等）所在；传给
-// WmiSession::connect()。UWF 专属的 root\standardcimv2\embedded 见 api::kWmiNamespace。
-inline constexpr const char* kCimV2Namespace = "root\\cimv2";
-
 class WmiValue {
  public:
   enum class Kind { None, Bool, Int, UInt, Double, String };

@@ -16,6 +16,7 @@
 #include <climits>
 #include <format>
 
+#include "../core/Config.h"
 #include "I18n.h"
 #include "OverlayUsageBar.h"
 #include "SwitchButton.h"
@@ -358,7 +359,7 @@ void GlobalStatusPanel::reconfigureRanges() const {
   // 约束向下传递 —— 每个 spinbox 的区间取决于覆盖层类型与"更粗一级"的当前值：
   //   - max  ∈ [maxFloor, maxCeiling]
   //     * RAM 模式  : maxFloor = 0；maxCeiling = 系统总内存 MB
-  //     * Disk 模式 : maxFloor = kDiskOverlayMinSizeMb（基于磁盘的覆盖层
+  //     * Disk 模式 : maxFloor = config::kDiskOverlayMinSizeMb（基于磁盘的覆盖层
   //       UWF 要求至少 1024 MB）；maxCeiling = INT_MAX（物理上限来自目标卷
   //       容量，不在这里卡）
   //   - crit ∈ [0, max 当前值]
@@ -370,7 +371,7 @@ void GlobalStatusPanel::reconfigureRanges() const {
   // 超过上限的字符由 ClampingSpinBox::fixup() 在失焦/回车时吸到 maximum()。
   const bool isRam = static_cast<OverlayType>(m_overlayTypeNext->currentData().toInt()) == OverlayType::RAM;
   const int maxCeiling = (isRam && m_totalRamMb > 0) ? static_cast<int>(std::min<uint32_t>(m_totalRamMb, INT_MAX)) : INT_MAX;
-  const int maxFloor = isRam ? 0 : static_cast<int>(core::kDiskOverlayMinSizeMb);
+  const int maxFloor = isRam ? 0 : static_cast<int>(config::kDiskOverlayMinSizeMb);
 
   m_maxNext->setRange(maxFloor, maxCeiling);
   m_critNext->setRange(0, m_maxNext->value());
