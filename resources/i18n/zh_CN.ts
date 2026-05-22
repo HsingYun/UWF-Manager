@@ -233,6 +233,8 @@ The path must no longer exist in the current session — meaning it has already 
     <message><source>Loading…</source><translation>加载中…</translation></message>
     <message><source>Failed: %1</source><translation>失败：%1</translation></message>
     <message><source>%1 file(s) in overlay</source><translation>覆盖层中共 %1 个文件</translation></message>
+    <message><source>No files</source><translation>无文件</translation></message>
+    <message><source>Page %1 / %2 · %3 file(s) total</source><translation>第 %1 / %2 页 · 共 %3 个文件</translation></message>
     <message>
         <source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure. Wait a few seconds and click &quot;View overlay files&quot; again, often it succeeds on retry.</source>
         <translation>WMI 提供程序在枚举覆盖层文件时崩溃。这是 UWF_Overlay.GetOverlayFiles 在覆盖层较大或磁盘 I/O 繁忙时的已知不稳定行为。等几秒后再点一次"查看覆盖层文件"，多数情况下重试就能成功。</translation>

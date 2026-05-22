@@ -12,16 +12,19 @@
 #include <QHBoxLayout>
 #include <QHash>
 #include <QLabel>
+#include <QListWidget>
 #include <QListWidgetItem>
 #include <QMenu>
 #include <QPointer>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QResizeEvent>
 #include <QSaveFile>
 #include <QStringConverter>
 #include <QTextStream>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <functional>
 #include <mutex>
 #include <thread>
 #include <utility>
@@ -37,6 +40,25 @@
 namespace uwf::ui {
 
 namespace {
+
+// 每个列表项显式声明的行高（sizeHint 高度）。QSS（exclusionList::item）会再
+// 叠加 padding 与 border，故 pageSize 计算用的实际行高由 rowHeight() 实测得出，
+// 不直接用本常量。
+constexpr int kBaseRowHeight = 22;
+
+// QListWidget 子类：viewport 尺寸变化时回调，让对话框按新高度重算单页行数。
+// 与日志查看器的 PagedTable 同一思路；无 Q_OBJECT，纯虚函数 override。
+class PagedListWidget : public QListWidget {
+ public:
+  using QListWidget::QListWidget;
+  std::function<void()> onViewportResized;
+
+ protected:
+  void resizeEvent(QResizeEvent* e) override {
+    QListWidget::resizeEvent(e);
+    if (onViewportResized) onViewportResized();
+  }
+};
 
 QString formatSize(qulonglong b) {
   constexpr qulonglong KB = 1024;
@@ -126,18 +148,60 @@ OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, QWidget* pare
   loadingRow->addWidget(m_loadingLabel);
   layout->addLayout(loadingRow);
 
-  m_list = new QListWidget(this);
-  m_list->setSelectionMode(QAbstractItemView::ExtendedSelection);
-  m_list->setIconSize({16, 16});
+  auto* list = new PagedListWidget(this);
+  list->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  list->setIconSize({16, 16});
   // 复用 ExclusionListWidget 的 QSS class，跟随 dark/light 主题。
-  m_list->setObjectName("exclusionList");
-  m_list->setContextMenuPolicy(Qt::CustomContextMenu);
-  connect(m_list, &QListWidget::customContextMenuRequested, this, &OverlayFilesDialog::onContextMenu);
-  layout->addWidget(m_list, 1);
+  list->setObjectName("exclusionList");
+  list->setContextMenuPolicy(Qt::CustomContextMenu);
+  // 单页行数随 viewport 高度走，永不出垂直滚动条（与日志查看器一致）。
+  list->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  list->onViewportResized = [this]() { recomputePageSize(); };
+  connect(list, &QListWidget::customContextMenuRequested, this, &OverlayFilesDialog::onContextMenu);
+  layout->addWidget(list, 1);
+  m_list = list;
 
   m_summary = new QLabel(this);
   m_summary->setTextInteractionFlags(Qt::TextSelectableByMouse);
   layout->addWidget(m_summary);
+
+  // 分页导航：与日志查看器一致的 «‹ ›» 布局。点击只改 m_currentPage 后重渲染
+  // 当前页，不触发任何 WMI 读取。
+  auto* pageRow = new QHBoxLayout();
+  m_firstBtn = new QPushButton(QStringLiteral("«"), this);
+  m_prevBtn = new QPushButton(QStringLiteral("‹"), this);
+  m_pageInfo = new QLabel(this);
+  m_pageInfo->setAlignment(Qt::AlignCenter);
+  m_pageInfo->setMinimumWidth(220);
+  m_nextBtn = new QPushButton(QStringLiteral("›"), this);
+  m_lastBtn = new QPushButton(QStringLiteral("»"), this);
+  for (auto* b : {m_firstBtn, m_prevBtn, m_nextBtn, m_lastBtn}) b->setMaximumWidth(36);
+  pageRow->addStretch(1);
+  pageRow->addWidget(m_firstBtn);
+  pageRow->addWidget(m_prevBtn);
+  pageRow->addWidget(m_pageInfo);
+  pageRow->addWidget(m_nextBtn);
+  pageRow->addWidget(m_lastBtn);
+  pageRow->addStretch(1);
+  layout->addLayout(pageRow);
+
+  // 导航按钮只调整 m_currentPage——越界由 renderPage() 统一夹取回合法区间。
+  connect(m_firstBtn, &QPushButton::clicked, this, [this]() {
+    m_currentPage = 0;
+    renderPage();
+  });
+  connect(m_prevBtn, &QPushButton::clicked, this, [this]() {
+    --m_currentPage;
+    renderPage();
+  });
+  connect(m_nextBtn, &QPushButton::clicked, this, [this]() {
+    ++m_currentPage;
+    renderPage();
+  });
+  connect(m_lastBtn, &QPushButton::clicked, this, [this]() {
+    m_currentPage = pageCount() - 1;
+    renderPage();
+  });
 
   // 自己拼按钮行而不是 QDialogButtonBox：Action/Reset 角色在 WindowsLayout
   // 下落点不稳定，直接 [Export] [stretch] [Close] 最直观。
@@ -244,8 +308,8 @@ void OverlayFilesDialog::onLoadFinished(QVector<OverlayFileEntry> entries, const
   if (m_progress) m_progress->hide();
   if (m_loadingLabel) m_loadingLabel->hide();
 
-  const auto& tm = ThemeManager::instance();
   if (!error.isEmpty()) {
+    const auto& tm = ThemeManager::instance();
     // GetOverlayFiles 是 UWF 文档承认不稳的方法——overlay 大、I/O 高负载或
     // NTFS 元数据复杂时 provider 会抛 RPC_E_SERVERFAULT，也可能 timeout
     // 或 OOM。按命名常量分支给用户一个可操作的中文提示，原始错误带在后面
@@ -303,23 +367,15 @@ void OverlayFilesDialog::onLoadFinished(QVector<OverlayFileEntry> entries, const
   std::ranges::sort(entries,
                     [](const OverlayFileEntry& a, const OverlayFileEntry& b) { return a.absolutePath.compare(b.absolutePath, Qt::CaseInsensitive) < 0; });
 
-  m_summary->setText(I18n::tr("%1 file(s) in overlay").arg(entries.size()));
-
-  for (const auto& e : entries) {
-    auto* item = new QListWidgetItem();
-    // 目录条目（来自 :$INDEX_ALLOCATION）显示 folder 图标，避免剥掉后缀
-    // 后用户分不清这条到底是文件还是目录。
-    item->setIcon(tm.icon(e.isDirectory ? ":/icons/folder.svg" : ":/icons/file.svg"));
-    item->setData(Qt::UserRole, e.absolutePath);
-    item->setData(Qt::UserRole + 1, e.isDirectory);
-    item->setData(Qt::UserRole + 2, e.isSystemMetadata);
-    item->setText(QString("%1    %2").arg(e.absolutePath, formatSize(e.fileSize)));
-    item->setToolTip(e.absolutePath);
-    m_list->addItem(item);
-  }
-
   m_entries = std::move(entries);
+  m_loaded = true;
+  m_currentPage = 0;
+  m_summary->setText(I18n::tr("%1 file(s) in overlay").arg(m_entries.size()));
   if (!m_entries.isEmpty()) m_exportBtn->setEnabled(true);
+
+  // 条目已就位——渲染首页。单页行数此前已由对话框 show 时的 resize 事件按
+  // viewport 高度定好（GetOverlayFiles 耗时远长于首次布局）。
+  renderPage();
 }
 
 void OverlayFilesDialog::onContextMenu(const QPoint& pos) {
@@ -428,6 +484,87 @@ void OverlayFilesDialog::onExportClicked() {
   }
 
   dialogs::information(this, I18n::tr("Export finished"), I18n::tr("Saved %1 entries to:\n%2").arg(m_entries.size()).arg(QDir::toNativeSeparators(path)));
+}
+
+void OverlayFilesDialog::renderPage() {
+  if (!m_list) return;
+
+  const int total = static_cast<int>(m_entries.size());
+  const int pages = pageCount();
+  // 夹取页码：导航按钮可能 ++/-- 出界，按最新页数收回合法区间。
+  if (m_currentPage < 0) m_currentPage = 0;
+  if (m_currentPage >= pages) m_currentPage = pages > 0 ? pages - 1 : 0;
+
+  const int start = m_currentPage * m_pageSize;
+  const int end = std::min(total, start + m_pageSize);
+
+  const auto& tm = ThemeManager::instance();
+  m_list->setUpdatesEnabled(false);
+  m_list->clear();
+  for (int i = start; i < end; ++i) {
+    const auto& e = m_entries[i];
+    auto* item = new QListWidgetItem();
+    // 统一行高——pageSize 的计算依赖每行等高（实测值含 QSS padding / border）。
+    item->setSizeHint(QSize(0, kBaseRowHeight));
+    // 目录条目（来自 :$INDEX_ALLOCATION）显示 folder 图标，避免剥掉后缀
+    // 后用户分不清这条到底是文件还是目录。
+    item->setIcon(tm.icon(e.isDirectory ? ":/icons/folder.svg" : ":/icons/file.svg"));
+    item->setData(Qt::UserRole, e.absolutePath);
+    item->setData(Qt::UserRole + 1, e.isDirectory);
+    item->setData(Qt::UserRole + 2, e.isSystemMetadata);
+    item->setText(QString("%1    %2").arg(e.absolutePath, formatSize(e.fileSize)));
+    item->setToolTip(e.absolutePath);
+    m_list->addItem(item);
+  }
+  m_list->setUpdatesEnabled(true);
+
+  if (!m_loaded) {
+    m_pageInfo->clear();  // 加载完成前不显示页码统计
+  } else if (pages == 0) {
+    m_pageInfo->setText(I18n::tr("No files"));
+  } else {
+    m_pageInfo->setText(I18n::tr("Page %1 / %2 · %3 file(s) total").arg(m_currentPage + 1).arg(pages).arg(total));
+  }
+  const bool hasPrev = m_currentPage > 0;
+  const bool hasNext = m_currentPage < pages - 1;
+  m_firstBtn->setEnabled(hasPrev);
+  m_prevBtn->setEnabled(hasPrev);
+  m_nextBtn->setEnabled(hasNext);
+  m_lastBtn->setEnabled(hasNext);
+}
+
+void OverlayFilesDialog::recomputePageSize() {
+  if (!m_list) return;
+  const int rowH = std::max(1, rowHeight());
+  const int viewH = std::max(0, m_list->viewport()->height());
+  const int newSize = std::max(1, viewH / rowH);
+  if (newSize == m_pageSize) return;
+  // 尽量保住"当前页第一条"——按它在全量列表里的下标重新定位到对应页。
+  const int firstIdx = m_currentPage * m_pageSize;
+  m_pageSize = newSize;
+  m_currentPage = firstIdx / newSize;
+  renderPage();
+}
+
+int OverlayFilesDialog::rowHeight() {
+  if (m_rowHeight > 0) return m_rowHeight;
+  // QSS（exclusionList::item）给条目叠加了 padding 与 border，固定常量量不准——
+  // 直接问 widget 要一行的实际像素高度。列表为空时插一个探针项量完即删。
+  const bool empty = m_list->count() == 0;
+  if (empty) {
+    auto* probe = new QListWidgetItem(QStringLiteral("probe"));
+    probe->setSizeHint(QSize(0, kBaseRowHeight));
+    m_list->addItem(probe);
+  }
+  const int h = m_list->sizeHintForRow(0);
+  if (empty) delete m_list->takeItem(0);
+  if (h > 0) m_rowHeight = h;
+  return m_rowHeight > 0 ? m_rowHeight : kBaseRowHeight;
+}
+
+int OverlayFilesDialog::pageCount() const {
+  const int total = static_cast<int>(m_entries.size());
+  return (m_pageSize > 0 && total > 0) ? (total + m_pageSize - 1) / m_pageSize : 0;
 }
 
 }  // namespace uwf::ui

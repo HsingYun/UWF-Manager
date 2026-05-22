@@ -40,6 +40,9 @@ struct OverlayFileEntry {
 // 所以在 worker 线程上跑（自己 CoInitializeEx + 独立 WmiSession），结果
 // 投回 UI 线程渲染。加载期间显示忙碌进度条；用户可以提前关闭对话框，
 // worker 线程靠 QPointer 检查 dialog 是否还活着，活着再投递结果。
+//
+// 覆盖层文件可能成千上万，列表与日志查看器一样按页展示：条目全量留在
+// m_entries，m_list 每次只渲染当前页，单页行数随窗口高度自适应、不出滚动条。
 class OverlayFilesDialog : public QDialog {
   Q_OBJECT
  public:
@@ -62,6 +65,14 @@ class OverlayFilesDialog : public QDialog {
   // hresult 0 表示成功；非 0 时按命名常量分支处理（RPC_E_SERVERFAULT
   // / WBEM_E_OUT_OF_MEMORY / WBEM_E_NOT_SUPPORTED 等）。
   void onLoadFinished(QVector<OverlayFileEntry> entries, const QString& error, int32_t hresult);
+  // 把 m_currentPage 指向的那一页条目渲染进 m_list，并刷新页码标签 / 导航按钮。
+  void renderPage();
+  // viewport 高度变化时按实测行高重算每页行数；行数变了才重渲染。
+  void recomputePageSize();
+  // 实测一行（含 QSS padding / border）的像素高度，量到一次后缓存复用。
+  int rowHeight();
+  // 由当前条目数与每页行数算出的总页数；空列表为 0。
+  [[nodiscard]] int pageCount() const;
   // absolutePath 已是规范化绝对路径，不依赖任何实例状态，故为 static。
   static void openContainingFolder(const QString& absolutePath);
 
@@ -71,8 +82,21 @@ class OverlayFilesDialog : public QDialog {
   QLabel* m_loadingLabel = nullptr;
   QLabel* m_summary = nullptr;
   QPushButton* m_exportBtn = nullptr;
-  // 加载完成后的条目副本（已规范化 + 排序），导出按钮直接读这个，避免再
-  // 走一遍 list widget 还原。
+
+  // 分页导航控件与状态。与日志查看器一致：条目全量留在 m_entries，
+  // m_list 每次只渲染一页，单页行数随 viewport 高度走、不出垂直滚动条。
+  QLabel* m_pageInfo = nullptr;
+  QPushButton* m_firstBtn = nullptr;
+  QPushButton* m_prevBtn = nullptr;
+  QPushButton* m_nextBtn = nullptr;
+  QPushButton* m_lastBtn = nullptr;
+  int m_currentPage = 0;
+  int m_pageSize = 1;     // 占位值；首个 resize 事件按 viewport 高度修正
+  int m_rowHeight = 0;    // 实测行高缓存，0 = 尚未测量
+  bool m_loaded = false;  // 加载成功后才在页码标签里显示统计
+
+  // 加载完成后的条目副本（已规范化 + 排序），导出与分页渲染直接读这个，
+  // 避免再走一遍 list widget 还原。
   QVector<OverlayFileEntry> m_entries;
 
   // 后台加载 worker。GetOverlayFiles 可能跑到小时级——worker 启用 COM 调用
