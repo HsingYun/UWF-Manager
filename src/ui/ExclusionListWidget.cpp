@@ -272,11 +272,27 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
     connect(m_addFileAct, &QAction::triggered, this, &ExclusionListWidget::onAddFile);
     connect(m_addDirAct, &QAction::triggered, this, &ExclusionListWidget::onAddDir);
   } else {
+    m_persistDomainSecretKey.name = QStringLiteral("DomainSecretKey");
+    m_persistTSCAL.name = QStringLiteral("TSCAL");
+    // "添加"是下拉菜单：三选一——手填注册表键 / 开启 DomainSecretKey / 开启
+    // TSCAL。后两项把 UWF_RegistryFilter 的全局开关当伪条目，模拟普通排除的添加。
     m_addBtn = new QPushButton(tm.iconWithColor(":/icons/add.svg", btnIconFg), I18n::tr("Add"), this);
     m_addBtn->setObjectName("primaryBtn");
-    m_addBtn->setToolTip(I18n::tr("Enter a registry key path to add to the exclusion list."));
+    m_addBtn->setToolTip(I18n::tr("Add a registry key to the exclusion list, or enable a persistence switch."));
+    auto* addMenu = new QMenu(m_addBtn);
+    addMenu->setToolTipsVisible(true);
+    m_addRegKeyAct = addMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Registry key…"));
+    m_addRegKeyAct->setToolTip(I18n::tr("Enter a registry key path to add to the exclusion list."));
+    m_addDomainSecretAct = addMenu->addAction(I18n::tr("Enable DomainSecretKey"));
+    m_addDomainSecretAct->setToolTip(I18n::tr("Persist the domain secret key (machine account password) across UWF sessions."));
+    m_addTscalAct = addMenu->addAction(I18n::tr("Enable TSCAL"));
+    m_addTscalAct->setToolTip(I18n::tr("Persist Terminal Services client access licenses across UWF sessions."));
+    m_addBtn->setMenu(addMenu);
     header->addWidget(m_addBtn);
-    connect(m_addBtn, &QPushButton::clicked, this, &ExclusionListWidget::onAddRegistry);
+    connect(m_addRegKeyAct, &QAction::triggered, this, &ExclusionListWidget::onAddRegistry);
+    connect(m_addDomainSecretAct, &QAction::triggered, this, [this] { enablePersistFlag(m_persistDomainSecretKey); });
+    connect(m_addTscalAct, &QAction::triggered, this, [this] { enablePersistFlag(m_persistTSCAL); });
+    connect(addMenu, &QMenu::aboutToShow, this, &ExclusionListWidget::updateAddMenuState);
   }
 
   m_rmBtn = new QPushButton(tm.iconWithColor(":/icons/remove.svg", btnIconFg), I18n::tr("Remove selected"), this);
@@ -401,6 +417,7 @@ void ExclusionListWidget::refreshThemedIcons() {
   }
   if (m_addFileAct) m_addFileAct->setIcon(tm.icon(":/icons/file.svg"));
   if (m_addDirAct) m_addDirAct->setIcon(tm.icon(":/icons/folder.svg"));
+  if (m_addRegKeyAct) m_addRegKeyAct->setIcon(tm.icon(":/icons/registry.svg"));
   if (m_rmBtn) {
     m_rmBtn->setIcon(tm.iconWithColor(":/icons/remove.svg", btnIconFg));
   }
@@ -473,9 +490,21 @@ void ExclusionListWidget::setBaseline(const QStringList& current, const QStringL
   emit pendingChanged();
 }
 
+void ExclusionListWidget::setPersistBaseline(bool domainSecretKeyCurrent, bool domainSecretKeyNext, bool tscalCurrent, bool tscalNext) {
+  m_persistDomainSecretKey.baseCurrent = domainSecretKeyCurrent;
+  m_persistDomainSecretKey.baseNext = domainSecretKeyNext;
+  m_persistDomainSecretKey.pendingNext.reset();
+  m_persistTSCAL.baseCurrent = tscalCurrent;
+  m_persistTSCAL.baseNext = tscalNext;
+  m_persistTSCAL.pendingNext.reset();
+  rebuild();
+}
+
 void ExclusionListWidget::resetPending() {
   m_added.clear();
   m_removed.clear();
+  m_persistDomainSecretKey.pendingNext.reset();
+  m_persistTSCAL.pendingNext.reset();
   rebuild();
   emit pendingChanged();
 }
@@ -491,6 +520,9 @@ QStringList ExclusionListWidget::pendingRemoved() const {
   sortList(l);
   return l;
 }
+
+std::optional<bool> ExclusionListWidget::pendingPersistDomainSecretKey() const { return m_persistDomainSecretKey.pendingNext; }
+std::optional<bool> ExclusionListWidget::pendingPersistTSCAL() const { return m_persistTSCAL.pendingNext; }
 
 void ExclusionListWidget::setReadOnly(bool ro) {
   m_readOnly = ro;
@@ -639,6 +671,15 @@ void ExclusionListWidget::onRemove() {
   if (m_readOnly) return;
   for (auto* it : m_list->selectedItems()) {
     const QString text = it->data(Qt::UserRole).toString();
+    // 持久化开关伪条目：移除 = 撤销待开启，或把已开启的标记为待关闭。
+    if (isPersistRow(text)) {
+      PersistFlag& flag = (text == m_persistDomainSecretKey.name) ? m_persistDomainSecretKey : m_persistTSCAL;
+      if (flag.pendingNext == true)
+        flag.pendingNext.reset();
+      else if (flag.baseNext)
+        flag.pendingNext = false;
+      continue;
+    }
     if (setContainsCI(m_added, text))
       setRemoveCI(m_added, text);
     else if (m_next.contains(text, Qt::CaseInsensitive))
@@ -691,7 +732,15 @@ void ExclusionListWidget::rebuild() {
   }
   sortList(pending);
   sortList(rest);
-  QStringList display = pending + rest;
+  // 持久化开关伪条目恒排在最前（current 或 next 任一为真才显示）。
+  QStringList display;
+  if (m_kind == Kind::Registry) {
+    for (const PersistFlag* f : {&m_persistDomainSecretKey, &m_persistTSCAL}) {
+      if (f->visible()) display << f->name;
+    }
+  }
+  display += pending;
+  display += rest;
 
   int added = 0, removed = 0, changed = 0;
 
@@ -699,10 +748,13 @@ void ExclusionListWidget::rebuild() {
     auto* item = new QListWidgetItem();
     item->setData(Qt::UserRole, entry);
 
-    const bool inCurrent = m_current.contains(entry, Qt::CaseInsensitive);
-    const bool inNextBase = m_next.contains(entry, Qt::CaseInsensitive);
-    const bool userAdded = m_added.contains(entry);
-    const bool userRemoved = m_removed.contains(entry);
+    // 持久化开关伪条目的 4 个状态位取自 PersistFlag；普通排除项取自字符串集合。
+    const PersistFlag* flag = nullptr;
+    if (isPersistRow(entry)) flag = (entry == m_persistDomainSecretKey.name) ? &m_persistDomainSecretKey : &m_persistTSCAL;
+    const bool inCurrent = flag ? flag->baseCurrent : m_current.contains(entry, Qt::CaseInsensitive);
+    const bool inNextBase = flag ? flag->baseNext : m_next.contains(entry, Qt::CaseInsensitive);
+    const bool userAdded = flag ? (flag->pendingNext == true) : m_added.contains(entry);
+    const bool userRemoved = flag ? (flag->pendingNext == false) : m_removed.contains(entry);
     const bool inNextFinal = (inNextBase || userAdded) && !userRemoved;
 
     Badge badge = Badge::None;
@@ -748,6 +800,27 @@ void ExclusionListWidget::rebuild() {
   m_summary->setText(I18n::tr("%1 entries · %2 to add · %3 to remove in next session · %4 pending").arg(display.size()).arg(added).arg(removed).arg(changed));
 
   onFilterChanged(m_filter->text());
+}
+
+void ExclusionListWidget::enablePersistFlag(PersistFlag& flag) {
+  if (m_readOnly) return;
+  if (flag.pendingNext == false)
+    flag.pendingNext.reset();  // 撤销"待关闭"，回到基线（基线必为开）
+  else if (!flag.baseNext)
+    flag.pendingNext = true;  // 基线为关 → 标记待开启
+  // 其余情况（基线已开 / 已待开启）菜单项本就置灰，到不了这里。
+  rebuild();
+  emit pendingChanged();
+}
+
+bool ExclusionListWidget::isPersistRow(const QString& entry) const {
+  return m_kind == Kind::Registry && (entry == m_persistDomainSecretKey.name || entry == m_persistTSCAL.name);
+}
+
+void ExclusionListWidget::updateAddMenuState() {
+  // 已经（含待应用）开启的开关，"开启 X"项置灰——要关闭只能在列表里移除。
+  if (m_addDomainSecretAct) m_addDomainSecretAct->setEnabled(!m_persistDomainSecretKey.effectiveNext());
+  if (m_addTscalAct) m_addTscalAct->setEnabled(!m_persistTSCAL.effectiveNext());
 }
 
 }  // namespace uwf::ui

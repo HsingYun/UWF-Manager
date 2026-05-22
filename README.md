@@ -23,6 +23,7 @@ UWF is the supported successor to the older Enhanced Write Filter (EWF) and File
 - Per-volume protection toggle and drive-letter / volume-ID binding
 - File and directory exclusion lists per volume
 - Registry exclusion list (system volume)
+- DomainSecretKey / TSCAL persistence switches, shown and toggled inline in the registry exclusion list
 - Persist overlay contents back to disk or registry (files, directories, file deletions, registry keys)
 - Read-only enumeration of overlay file entries
 - Import uwfmgr commands — paste or load a command script and stage each line as a pending change
@@ -35,7 +36,6 @@ UWF is the supported successor to the older Enhanced Write Filter (EWF) and File
 - HORM (Hibernate Once / Resume Many)
 - Servicing mode
 - Free-space passthrough, persistent overlay, read-only media mode, swapfile creation
-- Surfacing the domain-secret-key / TSCAL persistence status in the UI
 
 ## Requirements
 

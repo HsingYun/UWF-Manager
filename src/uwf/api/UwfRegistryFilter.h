@@ -28,6 +28,11 @@ class UwfRegistryFilter {
   bool addExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error = nullptr) const;
   bool removeExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error = nullptr) const;
 
+  // 写 UWF_RegistryFilter 的两个全局持久化开关。该类没有对应的 Set* 方法，只能
+  // 整实例 PutInstance——本类属性只有 CurrentSession（键）+ 这两个布尔，故必须
+  // 同时给出两个值（未改动的那个由调用方用现值兜底）。row 用于定位目标会话。
+  bool setPersistFlags(const api::RegistryFilterRow& row, bool persistDomainSecretKey, bool persistTSCAL, std::string* error = nullptr) const;
+
   // 返回 true/false；error 非空说明调用失败。
   std::optional<bool> findExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error = nullptr) const;
 

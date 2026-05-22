@@ -89,6 +89,23 @@ bool UwfRegistryFilter::removeExclusion(const api::RegistryFilterRow& row, const
   return true;
 }
 
+bool UwfRegistryFilter::setPersistFlags(const api::RegistryFilterRow& row, bool persistDomainSecretKey, bool persistTSCAL, std::string* error) const {
+  // UWF_RegistryFilter 的键属性是 CurrentSession；PutInstance(CREATE_OR_UPDATE)
+  // 按键定位实例。本类属性只有 CurrentSession + 这两个布尔，全部给出即整实例更新。
+  WmiRow props;
+  props.emplace("CurrentSession", WmiValue::fromBool(row.currentSession));
+  props.emplace("PersistDomainSecretKey", WmiValue::fromBool(persistDomainSecretKey));
+  props.emplace("PersistTSCAL", WmiValue::fromBool(persistTSCAL));
+  std::string putErr;
+  if (!m_session.putInstance("UWF_RegistryFilter", props, &putErr)) {
+    if (error) *error = putErr;
+    return false;
+  }
+  UWF_LOG_I("UWF_RegistryFilter") << std::format("setPersistFlags ok: session={} dsk={} tscal={}", row.currentSession ? "current" : "next",
+                                                 persistDomainSecretKey, persistTSCAL);
+  return true;
+}
+
 std::optional<bool> UwfRegistryFilter::findExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error) const {
   if (row.path.empty()) {
     if (error) *error = "UWF_RegistryFilter row has empty __PATH; call read() first";

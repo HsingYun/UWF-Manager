@@ -343,6 +343,15 @@
     <message><source>Pick a file to add to the exclusion list.</source><translation>选择一个文件加入排除列表。</translation></message>
     <message><source>Pick a folder (and all of its contents) to add to the exclusion list.</source><translation>选择一个文件夹（包含其中所有内容）加入排除列表。</translation></message>
     <message><source>Enter a registry key path to add to the exclusion list.</source><translation>手动输入一个注册表键路径加入排除列表。</translation></message>
+    <message><source>Add a registry key to the exclusion list, or enable a persistence switch.</source><translation>把一个注册表键加入排除列表，或开启一个持久化开关。</translation></message>
+    <message><source>Registry key…</source><translation>注册表键…</translation></message>
+    <message><source>Enable DomainSecretKey</source><translation>开启 DomainSecretKey</translation></message>
+    <message><source>Enable TSCAL</source><translation>开启 TSCAL</translation></message>
+    <message><source>Persist the domain secret key (machine account password) across UWF sessions.</source><translation>跨 UWF 会话持久化域机密密钥（计算机账户密码）。</translation></message>
+    <message><source>Persist Terminal Services client access licenses across UWF sessions.</source><translation>跨 UWF 会话持久化终端服务客户端访问许可证。</translation></message>
+    <message><source>· %1 persistence %2</source><translation>· %1 持久化 %2</translation></message>
+    <message><source>✓ %1 persistence: %2</source><translation>✓ %1 持久化：%2</translation></message>
+    <message><source>✘ Failed to update registry persistence switches: %1</source><translation>✘ 更新注册表持久化开关失败：%1</translation></message>
     <message><source>Remove selected</source><translation>删除所选</translation></message>
     <message>
         <source>Remove the selected entries from the exclusion list. Takes effect after Apply.</source>
@@ -425,6 +434,10 @@ Pending change: %3</source>
         <translation>&lt;p&gt;UWF 的图形化管理界面：筛选器状态、覆盖层、文件与注册表排除。多数变更在下次重启后生效。&lt;/p&gt;&lt;p&gt;源代码仓库：&lt;a href=&quot;%3&quot;&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href=&quot;mailto:%1&quot;&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;本程序采用 &lt;a href=&quot;%2&quot;&gt;GNU General Public License v3.0&lt;/a&gt; 协议发布；完整协议文本见随程序分发的 LICENSE 文件。&lt;/p&gt;&lt;p&gt;本程序为自由软件，您可以在 GPL v3 条款下重新分发或修改本程序。本程序按"原样"提供，不附带任何形式的担保。&lt;/p&gt;</translation>
     </message>
     <message><source>About UWF Manager</source><translation>关于 UWF 管理器</translation></message>
+    <message>
+        <source>&lt;p&gt;&lt;b&gt;This program depends on the Windows Unified Write Filter (UWF).&lt;/b&gt; UWF Manager does not perform write filtering itself; the actual write protection is provided by the UWF feature built into Windows. This program only configures and manages UWF, and requires UWF to be installed and enabled on the system.&lt;/p&gt;&lt;p&gt;When UWF is first enabled on a device, it makes the following changes to the system to improve UWF performance:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Paging files are disabled.&lt;/li&gt;&lt;li&gt;System Restore is disabled.&lt;/li&gt;&lt;li&gt;SuperFetch is disabled.&lt;/li&gt;&lt;li&gt;The file indexing service is turned off.&lt;/li&gt;&lt;li&gt;The defragmentation service is turned off.&lt;/li&gt;&lt;li&gt;Fast boot is disabled.&lt;/li&gt;&lt;li&gt;The BCD setting bootstatuspolicy is set to ignoreallfailures.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;After UWF is enabled, these settings can be changed as needed. For example, the paging file can be moved to an unprotected volume and paging re-enabled.&lt;/p&gt;</source>
+        <translation>&lt;p&gt;&lt;b&gt;本程序依赖 Windows 统一写入筛选器（UWF）。&lt;/b&gt;UWF Manager 自身不执行写入过滤；实际的写入保护由 Windows 内置的 UWF 功能提供。本程序仅用于配置和管理 UWF，需系统已安装并启用 UWF 才能使用。&lt;/p&gt;&lt;p&gt;首次在设备上启用 UWF 时，为提升 UWF 性能，UWF 会对系统做以下更改：&lt;/p&gt;&lt;ul&gt;&lt;li&gt;禁用页面文件（paging files）。&lt;/li&gt;&lt;li&gt;禁用系统还原（System Restore）。&lt;/li&gt;&lt;li&gt;禁用 SuperFetch。&lt;/li&gt;&lt;li&gt;关闭文件索引服务（File indexing service）。&lt;/li&gt;&lt;li&gt;关闭碎片整理服务（Defragmentation service）。&lt;/li&gt;&lt;li&gt;禁用快速启动（Fast boot）。&lt;/li&gt;&lt;li&gt;将 BCD 设置 bootstatuspolicy 设为 ignoreallfailures。&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;启用 UWF 后，可以按需更改这些设置。例如可把页面文件移到未保护卷上并重新启用页面文件。&lt;/p&gt;</translation>
+    </message>
 
     <!-- Commit failure explanations -->
     <message>
@@ -499,7 +512,6 @@ Please verify that the UWF feature is enabled and that this program is running a
 
 请确认已启用 UWF 功能，并以管理员身份运行。</translation>
     </message>
-    <message><source>Failed to read UWF state</source><translation>读取 UWF 状态失败</translation></message>
     <message><source>UWF namespace is not available</source><translation>UWF 命名空间不可用</translation></message>
     <message><source>Refreshed · %1 volumes</source><translation>已刷新 · 共 %1 个卷</translation></message>
 

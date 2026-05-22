@@ -918,7 +918,8 @@ void MainWindow::updatePendingSummary() {
     if (!t) continue;
     if (t->pendingVolumeProtected()) ++pending;
     if (t->pendingBindByVolumeName()) ++pending;
-    pending += t->pendingFileAdded().size() + t->pendingFileRemoved().size() + t->pendingRegAdded().size() + t->pendingRegRemoved().size();
+    pending += t->pendingFileAdded().size() + t->pendingFileRemoved().size() + t->pendingRegAdded().size() + t->pendingRegRemoved().size() +
+               (t->pendingPersistDomainSecretKey().has_value() ? 1 : 0) + (t->pendingPersistTSCAL().has_value() ? 1 : 0);
   }
   const QString msg = pending > 0 ? I18n::tr("%1 pending change(s) (not yet written to the system)").arg(pending) : I18n::tr("No pending changes");
   m_statusBaseline = msg;
@@ -1317,7 +1318,35 @@ void MainWindow::showAbout() {
   const QString linkColor = ThemeManager::instance().color(Sem::Accent).name();
   html.replace(QStringLiteral("<a "), QStringLiteral("<a style=\"color:%1\" ").arg(linkColor));
   body->setText(html);
-  layout->addWidget(body);
+  // body 吸收纵向拉伸：对话框拉高时多余空间归 body，header（logo + 标题 + 版本）保持紧凑、不被拉开。
+  layout->addWidget(body, 1);
+
+  // UWF 行为提示：说明本程序只是 UWF 的图形配置前端（写入过滤由系统 UWF 完成、且依赖
+  // 系统已装并启用 UWF），以及 UWF 首次启用会对系统做的更改。单独一个 label，顶部描边与正文分块。
+  auto* uwfNote = new QLabel(&dlg);
+  uwfNote->setTextFormat(Qt::RichText);
+  uwfNote->setTextInteractionFlags(Qt::TextSelectableByMouse);
+  uwfNote->setWordWrap(true);
+  uwfNote->setText(I18n::tr(
+      "<p><b>This program depends on the Windows Unified Write Filter (UWF).</b> UWF Manager does not perform write "
+      "filtering itself; the actual write protection is provided by the UWF feature built into Windows. This program "
+      "only configures and manages UWF, and requires UWF to be installed and enabled on the system.</p>"
+      "<p>When UWF is first enabled on a device, it makes the following changes to the system to improve UWF "
+      "performance:</p>"
+      "<ul>"
+      "<li>Paging files are disabled.</li>"
+      "<li>System Restore is disabled.</li>"
+      "<li>SuperFetch is disabled.</li>"
+      "<li>The file indexing service is turned off.</li>"
+      "<li>The defragmentation service is turned off.</li>"
+      "<li>Fast boot is disabled.</li>"
+      "<li>The BCD setting bootstatuspolicy is set to ignoreallfailures.</li>"
+      "</ul>"
+      "<p>After UWF is enabled, these settings can be changed as needed. For example, the paging file can be moved "
+      "to an unprotected volume and paging re-enabled.</p>"));
+  uwfNote->setStyleSheet(QStringLiteral("QLabel { border-top: 1px solid %1; padding-top: 10px; }")
+                             .arg(ThemeManager::instance().color(Sem::FgMuted).name()));
+  layout->addWidget(uwfNote);
 
   auto* btns = new QDialogButtonBox(&dlg);
   auto* closeBtn = btns->addButton(I18n::tr("Close"), QDialogButtonBox::AcceptRole);
@@ -1464,7 +1493,9 @@ void MainWindow::commitFilePath(const QString& path) {
   }
 
   if (isDir && targets.isEmpty()) {
-    information(this, I18n::tr("Nothing to commit"), I18n::tr("No files were found under %1.").arg(path));
+    // 没有可提交的文件：复用提交确认对话框的版式，但"继续"按钮置灰，用户只能取消。
+    confirmCommit(this, I18n::tr("Commit to disk"), I18n::tr("Commit this folder's overlay changes to disk"), path,
+                  I18n::tr("No files were found under %1.").arg(path), /*allowContinue=*/false);
     return;
   }
 

@@ -48,6 +48,9 @@ class DiskTab : public QWidget {
   [[nodiscard]] QStringList pendingFileRemoved() const;
   [[nodiscard]] QStringList pendingRegAdded() const;
   [[nodiscard]] QStringList pendingRegRemoved() const;
+  // UWF_RegistryFilter 两个全局持久化开关的待应用值；nullopt = 未改动。
+  [[nodiscard]] std::optional<bool> pendingPersistDomainSecretKey() const;
+  [[nodiscard]] std::optional<bool> pendingPersistTSCAL() const;
 
   [[nodiscard]] std::optional<bool> pendingVolumeProtected() const;
   // bBindByVolumeName：true=按卷 ID 绑定；nullopt=未改动。

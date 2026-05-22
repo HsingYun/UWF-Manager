@@ -96,6 +96,10 @@ struct SessionSnapshot {
   std::vector<VolumeRecord> volumes;
   std::map<std::string, std::vector<std::string>> fileExclusions;  // key: volumeName（如 \\?\Volume{GUID}\）
   std::vector<std::string> registryExclusions;                     // 注册表排除是全局的，不按卷分
+  // UWF_RegistryFilter 的两个全局开关：是否在覆盖层中持久化域机密密钥
+  // 与终端服务客户端访问许可证（TSCAL）。
+  bool persistDomainSecretKey = false;
+  bool persistTSCAL = false;
 };
 
 // 一次"读取 UWF 状态"的总结果。
@@ -145,6 +149,9 @@ struct PendingChanges {
   std::map<std::string, std::vector<std::string>> removeFileExclusions;  // key: 盘符
   std::vector<std::string> addRegistryExclusions;
   std::vector<std::string> removeRegistryExclusions;
+  // UWF_RegistryFilter 的两个全局持久化开关；nullopt 表示不动。
+  std::optional<bool> setPersistDomainSecretKey;
+  std::optional<bool> setPersistTSCAL;
 
   [[nodiscard]] bool empty() const;
   void clear();

@@ -4,6 +4,7 @@
 #include <QString>
 #include <QStringList>
 #include <QWidget>
+#include <optional>
 
 class QListWidget;
 class QListWidgetItem;
@@ -22,10 +23,19 @@ class ExclusionListWidget : public QWidget {
 
   void setDriveLetter(const QString& dl);
   void setBaseline(const QStringList& currentSession, const QStringList& nextSession);
+  // Registry kind 专用：把 UWF_RegistryFilter 的两个全局持久化开关
+  // （PersistDomainSecretKey / PersistTSCAL）作为伪条目纳入本列表，置于最前。
+  // current 或 next 任一为 true 才显示；染色复用排除项的 current/next 逻辑。
+  // 须在 setBaseline 之后调用。
+  void setPersistBaseline(bool domainSecretKeyCurrent, bool domainSecretKeyNext, bool tscalCurrent, bool tscalNext);
   void resetPending();
 
   [[nodiscard]] QStringList pendingAdded() const;
   [[nodiscard]] QStringList pendingRemoved() const;
+
+  // 两个持久化开关的待应用值：nullopt = 未改动，否则为用户期望的下次会话值。
+  [[nodiscard]] std::optional<bool> pendingPersistDomainSecretKey() const;
+  [[nodiscard]] std::optional<bool> pendingPersistTSCAL() const;
 
   void setReadOnly(bool ro);
 
@@ -79,6 +89,23 @@ class ExclusionListWidget : public QWidget {
   // 把 path 复制到剪贴板并发出 copiedToClipboard 提示。
   void copyPathToClipboard(const QString& path);
 
+  // Registry kind：UWF_RegistryFilter 持久化开关伪条目的状态。baseCurrent /
+  // baseNext 来自快照，pendingNext 为用户的待应用改动（nullopt = 未改）。
+  struct PersistFlag {
+    QString name;
+    bool baseCurrent = false;
+    bool baseNext = false;
+    std::optional<bool> pendingNext;
+    [[nodiscard]] bool visible() const { return baseCurrent || baseNext || pendingNext == true; }
+    [[nodiscard]] bool effectiveNext() const { return pendingNext.value_or(baseNext); }
+  };
+  // 菜单"开启 X"：把伪条目标记为待开启（或撤销待关闭）。
+  void enablePersistFlag(PersistFlag& flag);
+  // entry 是否为某个持久化开关伪条目。
+  [[nodiscard]] bool isPersistRow(const QString& entry) const;
+  // Registry "添加" 菜单弹出前：已开启的开关项置灰。
+  void updateAddMenuState();
+
   Kind m_kind;
   QString m_driveLetter;
   QStringList m_current;
@@ -94,6 +121,12 @@ class ExclusionListWidget : public QWidget {
   QPushButton* m_rmBtn = nullptr;
   QAction* m_addFileAct = nullptr;
   QAction* m_addDirAct = nullptr;
+  // Registry kind 的"添加"下拉菜单三项。
+  QAction* m_addRegKeyAct = nullptr;
+  QAction* m_addDomainSecretAct = nullptr;
+  QAction* m_addTscalAct = nullptr;
+  PersistFlag m_persistDomainSecretKey;
+  PersistFlag m_persistTSCAL;
   bool m_readOnly = false;
   bool m_commitEnabled = false;
 };

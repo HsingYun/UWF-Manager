@@ -24,7 +24,8 @@ void sortSnapshot(UwfSnapshot& snapshot) {
 
 bool PendingChanges::empty() const {
   return !setFilterEnabled && setOverlay.empty() && volumeProtect.empty() && volumeBindByVolumeName.empty() && addFileExclusions.empty() &&
-         removeFileExclusions.empty() && addRegistryExclusions.empty() && removeRegistryExclusions.empty();
+         removeFileExclusions.empty() && addRegistryExclusions.empty() && removeRegistryExclusions.empty() && !setPersistDomainSecretKey &&
+         !setPersistTSCAL;
 }
 
 void PendingChanges::clear() {
@@ -36,6 +37,8 @@ void PendingChanges::clear() {
   removeFileExclusions.clear();
   addRegistryExclusions.clear();
   removeRegistryExclusions.clear();
+  setPersistDomainSecretKey.reset();
+  setPersistTSCAL.reset();
 }
 
 }  // namespace uwf::core

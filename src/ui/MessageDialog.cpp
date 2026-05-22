@@ -83,7 +83,8 @@ bool confirm(QWidget* parent, const QString& title, const QString& text) {
   return accepted;
 }
 
-bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail) {
+bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail,
+                   bool allowContinue) {
   auto* dlg = new QDialog(parent);
   dlg->setWindowTitle(title);
 
@@ -127,6 +128,8 @@ bool confirmCommit(QWidget* parent, const QString& title, const QString& heading
 
   auto* btns = new QDialogButtonBox(dlg);
   auto* okBtn = btns->addButton(I18n::tr("Continue"), QDialogButtonBox::AcceptRole);
+  // allowContinue 为 false：没有可执行的动作，"继续"置灰，用户只能取消。
+  if (!allowContinue) okBtn->setEnabled(false);
   auto* cancelBtn = btns->addButton(I18n::tr("Cancel"), QDialogButtonBox::RejectRole);
   QObject::connect(okBtn, &QPushButton::clicked, dlg, &QDialog::accept);
   QObject::connect(cancelBtn, &QPushButton::clicked, dlg, &QDialog::reject);

@@ -121,10 +121,12 @@ core::UwfSnapshot readSnapshot(std::string* error) {
     }
   }
 
-  // ── UWF_RegistryFilter：current/next 各自的排除列表 ──────────
+  // ── UWF_RegistryFilter：current/next 各自的排除列表 + 两个持久化开关 ──
   const UwfRegistryFilter rf{s};
   for (const auto& r : rf.readAll()) {
     auto& session = r.currentSession ? snap.current : snap.next;
+    session.persistDomainSecretKey = r.persistDomainSecretKey;
+    session.persistTSCAL = r.persistTSCAL;
     for (const auto& [registryKey] : rf.getExclusions(r)) {
       if (!registryKey.empty()) session.registryExclusions.push_back(registryKey);
     }

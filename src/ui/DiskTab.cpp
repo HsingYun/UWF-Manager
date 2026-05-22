@@ -162,6 +162,8 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   m_commitBtn = new QPushButton(tm.icon(":/icons/commit.svg"), I18n::tr("Commit"));
   m_commitBtn->setToolTip(I18n::tr("Commit overlay changes to disk / registry. This action cannot be undone."));
   auto* commitMenu = new QMenu(m_commitBtn);
+  // QMenu 默认不显示 action 的 toolTip，须显式打开，下面每项设的 setToolTip 才会出现。
+  commitMenu->setToolTipsVisible(true);
   // 先列"提交类"（把覆盖层改动写回磁盘 / 注册表），分隔线之后再列"删除类"。
   m_commitFileAct = commitMenu->addAction(tm.icon(":/icons/file.svg"), I18n::tr("Commit file changes…"));
   m_commitFileAct->setToolTip(I18n::tr("Pick a file and commit its overlay changes to disk."));
@@ -480,6 +482,7 @@ void DiskTab::applySnapshot(const core::UwfSnapshot& snap) {
 
   if (m_regs) {
     m_regs->setBaseline(toQList(snap.current.registryExclusions), toQList(snap.next.registryExclusions));
+    m_regs->setPersistBaseline(snap.current.persistDomainSecretKey, snap.next.persistDomainSecretKey, snap.current.persistTSCAL, snap.next.persistTSCAL);
   }
 
   // 不可写（UWF 不可用 / 未提权）时排除列表没有可落地的目标——整列设只读，
@@ -500,6 +503,8 @@ QStringList DiskTab::pendingFileAdded() const { return m_files->pendingAdded(); 
 QStringList DiskTab::pendingFileRemoved() const { return m_files->pendingRemoved(); }
 QStringList DiskTab::pendingRegAdded() const { return m_regs ? m_regs->pendingAdded() : QStringList(); }
 QStringList DiskTab::pendingRegRemoved() const { return m_regs ? m_regs->pendingRemoved() : QStringList(); }
+std::optional<bool> DiskTab::pendingPersistDomainSecretKey() const { return m_regs ? m_regs->pendingPersistDomainSecretKey() : std::nullopt; }
+std::optional<bool> DiskTab::pendingPersistTSCAL() const { return m_regs ? m_regs->pendingPersistTSCAL() : std::nullopt; }
 
 std::optional<bool> DiskTab::pendingVolumeProtected() const { return supported() ? m_status->pendingVolumeProtected() : std::nullopt; }
 
