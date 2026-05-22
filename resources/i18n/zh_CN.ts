@@ -202,8 +202,6 @@
         <source>Select a folder whose deletion you want to commit</source>
         <translation>选择要提交删除的文件夹</translation>
     </message>
-    <message><source>Commit file deletion</source><translation>提交文件删除</translation></message>
-    <message><source>Commit folder deletion</source><translation>提交文件夹删除</translation></message>
     <message><source>Commit registry changes</source><translation>提交注册表修改</translation></message>
     <message><source>Leave empty to commit the whole key recursively</source><translation>留空则递归提交整棵键子树</translation></message>
     <message>
@@ -652,30 +650,6 @@ Exclusion: %2</source>
     <message><source>Nothing to commit</source><translation>无可提交内容</translation></message>
     <message><source>No files were found under %1.</source><translation>目录 %1 下递归遍历到 0 个文件。</translation></message>
     <message><source>Commit to disk</source><translation>提交到磁盘</translation></message>
-    <message>
-        <source>Recursively walk the folder and commit %1 files to disk one by one. This action cannot be undone.
-
-%2
-
-Continue?</source>
-        <translation>将递归遍历目录，对其中 %1 个文件逐个提交到磁盘。此操作不可撤销。
-
-%2
-
-确定要继续吗？</translation>
-    </message>
-    <message>
-        <source>Commit the following path from the overlay to disk. This action cannot be undone.
-
-%1
-
-Continue?</source>
-        <translation>将把下面路径从覆盖层提交到磁盘。此操作不可撤销。
-
-%1
-
-确定要继续吗？</translation>
-    </message>
     <message><source>Committing…</source><translation>正在提交…</translation></message>
 
     <!-- confirmCommit dialog -->
@@ -730,31 +704,6 @@ Exclusion: %2</source>
 目标：%1
 排除项：%2</translation>
     </message>
-    <message>
-        <source>Delete the following file and commit the deletion to disk. This action cannot be undone.
-
-%1
-
-Continue?</source>
-        <translation>将删除下面的文件并把删除提交到磁盘，此操作不可撤销：
-
-%1
-
-确定要继续吗？</translation>
-    </message>
-    <message>
-        <source>Delete the folder below and everything inside it — %1 files and %2 subfolders — and commit the deletions to disk. This action cannot be undone.
-
-%3
-
-Continue?</source>
-        <translation>将删除下面的文件夹及其内部全部内容——%1 个文件、%2 个子文件夹——并把这些删除一并提交到磁盘，此操作不可撤销：
-
-%3
-
-确定要继续吗？</translation>
-    </message>
-
     <!-- commitRegistryKey -->
     <message>
         <source>This key is in the registry exclusion list. UWF does not write it to the overlay, so committing it to disk is neither needed nor possible.
@@ -798,31 +747,6 @@ Exclusion: %2</source>
 
 %1</translation>
     </message>
-    <message>
-        <source>Commit the registry key below, all its values and all its subkeys recursively to disk — %1 values in total. This action cannot be undone.
-
-%2
-
-Continue?</source>
-        <translation>将把下面的注册表键、它的所有值、以及它所有的子键递归提交到磁盘——共 %1 个值，此操作不可撤销：
-
-%2
-
-确定要继续吗？</translation>
-    </message>
-    <message>
-        <source>Commit the following registry value to disk. This action cannot be undone.
-
-%1
-
-Continue?</source>
-        <translation>将把下面的注册表值提交到磁盘，此操作不可撤销：
-
-%1
-
-确定要继续吗？</translation>
-    </message>
-
     <!-- commitRegistryDeletionKey -->
     <message>
         <source>This key is in the registry exclusion list. UWF does not write it to the overlay, so committing its deletion to disk is neither needed nor possible.
@@ -850,31 +774,6 @@ Exclusion: %2</source>
 
 %1</translation>
     </message>
-    <message>
-        <source>Delete the registry key below, all its values and all its subkeys recursively — %1 keys in total — and commit the deletions to disk. This action cannot be undone.
-
-%2
-
-Continue?</source>
-        <translation>将把下面的注册表键、它的所有值、以及它所有的子键递归删除——共 %1 个键——并把这些删除一并提交到磁盘，此操作不可撤销：
-
-%2
-
-确定要继续吗？</translation>
-    </message>
-    <message>
-        <source>Delete the following registry value and commit the deletion to disk. This action cannot be undone.
-
-%1
-
-Continue?</source>
-        <translation>将删除下面的注册表值并把删除提交到磁盘，此操作不可撤销：
-
-%1
-
-确定要继续吗？</translation>
-    </message>
-
     <!-- showPlan: Export commands button -->
     <message><source>Export commands…</source><translation>导出命令…</translation></message>
     <message><source>Export commands to file</source><translation>导出命令到文件</translation></message>
