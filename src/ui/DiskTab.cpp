@@ -162,18 +162,22 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   m_commitBtn = new QPushButton(tm.icon(":/icons/commit.svg"), I18n::tr("Commit"));
   m_commitBtn->setToolTip(I18n::tr("Commit overlay changes to disk / registry. This action cannot be undone."));
   auto* commitMenu = new QMenu(m_commitBtn);
+  // 先列"提交类"（把覆盖层改动写回磁盘 / 注册表），分隔线之后再列"删除类"。
   m_commitFileAct = commitMenu->addAction(tm.icon(":/icons/file.svg"), I18n::tr("Commit file changes…"));
   m_commitFileAct->setToolTip(I18n::tr("Pick a file and commit its overlay changes to disk."));
   m_commitDirAct = commitMenu->addAction(tm.icon(":/icons/folder.svg"), I18n::tr("Commit folder changes…"));
   m_commitDirAct->setToolTip(I18n::tr("Pick a folder and commit overlay changes for every file inside it to disk."));
-  m_commitFileDeleteAct = commitMenu->addAction(tm.icon(":/icons/file.svg"), I18n::tr("Commit file deletion…"));
-  m_commitFileDeleteAct->setToolTip(I18n::tr("Pick a file to delete, and commit the deletion to disk."));
-  m_commitFolderDeleteAct = commitMenu->addAction(tm.icon(":/icons/folder.svg"), I18n::tr("Commit folder deletion…"));
-  m_commitFolderDeleteAct->setToolTip(I18n::tr("Pick a folder to delete (recursively, with everything inside it) and commit the deletions to disk."));
   if (m_showRegistry) {
     m_commitRegAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Commit registry changes…"));
     m_commitRegAct->setToolTip(I18n::tr("Enter a registry key (and optional value name) and commit changes to the registry."));
-    m_commitRegDeleteAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Commit registry deletion…"));
+  }
+  commitMenu->addSeparator();
+  m_commitFileDeleteAct = commitMenu->addAction(tm.icon(":/icons/file.svg"), I18n::tr("Delete and commit file…"));
+  m_commitFileDeleteAct->setToolTip(I18n::tr("Pick a file to delete, and commit the deletion to disk."));
+  m_commitFolderDeleteAct = commitMenu->addAction(tm.icon(":/icons/folder.svg"), I18n::tr("Delete and commit folder…"));
+  m_commitFolderDeleteAct->setToolTip(I18n::tr("Pick a folder to delete (recursively, with everything inside it) and commit the deletions to disk."));
+  if (m_showRegistry) {
+    m_commitRegDeleteAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Delete and commit registry…"));
     m_commitRegDeleteAct->setToolTip(I18n::tr("Enter a registry key (and optional value name) to delete, and commit the deletion to the registry."));
   }
   m_commitBtn->setMenu(commitMenu);

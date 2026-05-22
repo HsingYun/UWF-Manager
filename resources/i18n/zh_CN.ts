@@ -136,12 +136,12 @@
         <source>Pick a folder and commit overlay changes for every file inside it to disk.</source>
         <translation>选择一个目录，把里面所有文件在覆盖层中的修改提交到磁盘。</translation>
     </message>
-    <message><source>Commit file deletion…</source><translation>提交文件删除…</translation></message>
+    <message><source>Delete and commit file…</source><translation>删除并提交文件…</translation></message>
     <message>
         <source>Pick a file to delete, and commit the deletion to disk.</source>
         <translation>选择一个要删除的文件，把这次删除提交到磁盘。</translation>
     </message>
-    <message><source>Commit folder deletion…</source><translation>提交文件夹删除…</translation></message>
+    <message><source>Delete and commit folder…</source><translation>删除并提交文件夹…</translation></message>
     <message>
         <source>Pick a folder to delete (recursively, with everything inside it) and commit the deletions to disk.</source>
         <translation>选择一个要删除的文件夹（连同其内部所有内容一并递归删除），把这些删除提交到磁盘。</translation>
@@ -151,7 +151,7 @@
         <source>Enter a registry key (and optional value name) and commit changes to the registry.</source>
         <translation>输入注册表键（可选值名），把修改提交到注册表。</translation>
     </message>
-    <message><source>Commit registry deletion…</source><translation>提交注册表删除…</translation></message>
+    <message><source>Delete and commit registry…</source><translation>删除并提交注册表…</translation></message>
     <message>
         <source>Enter a registry key (and optional value name) to delete, and commit the deletion to the registry.</source>
         <translation>输入要删除的注册表键（可选值名），把这次删除提交到注册表。</translation>
