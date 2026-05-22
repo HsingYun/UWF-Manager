@@ -174,7 +174,7 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
     m_commitRegAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Commit registry changes…"));
     m_commitRegAct->setToolTip(I18n::tr("Enter a registry key (and optional value name) and commit changes to the registry."));
     m_commitRegDeleteAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Commit registry deletion…"));
-    m_commitRegDeleteAct->setToolTip(I18n::tr("Enter a registry key or value that has already been deleted, and commit the deletion to the registry."));
+    m_commitRegDeleteAct->setToolTip(I18n::tr("Enter a registry key (and optional value name) to delete, and commit the deletion to the registry."));
   }
   m_commitBtn->setMenu(commitMenu);
   m_status->addTrailingAction(m_commitBtn);
@@ -346,10 +346,9 @@ std::optional<std::pair<QString, QString>> DiskTab::promptRegistryTarget(const Q
 
 void DiskTab::onCommitRegistry() {
   // CommitRegistry 是单值操作——不会带上同键的其它值，更不会递归子键。
-  const auto target = promptRegistryTarget(
-      I18n::tr("Commit registry changes"), I18n::tr("Leave empty to commit the key's default value"),
-      I18n::tr("Only the single value above is committed (an empty value name means the key's (Default) value). "
-               "Other values under the key, and any subkeys, are not committed."));
+  const auto target = promptRegistryTarget(I18n::tr("Commit registry changes"), I18n::tr("Leave empty to commit the key's default value"),
+                                           I18n::tr("Only the single value above is committed (an empty value name means the key's (Default) value). "
+                                                    "Other values under the key, and any subkeys, are not committed."));
   if (!target) return;
   emit commitRegistryRequested(target->first, target->second);
 }
@@ -358,8 +357,8 @@ void DiskTab::onCommitRegistryDelete() {
   // CommitRegistryDeletion：值名留空 = 删除整个键（含所有值与子键）。
   const auto target = promptRegistryTarget(
       I18n::tr("Commit registry deletion"), I18n::tr("Leave empty to delete the entire key, including its subkeys"),
-      I18n::tr("The entry above must already have been deleted in the current session — committing only writes that pending deletion to disk. "
-               "Leaving the value name empty deletes the entire key, including all of its values and subkeys."));
+      I18n::tr("Committing deletes the entry above from both the overlay and the on-disk registry, so it must still exist. "
+               "An empty value name deletes the entire key, including all of its values and subkeys."));
   if (!target) return;
   emit commitRegistryDeletionRequested(target->first, target->second);
 }

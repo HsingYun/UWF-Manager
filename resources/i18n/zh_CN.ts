@@ -148,8 +148,8 @@
     </message>
     <message><source>Commit registry deletion…</source><translation>提交注册表删除…</translation></message>
     <message>
-        <source>Enter a registry key or value that has already been deleted, and commit the deletion to the registry.</source>
-        <translation>输入一个已被删除的注册表键或值，把这次删除提交到注册表。</translation>
+        <source>Enter a registry key (and optional value name) to delete, and commit the deletion to the registry.</source>
+        <translation>输入要删除的注册表键（可选值名），把这次删除提交到注册表。</translation>
     </message>
     <message><source>File exclusions</source><translation>文件排除</translation></message>
     <message>
@@ -209,8 +209,8 @@ The path must no longer exist in the current session — meaning it has already 
     <message><source>Commit registry deletion</source><translation>提交注册表删除</translation></message>
     <message><source>Leave empty to delete the entire key, including its subkeys</source><translation>留空则删除整个键，包括其所有子键</translation></message>
     <message>
-        <source>The entry above must already have been deleted in the current session — committing only writes that pending deletion to disk. Leaving the value name empty deletes the entire key, including all of its values and subkeys.</source>
-        <translation>上方指定的项必须已在当前会话中被删除——提交只是把这次待落盘的删除写入磁盘。值名留空表示删除整个键，包括它的所有值和子键。</translation>
+        <source>Committing deletes the entry above from both the overlay and the on-disk registry, so it must still exist. An empty value name deletes the entire key, including all of its values and subkeys.</source>
+        <translation>提交会把上方指定的项从覆盖层和磁盘上的注册表一并删除，因此它当前必须仍存在。值名留空表示删除整个键，包括它的所有值和子键。</translation>
     </message>
 
     <!-- OverlayFilesDialog -->
@@ -786,40 +786,24 @@ Value: (entire key — all values and subkeys)</source>
 值：（整个键——所有值与子键）</translation>
     </message>
     <message>
-        <source>Commit registry deletion requires the entry to no longer exist in the current session — that is, it has already been deleted in this session, leaving only a deletion marker in the overlay waiting to be written to disk.
+        <source>This registry entry does not exist, so there is nothing to delete.
 
-However, the following entry still exists:
+%1</source>
+        <translation>该注册表项不存在，没有可删除的内容。
 
-%1
-
-Delete it in Registry Editor first, then return here to commit the deletion.</source>
-        <translation>提交注册表删除要求该项在当前会话中已不存在——即在本次会话里已经把它删掉，覆盖层里只剩一个删除标记，等待写入磁盘。
-
-但下面这一项目前仍然存在：
-
-%1
-
-请先在注册表编辑器中删除它，再回到这里提交删除。</translation>
+%1</translation>
     </message>
     <message>
-        <source>Commit the deletion of the following registry entry to disk. This action cannot be undone.
+        <source>Delete the following registry entry and commit the deletion to disk. This action cannot be undone.
 
 %1
 
 Continue?</source>
-        <translation>将把下面这个注册表项的删除提交到磁盘，此操作不可撤销：
+        <translation>将删除下面的注册表项并把删除提交到磁盘，此操作不可撤销：
 
 %1
 
 确定要继续吗？</translation>
-    </message>
-    <message>
-        <source>UWF has no pending deletion for this registry entry in the overlay, so there is nothing to commit.
-
-%1</source>
-        <translation>UWF 的覆盖层里没有这个注册表项的待提交删除，没有内容可提交。
-
-%1</translation>
     </message>
 
     <!-- showPlan: Export commands button -->

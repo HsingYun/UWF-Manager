@@ -319,8 +319,8 @@ QString windowsVersionText() {
   // LTSC / LTSB 变体：EditionID = EnterpriseS / EnterpriseSN / IoTEnterpriseS …
   // ProductName 并不总是把 "LTSC" 写出来，需要自己补上。
   const QString ed = editionId.toLower();
-  const bool isLtsc = std::ranges::any_of(config::kLtscEditionIds,
-                                          [&ed](std::string_view id) { return ed == QLatin1String(id.data(), static_cast<qsizetype>(id.size())); });
+  const bool isLtsc =
+      std::ranges::any_of(config::kLtscEditionIds, [&ed](std::string_view id) { return ed == QLatin1String(id.data(), static_cast<qsizetype>(id.size())); });
   if (isLtsc && !edition.contains("LTSC", Qt::CaseInsensitive) && !edition.contains("LTSB", Qt::CaseInsensitive)) {
     edition = edition.isEmpty() ? QStringLiteral("LTSC") : (edition + QStringLiteral(" LTSC"));
   }
@@ -1544,8 +1544,7 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
   const std::string normKey = regkey::normalize(key.toStdString());
   if (normKey.empty()) return;
   const QString keyText = QString::fromStdString(normKey);
-  const QString desc = valueName.isEmpty() ? I18n::tr("Key: %1\nValue: (Default)").arg(keyText)
-                                           : I18n::tr("Key: %1\nValue: %2").arg(keyText, valueName);
+  const QString desc = valueName.isEmpty() ? I18n::tr("Key: %1\nValue: (Default)").arg(keyText) : I18n::tr("Key: %1\nValue: %2").arg(keyText, valueName);
 
   // 注册表排除是全局的，直接比对当前运行会话即可。覆盖 = 键相等或为其祖先。
   const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
@@ -1615,20 +1614,17 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
     return;
   }
 
-  // 删除提交的语义：目标在当前会话里**已被删除**，覆盖层里只剩一个删除标记等待
-  // 落盘。若目标仍在，说明删除根本没发生，提交删除没有意义——提交前就拒绝。
-  const bool stillExists = valueName.isEmpty() ? regkey::keyExists(normKey) : regkey::valueExists(normKey, valueName.toStdString());
-  if (stillExists) {
-    warning(this, I18n::tr("Commit rejected"),
-            I18n::tr("Commit registry deletion requires the entry to no longer exist in the current session — that is, it has already been deleted in this "
-                     "session, leaving only a deletion marker in the overlay waiting to be written to disk.\n\nHowever, the following entry still "
-                     "exists:\n\n%1\n\nDelete it in Registry Editor first, then return here to commit the deletion.")
-                .arg(desc));
+  // CommitRegistryDeletion 由方法自身执行删除——把目标从覆盖层 + 物理 hive 一并
+  // 删掉，因此调用时目标必须**仍存在**。不存在就没有可删的东西，提交前直接拒绝
+  // （否则 UWF 回 WBEM_E_NOT_FOUND）。
+  const bool exists = valueName.isEmpty() ? regkey::keyExists(normKey) : regkey::valueExists(normKey, valueName.toStdString());
+  if (!exists) {
+    warning(this, I18n::tr("Commit rejected"), I18n::tr("This registry entry does not exist, so there is nothing to delete.\n\n%1").arg(desc));
     return;
   }
 
   if (!confirm(this, I18n::tr("Commit registry deletion"),
-               I18n::tr("Commit the deletion of the following registry entry to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(desc)))
+               I18n::tr("Delete the following registry entry and commit the deletion to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(desc)))
     return;
 
   std::string err;
@@ -1647,14 +1643,9 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
     case CommitOutcome::Ok:
       showTransientHint(I18n::tr("Committed: %1").arg(keyText), 3000);
       break;
-    // Skipped = WBEM_E_NOT_FOUND：覆盖层里没有这条待提交的删除。和 commitRegistryKey
-    // 不同——那边 valueExists 预检确保 Skipped 只可能是并发竞态；这里"目标已不存在"
-    // 的预检并不保证覆盖层里就攒了删除标记（该项可能从未在受保护会话里被删过），
-    // 故 Skipped 是正常可达结果，平静提示即可，不当作错误。
+    // 目标存在性已由上面的预检确认，走到这里的 Skipped（NOT_FOUND，例如预检后
+    // 目标被并发删除）与 Failed 一样按失败报告。
     case CommitOutcome::Skipped:
-      information(this, I18n::tr("Nothing to commit"),
-                  I18n::tr("UWF has no pending deletion for this registry entry in the overlay, so there is nothing to commit.\n\n%1").arg(desc));
-      break;
     case CommitOutcome::Failed:
       warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to write registry: %1").arg(explainCommitFailure(res.hresult, res.returnValue)));
       break;
