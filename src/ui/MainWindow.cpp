@@ -72,6 +72,7 @@ namespace {
 // 旧的 warnSelectable / confirmYesNo helper 已迁移到 ui::dialogs（QDialog 实现，
 // 走 app font，避免 QMessageBox 的中文渲染糊问题）。
 using uwf::ui::dialogs::confirm;
+using uwf::ui::dialogs::confirmCommit;
 using uwf::ui::dialogs::information;
 using uwf::ui::dialogs::warning;
 
@@ -1450,12 +1451,9 @@ void MainWindow::commitFilePath(const QString& path) {
     return;
   }
 
-  if (!confirm(this, I18n::tr("Commit to disk"),
-               isDir ? I18n::tr("Recursively walk the folder and commit %1 files to disk one by one. This action cannot be undone.\n\n%2\n\nContinue?")
-                           .arg(targets.size())
-                           .arg(path)
-                     : I18n::tr("Commit the following path from the overlay to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(path)))
-    return;
+  const QString heading = isDir ? I18n::tr("Commit this folder's overlay changes to disk") : I18n::tr("Commit this file's overlay changes to disk");
+  const QString detail = isDir ? I18n::tr("%1 files in this folder and all its subfolders will be committed.").arg(targets.size()) : QString();
+  if (!confirmCommit(this, I18n::tr("Commit to disk"), heading, path, detail)) return;
 
   runCommitBatch(
       I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; },
@@ -1534,16 +1532,11 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
     targets << path;
   }
 
-  const QString title = isDir ? I18n::tr("Commit folder deletion") : I18n::tr("Commit file deletion");
-  const QString prompt =
-      isDir ? I18n::tr(
-                  "Delete the folder below and everything inside it — %1 files and %2 subfolders — and commit the deletions to disk. "
-                  "This action cannot be undone.\n\n%3\n\nContinue?")
-                  .arg(fileCount)
-                  .arg(subdirCount)
-                  .arg(path)
-            : I18n::tr("Delete the following file and commit the deletion to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(path);
-  if (!confirm(this, title, prompt)) return;
+  const QString title = I18n::tr("Delete and commit");
+  const QString heading = isDir ? I18n::tr("Delete this folder and its contents, and commit the deletions to disk")
+                                : I18n::tr("Delete this file, and commit the deletion to disk");
+  const QString detail = isDir ? I18n::tr("%1 files and %2 subfolders will be deleted.").arg(fileCount).arg(subdirCount) : QString();
+  if (!confirmCommit(this, title, heading, path, detail)) return;
 
   runCommitBatch(
       title, targets, [](const QString& f) { return f; },
@@ -1609,15 +1602,10 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
   }
   const int total = static_cast<int>(targets.size());
 
-  const QString prompt =
-      valueName.isEmpty()
-          ? I18n::tr(
-                "Commit the registry key below, all its values and all its subkeys recursively to disk — %1 values in "
-                "total. This action cannot be undone.\n\n%2\n\nContinue?")
-                .arg(total)
-                .arg(keyText)
-          : I18n::tr("Commit the following registry value to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(keyText + " : " + valueName);
-  if (!confirm(this, I18n::tr("Commit to disk"), prompt)) return;
+  const bool wholeKey = valueName.isEmpty();
+  const QString heading = wholeKey ? I18n::tr("Commit this registry key and its whole subtree to disk") : I18n::tr("Commit this registry value to disk");
+  const QString detail = wholeKey ? I18n::tr("%1 values in this key and all its subkeys will be committed.").arg(total) : QString();
+  if (!confirmCommit(this, I18n::tr("Commit to disk"), heading, wholeKey ? keyText : (keyText + " : " + valueName), detail)) return;
 
   std::string err;
   auto filters = m_registry.readAll(&err);
@@ -1686,16 +1674,11 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
   }
   const int total = static_cast<int>(targets.size());
 
-  const QString prompt = valueName.isEmpty() ? I18n::tr(
-                                                   "Delete the registry key below, all its values and all its subkeys recursively — %1 keys in total — "
-                                                   "and commit the deletions to disk. This action cannot be undone.\n\n%2\n\nContinue?")
-                                                   .arg(total)
-                                                   .arg(keyText)
-                                             : I18n::tr(
-                                                   "Delete the following registry value and commit the deletion to disk. This action cannot be "
-                                                   "undone.\n\n%1\n\nContinue?")
-                                                   .arg(keyText + " : " + valueName);
-  if (!confirm(this, I18n::tr("Commit registry deletion"), prompt)) return;
+  const bool wholeKey = valueName.isEmpty();
+  const QString heading = wholeKey ? I18n::tr("Delete this registry key and its whole subtree, and commit the deletions to disk")
+                                   : I18n::tr("Delete this registry value, and commit the deletion to disk");
+  const QString detail = wholeKey ? I18n::tr("%1 keys, including all their values and subkeys, will be deleted.").arg(total) : QString();
+  if (!confirmCommit(this, I18n::tr("Delete and commit"), heading, wholeKey ? keyText : (keyText + " : " + valueName), detail)) return;
 
   std::string err;
   auto filters = m_registry.readAll(&err);
@@ -1710,7 +1693,7 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
   }
 
   runCommitBatch(
-      I18n::tr("Commit registry deletion"), targets, [](const RegCommitTarget& t) { return t.display; },
+      I18n::tr("Delete and commit"), targets, [](const RegCommitTarget& t) { return t.display; },
       [&](const RegCommitTarget& t) {
         const auto res = m_registry.commitRegistryDeletion(*row, t.key, t.valueName);
         if (!res.detail.empty()) {

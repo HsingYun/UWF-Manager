@@ -19,4 +19,10 @@ void information(QWidget* parent, const QString& title, const QString& text);
 // 返回 true = 用户选了 OK；false = 用户选了 Cancel 或关掉对话框。
 bool confirm(QWidget* parent, const QString& title, const QString& text);
 
+// 提交 / 删除到磁盘前的二次确认对话框，带视觉层次：操作标题（加粗）、目标
+// （等宽字体 + 描边框，单独成块）、范围说明（次要色，detail 为空则不显示）、
+// 固定的"不可撤销"警示横幅。比纯文本 confirm 更适合「即将改动磁盘 / 注册表」
+// 这类破坏性操作。用户点"继续"返回 true。
+bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail);
+
 }  // namespace uwf::ui::dialogs

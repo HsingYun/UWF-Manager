@@ -678,6 +678,38 @@ Continue?</source>
     </message>
     <message><source>Committing…</source><translation>正在提交…</translation></message>
 
+    <!-- confirmCommit dialog -->
+    <message><source>This action cannot be undone.</source><translation>此操作不可撤销。</translation></message>
+    <message><source>Continue</source><translation>继续</translation></message>
+    <message><source>Delete and commit</source><translation>删除并提交</translation></message>
+    <message><source>Commit this file's overlay changes to disk</source><translation>把这个文件在覆盖层中的修改提交到磁盘</translation></message>
+    <message><source>Commit this folder's overlay changes to disk</source><translation>把这个文件夹在覆盖层中的修改提交到磁盘</translation></message>
+    <message>
+        <source>%1 files in this folder and all its subfolders will be committed.</source>
+        <translation>将提交该文件夹及其所有子文件夹中的 %1 个文件。</translation>
+    </message>
+    <message><source>Delete this file, and commit the deletion to disk</source><translation>删除这个文件，并把删除提交到磁盘</translation></message>
+    <message>
+        <source>Delete this folder and its contents, and commit the deletions to disk</source>
+        <translation>删除这个文件夹及其全部内容，并把删除提交到磁盘</translation>
+    </message>
+    <message><source>%1 files and %2 subfolders will be deleted.</source><translation>将删除 %1 个文件和 %2 个子文件夹。</translation></message>
+    <message><source>Commit this registry value to disk</source><translation>把这个注册表值提交到磁盘</translation></message>
+    <message><source>Commit this registry key and its whole subtree to disk</source><translation>把这个注册表键及其整棵子树提交到磁盘</translation></message>
+    <message>
+        <source>%1 values in this key and all its subkeys will be committed.</source>
+        <translation>将提交该键及其所有子键中的 %1 个值。</translation>
+    </message>
+    <message><source>Delete this registry value, and commit the deletion to disk</source><translation>删除这个注册表值，并把删除提交到磁盘</translation></message>
+    <message>
+        <source>Delete this registry key and its whole subtree, and commit the deletions to disk</source>
+        <translation>删除这个注册表键及其整棵子树，并把删除提交到磁盘</translation>
+    </message>
+    <message>
+        <source>%1 keys, including all their values and subkeys, will be deleted.</source>
+        <translation>将删除 %1 个键（连同它们的全部值和子键）。</translation>
+    </message>
+
     <!-- commitFileDeletionPath -->
     <message><source>Commit file deletion failed</source><translation>提交文件删除失败</translation></message>
     <message>

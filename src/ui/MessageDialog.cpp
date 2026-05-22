@@ -2,6 +2,7 @@
 
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QFont>
 #include <QFontMetrics>
 #include <QLabel>
 #include <QPushButton>
@@ -9,6 +10,7 @@
 #include <algorithm>
 
 #include "I18n.h"
+#include "ThemeManager.h"
 
 namespace uwf::ui::dialogs {
 
@@ -76,6 +78,70 @@ bool confirm(QWidget* parent, const QString& title, const QString& text) {
   // 默认焦点在 Cancel 上：误按 Enter 不会触发危险动作。
   cancelBtn->setDefault(true);
   cancelBtn->setFocus();
+  const bool accepted = dlg->exec() == QDialog::Accepted;
+  delete dlg;
+  return accepted;
+}
+
+bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail) {
+  auto* dlg = new QDialog(parent);
+  dlg->setWindowTitle(title);
+
+  auto* layout = new QVBoxLayout(dlg);
+  layout->setContentsMargins(20, 18, 20, 14);
+  layout->setSpacing(12);
+
+  // 操作标题：加粗，作为视觉重心——一句话说清"即将做什么"。
+  auto* head = new QLabel(heading, dlg);
+  head->setWordWrap(true);
+  QFont headFont = head->font();
+  headFont.setBold(true);
+  head->setFont(headFont);
+  layout->addWidget(head);
+
+  // 目标：等宽字体 + 描边框，单独成块——一眼看清"动的是哪一个"。
+  auto* targetLabel = new QLabel(target, dlg);
+  targetLabel->setWordWrap(true);
+  targetLabel->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+  QFont monoFont("Consolas");
+  monoFont.setStyleHint(QFont::Monospace);
+  targetLabel->setFont(monoFont);
+  const QString mutedHex = ThemeManager::instance().color(Sem::FgMuted).name();
+  targetLabel->setStyleSheet(QString("QLabel { border: 1px solid %1; border-radius: 4px; padding: 8px 10px; }").arg(mutedHex));
+  layout->addWidget(targetLabel);
+
+  // 范围说明：次要色弱化；单项操作时 detail 为空，整行不渲染。
+  if (!detail.isEmpty()) {
+    auto* detailLabel = new QLabel(detail, dlg);
+    detailLabel->setWordWrap(true);
+    detailLabel->setStyleSheet(QString("color: %1;").arg(mutedHex));
+    layout->addWidget(detailLabel);
+  }
+
+  // 不可撤销警示——复用全局状态横幅的 warn 样式（橙色），与别处口径一致。
+  auto* warnBanner = new QLabel(I18n::tr("This action cannot be undone."), dlg);
+  warnBanner->setObjectName("statusBanner");
+  warnBanner->setProperty("level", "warn");
+  warnBanner->setWordWrap(true);
+  layout->addWidget(warnBanner);
+
+  auto* btns = new QDialogButtonBox(dlg);
+  auto* okBtn = btns->addButton(I18n::tr("Continue"), QDialogButtonBox::AcceptRole);
+  auto* cancelBtn = btns->addButton(I18n::tr("Cancel"), QDialogButtonBox::RejectRole);
+  QObject::connect(okBtn, &QPushButton::clicked, dlg, &QDialog::accept);
+  QObject::connect(cancelBtn, &QPushButton::clicked, dlg, &QDialog::reject);
+  // 默认焦点在 Cancel 上：误按 Enter 不会触发破坏性动作。
+  cancelBtn->setDefault(true);
+  cancelBtn->setFocus();
+  layout->addWidget(btns);
+
+  // 宽度跟随内容：取标题 / 目标 / 说明里最宽的一行，夹在 [420, 760]。
+  const QFontMetrics headFm(headFont);
+  const QFontMetrics monoFm(monoFont);
+  int widest = std::max(headFm.horizontalAdvance(heading), monoFm.horizontalAdvance(target));
+  if (!detail.isEmpty()) widest = std::max(widest, headFm.horizontalAdvance(detail));
+  dlg->setMinimumWidth(std::clamp(widest + 64, 420, 760));
+
   const bool accepted = dlg->exec() == QDialog::Accepted;
   delete dlg;
   return accepted;
