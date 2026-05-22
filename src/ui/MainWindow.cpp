@@ -1346,6 +1346,53 @@ void MainWindow::safeRestart() {
   }
 }
 
+template <typename Target, typename DisplayFn, typename CommitFn>
+void MainWindow::runCommitBatch(const QString& progressTitle, const QList<Target>& targets, DisplayFn displayOf, CommitFn commitOne) {
+  const int total = static_cast<int>(targets.size());
+
+  // 进度条只在多目标时弹；单目标一两次 WMI 调用，弹窗反因 show 计时 / autoClose
+  // 的时序问题残留在屏上。setValue 内部 processEvents——必须 WindowModal，否则
+  // commit 半途用户点别处会嵌套触发同一份 m_writeSession（WMI 不可重入）。
+  std::unique_ptr<QProgressDialog> progress;
+  if (total > 1) {
+    progress = std::make_unique<QProgressDialog>(I18n::tr("Committing…"), I18n::tr("Cancel"), 0, total, this);
+    progress->setWindowTitle(progressTitle);
+    progress->setWindowModality(Qt::WindowModal);
+    progress->setMinimumDuration(500);
+    progress->setAutoClose(true);
+    progress->setAutoReset(false);
+    Q_ASSERT(progress->windowModality() == Qt::WindowModal);
+  }
+
+  int okCount = 0;
+  bool canceled = false;
+  QList<CommitReportRow> nonOkRows;
+  for (int i = 0; i < total; ++i) {
+    if (progress) {
+      progress->setValue(i);
+      if (progress->wasCanceled()) {
+        canceled = true;
+        break;
+      }
+      const QString d = displayOf(targets[i]);
+      progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(total).arg(d.size() > 80 ? ("…" + d.right(79)) : d));
+    }
+    const auto res = commitOne(targets[i]);
+    if (res.outcome == CommitOutcome::Ok) {
+      ++okCount;
+    } else {
+      nonOkRows.append({res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed"), displayOf(targets[i]),
+                        formatErrorCode(res.hresult, res.returnValue), explainCommitFailure(res.hresult, res.returnValue)});
+    }
+  }
+  if (progress) {
+    progress->setValue(total);
+    progress->close();
+  }
+  const int untouched = canceled ? (total - okCount - static_cast<int>(nonOkRows.size())) : 0;
+  showCommitReport(this, okCount, nonOkRows, untouched);
+}
+
 void MainWindow::commitFilePath(const QString& path) {
   if (path.isEmpty()) return;
 
@@ -1410,63 +1457,15 @@ void MainWindow::commitFilePath(const QString& path) {
                      : I18n::tr("Commit the following path from the overlay to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(path)))
     return;
 
-  // 进度条只在多文件时用；单文件一两个 WMI 调用就够了，弹进度条反而会
-  // 因为 show 计时器和 autoClose 的时序问题残留在屏上。
-  //
-  // 重入约束：QProgressDialog::setValue 会驱动 processEvents 派发挂起的
-  // UI 事件。本 dialog 必须 WindowModal，否则用户在 commit 期间点工具栏的
-  // refresh / 其它磁盘 TAB 上的 commit 等动作会嵌套触发同一份 m_writeSession，
-  // WMI 不是可重入的 → 行为未定义。下面的 assert 把这条不变量编译期/运行期
-  // 都钉死，将来谁如果改成 NonModal 会立刻被发现。
-  std::unique_ptr<QProgressDialog> progress;
-  if (targets.size() > 1) {
-    progress = std::make_unique<QProgressDialog>(I18n::tr("Committing…"), I18n::tr("Cancel"), 0, static_cast<int>(targets.size()), this);
-    progress->setWindowTitle(I18n::tr("Commit to disk"));
-    progress->setWindowModality(Qt::WindowModal);
-    progress->setMinimumDuration(500);
-    progress->setAutoClose(true);
-    progress->setAutoReset(false);
-    Q_ASSERT(progress->windowModality() == Qt::WindowModal);
-  }
-
-  int okCount = 0;
-  bool canceled = false;
-  QList<CommitReportRow> nonOkRows;
-  for (int i = 0; i < targets.size(); ++i) {
-    if (progress) {
-      progress->setValue(i);  // 内部 processEvents — 必须靠 WindowModal 拦住外部触发的 WMI 调用
-      if (progress->wasCanceled()) {
-        canceled = true;
-        break;
-      }
-      const QString& f = targets[i];
-      // label 截断一下，目录结构深时不至于把对话框撑到屏外。
-      const QString shown = f.size() > 80 ? ("…" + f.right(79)) : f;
-      progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(targets.size()).arg(shown));
-    }
-    const QString& f = targets[i];
-
+  runCommitBatch(I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; }, [&](const QString& f) {
     const auto res = m_volume.commitFile(*row, f.toStdString());
-    if (res.outcome == CommitOutcome::Ok) {
-      ++okCount;
-    } else {
-      // detail 仅入日志，不显示给用户；UI 翻成一句中文。
-      if (!res.detail.empty()) {
-        const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
-        UWF_LOG_W("commit") << std::format("CommitFile {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(), static_cast<uint32_t>(res.hresult),
-                                           res.returnValue, res.detail);
-      }
-      nonOkRows.append({res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed"), f, formatErrorCode(res.hresult, res.returnValue),
-                        explainCommitFailure(res.hresult, res.returnValue)});
+    if (!res.detail.empty()) {
+      const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+      UWF_LOG_W("commit") << std::format("CommitFile {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(), static_cast<uint32_t>(res.hresult),
+                                         res.returnValue, res.detail);
     }
-  }
-  if (progress) {
-    progress->setValue(static_cast<int>(targets.size()));
-    progress->close();  // 确保残留窗口不会跨越到结果弹窗之后。
-  }
-
-  const int untouched = canceled ? (static_cast<int>(targets.size()) - okCount - static_cast<int>(nonOkRows.size())) : 0;
-  showCommitReport(this, okCount, nonOkRows, untouched);
+    return res;
+  });
 }
 
 void MainWindow::commitFileDeletionPath(const QString& path) {
@@ -1543,52 +1542,15 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
             : I18n::tr("Delete the following file and commit the deletion to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(path);
   if (!confirm(this, title, prompt)) return;
 
-  std::unique_ptr<QProgressDialog> progress;
-  if (targets.size() > 1) {
-    progress = std::make_unique<QProgressDialog>(I18n::tr("Committing…"), I18n::tr("Cancel"), 0, static_cast<int>(targets.size()), this);
-    progress->setWindowTitle(title);
-    progress->setWindowModality(Qt::WindowModal);
-    progress->setMinimumDuration(500);
-    progress->setAutoClose(true);
-    progress->setAutoReset(false);
-    Q_ASSERT(progress->windowModality() == Qt::WindowModal);
-  }
-
-  int okCount = 0;
-  bool canceled = false;
-  QList<CommitReportRow> nonOkRows;
-  for (int i = 0; i < targets.size(); ++i) {
-    if (progress) {
-      progress->setValue(i);
-      if (progress->wasCanceled()) {
-        canceled = true;
-        break;
-      }
-      const QString& cur = targets[i];
-      const QString shown = cur.size() > 80 ? ("…" + cur.right(79)) : cur;
-      progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(targets.size()).arg(shown));
-    }
-    const QString& f = targets[i];
+  runCommitBatch(title, targets, [](const QString& f) { return f; }, [&](const QString& f) {
     const auto res = m_volume.commitFileDeletion(*row, f.toStdString());
-    if (res.outcome == CommitOutcome::Ok) {
-      ++okCount;
-    } else {
-      if (!res.detail.empty()) {
-        const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
-        UWF_LOG_W("commit") << std::format("CommitFileDeletion {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(),
-                                           static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-      }
-      nonOkRows.append({res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed"), f, formatErrorCode(res.hresult, res.returnValue),
-                        explainCommitFailure(res.hresult, res.returnValue)});
+    if (!res.detail.empty()) {
+      const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+      UWF_LOG_W("commit") << std::format("CommitFileDeletion {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(),
+                                         static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
     }
-  }
-  if (progress) {
-    progress->setValue(static_cast<int>(targets.size()));
-    progress->close();
-  }
-
-  const int untouched = canceled ? (static_cast<int>(targets.size()) - okCount - static_cast<int>(nonOkRows.size())) : 0;
-  showCommitReport(this, okCount, nonOkRows, untouched);
+    return res;
+  });
 }
 
 void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) {
@@ -1663,50 +1625,15 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     return;
   }
 
-  std::unique_ptr<QProgressDialog> progress;
-  if (total > 1) {
-    progress = std::make_unique<QProgressDialog>(I18n::tr("Committing…"), I18n::tr("Cancel"), 0, total, this);
-    progress->setWindowTitle(I18n::tr("Commit to disk"));
-    progress->setWindowModality(Qt::WindowModal);
-    progress->setMinimumDuration(500);
-    progress->setAutoClose(true);
-    progress->setAutoReset(false);
-    Q_ASSERT(progress->windowModality() == Qt::WindowModal);
-  }
-
-  int okCount = 0;
-  bool canceled = false;
-  QList<CommitReportRow> nonOkRows;
-  for (int i = 0; i < total; ++i) {
-    if (progress) {
-      progress->setValue(i);
-      if (progress->wasCanceled()) {
-        canceled = true;
-        break;
-      }
-      const QString& d = targets[i].display;
-      progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(total).arg(d.size() > 80 ? ("…" + d.right(79)) : d));
-    }
-    const auto& t = targets[i];
+  runCommitBatch(I18n::tr("Commit to disk"), targets, [](const RegCommitTarget& t) { return t.display; }, [&](const RegCommitTarget& t) {
     const auto res = m_registry.commitRegistry(*row, t.key, t.valueName);
-    if (res.outcome == CommitOutcome::Ok) {
-      ++okCount;
-    } else {
-      if (!res.detail.empty()) {
-        const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
-        UWF_LOG_W("commit") << std::format("CommitRegistry {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
-                                           static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-      }
-      nonOkRows.append({res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed"), t.display,
-                        formatErrorCode(res.hresult, res.returnValue), explainCommitFailure(res.hresult, res.returnValue)});
+    if (!res.detail.empty()) {
+      const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+      UWF_LOG_W("commit") << std::format("CommitRegistry {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
+                                         static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
     }
-  }
-  if (progress) {
-    progress->setValue(total);
-    progress->close();
-  }
-  const int untouched = canceled ? (total - okCount - static_cast<int>(nonOkRows.size())) : 0;
-  showCommitReport(this, okCount, nonOkRows, untouched);
+    return res;
+  });
 }
 
 void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& valueName) {
@@ -1773,50 +1700,15 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
     return;
   }
 
-  std::unique_ptr<QProgressDialog> progress;
-  if (total > 1) {
-    progress = std::make_unique<QProgressDialog>(I18n::tr("Committing…"), I18n::tr("Cancel"), 0, total, this);
-    progress->setWindowTitle(I18n::tr("Commit registry deletion"));
-    progress->setWindowModality(Qt::WindowModal);
-    progress->setMinimumDuration(500);
-    progress->setAutoClose(true);
-    progress->setAutoReset(false);
-    Q_ASSERT(progress->windowModality() == Qt::WindowModal);
-  }
-
-  int okCount = 0;
-  bool canceled = false;
-  QList<CommitReportRow> nonOkRows;
-  for (int i = 0; i < total; ++i) {
-    if (progress) {
-      progress->setValue(i);
-      if (progress->wasCanceled()) {
-        canceled = true;
-        break;
-      }
-      const QString& d = targets[i].display;
-      progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(total).arg(d.size() > 80 ? ("…" + d.right(79)) : d));
-    }
-    const auto& t = targets[i];
+  runCommitBatch(I18n::tr("Commit registry deletion"), targets, [](const RegCommitTarget& t) { return t.display; }, [&](const RegCommitTarget& t) {
     const auto res = m_registry.commitRegistryDeletion(*row, t.key, t.valueName);
-    if (res.outcome == CommitOutcome::Ok) {
-      ++okCount;
-    } else {
-      if (!res.detail.empty()) {
-        const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
-        UWF_LOG_W("commit") << std::format("CommitRegistryDeletion {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
-                                           static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-      }
-      nonOkRows.append({res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed"), t.display,
-                        formatErrorCode(res.hresult, res.returnValue), explainCommitFailure(res.hresult, res.returnValue)});
+    if (!res.detail.empty()) {
+      const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+      UWF_LOG_W("commit") << std::format("CommitRegistryDeletion {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
+                                         static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
     }
-  }
-  if (progress) {
-    progress->setValue(total);
-    progress->close();
-  }
-  const int untouched = canceled ? (total - okCount - static_cast<int>(nonOkRows.size())) : 0;
-  showCommitReport(this, okCount, nonOkRows, untouched);
+    return res;
+  });
 }
 
 }  // namespace uwf::ui

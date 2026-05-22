@@ -76,6 +76,13 @@ class MainWindow : public QMainWindow {
   // 托盘那半段交给 TrayController。
   void refreshUsage();
 
+  // commitFilePath / commitFileDeletionPath / commitRegistryKey / commitRegistryDeletionKey
+  // 共用的批处理收尾：>1 个目标弹模态进度条，逐个调用 commitOne，失败项汇总进
+  // showCommitReport。commitOne 返回单个目标的 CommitResult 并自行写失败日志；
+  // displayOf 给出进度条 / 报告里的展示串。模板定义在 .cpp（仅本 TU 内实例化）。
+  template <typename Target, typename DisplayFn, typename CommitFn>
+  void runCommitBatch(const QString& progressTitle, const QList<Target>& targets, DisplayFn displayOf, CommitFn commitOne);
+
   QTabWidget* m_tabs = nullptr;
   GlobalStatusPanel* m_global = nullptr;
   QLabel* m_statusText = nullptr;
