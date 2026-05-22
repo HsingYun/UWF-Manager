@@ -38,6 +38,7 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
+#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <algorithm>
@@ -1255,6 +1256,19 @@ void MainWindow::showAbout() {
   layout->setContentsMargins(20, 16, 20, 12);
   layout->setSpacing(10);
 
+  // 头部：左侧软件 logo，右侧标题 + 版本号竖排。
+  auto* header = new QHBoxLayout();
+  header->setSpacing(14);
+
+  // app.svg 是矢量 logo（同时用作窗口 / 托盘图标），渲染成 64×64 放在左侧。
+  auto* logo = new QLabel(&dlg);
+  logo->setPixmap(QIcon(QStringLiteral(":/icons/app.svg")).pixmap(64, 64));
+  logo->setFixedSize(64, 64);
+  header->addWidget(logo);
+
+  auto* titleBox = new QVBoxLayout();
+  titleBox->setSpacing(2);
+
   // 标题：手动用 QLabel + 大字号 + bold（YaHei 真实字重 700）替代 <h3>，
   // 避免 QTextDocument 的 <h3> 默认合成粗体（同样的 hinting 问题）。
   auto* title = new QLabel(I18n::tr("Unified Write Filter (UWF) Manager"), &dlg);
@@ -1263,7 +1277,7 @@ void MainWindow::showAbout() {
   titleFont.setPointSizeF(titleFont.pointSizeF() + 3);
   title->setFont(titleFont);
   title->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  layout->addWidget(title);
+  titleBox->addWidget(title);
 
   // 版本号紧贴标题下方、弱化显示。UWF_VER_STRING 由 cmake/GitVersion.cmake
   // 在构建期注入 git 短哈希（无 git 仓库时回退为 "1.0.0.0"）。用内联 color
@@ -1276,7 +1290,10 @@ void MainWindow::showAbout() {
   const QString verText =
       I18n::tr("Version %1").arg(QString::fromLatin1(UWF_VER_STRING)) + QStringLiteral(" · powered by Qt %1").arg(QString::fromLatin1(qVersion()));
   version->setText(QStringLiteral("<span style=\"color:%1\">%2</span>").arg(ThemeManager::instance().color(Sem::FgMuted).name(), verText));
-  layout->addWidget(version);
+  titleBox->addWidget(version);
+
+  header->addLayout(titleBox, 1);
+  layout->addLayout(header);
 
   auto* body = new QLabel(&dlg);
   body->setTextFormat(Qt::RichText);
