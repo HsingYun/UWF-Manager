@@ -66,6 +66,13 @@ std::string normalize(const std::string& key) {
   return path;  // hive 不认识——原样返回（已 trim、去尾反斜杠）
 }
 
+bool keyExists(std::string_view key) {
+  HKEY opened = nullptr;
+  if (!openForRead(key, opened)) return false;
+  RegCloseKey(opened);
+  return true;
+}
+
 bool valueExists(std::string_view key, std::string_view valueName) {
   HKEY opened = nullptr;
   if (!openForRead(key, opened)) return false;

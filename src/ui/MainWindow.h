@@ -51,6 +51,7 @@ class MainWindow : public QMainWindow {
   void commitFilePath(const QString& path);
   void commitFileDeletionPath(const QString& path);
   void commitRegistryKey(const QString& key, const QString& valueName);
+  void commitRegistryDeletionKey(const QString& key, const QString& valueName);
 
  protected:
   bool eventFilter(QObject* obj, QEvent* ev) override;

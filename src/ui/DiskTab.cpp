@@ -173,6 +173,8 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   if (m_showRegistry) {
     m_commitRegAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Commit registry changes…"));
     m_commitRegAct->setToolTip(I18n::tr("Enter a registry key (and optional value name) and commit changes to the registry."));
+    m_commitRegDeleteAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Commit registry deletion…"));
+    m_commitRegDeleteAct->setToolTip(I18n::tr("Enter a registry key or value that has already been deleted, and commit the deletion to the registry."));
   }
   m_commitBtn->setMenu(commitMenu);
   m_status->addTrailingAction(m_commitBtn);
@@ -219,6 +221,9 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   if (m_commitRegAct) {
     connect(m_commitRegAct, &QAction::triggered, this, &DiskTab::onCommitRegistry);
   }
+  if (m_commitRegDeleteAct) {
+    connect(m_commitRegDeleteAct, &QAction::triggered, this, &DiskTab::onCommitRegistryDelete);
+  }
 
   if (m_disk.support == core::DiskSupport::Supported) {
     // 完全支持，什么都不做
@@ -240,6 +245,7 @@ void DiskTab::refreshThemedIcons() {
   if (m_commitDirAct) m_commitDirAct->setIcon(tm.icon(":/icons/folder.svg"));
   if (m_commitFileDeleteAct) m_commitFileDeleteAct->setIcon(tm.icon(":/icons/file.svg"));
   if (m_commitRegAct) m_commitRegAct->setIcon(tm.icon(":/icons/registry.svg"));
+  if (m_commitRegDeleteAct) m_commitRegDeleteAct->setIcon(tm.icon(":/icons/registry.svg"));
   if (m_infoTabs) {
     if (m_files) {
       const int idx = m_infoTabs->indexOf(m_files);
@@ -292,16 +298,16 @@ void DiskTab::onCommitFileDelete() {
   emit commitFileDeletionRequested(QDir::toNativeSeparators(input));
 }
 
-void DiskTab::onCommitRegistry() {
+std::optional<std::pair<QString, QString>> DiskTab::promptRegistryTarget(const QString& title, const QString& valuePlaceholder, const QString& hintText) {
   // 键 + 可选值名在同一个 dialog 里用 QFormLayout 两行输入，避免连弹两次。
   QDialog dlg(this);
-  dlg.setWindowTitle(I18n::tr("Commit registry changes"));
+  dlg.setWindowTitle(title);
 
   auto* keyEdit = new QLineEdit(&dlg);
   keyEdit->setPlaceholderText("HKLM\\Software\\MyApp");
   keyEdit->setMinimumWidth(360);
   auto* valueEdit = new QLineEdit(&dlg);
-  valueEdit->setPlaceholderText(I18n::tr("Leave empty to commit the key's default value"));
+  valueEdit->setPlaceholderText(valuePlaceholder);
 
   auto* form = new QFormLayout;
   form->addRow(I18n::tr("Registry key:"), keyEdit);
@@ -313,16 +319,15 @@ void DiskTab::onCommitRegistry() {
   connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
   connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 
-  // 说明横幅：CommitRegistry 是单值操作——不会带上同键的其它值，更不会递归子键。
-  // 复用全局状态横幅的 warn 样式，与"Windows 兼容模式"提示同款。
-  auto* hint = new QLabel(I18n::tr("Only the single value above is committed (an empty value name means the key's (Default) value). "
-                                   "Other values under the key, and any subkeys, are not committed."),
-                          &dlg);
+  // 说明横幅：复用全局状态横幅的 warn 样式，与"Windows 兼容模式"提示同款。
+  auto* hint = new QLabel(hintText, &dlg);
   hint->setObjectName("statusBanner");
   hint->setProperty("level", "warn");
   hint->setWordWrap(true);
 
   auto* layout = new QVBoxLayout(&dlg);
+  // 12px 间距：让 warn 横幅与上方输入行之间留出呼吸空间，不要贴在一起。
+  layout->setSpacing(12);
   layout->addLayout(form);
   layout->addWidget(hint);
   layout->addWidget(btns);
@@ -332,10 +337,31 @@ void DiskTab::onCommitRegistry() {
   syncOk();
   connect(keyEdit, &QLineEdit::textChanged, &dlg, syncOk);
 
-  if (dlg.exec() != QDialog::Accepted) return;
+  if (dlg.exec() != QDialog::Accepted) return std::nullopt;
   const QString key = keyEdit->text().trimmed();
-  if (key.isEmpty()) return;
-  emit commitRegistryRequested(key, valueEdit->text());
+  if (key.isEmpty()) return std::nullopt;
+  // 值名原样保留、不 trim：注册表值名理论上允许首尾空格。
+  return std::make_pair(key, valueEdit->text());
+}
+
+void DiskTab::onCommitRegistry() {
+  // CommitRegistry 是单值操作——不会带上同键的其它值，更不会递归子键。
+  const auto target = promptRegistryTarget(
+      I18n::tr("Commit registry changes"), I18n::tr("Leave empty to commit the key's default value"),
+      I18n::tr("Only the single value above is committed (an empty value name means the key's (Default) value). "
+               "Other values under the key, and any subkeys, are not committed."));
+  if (!target) return;
+  emit commitRegistryRequested(target->first, target->second);
+}
+
+void DiskTab::onCommitRegistryDelete() {
+  // CommitRegistryDeletion：值名留空 = 删除整个键（含所有值与子键）。
+  const auto target = promptRegistryTarget(
+      I18n::tr("Commit registry deletion"), I18n::tr("Leave empty to delete the entire key, including its subkeys"),
+      I18n::tr("The entry above must already have been deleted in the current session — committing only writes that pending deletion to disk. "
+               "Leaving the value name empty deletes the entire key, including all of its values and subkeys."));
+  if (!target) return;
+  emit commitRegistryDeletionRequested(target->first, target->second);
 }
 
 void DiskTab::markUnsupported() const {
@@ -386,6 +412,7 @@ void DiskTab::updateCommitEnablement(const bool globalFilterOn, const bool thisV
   if (m_commitDirAct) m_commitDirAct->setEnabled(fileOK);
   if (m_commitFileDeleteAct) m_commitFileDeleteAct->setEnabled(fileOK);
   if (m_commitRegAct) m_commitRegAct->setEnabled(regOK);
+  if (m_commitRegDeleteAct) m_commitRegDeleteAct->setEnabled(regOK);
 
   if (m_commitBtn) {
     const bool any = fileOK || (regOK && m_commitRegAct != nullptr);

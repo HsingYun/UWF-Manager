@@ -951,6 +951,7 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
     connect(tab, &DiskTab::commitFileRequested, this, &MainWindow::commitFilePath);
     connect(tab, &DiskTab::commitFileDeletionRequested, this, &MainWindow::commitFileDeletionPath);
     connect(tab, &DiskTab::commitRegistryRequested, this, &MainWindow::commitRegistryKey);
+    connect(tab, &DiskTab::commitRegistryDeletionRequested, this, &MainWindow::commitRegistryDeletionKey);
   }
 
   // 切回刷新前选中的卷（按盘符匹配）。该卷若已不在（磁盘被移除）则保持默认第 0 个。
@@ -1586,6 +1587,74 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     // 提交目标的存在性已由上面的 valueExists 预检确认，故走到这里的 Skipped
     // （NOT_FOUND，例如预检之后该值被并发删除）与 Failed 一样按失败报告。
     case CommitOutcome::Skipped:
+    case CommitOutcome::Failed:
+      warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to write registry: %1").arg(explainCommitFailure(res.hresult, res.returnValue)));
+      break;
+  }
+}
+
+void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& valueName) {
+  if (key.isEmpty()) return;
+
+  // 同 commitRegistryKey：注册表键先归一成长写 hive（HKLM\… → HKEY_LOCAL_MACHINE\…）。
+  // UWF 覆盖层与排除列表都按长写键路径索引，跳过归一会匹配不到。
+  const std::string normKey = regkey::normalize(key.toStdString());
+  if (normKey.empty()) return;
+  const QString keyText = QString::fromStdString(normKey);
+  // 删除提交里 valueName 留空 = 删除整个键（含所有值与子键）；非空 = 删除该命名值。
+  const QString desc = valueName.isEmpty() ? I18n::tr("Key: %1\nValue: (entire key — all values and subkeys)").arg(keyText)
+                                           : I18n::tr("Key: %1\nValue: %2").arg(keyText, valueName);
+
+  // 注册表排除是全局的，直接比对当前运行会话即可。覆盖 = 键相等或为其祖先。
+  const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
+  if (!hit.empty()) {
+    warning(this, I18n::tr("Commit rejected"),
+            I18n::tr("This key is in the registry exclusion list. UWF does not write it to the overlay, so committing its deletion to disk is neither "
+                     "needed nor possible.\n\nTarget: %1\nExclusion: %2")
+                .arg(keyText, QString::fromStdString(hit)));
+    return;
+  }
+
+  // 删除提交的语义：目标在当前会话里**已被删除**，覆盖层里只剩一个删除标记等待
+  // 落盘。若目标仍在，说明删除根本没发生，提交删除没有意义——提交前就拒绝。
+  const bool stillExists = valueName.isEmpty() ? regkey::keyExists(normKey) : regkey::valueExists(normKey, valueName.toStdString());
+  if (stillExists) {
+    warning(this, I18n::tr("Commit rejected"),
+            I18n::tr("Commit registry deletion requires the entry to no longer exist in the current session — that is, it has already been deleted in this "
+                     "session, leaving only a deletion marker in the overlay waiting to be written to disk.\n\nHowever, the following entry still "
+                     "exists:\n\n%1\n\nDelete it in Registry Editor first, then return here to commit the deletion.")
+                .arg(desc));
+    return;
+  }
+
+  if (!confirm(this, I18n::tr("Commit registry deletion"),
+               I18n::tr("Commit the deletion of the following registry entry to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(desc)))
+    return;
+
+  std::string err;
+  auto filters = m_registry.readAll(&err);
+  if (!err.empty()) {
+    warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to read registry filter: %1").arg(QString::fromStdString(err)));
+    return;
+  }
+  const auto* row = findCurrentRegistryFilter(filters);
+  if (!row) {
+    warning(this, I18n::tr("Commit failed"), I18n::tr("No current-session registry filter record found."));
+    return;
+  }
+  const auto res = m_registry.commitRegistryDeletion(*row, normKey, valueName.toStdString());
+  switch (res.outcome) {
+    case CommitOutcome::Ok:
+      showTransientHint(I18n::tr("Committed: %1").arg(keyText), 3000);
+      break;
+    // Skipped = WBEM_E_NOT_FOUND：覆盖层里没有这条待提交的删除。和 commitRegistryKey
+    // 不同——那边 valueExists 预检确保 Skipped 只可能是并发竞态；这里"目标已不存在"
+    // 的预检并不保证覆盖层里就攒了删除标记（该项可能从未在受保护会话里被删过），
+    // 故 Skipped 是正常可达结果，平静提示即可，不当作错误。
+    case CommitOutcome::Skipped:
+      information(this, I18n::tr("Nothing to commit"),
+                  I18n::tr("UWF has no pending deletion for this registry entry in the overlay, so there is nothing to commit.\n\n%1").arg(desc));
+      break;
     case CommitOutcome::Failed:
       warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to write registry: %1").arg(explainCommitFailure(res.hresult, res.returnValue)));
       break;

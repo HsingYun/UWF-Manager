@@ -25,6 +25,9 @@ namespace uwf::regkey {
 //     合法性校验去拒绝。
 std::string normalize(const std::string& key);
 
+// 判断一个注册表键本身是否存在。key 内部会先 normalize，简写或长写均可。
+[[nodiscard]] bool keyExists(std::string_view key);
+
 // 判断该注册表键下名为 valueName 的值是否存在；valueName 为空表示键的默认值
 // (Default)。key 内部会先 normalize，简写或长写均可；无法识别 hive、键不存在、
 // 或该值不存在均返回 false。
