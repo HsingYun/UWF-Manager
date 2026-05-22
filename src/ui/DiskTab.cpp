@@ -313,8 +313,15 @@ void DiskTab::onCommitRegistry() {
   connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
   connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 
+  // 说明：CommitRegistry 是单值操作——不会带上同键的其它值，更不会递归子键。
+  auto* hint = new QLabel(I18n::tr("Only the single value above is committed (an empty value name means the key's (Default) value). "
+                                   "Other values under the key, and any subkeys, are not committed."),
+                          &dlg);
+  hint->setWordWrap(true);
+
   auto* layout = new QVBoxLayout(&dlg);
   layout->addLayout(form);
+  layout->addWidget(hint);
   layout->addWidget(btns);
 
   // 键必填：空串时"确定"灰掉。

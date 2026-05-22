@@ -195,6 +195,10 @@ The path must no longer exist in the current session — meaning it has already 
     <message><source>Commit file deletion</source><translation>提交文件删除</translation></message>
     <message><source>Commit registry changes</source><translation>提交注册表修改</translation></message>
     <message><source>Leave empty to commit the key's default value</source><translation>留空则提交该键的默认值</translation></message>
+    <message>
+        <source>Only the single value above is committed (an empty value name means the key's (Default) value). Other values under the key, and any subkeys, are not committed.</source>
+        <translation>只提交上方指定的这一个值（值名留空表示该键的默认值）。该键下的其它值、以及任何子键，都不会被提交。</translation>
+    </message>
     <message><source>Registry key:</source><translation>注册表键：</translation></message>
     <message><source>Value name (optional):</source><translation>值名（可选）：</translation></message>
 
