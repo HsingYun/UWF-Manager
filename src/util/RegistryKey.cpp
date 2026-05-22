@@ -4,6 +4,7 @@
 
 #include <utility>
 
+#include "../core/Config.h"
 #include "StringUtil.h"
 
 namespace uwf::regkey {
@@ -122,10 +123,9 @@ std::vector<std::string> subkeyNames(std::string_view key) {
   std::vector<std::string> out;
   HKEY opened = nullptr;
   if (!openForRead(key, opened)) return out;
-  // 注册表键名上限 255 字符；256 的缓冲含收尾 NUL 足够。
-  wchar_t name[256];
+  wchar_t name[config::kRegistryKeyNameBufChars];
   for (DWORD i = 0;; ++i) {
-    DWORD len = 256;
+    DWORD len = config::kRegistryKeyNameBufChars;
     if (RegEnumKeyExW(opened, i, name, &len, nullptr, nullptr, nullptr, nullptr) != ERROR_SUCCESS) break;
     out.push_back(wideToUtf8(std::wstring(name, len)));
   }
@@ -137,8 +137,7 @@ std::vector<std::string> valueNames(std::string_view key) {
   std::vector<std::string> out;
   HKEY opened = nullptr;
   if (!openForRead(key, opened)) return out;
-  // 注册表值名上限 16383 字符。
-  std::wstring name(16384, L'\0');
+  std::wstring name(config::kRegistryValueNameBufChars, L'\0');
   for (DWORD i = 0;; ++i) {
     DWORD len = static_cast<DWORD>(name.size());
     if (RegEnumValueW(opened, i, name.data(), &len, nullptr, nullptr, nullptr, nullptr) != ERROR_SUCCESS) break;

@@ -125,4 +125,10 @@ inline constexpr std::array<std::string_view, 6> kAllowedRegistryRootPrefixes = 
 // 须在白名单检查之前单独挡掉。
 inline constexpr std::string_view kForbiddenRegistryKeyMachineAccount = R"(HKEY_LOCAL_MACHINE\SECURITY\POLICY\SECRETS\$MACHINE.ACC)";
 
+// ── 注册表名字长度上限 ──────────────────────────────────────────────────────
+// Windows 注册表键名上限 255 字符、值名上限 16383 字符（RegCreateKeyEx /
+// RegSetValueEx 文档）。枚举子键 / 值名时按「上限 + 1（收尾 NUL）」开缓冲。
+inline constexpr int kRegistryKeyNameBufChars = 256;
+inline constexpr int kRegistryValueNameBufChars = 16384;
+
 }  // namespace uwf::config
