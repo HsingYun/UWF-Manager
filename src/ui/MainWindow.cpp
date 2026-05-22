@@ -1457,15 +1457,17 @@ void MainWindow::commitFilePath(const QString& path) {
                      : I18n::tr("Commit the following path from the overlay to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(path)))
     return;
 
-  runCommitBatch(I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; }, [&](const QString& f) {
-    const auto res = m_volume.commitFile(*row, f.toStdString());
-    if (!res.detail.empty()) {
-      const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
-      UWF_LOG_W("commit") << std::format("CommitFile {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(), static_cast<uint32_t>(res.hresult),
-                                         res.returnValue, res.detail);
-    }
-    return res;
-  });
+  runCommitBatch(
+      I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; },
+      [&](const QString& f) {
+        const auto res = m_volume.commitFile(*row, f.toStdString());
+        if (!res.detail.empty()) {
+          const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+          UWF_LOG_W("commit") << std::format("CommitFile {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(), static_cast<uint32_t>(res.hresult),
+                                             res.returnValue, res.detail);
+        }
+        return res;
+      });
 }
 
 void MainWindow::commitFileDeletionPath(const QString& path) {
@@ -1534,23 +1536,26 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
 
   const QString title = isDir ? I18n::tr("Commit folder deletion") : I18n::tr("Commit file deletion");
   const QString prompt =
-      isDir ? I18n::tr("Delete the folder below and everything inside it — %1 files and %2 subfolders — and commit the deletions to disk. "
-                       "This action cannot be undone.\n\n%3\n\nContinue?")
+      isDir ? I18n::tr(
+                  "Delete the folder below and everything inside it — %1 files and %2 subfolders — and commit the deletions to disk. "
+                  "This action cannot be undone.\n\n%3\n\nContinue?")
                   .arg(fileCount)
                   .arg(subdirCount)
                   .arg(path)
             : I18n::tr("Delete the following file and commit the deletion to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(path);
   if (!confirm(this, title, prompt)) return;
 
-  runCommitBatch(title, targets, [](const QString& f) { return f; }, [&](const QString& f) {
-    const auto res = m_volume.commitFileDeletion(*row, f.toStdString());
-    if (!res.detail.empty()) {
-      const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
-      UWF_LOG_W("commit") << std::format("CommitFileDeletion {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(),
-                                         static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-    }
-    return res;
-  });
+  runCommitBatch(
+      title, targets, [](const QString& f) { return f; },
+      [&](const QString& f) {
+        const auto res = m_volume.commitFileDeletion(*row, f.toStdString());
+        if (!res.detail.empty()) {
+          const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+          UWF_LOG_W("commit") << std::format("CommitFileDeletion {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(),
+                                             static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
+        }
+        return res;
+      });
 }
 
 void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) {
@@ -1604,13 +1609,14 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
   }
   const int total = static_cast<int>(targets.size());
 
-  const QString prompt = valueName.isEmpty()
-                             ? I18n::tr("Commit the registry key below, all its values and all its subkeys recursively to disk — %1 values in "
-                                        "total. This action cannot be undone.\n\n%2\n\nContinue?")
-                                   .arg(total)
-                                   .arg(keyText)
-                             : I18n::tr("Commit the following registry value to disk. This action cannot be undone.\n\n%1\n\nContinue?")
-                                   .arg(keyText + " : " + valueName);
+  const QString prompt =
+      valueName.isEmpty()
+          ? I18n::tr(
+                "Commit the registry key below, all its values and all its subkeys recursively to disk — %1 values in "
+                "total. This action cannot be undone.\n\n%2\n\nContinue?")
+                .arg(total)
+                .arg(keyText)
+          : I18n::tr("Commit the following registry value to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(keyText + " : " + valueName);
   if (!confirm(this, I18n::tr("Commit to disk"), prompt)) return;
 
   std::string err;
@@ -1625,15 +1631,17 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     return;
   }
 
-  runCommitBatch(I18n::tr("Commit to disk"), targets, [](const RegCommitTarget& t) { return t.display; }, [&](const RegCommitTarget& t) {
-    const auto res = m_registry.commitRegistry(*row, t.key, t.valueName);
-    if (!res.detail.empty()) {
-      const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
-      UWF_LOG_W("commit") << std::format("CommitRegistry {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
-                                         static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-    }
-    return res;
-  });
+  runCommitBatch(
+      I18n::tr("Commit to disk"), targets, [](const RegCommitTarget& t) { return t.display; },
+      [&](const RegCommitTarget& t) {
+        const auto res = m_registry.commitRegistry(*row, t.key, t.valueName);
+        if (!res.detail.empty()) {
+          const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+          UWF_LOG_W("commit") << std::format("CommitRegistry {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
+                                             static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
+        }
+        return res;
+      });
 }
 
 void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& valueName) {
@@ -1678,14 +1686,15 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
   }
   const int total = static_cast<int>(targets.size());
 
-  const QString prompt = valueName.isEmpty()
-                             ? I18n::tr("Delete the registry key below, all its values and all its subkeys recursively — %1 keys in total — "
-                                        "and commit the deletions to disk. This action cannot be undone.\n\n%2\n\nContinue?")
-                                   .arg(total)
-                                   .arg(keyText)
-                             : I18n::tr("Delete the following registry value and commit the deletion to disk. This action cannot be "
-                                        "undone.\n\n%1\n\nContinue?")
-                                   .arg(keyText + " : " + valueName);
+  const QString prompt = valueName.isEmpty() ? I18n::tr(
+                                                   "Delete the registry key below, all its values and all its subkeys recursively — %1 keys in total — "
+                                                   "and commit the deletions to disk. This action cannot be undone.\n\n%2\n\nContinue?")
+                                                   .arg(total)
+                                                   .arg(keyText)
+                                             : I18n::tr(
+                                                   "Delete the following registry value and commit the deletion to disk. This action cannot be "
+                                                   "undone.\n\n%1\n\nContinue?")
+                                                   .arg(keyText + " : " + valueName);
   if (!confirm(this, I18n::tr("Commit registry deletion"), prompt)) return;
 
   std::string err;
@@ -1700,15 +1709,17 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
     return;
   }
 
-  runCommitBatch(I18n::tr("Commit registry deletion"), targets, [](const RegCommitTarget& t) { return t.display; }, [&](const RegCommitTarget& t) {
-    const auto res = m_registry.commitRegistryDeletion(*row, t.key, t.valueName);
-    if (!res.detail.empty()) {
-      const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
-      UWF_LOG_W("commit") << std::format("CommitRegistryDeletion {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
-                                         static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-    }
-    return res;
-  });
+  runCommitBatch(
+      I18n::tr("Commit registry deletion"), targets, [](const RegCommitTarget& t) { return t.display; },
+      [&](const RegCommitTarget& t) {
+        const auto res = m_registry.commitRegistryDeletion(*row, t.key, t.valueName);
+        if (!res.detail.empty()) {
+          const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+          UWF_LOG_W("commit") << std::format("CommitRegistryDeletion {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
+                                             static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
+        }
+        return res;
+      });
 }
 
 }  // namespace uwf::ui

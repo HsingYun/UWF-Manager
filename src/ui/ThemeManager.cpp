@@ -139,9 +139,8 @@ void ThemeManager::toggle() { apply(m_theme == Theme::Dark ? Theme::Light : Them
 Theme ThemeManager::detectSystemTheme() {
   // AppsUseLightTheme：0 = 深色应用主题，非 0 / 缺失 = 浅色。读不到该值
   // （注册表项不存在等）时 readDword 返回 0——与"未配置时回退深色"一致。
-  return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", "AppsUseLightTheme") == 0
-             ? Theme::Dark
-             : Theme::Light;
+  return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", "AppsUseLightTheme") == 0 ? Theme::Dark
+                                                                                                                                          : Theme::Light;
 }
 
 QColor ThemeManager::color(Sem s) const {

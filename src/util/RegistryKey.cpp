@@ -1,7 +1,8 @@
 #include "RegistryKey.h"
 
-#include <utility>
 #include <windows.h>
+
+#include <utility>
 
 #include "StringUtil.h"
 

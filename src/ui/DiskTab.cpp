@@ -352,20 +352,20 @@ std::optional<std::pair<QString, QString>> DiskTab::promptRegistryTarget(const Q
 
 void DiskTab::onCommitRegistry() {
   // 值名给定 → 只提交该值；值名留空 → 由 MainWindow 递归提交整棵键子树。
-  const auto target = promptRegistryTarget(
-      I18n::tr("Commit registry changes"), I18n::tr("Leave empty to commit the whole key recursively"),
-      I18n::tr("With a value name, only that single value is committed. Leave the value name empty to commit the whole key recursively — "
-               "every value in the key and in all of its subkeys."));
+  const auto target =
+      promptRegistryTarget(I18n::tr("Commit registry changes"), I18n::tr("Leave empty to commit the whole key recursively"),
+                           I18n::tr("With a value name, only that single value is committed. Leave the value name empty to commit the whole key recursively — "
+                                    "every value in the key and in all of its subkeys."));
   if (!target) return;
   emit commitRegistryRequested(target->first, target->second);
 }
 
 void DiskTab::onCommitRegistryDelete() {
   // 值名给定 → 只删该值；值名留空 → 由 MainWindow 递归删除整棵键子树。
-  const auto target = promptRegistryTarget(
-      I18n::tr("Commit registry deletion"), I18n::tr("Leave empty to delete the whole key recursively"),
-      I18n::tr("With a value name, only that single value is deleted. Leave the value name empty to delete the whole key recursively — "
-               "the key, all of its values, and all of its subkeys."));
+  const auto target =
+      promptRegistryTarget(I18n::tr("Commit registry deletion"), I18n::tr("Leave empty to delete the whole key recursively"),
+                           I18n::tr("With a value name, only that single value is deleted. Leave the value name empty to delete the whole key recursively — "
+                                    "the key, all of its values, and all of its subkeys."));
   if (!target) return;
   emit commitRegistryDeletionRequested(target->first, target->second);
 }

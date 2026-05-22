@@ -76,8 +76,8 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   // Tag 列默认宽度 = 最长 tag（"UWF_RegistryFilter"，18 字符）实测文本宽 +
   // 约 4 个字符宽的裕度（覆盖单元格内边距 / 装饰）。固定 24px 裕度不够——
   // UWF_OverlayConfig 等仍会被 elide 成 "…"。Interactive 模式，可手动拖窄。
-  table->setColumnWidth(2, table->fontMetrics().horizontalAdvance(QStringLiteral("UWF_RegistryFilter")) +
-                               table->fontMetrics().horizontalAdvance(QStringLiteral("MMMM")));
+  table->setColumnWidth(
+      2, table->fontMetrics().horizontalAdvance(QStringLiteral("UWF_RegistryFilter")) + table->fontMetrics().horizontalAdvance(QStringLiteral("MMMM")));
   table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
   table->verticalHeader()->setDefaultSectionSize(kRowHeight);
   table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);

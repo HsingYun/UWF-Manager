@@ -102,14 +102,8 @@ inline constexpr std::string_view kForbiddenDirWindowsDrivers = R"(\WINDOWS\SYST
 
 // 系统卷上禁止排除的关键系统文件（注册表蜂巢 + 引导统计文件）。
 inline constexpr std::array<std::string_view, 8> kForbiddenSystemFiles = {
-    R"(\WINDOWS\SYSTEM32\CONFIG\DEFAULT)",
-    R"(\WINDOWS\SYSTEM32\CONFIG\SAM)",
-    R"(\WINDOWS\SYSTEM32\CONFIG\SECURITY)",
-    R"(\WINDOWS\SYSTEM32\CONFIG\SOFTWARE)",
-    R"(\WINDOWS\SYSTEM32\CONFIG\SYSTEM)",
-    R"(\WINDOWS\BOOTSTAT.DAT)",
-    R"(\EFI\MICROSOFT\BOOT\BOOTSTAT.DAT)",
-    R"(\BOOT\BOOTSTAT.DAT)",
+    R"(\WINDOWS\SYSTEM32\CONFIG\DEFAULT)", R"(\WINDOWS\SYSTEM32\CONFIG\SAM)", R"(\WINDOWS\SYSTEM32\CONFIG\SECURITY)", R"(\WINDOWS\SYSTEM32\CONFIG\SOFTWARE)",
+    R"(\WINDOWS\SYSTEM32\CONFIG\SYSTEM)",  R"(\WINDOWS\BOOTSTAT.DAT)",        R"(\EFI\MICROSOFT\BOOT\BOOTSTAT.DAT)",  R"(\BOOT\BOOTSTAT.DAT)",
 };
 
 // 每用户注册表蜂巢路径 \USERS\<用户名>\NTUSER.DAT 的两个固定段名（大写）。
@@ -123,12 +117,8 @@ inline constexpr std::string_view kPerUserRegistryHive = "NTUSER.DAT";
 // UWF 只允许排除以下 6 个顶层键的「子键」（顶层键本身不行，故前缀以反斜杠
 // 结尾，匹配时其后还须至少有一个字符）。
 inline constexpr std::array<std::string_view, 6> kAllowedRegistryRootPrefixes = {
-    R"(HKEY_LOCAL_MACHINE\BCD00000000\)",
-    R"(HKEY_LOCAL_MACHINE\SYSTEM\)",
-    R"(HKEY_LOCAL_MACHINE\SOFTWARE\)",
-    R"(HKEY_LOCAL_MACHINE\SAM\)",
-    R"(HKEY_LOCAL_MACHINE\SECURITY\)",
-    R"(HKEY_LOCAL_MACHINE\COMPONENTS\)",
+    R"(HKEY_LOCAL_MACHINE\BCD00000000\)", R"(HKEY_LOCAL_MACHINE\SYSTEM\)",   R"(HKEY_LOCAL_MACHINE\SOFTWARE\)",
+    R"(HKEY_LOCAL_MACHINE\SAM\)",         R"(HKEY_LOCAL_MACHINE\SECURITY\)", R"(HKEY_LOCAL_MACHINE\COMPONENTS\)",
 };
 
 // 域机器账户密钥——它在 SECURITY 下本可通过白名单，但 UWF 文档明确禁止排除，
