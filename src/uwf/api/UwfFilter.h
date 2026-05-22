@@ -31,8 +31,6 @@ class UwfFilter {
   bool restartSystem(const api::FilterRow& row, std::string* error = nullptr) const;
 
  private:
-  bool invokeNoArgs(const api::FilterRow& row, const char* methodName, std::string* error) const;
-
   WmiSession& m_session;
 };
 

@@ -9,21 +9,6 @@ namespace uwf {
 
 namespace {
 
-bool invokeSimple(const WmiSession& session, const std::string& path, const char* method, const WmiRow& inputs, std::string* error) {
-  if (path.empty()) {
-    if (error) *error = "UWF_RegistryFilter row has empty __PATH; call read() first";
-    UWF_LOG_E("UWF_RegistryFilter") << "invoke rejected: empty __PATH; method=" << method;
-    return false;
-  }
-  const auto r = session.callMethod(path, method, inputs);
-  if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_RegistryFilter::{} returned {}", method, r.returnValue) : r.error;
-    UWF_LOG_E("UWF_RegistryFilter") << std::format("{} failed: invoked={} rv={} err={}", method, r.invoked, r.returnValue, r.error);
-    return false;
-  }
-  return true;
-}
-
 // CommitRegistry / CommitRegistryDeletion 共用的调用 + 结果归类——两者除方法名
 // 外完全相同。失败按 classifyCommitFailure 分 Skipped / Failed（见 CommitResult.h）。
 CommitResult invokeCommit(const WmiSession& session, const std::string& path, const char* method, const std::string& registryKey,
@@ -48,7 +33,7 @@ CommitResult invokeCommit(const WmiSession& session, const std::string& path, co
     UWF_LOG_I("UWF_RegistryFilter") << std::format("{} ok: key={} value={}", method, registryKey, valueName);
     return out;
   }
-  out.detail = r.invoked ? std::format("UWF_RegistryFilter::{} returned {}", method, r.returnValue) : r.error;
+  out.detail = r.error;
   out.outcome = classifyCommitFailure(r);
   return out;
 }
@@ -83,17 +68,25 @@ std::optional<api::RegistryFilterRow> UwfRegistryFilter::read(bool currentSessio
 bool UwfRegistryFilter::addExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error) const {
   WmiRow in;
   in.emplace("RegistryKey", WmiValue::fromString(registryKey));
-  const bool ok = invokeSimple(m_session, row.path, "AddExclusion", in, error);
-  if (ok) UWF_LOG_I("UWF_RegistryFilter") << "AddExclusion ok: key=" << registryKey;
-  return ok;
+  const auto r = m_session.callMethod(row.path, "AddExclusion", in);
+  if (!r.ok()) {
+    if (error) *error = r.error;
+    return false;
+  }
+  UWF_LOG_I("UWF_RegistryFilter") << "AddExclusion ok: key=" << registryKey;
+  return true;
 }
 
 bool UwfRegistryFilter::removeExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error) const {
   WmiRow in;
   in.emplace("RegistryKey", WmiValue::fromString(registryKey));
-  const bool ok = invokeSimple(m_session, row.path, "RemoveExclusion", in, error);
-  if (ok) UWF_LOG_I("UWF_RegistryFilter") << "RemoveExclusion ok: key=" << registryKey;
-  return ok;
+  const auto r = m_session.callMethod(row.path, "RemoveExclusion", in);
+  if (!r.ok()) {
+    if (error) *error = r.error;
+    return false;
+  }
+  UWF_LOG_I("UWF_RegistryFilter") << "RemoveExclusion ok: key=" << registryKey;
+  return true;
 }
 
 std::optional<bool> UwfRegistryFilter::findExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error) const {

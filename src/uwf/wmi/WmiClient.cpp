@@ -481,6 +481,12 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
     return result;
   }
 
+  if (objectPath.empty()) {
+    result.error = "object path is empty (call read()/readAll() on the row first)";
+    UWF_LOG_E("wmi") << "callMethod rejected: empty object path; method=" << methodName;
+    return result;
+  }
+
   // 从 objectPath 推导类名。实际到达 callMethod 的 objectPath 只有两种（见各 api 调用方）：
   //   完整 __PATH  "\\\\host\\root\\...:UWF_Xxx.Key=Val,..." —— read()/readAll() 存的 __PATH
   //   相对路径     "UWF_Xxx.Key=Val,DriveLetter=\"C:\",..."   —— ensureNextSessionEntry 构造
@@ -606,8 +612,14 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
 
   if (const auto rv = result.outParams.value("ReturnValue"); rv.isValid()) result.returnValue = rv.toUInt();
 
-  UWF_LOG_D("wmi") << std::format("callMethod ok: {}::{} invoked={} rv={} outArrays={}", objectPath, methodName, result.invoked, result.returnValue,
-                                  result.outArrays.size());
+  // ExecMethod 成功但方法本身返回非 0——补一条可读 error，使 result.error 在任何
+  // !ok() 情形下都有内容，调用方直接取用即可。
+  if (result.returnValue != 0) {
+    result.error = std::format("{}::{} returned {}", className, methodName, result.returnValue);
+    UWF_LOG_E("wmi") << "callMethod: " << result.error;
+  } else {
+    UWF_LOG_D("wmi") << std::format("callMethod ok: {}::{} outArrays={}", objectPath, methodName, result.outArrays.size());
+  }
   return result;
 }
 

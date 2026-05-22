@@ -25,26 +25,25 @@ std::optional<api::FilterRow> UwfFilter::read(std::string* error) const {
   return r;
 }
 
-bool UwfFilter::invokeNoArgs(const api::FilterRow& row, const char* methodName, std::string* error) const {
-  if (row.path.empty()) {
-    if (error) *error = "UWF_Filter row has empty __PATH; call read() first";
-    UWF_LOG_E("UWF_Filter") << "invoke rejected: empty __PATH; method=" << methodName;
-    return false;
-  }
-  const auto r = m_session.callMethod(row.path, methodName);
+namespace {
+
+// 5 个写方法都是无参 ExecMethod、行为一致——只是方法名与日志面包屑不同。
+bool invoke(const WmiSession& session, const api::FilterRow& row, const char* methodName, std::string* error) {
+  const auto r = session.callMethod(row.path, methodName);
   if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_Filter::{} returned {}", methodName, r.returnValue) : r.error;
-    UWF_LOG_E("UWF_Filter") << std::format("{} failed: invoked={} rv={} err={}", methodName, r.invoked, r.returnValue, r.error);
+    if (error) *error = r.error;
     return false;
   }
   UWF_LOG_I("UWF_Filter") << methodName << " ok";
   return true;
 }
 
-bool UwfFilter::enable(const api::FilterRow& row, std::string* error) const { return invokeNoArgs(row, "Enable", error); }
-bool UwfFilter::disable(const api::FilterRow& row, std::string* error) const { return invokeNoArgs(row, "Disable", error); }
-bool UwfFilter::resetSettings(const api::FilterRow& row, std::string* error) const { return invokeNoArgs(row, "ResetSettings", error); }
-bool UwfFilter::shutdownSystem(const api::FilterRow& row, std::string* error) const { return invokeNoArgs(row, "ShutdownSystem", error); }
-bool UwfFilter::restartSystem(const api::FilterRow& row, std::string* error) const { return invokeNoArgs(row, "RestartSystem", error); }
+}  // namespace
+
+bool UwfFilter::enable(const api::FilterRow& row, std::string* error) const { return invoke(m_session, row, "Enable", error); }
+bool UwfFilter::disable(const api::FilterRow& row, std::string* error) const { return invoke(m_session, row, "Disable", error); }
+bool UwfFilter::resetSettings(const api::FilterRow& row, std::string* error) const { return invoke(m_session, row, "ResetSettings", error); }
+bool UwfFilter::shutdownSystem(const api::FilterRow& row, std::string* error) const { return invoke(m_session, row, "ShutdownSystem", error); }
+bool UwfFilter::restartSystem(const api::FilterRow& row, std::string* error) const { return invoke(m_session, row, "RestartSystem", error); }
 
 }  // namespace uwf

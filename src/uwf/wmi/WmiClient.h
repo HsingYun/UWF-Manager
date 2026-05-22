@@ -107,6 +107,8 @@ class WmiSession {
   //   - 实例的 __PATH（推荐；精确定位一行）
   //   - 相对路径 "Class.Key=Val,..."（不带命名空间，如 ensureNextSessionEntry 构造的）
   // inputs 中的 WmiValue 会根据 kind 转成对应 VARIANT 写入 in-params。
+  // 失败时 WmiMethodResult.error 在任何 !ok() 情形下都已填好可读信息，调用方
+  // 直接取用即可；callMethod 自身已在 wmi 层记录失败日志。
   [[nodiscard]] WmiMethodResult callMethod(const std::string& objectPath, const std::string& methodName, const WmiRow& inputs = {}) const;
 
   // 用 props 创建（或更新）一个 WMI 实例。className 是类名（如 "UWF_Volume"），
