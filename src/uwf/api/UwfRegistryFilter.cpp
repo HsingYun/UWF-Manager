@@ -24,6 +24,35 @@ bool invokeSimple(const WmiSession& session, const std::string& path, const char
   return true;
 }
 
+// CommitRegistry / CommitRegistryDeletion 共用的调用 + 结果归类——两者除方法名
+// 外完全相同。失败按 classifyCommitFailure 分 Skipped / Failed（见 CommitResult.h）。
+CommitResult invokeCommit(const WmiSession& session, const std::string& path, const char* method, const std::string& registryKey,
+                          const std::string& valueName) {
+  CommitResult out;
+  if (path.empty()) {
+    out.outcome = CommitOutcome::Failed;
+    out.detail = "UWF_RegistryFilter row has empty __PATH; call read() first";
+    UWF_LOG_E("UWF_RegistryFilter") << "commit rejected: empty __PATH; method=" << method;
+    return out;
+  }
+  WmiRow in;
+  // 实机 schema 的参数名是 "Registrykey"（小写 k）；WMI 参数名大小写不敏感，
+  // 传 "RegistryKey" 同样生效。
+  in.emplace("RegistryKey", WmiValue::fromString(registryKey));
+  in.emplace("ValueName", WmiValue::fromString(valueName));
+  const auto r = session.callMethod(path, method, in);
+  out.hresult = r.hresult;
+  out.returnValue = r.returnValue;
+  if (r.ok()) {
+    out.outcome = CommitOutcome::Ok;
+    UWF_LOG_I("UWF_RegistryFilter") << std::format("{} ok: key={} value={}", method, registryKey, valueName);
+    return out;
+  }
+  out.detail = r.invoked ? std::format("UWF_RegistryFilter::{} returned {}", method, r.returnValue) : r.error;
+  out.outcome = classifyCommitFailure(r);
+  return out;
+}
+
 }  // namespace
 
 std::vector<api::RegistryFilterRow> UwfRegistryFilter::readAll(std::string* error) const {
@@ -107,26 +136,12 @@ std::vector<api::ExcludedRegistryKey> UwfRegistryFilter::getExclusions(const api
   return out;
 }
 
-bool UwfRegistryFilter::commitRegistry(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName,
-                                       std::string* error) const {
-  WmiRow in;
-  in.emplace("RegistryKey", WmiValue::fromString(registryKey));
-  in.emplace("ValueName", WmiValue::fromString(valueName));
-  const bool ok = invokeSimple(m_session, row.path, "CommitRegistry", in, error);
-  if (ok) UWF_LOG_I("UWF_RegistryFilter") << std::format("CommitRegistry ok: key={} value={}", registryKey, valueName);
-  return ok;
+CommitResult UwfRegistryFilter::commitRegistry(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const {
+  return invokeCommit(m_session, row.path, "CommitRegistry", registryKey, valueName);
 }
 
-bool UwfRegistryFilter::commitRegistryDeletion(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName,
-                                               std::string* error) const {
-  WmiRow in;
-  // 实机 schema 的参数名是 "Registrykey"（小写 k）；WMI 参数名大小写不敏感，
-  // 传 "RegistryKey" 同样生效。
-  in.emplace("RegistryKey", WmiValue::fromString(registryKey));
-  in.emplace("ValueName", WmiValue::fromString(valueName));
-  const bool ok = invokeSimple(m_session, row.path, "CommitRegistryDeletion", in, error);
-  if (ok) UWF_LOG_I("UWF_RegistryFilter") << std::format("CommitRegistryDeletion ok: key={} value={}", registryKey, valueName);
-  return ok;
+CommitResult UwfRegistryFilter::commitRegistryDeletion(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const {
+  return invokeCommit(m_session, row.path, "CommitRegistryDeletion", registryKey, valueName);
 }
 
 }  // namespace uwf

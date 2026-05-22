@@ -13,24 +13,10 @@
 #include <vector>
 
 #include "../wmi/WmiClient.h"
+#include "CommitResult.h"
 #include "Types.h"
 
 namespace uwf {
-
-// commitFile 的结果分三档：
-//   Ok      — UWF 已把 overlay 里该文件的修改写回磁盘
-//   Skipped — 调用被底层拒绝但属于"可忽略"类：
-//             * WBEM_E_FAILED    0x80041001 → 通常是文件正被其他进程占用；
-//             * WBEM_E_NOT_FOUND 0x80041002 → overlay 里没这条（已与磁盘一致）。
-//   Failed  — 其它错误（INVALID_PARAMETER / UWF rv != 0 等）。
-enum class CommitOutcome { Ok, Skipped, Failed };
-
-struct CommitFileResult {
-  CommitOutcome outcome = CommitOutcome::Ok;
-  int32_t hresult = 0;       // ExecMethod 的 HRESULT；invoked=true 时为 0
-  uint32_t returnValue = 0;  // UWF 方法的 UInt32 返回值；0 = 成功
-  std::string detail;        // 原始技术细节，仅用于日志；不要直接丢给用户看
-};
 
 class UwfVolume {
  public:
@@ -41,7 +27,7 @@ class UwfVolume {
   bool protectVolume(const api::VolumeRow& row, std::string* error = nullptr) const;
   bool unprotect(const api::VolumeRow& row, std::string* error = nullptr) const;
 
-  CommitFileResult commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const;
+  CommitResult commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const;
 
   // 语义：把 overlay 里"删除"这个动作提交到物理盘。典型流程：
   //   1. 用户在受保护卷上删了某文件 → overlay 记下删除标记；
@@ -49,7 +35,7 @@ class UwfVolume {
   //   3. CommitFileDeletion 同步物理盘，让两边一致。
   // 因此调用方应该先校验"该路径在当前 OS 视角下确实不存在"（否则说明
   // overlay 里没这个删除标记，调用多半会失败）。
-  CommitFileResult commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const;
+  CommitResult commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const;
 
   // 对应 UWF_Volume.SetBindByDriveLetter(boolean bBindByDriveLetter) 官方签名：
   // bBindByDriveLetter=true 表示按盘符绑定（松绑定），false 表示按卷名绑定（紧绑定）。

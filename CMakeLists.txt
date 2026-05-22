@@ -18,6 +18,8 @@ set(UWF_SOURCES
         src/util/DriveLetter.cpp
         src/util/RegistryKey.h
         src/util/RegistryKey.cpp
+        src/util/StringUtil.h
+        src/util/StringUtil.cpp
         src/core/Config.h
         src/core/UwfConfig.h
         src/core/UwfConfig.cpp
@@ -30,6 +32,7 @@ set(UWF_SOURCES
         src/uwf/wmi/WmiRowUtil.h
         src/uwf/wmi/WmiRowUtil.cpp
         src/uwf/api/Types.h
+        src/uwf/api/CommitResult.h
         src/uwf/api/UwfFilter.h
         src/uwf/api/UwfFilter.cpp
         src/uwf/api/UwfVolume.h

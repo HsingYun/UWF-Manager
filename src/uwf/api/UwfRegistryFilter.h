@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "../wmi/WmiClient.h"
+#include "CommitResult.h"
 #include "Types.h"
 
 namespace uwf {
@@ -32,12 +33,13 @@ class UwfRegistryFilter {
 
   std::vector<api::ExcludedRegistryKey> getExclusions(const api::RegistryFilterRow& row, std::string* error = nullptr) const;
 
-  // valueName 为空串 = 提交整项。
-  bool commitRegistry(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName, std::string* error = nullptr) const;
+  // valueName 为空串 = 提交整项。结果分 Ok / Skipped / Failed（见 CommitResult）：
+  // 注册表项在 overlay 里没有待提交改动时 UWF 返回 WBEM_E_NOT_FOUND，归 Skipped——
+  // 键值已与磁盘一致，不算错误。
+  CommitResult commitRegistry(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const;
 
   // valueName 为空串 = 删除整项。
-  bool commitRegistryDeletion(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName,
-                              std::string* error = nullptr) const;
+  CommitResult commitRegistryDeletion(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const;
 
  private:
   WmiSession& m_session;

@@ -6,17 +6,11 @@
 #include <cwchar>
 #include <cwctype>
 
+#include "StringUtil.h"
+
 namespace uwf::drive {
 
 namespace {
-
-std::string trimmed(const std::string& s) {
-  size_t b = 0;
-  size_t e = s.size();
-  while (b < e && std::isspace(static_cast<unsigned char>(s[b]))) ++b;
-  while (e > b && std::isspace(static_cast<unsigned char>(s[e - 1]))) --e;
-  return s.substr(b, e - b);
-}
 
 // s 开头连续字母的数量。
 size_t leadingLetters(const std::string& s) {
@@ -26,13 +20,7 @@ size_t leadingLetters(const std::string& s) {
 }
 
 // 把字母段转大写、拼上结尾冒号，得到规范盘符（"C:" / "CC:"）。
-std::string toUpperWithColon(const std::string& letters) {
-  std::string out;
-  out.reserve(letters.size() + 1);
-  for (const char c : letters) out += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-  out += ':';
-  return out;
-}
+std::string toUpperWithColon(const std::string& letters) { return toUpperAscii(letters) + ':'; }
 
 // 去掉开头的扩展长度前缀 "\\?\" 或 "\\.\"（恰好这 4 个字符）；没有则原样返回。
 // 注意 "\\?\UNC\server\share" 去前缀后剩 "UNC\server\share"，后续按"无盘符"
@@ -65,10 +53,8 @@ std::string volumeNameFromGuidBody(const std::string& body) {
 // 用 Win32 把卷名 "\\?\Volume{GUID}\\" 解析成挂载的盘符（"C:" / "CC:"）。
 // 该卷没有盘符挂载点（仅挂在文件夹上 / 未挂载）或 API 失败 → 返回空串。
 std::string resolveVolumeDriveLetter(const std::string& volumeName) {
-  const int wlen = MultiByteToWideChar(CP_UTF8, 0, volumeName.data(), static_cast<int>(volumeName.size()), nullptr, 0);
-  if (wlen <= 0) return {};
-  std::wstring wvol(static_cast<size_t>(wlen), L'\0');
-  MultiByteToWideChar(CP_UTF8, 0, volumeName.data(), static_cast<int>(volumeName.size()), wvol.data(), wlen);
+  const std::wstring wvol = utf8ToWide(volumeName);
+  if (wvol.empty()) return {};
 
   // 先用 0 长缓冲探所需大小：必失败，且 GetLastError()==ERROR_MORE_DATA、
   // needed 被填好。任何其它结果都当解析不出盘符处理。
@@ -107,7 +93,7 @@ std::string resolveVolumeDriveLetter(const std::string& volumeName) {
 }  // namespace
 
 std::string normalize(const std::string& raw) {
-  const std::string s = stripExtendedPrefix(trimmed(raw));
+  const std::string s = stripExtendedPrefix(trim(raw));
   const size_t letters = leadingLetters(s);
   if (letters == 0) return {};
   // 字母段后面：要么直接到结尾（裸盘符 "C" / "CC"），要么紧跟 ':'（"C:" 或

@@ -626,7 +626,7 @@ Exclusion: %2</source>
 目标：%1
 排除项：%2</translation>
     </message>
-    <message><source>Nothing to commit</source><translation>无文件可提交</translation></message>
+    <message><source>Nothing to commit</source><translation>无可提交内容</translation></message>
     <message><source>No files were found under %1.</source><translation>目录 %1 下递归遍历到 0 个文件。</translation></message>
     <message><source>Commit to disk</source><translation>提交到磁盘</translation></message>
     <message>
@@ -739,6 +739,22 @@ Continue?</source>
     <message>
         <source>No current-session registry filter record found.</source>
         <translation>找不到当前会话的注册表筛选记录。</translation>
+    </message>
+    <message>
+        <source>This registry entry has no pending changes in the overlay; it is already consistent with disk.
+
+%1</source>
+        <translation>该注册表项在覆盖层中没有待提交的改动，已经与磁盘一致。
+
+%1</translation>
+    </message>
+    <message>
+        <source>This registry entry does not exist, so there is nothing to commit.
+
+%1</source>
+        <translation>该注册表项不存在，没有内容可提交。
+
+%1</translation>
     </message>
     <message><source>Failed to write registry: %1</source><translation>写入注册表失败：%1</translation></message>
     <message><source>Committed: %1</source><translation>已提交：%1</translation></message>

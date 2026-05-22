@@ -3,14 +3,9 @@
 #include <algorithm>
 #include <ranges>
 
-namespace uwf::core {
+#include "../util/StringUtil.h"
 
-namespace {
-std::string toLowerAscii(std::string s) {
-  std::ranges::transform(s, s.begin(), [](const unsigned char c) { return std::tolower(c); });
-  return s;
-}
-}  // namespace
+namespace uwf::core {
 
 void sortExclusions(std::vector<std::string>& items) {
   std::ranges::sort(items, [](const std::string& a, const std::string& b) { return toLowerAscii(a) < toLowerAscii(b); });

@@ -5,6 +5,7 @@
 
 #include "../core/Config.h"
 #include "../util/DriveLetter.h"
+#include "../util/StringUtil.h"
 #include "SystemCheck.h"
 #include "api/UwfFilter.h"
 #include "api/UwfOverlay.h"
@@ -19,11 +20,6 @@ namespace uwf {
 using core::DiskSupport;
 
 namespace {
-
-std::string toUpperAscii(std::string s) {
-  std::ranges::transform(s, s.begin(), [](const unsigned char c) { return std::toupper(c); });
-  return s;
-}
 
 core::OverlayConfig toOverlayConfig(const api::OverlayConfigRow& cfg, const uint32_t warningMb, const uint32_t criticalMb) {
   core::OverlayConfig o;

@@ -23,4 +23,9 @@ namespace uwf::regkey {
 //     合法性校验去拒绝。
 std::string normalize(const std::string& key);
 
+// 判断一个注册表键当前是否真实存在于本机注册表；valueName 非空时还要求该键下
+// 存在同名值。key 内部会先经 normalize，简写（HKLM\…）或长写均可；无法识别
+// hive 或键 / 值不存在均返回 false。实现使用 Windows 注册表 API。
+[[nodiscard]] bool keyExists(const std::string& key, const std::string& valueName);
+
 }  // namespace uwf::regkey

@@ -49,6 +49,7 @@
 #include "../core/Config.h"
 #include "../util/DriveLetter.h"
 #include "../util/Log.h"
+#include "../util/RegistryKey.h"
 #include "../uwf/UwfSnapshot.h"
 #include "../uwf/api/UwfmgrCli.h"
 #include "../uwf/wmi/WmiError.h"
@@ -1566,18 +1567,35 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
 void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) {
   if (key.isEmpty()) return;
 
+  // 注册表键先归一成长写 hive 形式（HKLM\… → HKEY_LOCAL_MACHINE\…）。这步不能
+  // 省：UWF 在覆盖层里按规范化的键路径索引改动，排除列表存的也是长写形式。
+  // 而"提交注册表"对话框的占位符给的是简写 HKLM\…——若把用户原样输入直接交给
+  // CommitRegistry，UWF 在覆盖层里匹配不到，即便该键确有待提交改动也会回
+  // WBEM_E_NOT_FOUND；下面的排除命中预检（大小写不敏感、但不认 hive 简写）
+  // 同样会漏判。其余处理注册表键的 UI 一律先经 regkey::normalize。
+  const std::string normKey = regkey::normalize(key.toStdString());
+  if (normKey.empty()) return;
+  const QString keyText = QString::fromStdString(normKey);
+  const QString desc = valueName.isEmpty() ? I18n::tr("Key: %1\n(empty value name → commit the entire key)").arg(keyText)
+                                           : I18n::tr("Key: %1\nValue: %2").arg(keyText, valueName);
+
   // 注册表排除是全局的，直接比对当前运行会话即可。覆盖 = 键相等或为其祖先。
-  const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, key.toStdString());
+  const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
   if (!hit.empty()) {
     warning(this, I18n::tr("Commit rejected"),
             I18n::tr("This key is in the registry exclusion list. UWF does not write it to the overlay, so committing it to disk is neither "
                      "needed nor possible.\n\nTarget: %1\nExclusion: %2")
-                .arg(key, QString::fromStdString(hit)));
+                .arg(keyText, QString::fromStdString(hit)));
     return;
   }
 
-  const QString desc =
-      valueName.isEmpty() ? I18n::tr("Key: %1\n(empty value name → commit the entire key)").arg(key) : I18n::tr("Key: %1\nValue: %2").arg(key, valueName);
+  // 该项是否存在，提交前就查清楚——不存在就立刻拒绝，不要等用户在确认框点了
+  // "继续"、再走一遍 WMI 才以 WBEM_E_NOT_FOUND 失败（那样要弹两次）。
+  if (!regkey::keyExists(normKey, valueName.toStdString())) {
+    warning(this, I18n::tr("Commit rejected"), I18n::tr("This registry entry does not exist, so there is nothing to commit.\n\n%1").arg(desc));
+    return;
+  }
+
   if (!confirm(this, I18n::tr("Commit to disk"),
                I18n::tr("Commit the following registry entry to disk. This action cannot be undone.\n\n%1\n\nContinue?").arg(desc)))
     return;
@@ -1593,12 +1611,21 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     warning(this, I18n::tr("Commit failed"), I18n::tr("No current-session registry filter record found."));
     return;
   }
-  std::string err2;
-  if (!m_registry.commitRegistry(*row, key.toStdString(), valueName.toStdString(), &err2)) {
-    warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to write registry: %1").arg(QString::fromStdString(err2)));
-    return;
+  const auto res = m_registry.commitRegistry(*row, normKey, valueName.toStdString());
+  switch (res.outcome) {
+    case CommitOutcome::Ok:
+      showTransientHint(I18n::tr("Committed: %1").arg(keyText), 3000);
+      break;
+    case CommitOutcome::Skipped:
+      // 提交前的 keyExists 预检已确认该项存在，故此处 WBEM_E_NOT_FOUND 只意味着
+      // 覆盖层里没有它的待提交改动——它本就与磁盘一致。
+      information(this, I18n::tr("Nothing to commit"),
+                  I18n::tr("This registry entry has no pending changes in the overlay; it is already consistent with disk.\n\n%1").arg(desc));
+      break;
+    case CommitOutcome::Failed:
+      warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to write registry: %1").arg(explainCommitFailure(res.hresult, res.returnValue)));
+      break;
   }
-  showTransientHint(I18n::tr("Committed: %1").arg(key), 3000);
 }
 
 }  // namespace uwf::ui

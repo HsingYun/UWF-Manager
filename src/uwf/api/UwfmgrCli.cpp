@@ -7,6 +7,7 @@
 #include <utility>
 
 #include "../../util/DriveLetter.h"
+#include "../../util/StringUtil.h"
 
 namespace uwf::api {
 
@@ -54,16 +55,6 @@ std::vector<std::string> tokenize(const std::string& line) {
   return out;
 }
 
-std::string toLowerAscii(std::string s) {
-  for (auto& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-  return s;
-}
-
-void trimInPlace(std::string& s) {
-  while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
-  while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) s.pop_back();
-}
-
 UwfmgrCommand makeCmd(UwfmgrKind k, std::vector<std::string> args = {}) {
   UwfmgrCommand c;
   c.kind = k;
@@ -76,8 +67,7 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
   out.sourceLineNo = lineNo;
   out.rawLine = rawLine;
 
-  std::string line = rawLine;
-  trimInPlace(line);
+  const std::string line = trim(rawLine);
 
   if (line.empty() || line.front() == '#' || line.starts_with("::") || line.starts_with("//")) {
     out.parseError = ParseError::Comment;

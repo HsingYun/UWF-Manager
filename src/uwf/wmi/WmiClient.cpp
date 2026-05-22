@@ -10,32 +10,11 @@
 #include <string>
 
 #include "../../util/Log.h"
+#include "../../util/StringUtil.h"
 
 namespace uwf {
 
 namespace {
-
-// UTF-16（wchar_t）→ UTF-8。ws 必须以 NUL 结尾（cchWideChar=-1 让
-// WideCharToMultiByte 自己算长度）。返回的 size 含 NUL，故 string 按 size-1
-// 分配；末尾 NUL 由 WideCharToMultiByte 写进 string 自身的终止符槽位。
-std::string wideToUtf8(const wchar_t* ws) {
-  if (!ws) return {};
-  const int size = WideCharToMultiByte(CP_UTF8, 0, ws, -1, nullptr, 0, nullptr, nullptr);
-  if (size <= 0) return {};
-  std::string out(static_cast<size_t>(size - 1), '\0');
-  WideCharToMultiByte(CP_UTF8, 0, ws, -1, out.data(), size, nullptr, nullptr);
-  return out;
-}
-
-// UTF-8 → UTF-16（wchar_t）。
-std::wstring utf8ToWide(const std::string& s) {
-  if (s.empty()) return {};
-  const int size = MultiByteToWideChar(CP_UTF8, 0, s.data(), static_cast<int>(s.size()), nullptr, 0);
-  if (size <= 0) return {};
-  std::wstring out(static_cast<size_t>(size), L'\0');
-  MultiByteToWideChar(CP_UTF8, 0, s.data(), static_cast<int>(s.size()), out.data(), size);
-  return out;
-}
 
 // 把 HRESULT 渲染成 "描述 (0xXXXXXXXX)" 的形式，方便日志。
 std::string hrText(const HRESULT hr) {

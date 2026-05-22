@@ -10,19 +10,11 @@
 
 #include "../core/Config.h"
 #include "../util/Log.h"
+#include "../util/StringUtil.h"
 
 namespace uwf {
 
 namespace {
-
-std::string wideToUtf8(const std::wstring& w) {
-  if (w.empty()) return {};
-  const int size = WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), nullptr, 0, nullptr, nullptr);
-  if (size <= 0) return {};
-  std::string out(static_cast<size_t>(size), '\0');
-  WideCharToMultiByte(CP_UTF8, 0, w.data(), static_cast<int>(w.size()), out.data(), size, nullptr, nullptr);
-  return out;
-}
 
 std::string readRegString(HKEY root, const wchar_t* subKey, const wchar_t* value) {
   HKEY key = nullptr;
@@ -50,11 +42,6 @@ std::string envVar(const wchar_t* name) {
   if (got == 0 || got >= size) return {};
   buf.resize(got);
   return wideToUtf8(buf);
-}
-
-std::string toLowerAscii(std::string s) {
-  std::ranges::transform(s, s.begin(), [](const unsigned char c) { return std::tolower(c); });
-  return s;
 }
 
 // Windows 11 上注册表的 ProductName 仍写着 "Windows 10"——微软从未更新过这个

@@ -5,7 +5,6 @@
 
 #include "../../util/DriveLetter.h"
 #include "../../util/Log.h"
-#include "../wmi/WmiError.h"
 #include "../wmi/WmiRowUtil.h"
 
 namespace uwf {
@@ -67,16 +66,6 @@ std::string escapeWmiPathValue(const std::string& s) {
   return out;
 }
 
-// CommitFile / CommitFileDeletion 的失败分类：
-//   * WBEM_E_FAILED    ≈ 文件被其它进程占用
-//   * WBEM_E_NOT_FOUND ≈ overlay 里没相关条目（可能已和磁盘一致）
-// 这两种归 Skipped——UI 只提示不报错；其它 hresult 算 Failed。
-CommitOutcome classifyCommitFailure(const WmiMethodResult& r) {
-  if (r.invoked) return CommitOutcome::Failed;
-  const WmiError err(r.hresult);
-  return (err == WmiErrorCode::Failed || err == WmiErrorCode::NotFound) ? CommitOutcome::Skipped : CommitOutcome::Failed;
-}
-
 }  // namespace
 
 std::vector<api::VolumeRow> UwfVolume::readAll(std::string* error) const {
@@ -118,8 +107,8 @@ bool UwfVolume::unprotect(const api::VolumeRow& row, std::string* error) const {
   return ok;
 }
 
-CommitFileResult UwfVolume::commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const {
-  CommitFileResult out;
+CommitResult UwfVolume::commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const {
+  CommitResult out;
   std::string stripErr;
   const auto normalized = stripVolumeDriveLetter(fileFullPath, row.driveLetter, &stripErr);
   if (!normalized) {
@@ -153,8 +142,8 @@ CommitFileResult UwfVolume::commitFile(const api::VolumeRow& row, const std::str
   return out;
 }
 
-CommitFileResult UwfVolume::commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const {
-  CommitFileResult out;
+CommitResult UwfVolume::commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const {
+  CommitResult out;
   std::string stripErr;
   const auto normalized = stripVolumeDriveLetter(fileName, row.driveLetter, &stripErr);
   if (!normalized) {
