@@ -335,11 +335,13 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
       auto* copyAct = menu.addAction(I18n::tr("Copy file path"));
       connect(copyAct, &QAction::triggered, this, [this, full]() { copyPathToClipboard(full); });
 
-      // "提交改动到磁盘"只在两个条件同时满足时出现：路径在磁盘上真实存在，
-      // 且该条目在当前会话**尚未**被排除。已在当前会话被排除的条目其写入本就
-      // 绕过覆盖层直接落盘，覆盖层里没有可提交的改动（见 commitFilePath）。
+      // "提交改动到磁盘"在三个条件同时满足时才出现：本卷当前会话有活动覆盖层
+      // 可提交（m_commitEnabled——由 DiskTab 按全局筛选器 + 本卷当前会话保护
+      // 状态算出）、路径在磁盘上真实存在、且该条目在当前会话**尚未**被排除。
+      // 已在当前会话被排除的条目其写入本就绕过覆盖层直接落盘，覆盖层里没有
+      // 可提交的改动（见 commitFilePath）。
       const QFileInfo fi(full);
-      if (fi.exists() && !m_current.contains(rel, Qt::CaseInsensitive)) {
+      if (m_commitEnabled && fi.exists() && !m_current.contains(rel, Qt::CaseInsensitive)) {
         menu.addSeparator();
         const QString label = fi.isDir() ? I18n::tr("Commit folder changes to disk…") : I18n::tr("Commit file changes to disk…");
         auto* commitAct = menu.addAction(tm.icon(":/icons/commit.svg"), label);
@@ -496,6 +498,8 @@ void ExclusionListWidget::setReadOnly(bool ro) {
   m_list->setEnabled(!ro);
   for (auto* btn : findChildren<QPushButton*>()) btn->setEnabled(!ro);
 }
+
+void ExclusionListWidget::setCommitEnabled(bool enabled) { m_commitEnabled = enabled; }
 
 void ExclusionListWidget::onFilterChanged(const QString& text) {
   const QString needle = text.trimmed().toLower();

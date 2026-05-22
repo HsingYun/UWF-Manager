@@ -29,6 +29,11 @@ class ExclusionListWidget : public QWidget {
 
   void setReadOnly(bool ro);
 
+  // 文件列表右键"提交改动到磁盘"的总开关：仅当本卷当前会话存在活动覆盖层
+  // （全局筛选器开 + 本卷当前会话受保护）时才为 true，由 DiskTab 每次快照后
+  // 下发。为 false 时右键菜单不列出"提交"项。Registry kind 无此项，设之无副作用。
+  void setCommitEnabled(bool enabled);
+
   // 给"导入 uwfmgr 命令"流程用的静默 add / remove。和 addPendingEntry 的差异：
   //   - 不弹任何对话框；通过返回值告诉 caller 结果，caller 自己汇总到导入报告里；
   //   - 复用同一组黑名单 / 卷归属校验，保证导入的路径和 UI 手动加进来的具备
@@ -90,6 +95,7 @@ class ExclusionListWidget : public QWidget {
   QAction* m_addFileAct = nullptr;
   QAction* m_addDirAct = nullptr;
   bool m_readOnly = false;
+  bool m_commitEnabled = false;
 };
 
 }  // namespace uwf::ui

@@ -413,6 +413,9 @@ void DiskTab::updateCommitEnablement(const bool globalFilterOn, const bool thisV
   if (m_commitFileDeleteAct) m_commitFileDeleteAct->setEnabled(fileOK);
   if (m_commitRegAct) m_commitRegAct->setEnabled(regOK);
   if (m_commitRegDeleteAct) m_commitRegDeleteAct->setEnabled(regOK);
+  // 文件列表右键"提交改动到磁盘"和上面的 commit 菜单同一套门槛：本卷当前会话
+  // 有活动覆盖层（fileOK）时才放出该项。m_files 在构造期晚于本函数首次调用，故判空。
+  if (m_files) m_files->setCommitEnabled(fileOK);
 
   if (m_commitBtn) {
     const bool any = fileOK || (regOK && m_commitRegAct != nullptr);
