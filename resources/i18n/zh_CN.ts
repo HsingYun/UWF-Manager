@@ -334,6 +334,8 @@ The path must no longer exist in the current session — meaning it has already 
         <translation>从排除列表中移除选中项（应用后生效）。</translation>
     </message>
     <message><source>Open containing folder</source><translation>打开所在文件夹</translation></message>
+    <message><source>Copy file path</source><translation>复制文件路径</translation></message>
+    <message><source>Copy registry path</source><translation>复制注册表路径</translation></message>
     <message><source>Commit folder changes to disk…</source><translation>提交文件夹改动到磁盘…</translation></message>
     <message><source>Commit file changes to disk…</source><translation>提交文件改动到磁盘…</translation></message>
     <message><source>Copied to clipboard: </source><translation>已复制到剪贴板：</translation></message>

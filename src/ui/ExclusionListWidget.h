@@ -69,6 +69,10 @@ class ExclusionListWidget : public QWidget {
   void refreshThemedIcons();
   // 用资源管理器打开 entry 所在文件夹，并高亮该条目。仅 File kind 用。
   void openContainingFolder(const QString& entry) const;
+  // item 对应的完整路径：文件列表拼成带盘符的绝对路径，注册表列表即键全路径。
+  [[nodiscard]] QString entryFullPath(const QListWidgetItem* item) const;
+  // 把 path 复制到剪贴板并发出 copiedToClipboard 提示。
+  void copyPathToClipboard(const QString& path);
 
   Kind m_kind;
   QString m_driveLetter;

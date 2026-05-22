@@ -315,49 +315,43 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
   connect(m_list, &QListWidget::itemDoubleClicked, this, &ExclusionListWidget::onItemDoubleClicked);
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this](Theme) { refreshThemedIcons(); });
 
-  // 文件列表上的右键菜单：仅 File kind 提供（注册表条目没有"所在文件夹"
-  // 或"提交改动"语义）。
-  if (m_kind == Kind::File) {
-    m_list->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_list, &QListWidget::customContextMenuRequested, this, [this](const QPoint& pos) {
-      const auto* item = m_list->itemAt(pos);
-      if (!item) return;
+  // 列表右键菜单：文件列表给"打开所在文件夹 / 复制文件路径 / 提交改动"，
+  // 注册表列表给"复制注册表路径"。
+  m_list->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(m_list, &QListWidget::customContextMenuRequested, this, [this](const QPoint& pos) {
+    auto* item = m_list->itemAt(pos);
+    if (!item) return;
+    const QString full = entryFullPath(item);
+    if (full.isEmpty()) return;
+
+    auto& tm = ThemeManager::instance();
+    QMenu menu(this);
+
+    if (m_kind == Kind::File) {
       const QString rel = item->data(Qt::UserRole).toString();
-      if (rel.isEmpty()) return;
-
-      // entry 可能是 "\Users\xxx" 或 "C:\Users\xxx"，统一拼成绝对路径
-      // 给后续动作用。
-      QString abs = rel;
-      if (abs.startsWith('\\')) abs = m_driveLetter + abs;
-      abs = QDir::toNativeSeparators(abs);
-
-      auto& tm = ThemeManager::instance();
-      QMenu menu(this);
-
       auto* openAct = menu.addAction(tm.icon(":/icons/folder.svg"), I18n::tr("Open containing folder"));
       connect(openAct, &QAction::triggered, this, [this, rel]() { openContainingFolder(rel); });
 
-      // "提交改动到磁盘"只在两个条件同时满足时出现：
-      //   1. 路径在磁盘上真实存在（既存的文件 / 文件夹）；
-      //   2. 该条目在当前会话**尚未**被排除（不在 m_current 里）。
-      // 已在当前会话被排除的条目，其写入本就绕过覆盖层直接落盘，覆盖层里
-      // 没有可提交的改动——若仍提供提交项，点击后会被 MainWindow 以"提交
-      // 被拒绝"挡回（见 MainWindow::commitFilePath）。只有下次会话才新增 /
-      // 待应用的排除项当前仍受保护，覆盖层里才有改动可提交。
-      // 按文件/文件夹分别用不同文案，最终都走 UWF_Volume.CommitFile
-      // （MainWindow 那边收到 absPath 自己判断是文件还是目录、是否递归）。
-      const QFileInfo fi(abs);
-      const bool excludedInCurrentSession = m_current.contains(rel, Qt::CaseInsensitive);
-      if (fi.exists() && !excludedInCurrentSession) {
+      auto* copyAct = menu.addAction(I18n::tr("Copy file path"));
+      connect(copyAct, &QAction::triggered, this, [this, full]() { copyPathToClipboard(full); });
+
+      // "提交改动到磁盘"只在两个条件同时满足时出现：路径在磁盘上真实存在，
+      // 且该条目在当前会话**尚未**被排除。已在当前会话被排除的条目其写入本就
+      // 绕过覆盖层直接落盘，覆盖层里没有可提交的改动（见 commitFilePath）。
+      const QFileInfo fi(full);
+      if (fi.exists() && !m_current.contains(rel, Qt::CaseInsensitive)) {
         menu.addSeparator();
         const QString label = fi.isDir() ? I18n::tr("Commit folder changes to disk…") : I18n::tr("Commit file changes to disk…");
         auto* commitAct = menu.addAction(tm.icon(":/icons/commit.svg"), label);
-        connect(commitAct, &QAction::triggered, this, [this, abs]() { emit commitFileRequested(abs); });
+        connect(commitAct, &QAction::triggered, this, [this, full]() { emit commitFileRequested(full); });
       }
+    } else {
+      auto* copyAct = menu.addAction(I18n::tr("Copy registry path"));
+      connect(copyAct, &QAction::triggered, this, [this, full]() { copyPathToClipboard(full); });
+    }
 
-      menu.exec(m_list->viewport()->mapToGlobal(pos));
-    });
-  }
+    menu.exec(m_list->viewport()->mapToGlobal(pos));
+  });
 }
 
 void ExclusionListWidget::openContainingFolder(const QString& entry) const {
@@ -433,12 +427,26 @@ void ExclusionListWidget::applyViewportMask() {
   vp->setMask(QRegion(path.toFillPolygon().toPolygon()));
 }
 
-void ExclusionListWidget::onItemDoubleClicked(QListWidgetItem* item) {
-  if (!item) return;
-  const QString path = item->data(Qt::UserRole).toString();
+QString ExclusionListWidget::entryFullPath(const QListWidgetItem* item) const {
+  QString p = item->data(Qt::UserRole).toString();
+  // 文件列表条目可能是 "\Users\xxx"（相对卷根）或 "C:\Users\xxx"——统一拼成
+  // 带盘符的绝对路径；注册表列表条目本就是键全路径，原样返回。
+  if (m_kind == Kind::File && !p.isEmpty()) {
+    if (p.startsWith('\\')) p = m_driveLetter + p;
+    p = QDir::toNativeSeparators(p);
+  }
+  return p;
+}
+
+void ExclusionListWidget::copyPathToClipboard(const QString& path) {
   if (path.isEmpty()) return;
   QApplication::clipboard()->setText(path);
   emit copiedToClipboard(I18n::tr("Copied to clipboard: ") + path);
+}
+
+void ExclusionListWidget::onItemDoubleClicked(QListWidgetItem* item) {
+  if (!item) return;
+  copyPathToClipboard(entryFullPath(item));
 }
 
 void ExclusionListWidget::setDriveLetter(const QString& dl) {
