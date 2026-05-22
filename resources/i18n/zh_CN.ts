@@ -200,7 +200,7 @@ The path must no longer exist in the current session — meaning it has already 
         <translation>只提交上方指定的这一个值（值名留空表示该键的默认值）。该键下的其它值、以及任何子键，都不会被提交。</translation>
     </message>
     <message><source>Registry key:</source><translation>注册表键：</translation></message>
-    <message><source>Value name (optional):</source><translation>值名（可选）：</translation></message>
+    <message><source>Value name:</source><translation>值名：</translation></message>
 
     <!-- OverlayFilesDialog -->
     <message><source>Overlay files - %1</source><translation>覆盖层文件 - %1</translation></message>
@@ -714,9 +714,9 @@ Exclusion: %2</source>
     </message>
     <message>
         <source>Key: %1
-(empty value name → commit the entire key)</source>
+Value: (Default)</source>
         <translation>键：%1
-（值名为空 → 提交整项）</translation>
+值：(Default)</translation>
     </message>
     <message>
         <source>Key: %1

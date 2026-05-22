@@ -305,7 +305,7 @@ void DiskTab::onCommitRegistry() {
 
   auto* form = new QFormLayout;
   form->addRow(I18n::tr("Registry key:"), keyEdit);
-  form->addRow(I18n::tr("Value name (optional):"), valueEdit);
+  form->addRow(I18n::tr("Value name:"), valueEdit);
 
   auto* btns = new QDialogButtonBox(&dlg);
   auto* okBtn = btns->addButton(I18n::tr("OK"), QDialogButtonBox::AcceptRole);
@@ -313,10 +313,13 @@ void DiskTab::onCommitRegistry() {
   connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
   connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
 
-  // 说明：CommitRegistry 是单值操作——不会带上同键的其它值，更不会递归子键。
+  // 说明横幅：CommitRegistry 是单值操作——不会带上同键的其它值，更不会递归子键。
+  // 复用全局状态横幅的 warn 样式，与"Windows 兼容模式"提示同款。
   auto* hint = new QLabel(I18n::tr("Only the single value above is committed (an empty value name means the key's (Default) value). "
                                    "Other values under the key, and any subkeys, are not committed."),
                           &dlg);
+  hint->setObjectName("statusBanner");
+  hint->setProperty("level", "warn");
   hint->setWordWrap(true);
 
   auto* layout = new QVBoxLayout(&dlg);

@@ -1543,7 +1543,7 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
   const std::string normKey = regkey::normalize(key.toStdString());
   if (normKey.empty()) return;
   const QString keyText = QString::fromStdString(normKey);
-  const QString desc = valueName.isEmpty() ? I18n::tr("Key: %1\n(empty value name → commit the entire key)").arg(keyText)
+  const QString desc = valueName.isEmpty() ? I18n::tr("Key: %1\nValue: (Default)").arg(keyText)
                                            : I18n::tr("Key: %1\nValue: %2").arg(keyText, valueName);
 
   // 注册表排除是全局的，直接比对当前运行会话即可。覆盖 = 键相等或为其祖先。
