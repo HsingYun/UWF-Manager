@@ -301,7 +301,7 @@ void DiskTab::onCommitRegistry() {
   keyEdit->setPlaceholderText("HKLM\\Software\\MyApp");
   keyEdit->setMinimumWidth(360);
   auto* valueEdit = new QLineEdit(&dlg);
-  valueEdit->setPlaceholderText(I18n::tr("Leave empty to commit the whole key"));
+  valueEdit->setPlaceholderText(I18n::tr("Leave empty to commit the key's default value"));
 
   auto* form = new QFormLayout;
   form->addRow(I18n::tr("Registry key:"), keyEdit);

@@ -5,7 +5,7 @@
 // 用户可能键入简写（HKLM\...）或长写（HKEY_LOCAL_MACHINE\...）——统一归一后，
 // 对外展示口径一致，去重也不会把同一个键的两种写法当成两条。
 //
-// 全项目的注册表读取都收口在这里：keyExists / readString / readDword 让各处
+// 全项目的注册表读取都收口在这里：valueExists / readString / readDword 让各处
 // 不再各写一份 RegOpenKeyExW + RegQueryValueExW。键参数接受简写或长写 hive。
 //
 // 头文件不依赖 Qt、不引入平台头（实现在 .cpp 里用 Windows 注册表 API）。
@@ -25,9 +25,10 @@ namespace uwf::regkey {
 //     合法性校验去拒绝。
 std::string normalize(const std::string& key);
 
-// 判断一个注册表键当前是否真实存在；valueName 非空时还要求该键下存在同名值。
-// key 内部会先 normalize，简写或长写均可；无法识别 hive 或键 / 值不存在返回 false。
-[[nodiscard]] bool keyExists(std::string_view key, std::string_view valueName);
+// 判断该注册表键下名为 valueName 的值是否存在；valueName 为空表示键的默认值
+// (Default)。key 内部会先 normalize，简写或长写均可；无法识别 hive、键不存在、
+// 或该值不存在均返回 false。
+[[nodiscard]] bool valueExists(std::string_view key, std::string_view valueName);
 
 // 读取注册表字符串值（REG_SZ / REG_EXPAND_SZ）；键 / 值不存在或类型不符返回空串。
 [[nodiscard]] std::string readString(std::string_view key, std::string_view valueName);

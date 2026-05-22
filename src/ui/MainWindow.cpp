@@ -1556,9 +1556,9 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     return;
   }
 
-  // 该项是否存在，提交前就查清楚——不存在就立刻拒绝，不要等用户在确认框点了
-  // "继续"、再走一遍 WMI 才以 WBEM_E_NOT_FOUND 失败（那样要弹两次）。
-  if (!regkey::keyExists(normKey, valueName.toStdString())) {
+  // 提交目标（valueName 为空时即该键的默认值）是否存在，提交前就查清楚——不存在
+  // 就立刻拒绝，不要等用户在确认框点了"继续"、再走一遍 WMI 才以 NOT_FOUND 失败。
+  if (!regkey::valueExists(normKey, valueName.toStdString())) {
     warning(this, I18n::tr("Commit rejected"), I18n::tr("This registry entry does not exist, so there is nothing to commit.\n\n%1").arg(desc));
     return;
   }
@@ -1583,12 +1583,9 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     case CommitOutcome::Ok:
       showTransientHint(I18n::tr("Committed: %1").arg(keyText), 3000);
       break;
+    // 提交目标的存在性已由上面的 valueExists 预检确认，故走到这里的 Skipped
+    // （NOT_FOUND，例如预检之后该值被并发删除）与 Failed 一样按失败报告。
     case CommitOutcome::Skipped:
-      // 提交前的 keyExists 预检已确认该项存在，故此处 WBEM_E_NOT_FOUND 只意味着
-      // 覆盖层里没有它的待提交改动——它本就与磁盘一致。
-      information(this, I18n::tr("Nothing to commit"),
-                  I18n::tr("This registry entry has no pending changes in the overlay; it is already consistent with disk.\n\n%1").arg(desc));
-      break;
     case CommitOutcome::Failed:
       warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to write registry: %1").arg(explainCommitFailure(res.hresult, res.returnValue)));
       break;

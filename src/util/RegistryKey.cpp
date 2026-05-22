@@ -66,14 +66,13 @@ std::string normalize(const std::string& key) {
   return path;  // hive 不认识——原样返回（已 trim、去尾反斜杠）
 }
 
-bool keyExists(std::string_view key, std::string_view valueName) {
+bool valueExists(std::string_view key, std::string_view valueName) {
   HKEY opened = nullptr;
   if (!openForRead(key, opened)) return false;
-  bool exists = true;
-  if (!valueName.empty()) {
-    const std::wstring wideValue = utf8ToWide(valueName);
-    exists = RegQueryValueExW(opened, wideValue.c_str(), nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS;
-  }
+  // valueName 为空 → utf8ToWide 得空宽串 → RegQueryValueExW 查的就是键的默认值
+  // (Default)；非空则查该命名值。无条件查值，不为空 valueName 开特例。
+  const std::wstring wideValue = utf8ToWide(valueName);
+  const bool exists = RegQueryValueExW(opened, wideValue.c_str(), nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS;
   RegCloseKey(opened);
   return exists;
 }

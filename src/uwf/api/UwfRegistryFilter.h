@@ -33,9 +33,10 @@ class UwfRegistryFilter {
 
   std::vector<api::ExcludedRegistryKey> getExclusions(const api::RegistryFilterRow& row, std::string* error = nullptr) const;
 
-  // valueName 为空串 = 提交整项。结果分 Ok / Skipped / Failed（见 CommitResult）：
-  // 注册表项在 overlay 里没有待提交改动时 UWF 返回 WBEM_E_NOT_FOUND，归 Skipped——
-  // 键值已与磁盘一致，不算错误。
+  // valueName 为空串 = 提交该键的「默认值」(Default)——CommitRegistry 只能逐个值
+  // 提交，没有「提交整个键」的能力（实机验证见 knowledge/reference/11-uwf-api.html
+  // 的 CommitRegistry 一节）。结果分 Ok / Skipped / Failed（见 CommitResult）：指定
+  // 的值（valueName 为空时即默认值）在注册表中不存在时 UWF 返回 WBEM_E_NOT_FOUND。
   CommitResult commitRegistry(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const;
 
   // valueName 为空串 = 删除整项。

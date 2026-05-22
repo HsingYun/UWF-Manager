@@ -194,7 +194,7 @@ The path must no longer exist in the current session — meaning it has already 
     </message>
     <message><source>Commit file deletion</source><translation>提交文件删除</translation></message>
     <message><source>Commit registry changes</source><translation>提交注册表修改</translation></message>
-    <message><source>Leave empty to commit the whole key</source><translation>留空则提交整个键</translation></message>
+    <message><source>Leave empty to commit the key's default value</source><translation>留空则提交该键的默认值</translation></message>
     <message><source>Registry key:</source><translation>注册表键：</translation></message>
     <message><source>Value name (optional):</source><translation>值名（可选）：</translation></message>
 
@@ -739,14 +739,6 @@ Continue?</source>
     <message>
         <source>No current-session registry filter record found.</source>
         <translation>找不到当前会话的注册表筛选记录。</translation>
-    </message>
-    <message>
-        <source>This registry entry has no pending changes in the overlay; it is already consistent with disk.
-
-%1</source>
-        <translation>该注册表项在覆盖层中没有待提交的改动，已经与磁盘一致。
-
-%1</translation>
     </message>
     <message>
         <source>This registry entry does not exist, so there is nothing to commit.
