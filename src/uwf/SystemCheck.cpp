@@ -2,7 +2,6 @@
 
 #include <windows.h>
 
-#include <algorithm>
 #include <charconv>
 #include <filesystem>
 #include <string>

@@ -1,7 +1,5 @@
 #include "WmiRowUtil.h"
 
-#include <algorithm>
-#include <cctype>
 #include <cstring>
 #include <regex>
 
