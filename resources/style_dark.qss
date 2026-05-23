@@ -209,9 +209,9 @@ QLabel#statusBanner {
 }
 
 QLabel#statusBanner[level="warn"] {
-    background: rgba(255, 180, 90, 0.12);
-    border: 1px solid #FFB45A;
-    color: #FFD79E;
+    background: rgba(255, 180, 90, 0.07);
+    border: 1px solid rgba(255, 180, 90, 0.35);
+    color: #D6B788;
 }
 
 QLabel#diffSummary {

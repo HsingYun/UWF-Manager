@@ -43,9 +43,34 @@ std::string normalize(const std::string& key);
 // 列出 key 的直接子键名（仅名字，不含完整路径）。无法识别 hive / 键不存在 → 空。
 [[nodiscard]] std::vector<std::string> subkeyNames(std::string_view key);
 
+// 仅判断 key 下是否有任何子键——比 subkeyNames(...).empty() 省一次完整枚举：
+// 走 RegQueryInfoKeyW 拿 cSubKeys 字段，对树形 picker"要不要画展开箭头"的判
+// 定足够快（每个新节点一次 Open + 一次 Query，毫秒级）。
+// 访问被拒 / 键不存在 → 返回 false（picker 视为叶子，符合直觉）。
+[[nodiscard]] bool hasSubkeys(std::string_view key);
+
 // 列出 key 上的全部值名；默认值 (Default) 存在时其名为空串 "" 也会列出。
 // 无法识别 hive / 键不存在 → 空。
 [[nodiscard]] std::vector<std::string> valueNames(std::string_view key);
+
+// 单个值的元信息：name + Win32 类型码（REG_SZ / REG_DWORD / REG_BINARY 等）。
+struct RegValueInfo {
+  std::string name;  // 空串 = (Default) 值
+  uint32_t type;     // RRF_RT_REG_SZ / REG_DWORD 等 Win32 类型码
+};
+
+// 列出 key 上的全部值，带类型信息。用于 picker 等需要展示 REG_SZ / REG_DWORD
+// 区分的场景；只要名字用 valueNames() 更省事。
+[[nodiscard]] std::vector<RegValueInfo> values(std::string_view key);
+
+// 把 RegValueInfo::type 翻成 Win32 文档使用的常量名（"REG_SZ" / "REG_DWORD" 等）；
+// 未知类型返回 "UNKNOWN(<数字>)"。纯字符串，不走 i18n——这些是 Win32 协议
+// 标识，不该翻译。
+[[nodiscard]] std::string valueTypeName(uint32_t type);
+
+// 5 个标准注册表 hive 的长写名（"HKEY_LOCAL_MACHINE" 等）。UI 列树根节点
+// 共用——每次调用返回相同列表。
+[[nodiscard]] std::vector<std::string> rootHiveLongNames();
 
 // 收集 key 子树里的所有键（含 key 自身），后序排列——最深的子键在前、key 在最末，
 // 正好是「递归删除」要的顺序（逐个删时每个键被处理时都已是叶子）。返回归一化后的

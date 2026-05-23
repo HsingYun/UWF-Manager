@@ -12,7 +12,6 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QIcon>
-#include <QInputDialog>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidgetItem>
@@ -35,6 +34,7 @@
 #include "DialogHelpers.h"
 #include "I18n.h"
 #include "MessageDialog.h"
+#include "RegistryPickerDialog.h"
 #include "ThemeManager.h"
 
 namespace uwf::ui {
@@ -162,6 +162,31 @@ QString forbidRegExclusionReason(const QString& rawKey) {
   return I18n::tr(
       "UWF only allows exclusions under the following top-level registry keys. Please pick a specific subkey under one of them:\n  HKLM\\BCD00000000\n  "
       "HKLM\\SYSTEM\n  HKLM\\SOFTWARE\n  HKLM\\SAM\n  HKLM\\SECURITY\n  HKLM\\COMPONENTS");
+}
+
+// 把 forbidRegExclusionReason 的"合法 / 非法"扩成三态供 picker 给树节点染色。
+// 三态判定见 RegistryPickerDialog::KeyAvailability 注释。
+//
+// 已知 picker 把树里的键路径以长写 hive 形式（"HKEY_LOCAL_MACHINE\..."）传入；
+// 非法路径字符之类的边界这里不必再检查，那是 forbidRegExclusionReason 给地址栏
+// 自由输入兜底用的——树里不会出现。
+RegistryPickerDialog::KeyAvailability regExclusionAvailability(const QString& rawKey) {
+  using A = RegistryPickerDialog::KeyAvailability;
+  if (forbidRegExclusionReason(rawKey).isEmpty()) return A::Selectable;
+
+  // 不合法，看 rawKey 子树里能否落到某个 6-prefix 之下的合法 key：
+  //   - rawKey 自身在某 prefix 之下（含等于 prefix-去尾的情况）→ 子键全都合法
+  //   - rawKey 是某 prefix 的真祖先 → prefix 之下的 key 是 rawKey 的后代
+  // 两种都意味着"可展开但本节点不可选"——ContainerOnly。
+  const QString upper = normRegKey(rawKey).toUpper();
+  if (upper.isEmpty()) return A::Pruned;
+  const QString pWithSep = upper + '\\';
+  for (const auto sv : config::kAllowedRegistryRootPrefixes) {
+    const QLatin1String prefix = l1(sv);
+    if (pWithSep.startsWith(prefix)) return A::ContainerOnly;
+    if (QString(prefix).startsWith(pWithSep)) return A::ContainerOnly;
+  }
+  return A::Pruned;
 }
 
 void sortList(QStringList& list) {
@@ -571,11 +596,14 @@ void ExclusionListWidget::onAddDir() {
 
 void ExclusionListWidget::onAddRegistry() {
   if (m_readOnly) return;
-  bool ok = false;
-  const QString input = QInputDialog::getText(this, I18n::tr("Add registry exclusion"), I18n::tr("Full registry key (e.g. HKLM\\Software\\MyApp):"),
-                                              QLineEdit::Normal, QString(), &ok);
-  if (!ok) return;
-  addPendingEntry(input);
+  // RegistryPickerDialog 用 regExclusionAvailability 把树里每个节点分三态——
+  // Pruned 灰掉且不可展开、ContainerOnly 灰但可展开、Selectable 可选可展开。
+  // OK 出来的 key 必然 Selectable，但 addPendingEntry 自己仍会再跑一遍
+  // forbidRegExclusionReason（状态机入口防线，不依赖 picker），两层保险。
+  const auto picked = RegistryPickerDialog::pick(RegistryPickerDialog::Mode::Exclusion, I18n::tr("Add registry exclusion"), this,
+                                                 [](const QString& key) { return regExclusionAvailability(key); });
+  if (!picked) return;
+  addPendingEntry(picked->key);
 }
 
 void ExclusionListWidget::addPendingEntry(const QString& raw) {

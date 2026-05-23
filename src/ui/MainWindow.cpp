@@ -1185,7 +1185,7 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
       [](const QString& f) { return QFileInfo::exists(f); });
 }
 
-void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) {
+void MainWindow::commitRegistryKey(const QString& key, const QString& valueName, bool wholeKey) {
   if (key.isEmpty()) return;
 
   // 多目标提交会弹 QProgressDialog（setValue 内部 processEvents）——暂停占用刷新
@@ -1199,10 +1199,12 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
   const QString keyText = QString::fromStdString(normKey);
 
   // 标题 / heading / target 文本提前算——失败和成功路径共用。
-  const bool wholeKey = valueName.isEmpty();
+  // 单值路径下 (默认) 值（valueName=""）展示成 "...\: (Default)"——和 picker 里
+  // (默认) 行口径一致，避免出现裸冒号的"key : "尾巴。
   const QString title = I18n::tr("Commit to disk");
   const QString heading = wholeKey ? I18n::tr("Commit this registry key and its whole subtree to disk") : I18n::tr("Commit this registry value to disk");
-  const QString target = wholeKey ? keyText : (keyText + " : " + valueName);
+  const QString valueDisplay = valueName.isEmpty() ? I18n::tr("(Default)") : valueName;
+  const QString target = wholeKey ? keyText : (keyText + " : " + valueDisplay);
 
   // 注册表排除是全局的，比对当前运行会话即可。覆盖 = 键相等或为其祖先。
   const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
@@ -1212,10 +1214,12 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     return;
   }
 
-  // 目标清单：值名给定 = 只提交那一个值；值名留空 = 递归整棵键子树的每一个值
-  // （CommitRegistry 只能逐值提交，"提交整键"由这里展开成逐值调用）。
+  // 目标清单：wholeKey=false = 只提交那一个值（valueExists 检查针对名值；
+  // valueName="" 即 (默认) 值，valueExists 内部已支持）。wholeKey=true = 递归
+  // 展开整棵键子树的每一个值——CommitRegistry 只能逐值提交，"提交整键"由这里
+  // 展开成逐值调用。
   QList<RegCommitTarget> targets;
-  if (!valueName.isEmpty()) {
+  if (!wholeKey) {
     if (!regkey::valueExists(normKey, valueName.toStdString())) {
       confirmCommit(this, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to commit."), /*allowContinue=*/false);
       return;
@@ -1228,18 +1232,13 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     }
     // UWF 的 CommitRegistry 是逐值提交——ValueName="" 提交的是键的 (Default)
     // 值，默认值不存在则返回 NOT_FOUND；UWF 没有"提交键本身（不带任何值）"的
-    // 能力。这里递归收集每一个键，并保证**每个键都至少 emit 一次** (k, "")
-    // 尝试，让 UWF 在结果表里对该键诚实表态——OK 或 NOT_FOUND——而不是 UI 凭
-    // valueNames 是否为空就跳过。命名值另外逐个 emit；若 (Default) 已在
-    // valueNames 中（即已被设过），则跳过额外的 (k, "") 避免重复行。
+    // 能力。这里递归展开成 valueNames 里实际存在的每一个值——valueNames 里没空串
+    // （键未设过默认值）就不再硬塞 (k, "")，省一次必然 NOT_FOUND 的 WMI 调用，
+    // 也让结果表里不再出现一堆无意义的 Skipped 行。代价是没值的纯结构 key
+    // 整个被跳过——CommitRegistry 本来对它就什么都做不了，跳过是对的。
     for (const auto& k : regkey::collectKeyTree(normKey)) {
       const QString kText = QString::fromStdString(k);
-      const auto vns = regkey::valueNames(k);
-      const bool defaultAlreadyInVns = std::ranges::any_of(vns, [](const std::string& s) { return s.empty(); });
-      if (!defaultAlreadyInVns) {
-        targets.append({k, std::string{}, kText + " : (Default)"});
-      }
-      for (const auto& vn : vns) {
+      for (const auto& vn : regkey::valueNames(k)) {
         targets.append({k, vn, vn.empty() ? (kText + " : (Default)") : (kText + " : " + QString::fromStdString(vn))});
       }
     }
@@ -1274,7 +1273,7 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
       });
 }
 
-void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& valueName) {
+void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& valueName, bool wholeKey) {
   if (key.isEmpty()) return;
 
   const ScopedTimerPause usagePause(m_usageTimer);
@@ -1285,11 +1284,12 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
   const QString keyText = QString::fromStdString(normKey);
 
   // 标题 / heading / target 提前算——失败和成功路径共用同一个 confirmCommit 版式。
-  const bool wholeKey = valueName.isEmpty();
+  // 单值路径 (默认) 值 valueName="" 展示成 "(Default)"，避免裸冒号尾巴。
   const QString title = I18n::tr("Delete and commit");
   const QString heading = wholeKey ? I18n::tr("Delete this registry key and its whole subtree, and commit the deletions to disk")
                                    : I18n::tr("Delete this registry value, and commit the deletion to disk");
-  const QString target = wholeKey ? keyText : (keyText + " : " + valueName);
+  const QString valueDisplay = valueName.isEmpty() ? I18n::tr("(Default)") : valueName;
+  const QString target = wholeKey ? keyText : (keyText + " : " + valueDisplay);
 
   const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
   if (!hit.empty()) {
@@ -1298,12 +1298,12 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
     return;
   }
 
-  // 目标清单：值名给定 = 只删那一个值；值名留空 = 递归整棵键子树。
-  // CommitRegistryDeletion 由方法自身执行删除，目标必须仍存在；它不递归——
-  // CommitRegistryDeletion(key,"") 只能删叶子键，故按 collectKeyTree 的后序
-  // （最深子键在前）逐个删，删到每个键时它都已是叶子。
+  // 目标清单：wholeKey=false = 只删那一个值（valueName="" 表示 (默认) 值，
+  // valueExists 已支持）；wholeKey=true = 递归整棵键子树。CommitRegistryDeletion
+  // 由方法自身执行删除，目标必须仍存在；它不递归——CommitRegistryDeletion(key,"")
+  // 只能删叶子键，故按 collectKeyTree 的后序（最深子键在前）逐个删。
   QList<RegCommitTarget> targets;
-  if (!valueName.isEmpty()) {
+  if (!wholeKey) {
     if (!regkey::valueExists(normKey, valueName.toStdString())) {
       confirmCommit(this, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to delete."), /*allowContinue=*/false);
       return;

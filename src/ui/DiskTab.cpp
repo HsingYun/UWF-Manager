@@ -1,13 +1,10 @@
 #include "DiskTab.h"
 
 #include <QAction>
-#include <QDialogButtonBox>
 #include <QFileDialog>
-#include <QFormLayout>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
-#include <QLineEdit>
 #include <QMenu>
 #include <QPushButton>
 #include <QSizePolicy>
@@ -20,6 +17,7 @@
 #include "ExclusionListWidget.h"
 #include "I18n.h"
 #include "OverlayFilesDialog.h"
+#include "RegistryPickerDialog.h"
 #include "StatusPanel.h"
 #include "ThemeManager.h"
 
@@ -296,70 +294,19 @@ void DiskTab::onCommitFolderDelete() {
   emit commitFileDeletionRequested(QDir::toNativeSeparators(path));
 }
 
-std::optional<std::pair<QString, QString>> DiskTab::promptRegistryTarget(const QString& title, const QString& valuePlaceholder, const QString& hintText) {
-  // 键 + 可选值名在同一个 dialog 里用 QFormLayout 两行输入，避免连弹两次。
-  QDialog dlg(this);
-  dlg.setWindowTitle(title);
-
-  auto* keyEdit = new QLineEdit(&dlg);
-  keyEdit->setPlaceholderText("HKLM\\Software\\MyApp");
-  keyEdit->setMinimumWidth(360);
-  auto* valueEdit = new QLineEdit(&dlg);
-  valueEdit->setPlaceholderText(valuePlaceholder);
-
-  auto* form = new QFormLayout;
-  form->addRow(I18n::tr("Registry key:"), keyEdit);
-  form->addRow(I18n::tr("Value name:"), valueEdit);
-
-  auto* btns = new QDialogButtonBox(&dlg);
-  auto* okBtn = btns->addButton(I18n::tr("OK"), QDialogButtonBox::AcceptRole);
-  btns->addButton(I18n::tr("Cancel"), QDialogButtonBox::RejectRole);
-  connect(btns, &QDialogButtonBox::accepted, &dlg, &QDialog::accept);
-  connect(btns, &QDialogButtonBox::rejected, &dlg, &QDialog::reject);
-
-  // 说明横幅：复用全局状态横幅的 warn 样式，与"Windows 兼容模式"提示同款。
-  auto* hint = new QLabel(hintText, &dlg);
-  hint->setObjectName("statusBanner");
-  hint->setProperty("level", "warn");
-  hint->setWordWrap(true);
-
-  auto* layout = new QVBoxLayout(&dlg);
-  // 12px 间距：让 warn 横幅与上方输入行之间留出呼吸空间，不要贴在一起。
-  layout->setSpacing(12);
-  layout->addLayout(form);
-  layout->addWidget(hint);
-  layout->addWidget(btns);
-
-  // 键必填：空串时"确定"灰掉。
-  const auto syncOk = [okBtn, keyEdit]() { okBtn->setEnabled(!keyEdit->text().trimmed().isEmpty()); };
-  syncOk();
-  connect(keyEdit, &QLineEdit::textChanged, &dlg, syncOk);
-
-  if (dlg.exec() != QDialog::Accepted) return std::nullopt;
-  const QString key = keyEdit->text().trimmed();
-  if (key.isEmpty()) return std::nullopt;
-  // 值名原样保留、不 trim：注册表值名理论上允许首尾空格。
-  return std::make_pair(key, valueEdit->text());
-}
-
 void DiskTab::onCommitRegistry() {
-  // 值名给定 → 只提交该值；值名留空 → 由 MainWindow 递归提交整棵键子树。
-  const auto target =
-      promptRegistryTarget(I18n::tr("Commit registry changes"), I18n::tr("Leave empty to commit the whole key recursively"),
-                           I18n::tr("With a value name, only that single value is committed. Leave the value name empty to commit the whole key recursively — "
-                                    "every value in the key and in all of its subkeys."));
+  // picker 的 wholeKey=true（值表空选中）→ MainWindow 递归提交整棵子树；
+  // wholeKey=false 时 valueName 是要提交的命名值（(Default) 已在 picker 里禁选，
+  // 默认值要走整键递归一并 commit）。
+  const auto target = RegistryPickerDialog::pick(RegistryPickerDialog::Mode::CommitValue, I18n::tr("Commit registry changes"), this);
   if (!target) return;
-  emit commitRegistryRequested(target->first, target->second);
+  emit commitRegistryRequested(target->key, target->valueName, target->wholeKey);
 }
 
 void DiskTab::onCommitRegistryDelete() {
-  // 值名给定 → 只删该值；值名留空 → 由 MainWindow 递归删除整棵键子树。
-  const auto target =
-      promptRegistryTarget(I18n::tr("Commit registry deletion"), I18n::tr("Leave empty to delete the whole key recursively"),
-                           I18n::tr("With a value name, only that single value is deleted. Leave the value name empty to delete the whole key recursively — "
-                                    "the key, all of its values, and all of its subkeys."));
+  const auto target = RegistryPickerDialog::pick(RegistryPickerDialog::Mode::DeleteValue, I18n::tr("Commit registry deletion"), this);
   if (!target) return;
-  emit commitRegistryDeletionRequested(target->first, target->second);
+  emit commitRegistryDeletionRequested(target->key, target->valueName, target->wholeKey);
 }
 
 int DiskTab::activeInfoTabIndex() const { return m_infoTabs ? m_infoTabs->currentIndex() : 0; }

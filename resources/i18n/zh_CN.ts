@@ -207,19 +207,20 @@
         <translation>选择要提交删除的文件夹</translation>
     </message>
     <message><source>Commit registry changes</source><translation>提交注册表修改</translation></message>
-    <message><source>Leave empty to commit the whole key recursively</source><translation>留空则递归提交整棵键子树</translation></message>
-    <message>
-        <source>With a value name, only that single value is committed. Leave the value name empty to commit the whole key recursively — every value in the key and in all of its subkeys.</source>
-        <translation>填写值名则只提交那一个值；值名留空则递归提交整棵键子树——该键以及它所有子键里的每一个值。</translation>
-    </message>
-    <message><source>Registry key:</source><translation>注册表键：</translation></message>
-    <message><source>Value name:</source><translation>值名：</translation></message>
     <message><source>Commit registry deletion</source><translation>提交注册表删除</translation></message>
-    <message><source>Leave empty to delete the whole key recursively</source><translation>留空则递归删除整棵键子树</translation></message>
+
+    <!-- RegistryPickerDialog -->
+    <message><source>Key path:</source><translation>键路径：</translation></message>
     <message>
-        <source>With a value name, only that single value is deleted. Leave the value name empty to delete the whole key recursively — the key, all of its values, and all of its subkeys.</source>
-        <translation>填写值名则只删除那一个值；值名留空则递归删除整棵键子树——该键、它的所有值、以及它所有的子键。</translation>
+        <source>HKLM\Software\... — type or paste, press Enter to jump</source>
+        <translation>HKLM\Software\… —— 可输入或粘贴，按回车跳转</translation>
     </message>
+    <message><source>Name</source><translation>名称</translation></message>
+    <message><source>Key: %1</source><translation>键：%1</translation></message>
+    <message><source>Value: %1</source><translation>值：%1</translation></message>
+    <message><source>(none)</source><translation>（无）</translation></message>
+    <message><source>(Default)</source><translation>（默认）</translation></message>
+    <message><source>(whole key recursive, including subkeys)</source><translation>（整键递归，递归包含子键）</translation></message>
 
     <!-- OverlayFilesDialog -->
     <message><source>Overlay files - %1</source><translation>覆盖层文件 - %1</translation></message>
@@ -380,10 +381,6 @@
         <translation>选择要加入排除的文件夹</translation>
     </message>
     <message><source>Add registry exclusion</source><translation>添加注册表排除</translation></message>
-    <message>
-        <source>Full registry key (e.g. HKLM\Software\MyApp):</source>
-        <translation>完整注册表键（例如 HKLM\Software\MyApp）：</translation>
-    </message>
     <message>
         <source>The selected path %1 is not on volume %2, and therefore cannot be added as an exclusion for this volume.</source>
         <translation>所选路径 %1 不在 %2 卷上，无法作为此卷的排除项。</translation>

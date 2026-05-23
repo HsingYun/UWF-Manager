@@ -2,6 +2,7 @@
 
 #include <windows.h>
 
+#include <format>
 #include <utility>
 
 #include "../core/Config.h"
@@ -27,13 +28,17 @@ const Hive kHives[] = {
 };
 
 // 把 key 归一、解析 hive、以只读方式打开。成功时 outKey 为已打开句柄（调用方
-// 负责 RegCloseKey）；hive 无法识别、缺子键或键不存在均返回 false。
+// 负责 RegCloseKey）；hive 无法识别或键不存在返回 false。
+// 单独 hive（如 "HKEY_LOCAL_MACHINE"，无子键）合法——RegOpenKeyExW 收空 lpSubKey
+// 会返回一份指向该 hive 自身的新句柄，可被 RegEnumKeyEx / RegCloseKey 正常使用。
+// picker 树根节点展开就走这条路径。
 bool openForRead(std::string_view key, HKEY& outKey) {
   const std::string normalized = normalize(std::string(key));
+  if (normalized.empty()) return false;
   const size_t firstSlash = normalized.find('\\');
-  if (firstSlash == std::string::npos) return false;  // 只有 hive、没有子键
 
-  const std::string hive = toUpperAscii(normalized.substr(0, firstSlash));
+  // 没有反斜杠时整串就是 hive；有时反斜杠前是 hive、之后是子键路径。
+  const std::string hive = toUpperAscii(firstSlash == std::string::npos ? normalized : normalized.substr(0, firstSlash));
   HKEY root = nullptr;
   for (const auto& h : kHives) {
     if (hive == h.longForm) {
@@ -43,7 +48,7 @@ bool openForRead(std::string_view key, HKEY& outKey) {
   }
   if (!root) return false;  // hive 无法识别
 
-  const std::wstring subkey = utf8ToWide(normalized.substr(firstSlash + 1));
+  const std::wstring subkey = firstSlash == std::string::npos ? std::wstring{} : utf8ToWide(normalized.substr(firstSlash + 1));
   return RegOpenKeyExW(root, subkey.c_str(), 0, KEY_READ | KEY_WOW64_64KEY, &outKey) == ERROR_SUCCESS;
 }
 
@@ -133,6 +138,15 @@ std::vector<std::string> subkeyNames(std::string_view key) {
   return out;
 }
 
+bool hasSubkeys(std::string_view key) {
+  HKEY opened = nullptr;
+  if (!openForRead(key, opened)) return false;
+  DWORD subkeyCount = 0;
+  const LONG rc = RegQueryInfoKeyW(opened, nullptr, nullptr, nullptr, &subkeyCount, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+  RegCloseKey(opened);
+  return rc == ERROR_SUCCESS && subkeyCount > 0;
+}
+
 std::vector<std::string> valueNames(std::string_view key) {
   std::vector<std::string> out;
   HKEY opened = nullptr;
@@ -144,6 +158,59 @@ std::vector<std::string> valueNames(std::string_view key) {
     out.push_back(wideToUtf8(std::wstring(name.data(), len)));
   }
   RegCloseKey(opened);
+  return out;
+}
+
+std::vector<RegValueInfo> values(std::string_view key) {
+  std::vector<RegValueInfo> out;
+  HKEY opened = nullptr;
+  if (!openForRead(key, opened)) return out;
+  std::wstring name(config::kRegistryValueNameBufChars, L'\0');
+  for (DWORD i = 0;; ++i) {
+    DWORD len = static_cast<DWORD>(name.size());
+    DWORD type = 0;
+    if (RegEnumValueW(opened, i, name.data(), &len, nullptr, &type, nullptr, nullptr) != ERROR_SUCCESS) break;
+    out.push_back({wideToUtf8(std::wstring(name.data(), len)), type});
+  }
+  RegCloseKey(opened);
+  return out;
+}
+
+std::string valueTypeName(uint32_t type) {
+  switch (type) {
+    case REG_NONE:
+      return "REG_NONE";
+    case REG_SZ:
+      return "REG_SZ";
+    case REG_EXPAND_SZ:
+      return "REG_EXPAND_SZ";
+    case REG_BINARY:
+      return "REG_BINARY";
+    case REG_DWORD:
+      return "REG_DWORD";
+    case REG_DWORD_BIG_ENDIAN:
+      return "REG_DWORD_BIG_ENDIAN";
+    case REG_LINK:
+      return "REG_LINK";
+    case REG_MULTI_SZ:
+      return "REG_MULTI_SZ";
+    case REG_RESOURCE_LIST:
+      return "REG_RESOURCE_LIST";
+    case REG_FULL_RESOURCE_DESCRIPTOR:
+      return "REG_FULL_RESOURCE_DESCRIPTOR";
+    case REG_RESOURCE_REQUIREMENTS_LIST:
+      return "REG_RESOURCE_REQUIREMENTS_LIST";
+    case REG_QWORD:
+      return "REG_QWORD";
+    default:
+      return std::format("UNKNOWN({})", type);
+  }
+}
+
+std::vector<std::string> rootHiveLongNames() {
+  std::vector<std::string> out;
+  out.reserve(std::size(kHives));
+  for (const auto& h : kHives) out.emplace_back(h.longForm);
   return out;
 }
 

@@ -61,6 +61,8 @@ set(UWF_SOURCES
         src/ui/CommitReportDialog.h
         src/ui/CommitReportDialog.cpp
         src/ui/DialogHelpers.h
+        src/ui/RegistryPickerDialog.h
+        src/ui/RegistryPickerDialog.cpp
         src/ui/TransientLabel.h
         src/ui/TransientLabel.cpp
         src/ui/LogViewerDialog.h

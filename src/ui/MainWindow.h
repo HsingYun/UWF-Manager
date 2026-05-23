@@ -51,8 +51,11 @@ class MainWindow : public QMainWindow {
   // 都共用这一个槽。
   void commitFilePath(const QString& path);
   void commitFileDeletionPath(const QString& path);
-  void commitRegistryKey(const QString& key, const QString& valueName);
-  void commitRegistryDeletionKey(const QString& key, const QString& valueName);
+  // wholeKey=true → 递归处理整棵键子树（valueName 被忽略）；
+  // wholeKey=false → 操作单个值，valueName 空串 = (默认) 值，非空 = 该具名值。
+  // 必须靠 wholeKey 区分——两种语义在 valueName="" 时输出相同，仅靠值名无法区分。
+  void commitRegistryKey(const QString& key, const QString& valueName, bool wholeKey);
+  void commitRegistryDeletionKey(const QString& key, const QString& valueName, bool wholeKey);
 
  protected:
   bool eventFilter(QObject* obj, QEvent* ev) override;

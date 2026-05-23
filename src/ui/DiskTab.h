@@ -4,7 +4,6 @@
 #include <QWidget>
 #include <optional>
 #include <string>
-#include <utility>
 
 #include "../core/UwfConfig.h"
 // 完整 include（不是前向声明）：本文件 public API 暴露
@@ -79,8 +78,11 @@ class DiskTab : public QWidget {
   void statusHint(const QString& text, int msec);
   void commitFileRequested(const QString& path);
   void commitFileDeletionRequested(const QString& path);
-  void commitRegistryRequested(const QString& key, const QString& valueName);
-  void commitRegistryDeletionRequested(const QString& key, const QString& valueName);
+  // wholeKey=true 表示 "整键递归"——valueName 被忽略；wholeKey=false 时
+  // valueName 是要操作的具体值（空串 = (默认) 值）。两种状态都可能产出
+  // valueName="" ，必须靠 wholeKey 区分语义。
+  void commitRegistryRequested(const QString& key, const QString& valueName, bool wholeKey);
+  void commitRegistryDeletionRequested(const QString& key, const QString& valueName, bool wholeKey);
 
  private slots:
   void onCommitFile();
@@ -99,10 +101,6 @@ class DiskTab : public QWidget {
   void updateCommitEnablement(bool globalFilterOn, bool thisVolumeProtected) const;
   // 主题切换时刷新菜单 icon + 重新生成 heading 的 RichText（里面带 inline 色）。
   void refreshThemedIcons();
-  // 弹出"注册表键 + 可选值名"两行输入框，提交注册表修改 / 删除共用。标题、值名
-  // 占位符、warn 横幅文案由调用方按用途定制。用户确认且键非空时返回
-  // {已 trim 的键, 原样值名}；取消或键为空返回 nullopt。
-  std::optional<std::pair<QString, QString>> promptRegistryTarget(const QString& title, const QString& valuePlaceholder, const QString& hintText);
 
   core::DiskInfo m_disk;
   QLabel* m_headingLabel = nullptr;     // 顶部盘符 + 磁盘信息
