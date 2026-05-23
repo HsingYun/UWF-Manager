@@ -216,10 +216,13 @@
         <translation>HKLM\Software\… —— 可输入或粘贴，按回车跳转</translation>
     </message>
     <message><source>Name</source><translation>名称</translation></message>
+    <message><source>Data</source><translation>数据</translation></message>
     <message><source>Key: %1</source><translation>键：%1</translation></message>
     <message><source>Value: %1</source><translation>值：%1</translation></message>
     <message><source>(none)</source><translation>（无）</translation></message>
     <message><source>(Default)</source><translation>（默认）</translation></message>
+    <message><source>(value not set)</source><translation>（数值未设置）</translation></message>
+    <message><source>(empty)</source><translation>（空）</translation></message>
     <message><source>(whole key recursive, including subkeys)</source><translation>（整键递归，递归包含子键）</translation></message>
 
     <!-- OverlayFilesDialog -->

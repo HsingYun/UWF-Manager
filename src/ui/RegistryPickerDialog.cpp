@@ -1,5 +1,7 @@
 #include "RegistryPickerDialog.h"
 
+#include <windows.h>  // REG_SZ / REG_DWORD / ... 值类型宏，formatValuePreview switch 用
+
 #include <QBrush>
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
@@ -50,6 +52,82 @@ std::pair<QString, QStringList> splitKeyPath(const QString& key) {
   const auto parts = key.split('\\', Qt::SkipEmptyParts);
   if (parts.isEmpty()) return {};
   return {parts.front(), parts.mid(1)};
+}
+
+// 把值的原始字节按 Win32 类型码格式化成可读单行预览。规则贴近 regedit：
+//   REG_SZ / EXPAND_SZ / LINK: 直出字符串（去尾部 null）
+//   REG_MULTI_SZ:              多串以 " · " 连接
+//   REG_DWORD / QWORD:         "0x%X (%u)"
+//   REG_BINARY 等:             空格分隔 hex 字节
+// 任一长度都截到 200 字符 + "…"——picker 是预览，不是查看器。
+constexpr int kPreviewMaxChars = 200;
+QString truncatedAt(QString s, int max = kPreviewMaxChars) {
+  if (s.size() > max) {
+    s.resize(max);
+    s.append(QStringLiteral("…"));
+  }
+  return s;
+}
+QString formatValuePreview(uint32_t type, const std::vector<uint8_t>& data) {
+  // 空数据：REG_SZ 走 regedit 的"未设置默认值"口径，其他类型显示一般的"空"。
+  if (data.empty()) return type == REG_SZ ? I18n::tr("(value not set)") : I18n::tr("(empty)");
+
+  switch (type) {
+    case REG_SZ:
+    case REG_EXPAND_SZ:
+    case REG_LINK: {
+      // UTF-16 LE 字节流；末尾的 null terminator（一对 0x00 0x00）要去掉。
+      const auto chars = static_cast<qsizetype>(data.size() / 2);
+      QString s = QString::fromUtf16(reinterpret_cast<const char16_t*>(data.data()), chars);
+      while (s.endsWith(QChar(u'\0'))) s.chop(1);
+      return truncatedAt(s);
+    }
+    case REG_MULTI_SZ: {
+      const auto chars = static_cast<qsizetype>(data.size() / 2);
+      const QStringView view(reinterpret_cast<const char16_t*>(data.data()), chars);
+      QStringList parts;
+      qsizetype begin = 0;
+      for (qsizetype i = 0; i < view.size(); ++i) {
+        if (view[i] == QChar(u'\0')) {
+          if (i > begin) parts.append(view.mid(begin, i - begin).toString());
+          begin = i + 1;
+        }
+      }
+      return truncatedAt(parts.join(QStringLiteral(" · ")));
+    }
+    case REG_DWORD: {
+      if (data.size() < 4) return I18n::tr("(empty)");
+      const uint32_t v = static_cast<uint32_t>(data[0]) | (static_cast<uint32_t>(data[1]) << 8) | (static_cast<uint32_t>(data[2]) << 16) |
+                         (static_cast<uint32_t>(data[3]) << 24);
+      return QString::asprintf("0x%08X (%u)", v, v);
+    }
+    case REG_DWORD_BIG_ENDIAN: {
+      if (data.size() < 4) return I18n::tr("(empty)");
+      const uint32_t v = (static_cast<uint32_t>(data[0]) << 24) | (static_cast<uint32_t>(data[1]) << 16) | (static_cast<uint32_t>(data[2]) << 8) |
+                         static_cast<uint32_t>(data[3]);
+      return QString::asprintf("0x%08X (%u)", v, v);
+    }
+    case REG_QWORD: {
+      if (data.size() < 8) return I18n::tr("(empty)");
+      uint64_t v = 0;
+      for (int i = 0; i < 8; ++i) v |= static_cast<uint64_t>(data[i]) << (i * 8);
+      return QString::asprintf("0x%016llX (%llu)", static_cast<unsigned long long>(v), static_cast<unsigned long long>(v));
+    }
+    default: {
+      // REG_BINARY / REG_NONE / REG_RESOURCE_* 等 —— hex 序列；截到前 64 字节
+      // 已经远超列宽，加 "…" 提示有更多。
+      constexpr size_t kMaxBytes = 64;
+      const size_t shown = std::min(data.size(), kMaxBytes);
+      QString hex;
+      hex.reserve(static_cast<qsizetype>(shown * 3));
+      for (size_t i = 0; i < shown; ++i) {
+        if (i > 0) hex.append(' ');
+        hex.append(QString::asprintf("%02X", data[i]));
+      }
+      if (data.size() > kMaxBytes) hex.append(QStringLiteral(" …"));
+      return hex;
+    }
+  }
 }
 
 }  // namespace
@@ -112,16 +190,17 @@ void RegistryPickerDialog::buildUi() {
   auto* split = new QSplitter(Qt::Horizontal, this);
   split->addWidget(m_tree);
 
-  m_valueTable = new QTableWidget(0, 2, this);
-  m_valueTable->setHorizontalHeaderLabels({I18n::tr("Name"), I18n::tr("Type")});
+  m_valueTable = new QTableWidget(0, 3, this);
+  m_valueTable->setHorizontalHeaderLabels({I18n::tr("Name"), I18n::tr("Type"), I18n::tr("Data")});
   m_valueTable->verticalHeader()->setVisible(false);
   m_valueTable->setEditTriggers(QAbstractItemView::NoEditTriggers);
   m_valueTable->setSelectionBehavior(QAbstractItemView::SelectRows);
   // Exclusion 模式整表禁选——AddExclusion 不收 ValueName，值表纯展示。
   m_valueTable->setSelectionMode(supportsValueSelection() ? QAbstractItemView::SingleSelection : QAbstractItemView::NoSelection);
   m_valueTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-  m_valueTable->horizontalHeader()->setStretchLastSection(true);
-  m_valueTable->horizontalHeader()->resizeSection(0, 260);
+  m_valueTable->horizontalHeader()->setStretchLastSection(true);  // Data 列吸收剩余宽度
+  m_valueTable->horizontalHeader()->resizeSection(0, 200);        // Name
+  m_valueTable->horizontalHeader()->resizeSection(1, 130);        // Type（REG_RESOURCE_REQUIREMENTS_LIST 是最长的）
   connect(m_valueTable, &QTableWidget::itemSelectionChanged, this, &RegistryPickerDialog::onValueSelectionChanged);
   // 值表 viewport 上单击空白 → 清掉选中（valueName 回到空）。Qt 默认不会清，
   // 这里走 eventFilter 自己处理。仅 m_valueTable 创建之后才能挂——viewport 在
@@ -336,7 +415,7 @@ void RegistryPickerDialog::refreshValueTable(const QString& keyPath) {
   if (def != items.end()) {
     std::rotate(items.begin(), def, def + 1);
   } else {
-    items.insert(items.begin(), {std::string{}, 1u});  // 1 = REG_SZ，对齐 regedit
+    items.insert(items.begin(), {std::string{}, 1u, {}});  // 1 = REG_SZ + 空 data → 预览显示"(value not set)"
   }
   // Exclusion 模式整表都不让选；CommitValue / DeleteValue 模式让命名值可选，
   // 但 (Default) 永远禁选——见类注释里"三种模式下 (Default) 行恒禁用"。
@@ -361,6 +440,14 @@ void RegistryPickerDialog::refreshValueTable(const QString& keyPath) {
     auto* typeItem = new QTableWidgetItem(QString::fromStdString(regkey::valueTypeName(v.type)));
     if (!rowSelectable) typeItem->setFlags(Qt::NoItemFlags);
     m_valueTable->setItem(row, 1, typeItem);
+
+    // Data 列：单行预览（已 truncate 到 200 字符），tooltip 给同样的预览方便长串
+    // 鼠标悬停查看——不显示完整数据，picker 不是查看器。
+    const QString preview = formatValuePreview(v.type, v.data);
+    auto* dataItem = new QTableWidgetItem(preview);
+    dataItem->setToolTip(preview);
+    if (!rowSelectable) dataItem->setFlags(Qt::NoItemFlags);
+    m_valueTable->setItem(row, 2, dataItem);
   }
 }
 

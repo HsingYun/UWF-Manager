@@ -53,14 +53,16 @@ std::string normalize(const std::string& key);
 // 无法识别 hive / 键不存在 → 空。
 [[nodiscard]] std::vector<std::string> valueNames(std::string_view key);
 
-// 单个值的元信息：name + Win32 类型码（REG_SZ / REG_DWORD / REG_BINARY 等）。
+// 单个值的元信息：name + Win32 类型码（REG_SZ / REG_DWORD / REG_BINARY 等）+ 原始字节。
 struct RegValueInfo {
-  std::string name;  // 空串 = (Default) 值
-  uint32_t type;     // RRF_RT_REG_SZ / REG_DWORD 等 Win32 类型码
+  std::string name;           // 空串 = (Default) 值
+  uint32_t type;              // RRF_RT_REG_SZ / REG_DWORD 等 Win32 类型码
+  std::vector<uint8_t> data;  // 原始字节；REG_SZ 等是 UTF-16 LE 字节流（含 null）。调用方按 type 自行解码
 };
 
-// 列出 key 上的全部值，带类型信息。用于 picker 等需要展示 REG_SZ / REG_DWORD
-// 区分的场景；只要名字用 valueNames() 更省事。
+// 列出 key 上的全部值，带类型信息 + 原始数据。用于 picker 等需要展示 REG_SZ /
+// REG_DWORD 区分 + 数据预览的场景；只要名字用 valueNames() 更省事，只要名字 +
+// 类型时 data 字段忽略即可（无开销差异显著差距）。
 [[nodiscard]] std::vector<RegValueInfo> values(std::string_view key);
 
 // 把 RegValueInfo::type 翻成 Win32 文档使用的常量名（"REG_SZ" / "REG_DWORD" 等）；

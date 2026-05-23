@@ -166,11 +166,23 @@ std::vector<RegValueInfo> values(std::string_view key) {
   HKEY opened = nullptr;
   if (!openForRead(key, opened)) return out;
   std::wstring name(config::kRegistryValueNameBufChars, L'\0');
+  // 4 KiB 起步够覆盖绝大多数注册表值（典型 < 256 字节）；超过时按返回的 dataLen
+  // 扩容重试。RegEnumValueW 在 ERROR_MORE_DATA 时对 lpData 的部分填充语义未明确，
+  // 不能依赖——必须 retry。
+  std::vector<uint8_t> data(4096);
   for (DWORD i = 0;; ++i) {
-    DWORD len = static_cast<DWORD>(name.size());
+    DWORD nameLen = static_cast<DWORD>(name.size());
+    DWORD dataLen = static_cast<DWORD>(data.size());
     DWORD type = 0;
-    if (RegEnumValueW(opened, i, name.data(), &len, nullptr, &type, nullptr, nullptr) != ERROR_SUCCESS) break;
-    out.push_back({wideToUtf8(std::wstring(name.data(), len)), type});
+    LONG rc = RegEnumValueW(opened, i, name.data(), &nameLen, nullptr, &type, data.data(), &dataLen);
+    if (rc == ERROR_MORE_DATA) {
+      data.resize(dataLen);
+      nameLen = static_cast<DWORD>(name.size());
+      dataLen = static_cast<DWORD>(data.size());
+      rc = RegEnumValueW(opened, i, name.data(), &nameLen, nullptr, &type, data.data(), &dataLen);
+    }
+    if (rc != ERROR_SUCCESS) break;
+    out.push_back({wideToUtf8(std::wstring(name.data(), nameLen)), type, std::vector<uint8_t>(data.begin(), data.begin() + dataLen)});
   }
   RegCloseKey(opened);
   return out;
