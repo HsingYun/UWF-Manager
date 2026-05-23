@@ -221,12 +221,17 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     // UWF_RegistryFilter 的两个全局持久化开关——无对应 uwfmgr CLI，cmd 留空。
     if (const auto v = t->pendingPersistDomainSecretKey()) {
       m_changes.setPersistDomainSecretKey = *v;
-      m_changeCmds.push_back(
-          {I18n::tr("· %1 persistence %2").arg(QStringLiteral("DomainSecretKey"), *v ? I18n::tr("Enable") : I18n::tr("Disable")).toStdString(), ""});
+      m_changeCmds.push_back({I18n::tr("· %1 persistence %2")
+                                  .arg(I18n::tr("Domain Secret Key (DomainSecretKey)"), *v ? I18n::tr("Enable") : I18n::tr("Disable"))
+                                  .toStdString(),
+                              ""});
     }
     if (const auto v = t->pendingPersistTSCAL()) {
       m_changes.setPersistTSCAL = *v;
-      m_changeCmds.push_back({I18n::tr("· %1 persistence %2").arg(QStringLiteral("TSCAL"), *v ? I18n::tr("Enable") : I18n::tr("Disable")).toStdString(), ""});
+      m_changeCmds.push_back({I18n::tr("· %1 persistence %2")
+                                  .arg(I18n::tr("Terminal Services Client Access License (TSCAL)"), *v ? I18n::tr("Enable") : I18n::tr("Disable"))
+                                  .toStdString(),
+                              ""});
     }
   }
 
@@ -618,11 +623,13 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
           if (m_registry.setPersistFlags(*next, dsk, tscal, &e)) {
             if (m_changes.setPersistDomainSecretKey)
               note(I18n::tr("✓ %1 persistence: %2")
-                       .arg(QStringLiteral("DomainSecretKey"), *m_changes.setPersistDomainSecretKey ? I18n::tr("Enabled") : I18n::tr("Disabled"))
+                       .arg(I18n::tr("Domain Secret Key (DomainSecretKey)"),
+                            *m_changes.setPersistDomainSecretKey ? I18n::tr("Enabled") : I18n::tr("Disabled"))
                        .toStdString());
             if (m_changes.setPersistTSCAL)
               note(I18n::tr("✓ %1 persistence: %2")
-                       .arg(QStringLiteral("TSCAL"), *m_changes.setPersistTSCAL ? I18n::tr("Enabled") : I18n::tr("Disabled"))
+                       .arg(I18n::tr("Terminal Services Client Access License (TSCAL)"),
+                            *m_changes.setPersistTSCAL ? I18n::tr("Enabled") : I18n::tr("Disabled"))
                        .toStdString());
           } else {
             note(I18n::tr("✘ Failed to update registry persistence switches: %1").arg(QString::fromStdString(e)).toStdString());

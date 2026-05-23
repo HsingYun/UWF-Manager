@@ -74,7 +74,6 @@ namespace {
 // 走 app font，避免 QMessageBox 的中文渲染糊问题）。
 using uwf::ui::dialogs::confirm;
 using uwf::ui::dialogs::confirmCommit;
-using uwf::ui::dialogs::information;
 using uwf::ui::dialogs::warning;
 
 // 在作用域内暂停一个 QTimer，离开作用域时恢复（仅当它原本就在运行）。给 commit
@@ -121,12 +120,15 @@ class ToolbarExtIcon : public QObject {
   }
 };
 
-// 批量 CommitFile 结果里单条文件的记录（非 Ok 才进这里）。
+// 批量提交 / 删除结果里单个目标的记录——成功、跳过、失败全都进这里。
 struct CommitReportRow {
-  QString category;   // "跳过" / "失败"
-  QString path;       // 完整文件路径
-  QString errorCode;  // "0x80041001" 之类，或 "-" 表示无 HRESULT
-  QString reason;     // 面向普通用户的中文解释
+  QString category;   // "成功" / "跳过" / "失败"
+  QString path;       // 完整路径 / 注册表键
+  QString errorCode;  // "0x80041001" 之类，成功为 "-"
+  QString reason;     // 面向普通用户的解释，成功为 "-"
+  // 仅删除操作填充：执行前 / 后目标是否存在。提交操作留 nullopt，结果表不显示这两列。
+  std::optional<bool> existedBefore;
+  std::optional<bool> existsAfter;
 };
 
 // 一次注册表递归提交 / 删除批处理里的单个目标。
@@ -141,14 +143,19 @@ struct RegCommitTarget {
 QString explainCommitFailure(int32_t hresult, uint32_t returnValue) {
   if (hresult != 0) {
     switch (uwf::WmiError(hresult).code()) {
+      // WBEM_E_FAILED（0x80041001）是一般性失败码，没有确定原因。实测最常见
+      // 的一种诱因：目标被其他进程占着 handle（例如资源管理器正在浏览该目录、
+      // 文本编辑器打开了文件、AV 在扫描），UWF CommitFileDeletion 看到非
+      // 0 引用计数就拒。措辞要带"可能"避免误导——其它原因（权限、UWF 内部
+      // 状态等）也会落到同一个 HRESULT，无法仅凭代码区分。
       case uwf::WmiErrorCode::Failed:
-        return I18n::tr("The file is in use by another process and cannot be saved right now.");
+        return I18n::tr("The operation failed. The target may be in use by another process (e.g. an Explorer window browsing the folder, or the file is open). Close any program holding it and try again.");
       case uwf::WmiErrorCode::NotFound:
-        return I18n::tr("The file has no pending changes; nothing to save.");
+        return I18n::tr("The target was not found; there is nothing in the overlay to commit.");
       case uwf::WmiErrorCode::InvalidParameter:
-        return I18n::tr("The path is invalid or improperly formatted.");
+        return I18n::tr("A parameter was rejected by the system (invalid path or argument).");
       default:
-        return I18n::tr("System call failed (see log for details).");
+        return I18n::tr("The operation failed (see log for details).");
     }
   }
   if (returnValue != 0) return I18n::tr("Operation rejected (code %1).").arg(returnValue);
@@ -162,98 +169,169 @@ QString formatErrorCode(int32_t hresult, uint32_t returnValue) {
   return "-";
 }
 
-// 结果对话框：四列表格（类别/路径/错误码/原因），可排序、可选中、
-// Ctrl+C 复制选中区、右键菜单"复制选中/复制全部"、底部"复制全部"按钮。
-// 当 rows 为空（全成功）时：不渲染表格和"复制全部"按钮，只保留标题+汇总+关闭。
-// 用普通 QDialog 而不是 QMessageBox，避免 Windows 的提示音。
-void showCommitReport(QWidget* parent, int okCount, const QList<CommitReportRow>& rows, int canceledRemaining = 0) {
+// 结果对话框：每次提交 / 删除后都弹出，无论成功失败都列出全部目标。
+// 列：类别 / 路径 / [删除操作额外的"执行前存在""执行后存在"] / 错误码 / 原因。
+// 大批量（十万条级）分页展示，每页 kReportPageSize 行。用普通 QDialog 而非
+// QMessageBox，避免 Windows 提示音。
+void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int canceledRemaining = 0) {
+  constexpr int kReportPageSize = 200;
+
+  // 删除操作才填了"执行前 / 后是否存在"；提交操作为 nullopt，那两列不出现。
+  // 提前算：决定要不要多两列、影响默认窗宽。下方表头处复用同一份判定。
+  const bool showExistence = !rows.isEmpty() && rows.front().existedBefore.has_value();
+
   QDialog dlg(parent);
   dlg.setWindowTitle(canceledRemaining > 0 ? I18n::tr("Commit canceled") : I18n::tr("Commit result"));
-  const bool hasRows = !rows.isEmpty();
-  if (hasRows)
-    dlg.resize(1100, 480);
-  else
-    dlg.resize(420, 140);
+  dlg.resize(showExistence ? 1300 : 1180, 520);
   auto* lay = new QVBoxLayout(&dlg);
 
+  const QString okLabel = I18n::tr("Succeeded");
   const QString skipLabel = I18n::tr("Skipped");
-  int skipN = 0, failN = 0;
+  int okN = 0, skipN = 0, failN = 0;
   for (const auto& r : rows) {
-    if (r.category == skipLabel)
+    if (r.category == okLabel)
+      ++okN;
+    else if (r.category == skipLabel)
       ++skipN;
     else
       ++failN;
   }
-  QString summaryText;
-  if (hasRows) {
-    summaryText = I18n::tr("%1 succeeded; %2 skipped; %3 failed.").arg(okCount).arg(skipN).arg(failN);
-  } else {
-    summaryText = I18n::tr("%1 items committed successfully.").arg(okCount);
-  }
-  if (canceledRemaining > 0) {
-    summaryText += I18n::tr("\nCanceled by user; %1 entries not processed.").arg(canceledRemaining);
-  }
+  QString summaryText = I18n::tr("%1 succeeded; %2 skipped; %3 failed.").arg(okN).arg(skipN).arg(failN);
+  if (canceledRemaining > 0) summaryText += I18n::tr("\nCanceled by user; %1 entries not processed.").arg(canceledRemaining);
   auto* summary = new QLabel(summaryText);
   summary->setTextInteractionFlags(Qt::TextSelectableByMouse);
   lay->addWidget(summary);
 
-  QTableWidget* table = nullptr;
-  if (hasRows) {
-    table = new QTableWidget(static_cast<int>(rows.size()), 4, &dlg);
-    table->setHorizontalHeaderLabels({I18n::tr("Category"), I18n::tr("Path"), I18n::tr("Error code"), I18n::tr("Reason")});
-    table->verticalHeader()->setVisible(false);
-    table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-    table->setSelectionBehavior(QAbstractItemView::SelectRows);
-    table->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    table->setTextElideMode(Qt::ElideMiddle);
-    auto* hh = table->horizontalHeader();
-    hh->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    hh->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    hh->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    hh->setSectionResizeMode(3, QHeaderView::ResizeToContents);
-    hh->setStretchLastSection(false);
-    table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+  QStringList headers{I18n::tr("Category"), I18n::tr("Path")};
+  if (showExistence) headers << I18n::tr("Existed before") << I18n::tr("Exists after");
+  headers << I18n::tr("Error code") << I18n::tr("Reason");
+  const int colCount = static_cast<int>(headers.size());
 
-    for (int i = 0; i < rows.size(); ++i) {
-      table->setItem(i, 0, new QTableWidgetItem(rows[i].category));
-      auto* pathItem = new QTableWidgetItem(rows[i].path);
-      pathItem->setToolTip(rows[i].path);
-      table->setItem(i, 1, pathItem);
-      table->setItem(i, 2, new QTableWidgetItem(rows[i].errorCode));
-      auto* reasonItem = new QTableWidgetItem(rows[i].reason);
-      reasonItem->setToolTip(rows[i].reason);
-      table->setItem(i, 3, reasonItem);
-    }
-    table->setSortingEnabled(true);
-    lay->addWidget(table, 1);
-
-    // Ctrl+C 复制选中
-    auto* copyShortcut = new QShortcut(QKeySequence::Copy, table);
-    copyShortcut->setContext(Qt::WidgetShortcut);
-    QObject::connect(copyShortcut, &QShortcut::activated, [table]() {
-      const auto txt = tableSelectionToText(table);
-      if (!txt.isEmpty()) QGuiApplication::clipboard()->setText(txt);
-    });
-
-    // 右键菜单
-    table->setContextMenuPolicy(Qt::CustomContextMenu);
-    QObject::connect(table, &QWidget::customContextMenuRequested, [table](const QPoint& pos) {
-      QMenu menu;
-      auto* copySel = menu.addAction(I18n::tr("Copy selected rows"));
-      auto* copyAll = menu.addAction(I18n::tr("Copy all"));
-      const bool hasSel = !table->selectedRanges().isEmpty();
-      copySel->setEnabled(hasSel);
-      QObject::connect(copySel, &QAction::triggered, [table]() { QGuiApplication::clipboard()->setText(tableSelectionToText(table)); });
-      QObject::connect(copyAll, &QAction::triggered, [table]() { QGuiApplication::clipboard()->setText(tableAllToText(table)); });
-      menu.exec(table->viewport()->mapToGlobal(pos));
-    });
+  auto* table = new QTableWidget(0, colCount, &dlg);
+  table->setHorizontalHeaderLabels(headers);
+  table->verticalHeader()->setVisible(false);
+  table->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  table->setSelectionBehavior(QAbstractItemView::SelectRows);
+  table->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  table->setTextElideMode(Qt::ElideMiddle);
+  table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+  auto* hh = table->horizontalHeader();
+  // 全部 Interactive：QHeaderView 文档明确 Stretch / ResizeToContents 都禁止用户拖动
+  // 列宽；只有 Interactive / Fixed 让用户拖。给每列一个合理初值（按内容典型宽度），
+  // 路径列默认给得最宽。Reason 不能再用 ResizeToContents——它有时是一长串中文
+  // （"目标可能正被其他程序占用…"）会把整张表撑爆，挤掉路径列变成 "C..."。
+  // 横向滚动模式已开（ScrollPerPixel），列宽总和 > 表宽时用户可以横向滚动看全。
+  hh->setSectionResizeMode(QHeaderView::Interactive);
+  hh->setStretchLastSection(false);
+  int initialCol = 0;
+  hh->resizeSection(initialCol++, 70);   // Category：「成功」/「跳过」/「失败」
+  hh->resizeSection(initialCol++, 520);  // Path：大头——典型 Windows 路径
+  if (showExistence) {
+    hh->resizeSection(initialCol++, 100);  // Existed before：「是」/「否」+ 表头宽度
+    hh->resizeSection(initialCol++, 100);  // Exists after
   }
+  hh->resizeSection(initialCol++, 120);  // Error code：「0x80041001」
+  hh->resizeSection(initialCol++, 360);  // Reason：可能很长，给 360 起；用户可拖宽
+  lay->addWidget(table, 1);
+
+  const QString yes = I18n::tr("Yes");
+  const QString no = I18n::tr("No");
+  const int pageCount = rows.isEmpty() ? 1 : (static_cast<int>(rows.size()) + kReportPageSize - 1) / kReportPageSize;
+
+  auto fillPage = [&](int page) {
+    const int start = page * kReportPageSize;
+    const int end = std::min<int>(start + kReportPageSize, static_cast<int>(rows.size()));
+    table->setRowCount(end - start);
+    for (int i = start; i < end; ++i) {
+      const auto& r = rows[i];
+      const int vr = i - start;
+      int c = 0;
+      table->setItem(vr, c++, new QTableWidgetItem(r.category));
+      auto* pathItem = new QTableWidgetItem(r.path);
+      pathItem->setToolTip(r.path);
+      table->setItem(vr, c++, pathItem);
+      if (showExistence) {
+        table->setItem(vr, c++, new QTableWidgetItem(r.existedBefore.value_or(false) ? yes : no));
+        table->setItem(vr, c++, new QTableWidgetItem(r.existsAfter.value_or(false) ? yes : no));
+      }
+      table->setItem(vr, c++, new QTableWidgetItem(r.errorCode));
+      auto* reasonItem = new QTableWidgetItem(r.reason);
+      reasonItem->setToolTip(r.reason);
+      table->setItem(vr, c++, reasonItem);
+    }
+  };
+
+  // 分页栏常驻显示——即使只有一页也保留，让"分页 + 总条数"这两条信息一直可见，
+  // 同时和 LogViewerDialog 的体感一致。按钮按状态置灰，标签固定写"第 X / Y 页 · 共 N 条"。
+  int currentPage = 0;
+  auto* pageBar = new QHBoxLayout();
+  auto* prevBtn = new QPushButton(I18n::tr("Previous page"), &dlg);
+  auto* nextBtn = new QPushButton(I18n::tr("Next page"), &dlg);
+  auto* pageLabel = new QLabel(&dlg);
+  pageBar->addStretch();
+  pageBar->addWidget(prevBtn);
+  pageBar->addWidget(pageLabel);
+  pageBar->addWidget(nextBtn);
+  pageBar->addStretch();
+  lay->addLayout(pageBar);
+
+  const int totalRows = static_cast<int>(rows.size());
+  auto refreshPage = [&]() {
+    fillPage(currentPage);
+    pageLabel->setText(I18n::tr("Page %1 / %2 · %3 entries total").arg(currentPage + 1).arg(pageCount).arg(totalRows));
+    prevBtn->setEnabled(currentPage > 0);
+    nextBtn->setEnabled(currentPage + 1 < pageCount);
+  };
+  QObject::connect(prevBtn, &QPushButton::clicked, &dlg, [&] {
+    if (currentPage > 0) {
+      --currentPage;
+      refreshPage();
+    }
+  });
+  QObject::connect(nextBtn, &QPushButton::clicked, &dlg, [&] {
+    if (currentPage + 1 < pageCount) {
+      ++currentPage;
+      refreshPage();
+    }
+  });
+  refreshPage();
+
+  // "复制全部"复制所有行（不止当前页），直接从 rows 拼 TSV。
+  auto allRowsToText = [&] {
+    QString out = headers.join('\t');
+    for (const auto& r : rows) {
+      out += '\n' + r.category + '\t' + r.path;
+      if (showExistence) {
+        out += '\t';
+        out += r.existedBefore.value_or(false) ? yes : no;
+        out += '\t';
+        out += r.existsAfter.value_or(false) ? yes : no;
+      }
+      out += '\t' + r.errorCode + '\t' + r.reason;
+    }
+    return out;
+  };
+
+  auto* copyShortcut = new QShortcut(QKeySequence::Copy, table);
+  copyShortcut->setContext(Qt::WidgetShortcut);
+  QObject::connect(copyShortcut, &QShortcut::activated, table, [table] {
+    const auto txt = tableSelectionToText(table);
+    if (!txt.isEmpty()) QGuiApplication::clipboard()->setText(txt);
+  });
+  table->setContextMenuPolicy(Qt::CustomContextMenu);
+  QObject::connect(table, &QWidget::customContextMenuRequested, table, [table, allRowsToText](const QPoint& pos) {
+    QMenu menu;
+    auto* copySel = menu.addAction(I18n::tr("Copy selected rows"));
+    auto* copyAll = menu.addAction(I18n::tr("Copy all"));
+    copySel->setEnabled(!table->selectedRanges().isEmpty());
+    QObject::connect(copySel, &QAction::triggered, [table] { QGuiApplication::clipboard()->setText(tableSelectionToText(table)); });
+    QObject::connect(copyAll, &QAction::triggered, [allRowsToText] { QGuiApplication::clipboard()->setText(allRowsToText()); });
+    menu.exec(table->viewport()->mapToGlobal(pos));
+  });
 
   auto* btns = new QDialogButtonBox;
-  if (table) {
-    const auto* copyAllBtn = btns->addButton(I18n::tr("Copy all"), QDialogButtonBox::ActionRole);
-    QObject::connect(copyAllBtn, &QPushButton::clicked, [table]() { QGuiApplication::clipboard()->setText(tableAllToText(table)); });
-  }
+  const auto* copyAllBtn = btns->addButton(I18n::tr("Copy all"), QDialogButtonBox::ActionRole);
+  QObject::connect(copyAllBtn, &QPushButton::clicked, &dlg, [allRowsToText] { QGuiApplication::clipboard()->setText(allRowsToText()); });
   const auto* closeBtn = btns->addButton(I18n::tr("Close"), QDialogButtonBox::AcceptRole);
   QObject::connect(closeBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
   lay->addWidget(btns);
@@ -868,6 +946,29 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
   const auto type = ev->type();
   // 屏蔽原生 tooltip 气泡：截停 ToolTip 事件，说明文字只在右下角面板里。
   if (type == QEvent::ToolTip) return true;
+
+  // QMenu 上的 QAction 不是 QWidget——下面的 parent-toolTip 链拿不到它；落到
+  // QMenu 自身上又只会走出菜单按钮的 toolTip（不是当前悬停的那一项）。这里专门
+  // 拦菜单的悬停事件：用 menu->activeAction() 反查当前选中项，把它显式设置过的
+  // toolTip 推到提示框。判定"显式设置"= toolTip() != text()——Qt 默认把未设置的
+  // toolTip 回落到 text()，相同时把同一句话再推一次没有价值。
+  if (auto* menu = qobject_cast<QMenu*>(obj)) {
+    if (type == QEvent::MouseMove || type == QEvent::HoverMove || type == QEvent::Enter || type == QEvent::HoverEnter) {
+      const QAction* act = menu->activeAction();
+      const QString tip = act ? act->toolTip() : QString();
+      if (act && !tip.isEmpty() && tip != act->text()) {
+        if (m_hoverClearTimer) m_hoverClearTimer->stop();
+        m_hoverHint->setText(tip);
+      } else if (m_hoverClearTimer) {
+        // 当前项没有专门 toolTip：让面板回到默认（用 clear timer 抗闪烁）。
+        m_hoverClearTimer->start();
+      }
+    } else if (type == QEvent::Leave || type == QEvent::HoverLeave || type == QEvent::Hide) {
+      if (m_hoverClearTimer) m_hoverClearTimer->start();
+    }
+    return QMainWindow::eventFilter(obj, ev);
+  }
+
   if (type == QEvent::Enter || type == QEvent::HoverEnter || type == QEvent::MouseMove || type == QEvent::HoverMove) {
     auto* w = qobject_cast<QWidget*>(obj);
     if (!w) return QMainWindow::eventFilter(obj, ev);
@@ -1286,10 +1387,10 @@ void MainWindow::showAbout() {
   auto* version = new QLabel(&dlg);
   version->setTextFormat(Qt::RichText);
   version->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  // 应用版本后附运行时 Qt 版本，便于诊断。"powered by Qt …" 不进 tr——它是
-  // Qt 官方品牌标语、版本号也无需翻译，且避免改动既有翻译条目 "Version %1"。
+  // 版本号与 "powered by Qt …" 都不进 tr：版本号无需翻译，"powered by Qt" 是
+  // Qt 官方品牌标语。
   const QString verText =
-      I18n::tr("Version %1").arg(QString::fromLatin1(UWF_VER_STRING)) + QStringLiteral(" · powered by Qt %1").arg(QString::fromLatin1(qVersion()));
+      QStringLiteral("Version %1").arg(QString::fromLatin1(UWF_VER_STRING)) + QStringLiteral(" · powered by Qt %1").arg(QString::fromLatin1(qVersion()));
   version->setText(QStringLiteral("<span style=\"color:%1\">%2</span>").arg(ThemeManager::instance().color(Sem::FgMuted).name(), verText));
   titleBox->addWidget(version);
 
@@ -1393,8 +1494,8 @@ void MainWindow::safeRestart() {
   }
 }
 
-template <typename Target, typename DisplayFn, typename CommitFn>
-void MainWindow::runCommitBatch(const QString& progressTitle, const QList<Target>& targets, DisplayFn displayOf, CommitFn commitOne) {
+template <typename Target, typename DisplayFn, typename CommitFn, typename ExistsFn>
+void MainWindow::runCommitBatch(const QString& progressTitle, const QList<Target>& targets, DisplayFn displayOf, CommitFn commitOne, ExistsFn existsFn) {
   const int total = static_cast<int>(targets.size());
 
   // 进度条只在多目标时弹；单目标一两次 WMI 调用，弹窗反因 show 计时 / autoClose
@@ -1411,9 +1512,12 @@ void MainWindow::runCommitBatch(const QString& progressTitle, const QList<Target
     Q_ASSERT(progress->windowModality() == Qt::WindowModal);
   }
 
-  int okCount = 0;
+  // existsFn 为 decltype(nullptr) 即调用方（提交操作）未传——整段 constexpr 跳过；
+  // 删除操作传入它，在 commit 前后各探一次目标是否存在。
+  constexpr bool kHasExists = !std::is_same_v<ExistsFn, decltype(nullptr)>;
+
   bool canceled = false;
-  QList<CommitReportRow> nonOkRows;
+  QList<CommitReportRow> allRows;
   for (int i = 0; i < total; ++i) {
     if (progress) {
       progress->setValue(i);
@@ -1424,20 +1528,32 @@ void MainWindow::runCommitBatch(const QString& progressTitle, const QList<Target
       const QString d = displayOf(targets[i]);
       progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(total).arg(d.size() > 80 ? ("…" + d.right(79)) : d));
     }
+    std::optional<bool> existedBefore, existsAfter;
+    if constexpr (kHasExists) existedBefore = existsFn(targets[i]);
     const auto res = commitOne(targets[i]);
+    if constexpr (kHasExists) existsAfter = existsFn(targets[i]);
+
+    CommitReportRow row;
+    row.path = displayOf(targets[i]);
+    row.existedBefore = existedBefore;
+    row.existsAfter = existsAfter;
     if (res.outcome == CommitOutcome::Ok) {
-      ++okCount;
+      row.category = I18n::tr("Succeeded");
+      row.errorCode = QStringLiteral("-");
+      row.reason = QStringLiteral("-");
     } else {
-      nonOkRows.append({res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed"), displayOf(targets[i]),
-                        formatErrorCode(res.hresult, res.returnValue), explainCommitFailure(res.hresult, res.returnValue)});
+      row.category = res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed");
+      row.errorCode = formatErrorCode(res.hresult, res.returnValue);
+      row.reason = explainCommitFailure(res.hresult, res.returnValue);
     }
+    allRows.append(std::move(row));
   }
   if (progress) {
     progress->setValue(total);
     progress->close();
   }
-  const int untouched = canceled ? (total - okCount - static_cast<int>(nonOkRows.size())) : 0;
-  showCommitReport(this, okCount, nonOkRows, untouched);
+  const int untouched = canceled ? (total - static_cast<int>(allRows.size())) : 0;
+  showCommitReport(this, allRows, untouched);
 }
 
 void MainWindow::commitFilePath(const QString& path) {
@@ -1447,6 +1563,14 @@ void MainWindow::commitFilePath(const QString& path) {
   // 不受窗口模态约束，可能在 commit 半途触发、对同一个 m_writeSession 发起重入
   // WMI 调用。整段 commit 暂停该定时器，离开作用域自动恢复。
   const ScopedTimerPause usagePause(m_usageTimer);
+
+  // 标题 / heading 提前算出来：用户面前的前置校验（排除列表、空目录等）失败时
+  // 复用同一个 confirmCommit 版式，"继续"置灰、原因塞进警示区——和成功路径走
+  // 一致的视觉语言，不再用一个单独的 warning() 弹窗打断。
+  const QFileInfo fi(path);
+  const bool isDir = fi.isDir();
+  const QString title = I18n::tr("Commit to disk");
+  const QString heading = isDir ? I18n::tr("Commit this folder's overlay changes to disk") : I18n::tr("Commit this file's overlay changes to disk");
 
   // 从路径解析盘符，定位到对应的 next-session VolumeRow。
   const QString dl = extractDriveLetter(path);
@@ -1467,23 +1591,18 @@ void MainWindow::commitFilePath(const QString& path) {
     return;
   }
 
-  // 排除列表用 volumeName (Win32_Volume.DeviceID)
-  // 作键，按当前会话的运行态来判断。
+  // 排除列表用 volumeName (Win32_Volume.DeviceID) 作键，按当前会话的运行态判断。
   if (auto it = m_snapshot.current.fileExclusions.find(row->volumeName); it != m_snapshot.current.fileExclusions.end()) {
     const std::string hit = findCoveringExclusion(it->second, path.toStdString());
     if (!hit.empty()) {
-      warning(this, I18n::tr("Commit rejected"),
-              I18n::tr("This path is in the file exclusion list. UWF does not write it to the overlay, so committing it to disk is neither needed "
-                       "nor possible.\n\nTarget: %1\nExclusion: %2")
-                  .arg(path, QString::fromStdString(hit)));
+      confirmCommit(this, title, heading, path, I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
+                    /*allowContinue=*/false);
       return;
     }
   }
 
   // UWF_Volume.CommitFile 只认单个文件条目；给目录会返回 WBEM_E_NOT_FOUND。
   // 所以目录提交 = 递归遍历目录下所有文件挨个 commit。
-  const QFileInfo fi(path);
-  const bool isDir = fi.isDir();
   QStringList targets;
   if (isDir) {
     QDirIterator it(path, QDir::Files | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
@@ -1493,15 +1612,12 @@ void MainWindow::commitFilePath(const QString& path) {
   }
 
   if (isDir && targets.isEmpty()) {
-    // 没有可提交的文件：复用提交确认对话框的版式，但"继续"按钮置灰，用户只能取消。
-    confirmCommit(this, I18n::tr("Commit to disk"), I18n::tr("Commit this folder's overlay changes to disk"), path,
-                  I18n::tr("No files were found under %1.").arg(path), /*allowContinue=*/false);
+    confirmCommit(this, title, heading, path, I18n::tr("No files were found under %1.").arg(path), /*allowContinue=*/false);
     return;
   }
 
-  const QString heading = isDir ? I18n::tr("Commit this folder's overlay changes to disk") : I18n::tr("Commit this file's overlay changes to disk");
   const QString detail = isDir ? I18n::tr("%1 files in this folder and all its subfolders will be committed.").arg(targets.size()) : QString();
-  if (!confirmCommit(this, I18n::tr("Commit to disk"), heading, path, detail)) return;
+  if (!confirmCommit(this, title, heading, path, detail)) return;
 
   runCommitBatch(
       I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; },
@@ -1523,6 +1639,14 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
   // 同理，整段暂停占用刷新定时器，防止半途重入 m_writeSession。
   const ScopedTimerPause usagePause(m_usageTimer);
 
+  // 标题 / heading 提前算（fi.isDir() 在路径不存在时返回 false，正好作为"按文件
+  // 删除"的默认 heading）。用户面前的前置校验失败统一走 confirmCommit + 灰按钮。
+  const QFileInfo fi(path);
+  const bool isDir = fi.isDir();
+  const QString title = I18n::tr("Delete and commit");
+  const QString heading = isDir ? I18n::tr("Delete this folder and its contents, and commit the deletions to disk")
+                                : I18n::tr("Delete this file, and commit the deletion to disk");
+
   const QString dl = extractDriveLetter(path);
   if (dl.isEmpty()) {
     warning(this, I18n::tr("Commit file deletion failed"), I18n::tr("The path has no drive letter; cannot identify the target volume."));
@@ -1530,10 +1654,9 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
   }
 
   // 核心校验：CommitFileDeletion 由方法自身执行删除，目标（文件或目录）必须**仍
-  // 存在**。不存在就没有可删的东西，提交前直接拒绝。
-  const QFileInfo fi(path);
+  // 存在**。不存在就没有可删的东西——走灰按钮对话框告知。
   if (!fi.exists()) {
-    warning(this, I18n::tr("Commit rejected"), I18n::tr("This path does not exist, so there is nothing to delete.\n\n%1").arg(path));
+    confirmCommit(this, title, heading, path, I18n::tr("This path does not exist, so there is nothing to delete."), /*allowContinue=*/false);
     return;
   }
 
@@ -1553,17 +1676,14 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
   if (auto it = m_snapshot.current.fileExclusions.find(row->volumeName); it != m_snapshot.current.fileExclusions.end()) {
     const std::string hit = findCoveringExclusion(it->second, path.toStdString());
     if (!hit.empty()) {
-      warning(this, I18n::tr("Commit rejected"),
-              I18n::tr("This path is in the file exclusion list. UWF does not track its deletion in the overlay, so committing the deletion is "
-                       "meaningless.\n\nTarget: %1\nExclusion: %2")
-                  .arg(path, QString::fromStdString(hit)));
+      confirmCommit(this, title, heading, path, I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
+                    /*allowContinue=*/false);
       return;
     }
   }
 
   // CommitFileDeletion 不接受非空目录、也不递归——目录删除 = 把子文件、子目录、
   // 目录本身按"最深的先删"收齐，逐个调用；删到某目录时其内容已清空。
-  const bool isDir = fi.isDir();
   QStringList targets;
   int fileCount = 0;
   int subdirCount = 0;
@@ -1580,9 +1700,6 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
     targets << path;
   }
 
-  const QString title = I18n::tr("Delete and commit");
-  const QString heading = isDir ? I18n::tr("Delete this folder and its contents, and commit the deletions to disk")
-                                : I18n::tr("Delete this file, and commit the deletion to disk");
   const QString detail = isDir ? I18n::tr("%1 files and %2 subfolders will be deleted.").arg(fileCount).arg(subdirCount) : QString();
   if (!confirmCommit(this, title, heading, path, detail)) return;
 
@@ -1596,7 +1713,8 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
                                              static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
         }
         return res;
-      });
+      },
+      [](const QString& f) { return QFileInfo::exists(f); });
 }
 
 void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) {
@@ -1612,13 +1730,17 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
   if (normKey.empty()) return;
   const QString keyText = QString::fromStdString(normKey);
 
+  // 标题 / heading / target 文本提前算——失败和成功路径共用。
+  const bool wholeKey = valueName.isEmpty();
+  const QString title = I18n::tr("Commit to disk");
+  const QString heading = wholeKey ? I18n::tr("Commit this registry key and its whole subtree to disk") : I18n::tr("Commit this registry value to disk");
+  const QString target = wholeKey ? keyText : (keyText + " : " + valueName);
+
   // 注册表排除是全局的，比对当前运行会话即可。覆盖 = 键相等或为其祖先。
   const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
   if (!hit.empty()) {
-    warning(this, I18n::tr("Commit rejected"),
-            I18n::tr("This key is in the registry exclusion list. UWF does not write it to the overlay, so committing it to disk is neither "
-                     "needed nor possible.\n\nTarget: %1\nExclusion: %2")
-                .arg(keyText, QString::fromStdString(hit)));
+    confirmCommit(this, title, heading, target, I18n::tr("This key is in the registry exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
+                  /*allowContinue=*/false);
     return;
   }
 
@@ -1627,14 +1749,13 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
   QList<RegCommitTarget> targets;
   if (!valueName.isEmpty()) {
     if (!regkey::valueExists(normKey, valueName.toStdString())) {
-      warning(this, I18n::tr("Commit rejected"),
-              I18n::tr("This registry value does not exist, so there is nothing to commit.\n\n%1").arg(keyText + " : " + valueName));
+      confirmCommit(this, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to commit."), /*allowContinue=*/false);
       return;
     }
-    targets.append({normKey, valueName.toStdString(), keyText + " : " + valueName});
+    targets.append({normKey, valueName.toStdString(), target});
   } else {
     if (!regkey::keyExists(normKey)) {
-      warning(this, I18n::tr("Commit rejected"), I18n::tr("This registry key does not exist, so there is nothing to commit.\n\n%1").arg(keyText));
+      confirmCommit(this, title, heading, target, I18n::tr("This registry key does not exist, so there is nothing to commit."), /*allowContinue=*/false);
       return;
     }
     for (const auto& k : regkey::collectKeyTree(normKey)) {
@@ -1644,16 +1765,14 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
       }
     }
     if (targets.isEmpty()) {
-      information(this, I18n::tr("Nothing to commit"), I18n::tr("This registry key and its subkeys contain no values to commit.\n\n%1").arg(keyText));
+      confirmCommit(this, title, heading, target, I18n::tr("This registry key and its subkeys contain no values to commit."), /*allowContinue=*/false);
       return;
     }
   }
   const int total = static_cast<int>(targets.size());
 
-  const bool wholeKey = valueName.isEmpty();
-  const QString heading = wholeKey ? I18n::tr("Commit this registry key and its whole subtree to disk") : I18n::tr("Commit this registry value to disk");
   const QString detail = wholeKey ? I18n::tr("%1 values in this key and all its subkeys will be committed.").arg(total) : QString();
-  if (!confirmCommit(this, I18n::tr("Commit to disk"), heading, wholeKey ? keyText : (keyText + " : " + valueName), detail)) return;
+  if (!confirmCommit(this, title, heading, target, detail)) return;
 
   std::string err;
   auto filters = m_registry.readAll(&err);
@@ -1690,12 +1809,17 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
   if (normKey.empty()) return;
   const QString keyText = QString::fromStdString(normKey);
 
+  // 标题 / heading / target 提前算——失败和成功路径共用同一个 confirmCommit 版式。
+  const bool wholeKey = valueName.isEmpty();
+  const QString title = I18n::tr("Delete and commit");
+  const QString heading = wholeKey ? I18n::tr("Delete this registry key and its whole subtree, and commit the deletions to disk")
+                                   : I18n::tr("Delete this registry value, and commit the deletion to disk");
+  const QString target = wholeKey ? keyText : (keyText + " : " + valueName);
+
   const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
   if (!hit.empty()) {
-    warning(this, I18n::tr("Commit rejected"),
-            I18n::tr("This key is in the registry exclusion list. UWF does not write it to the overlay, so committing its deletion to disk is "
-                     "neither needed nor possible.\n\nTarget: %1\nExclusion: %2")
-                .arg(keyText, QString::fromStdString(hit)));
+    confirmCommit(this, title, heading, target, I18n::tr("This key is in the registry exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
+                  /*allowContinue=*/false);
     return;
   }
 
@@ -1706,14 +1830,13 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
   QList<RegCommitTarget> targets;
   if (!valueName.isEmpty()) {
     if (!regkey::valueExists(normKey, valueName.toStdString())) {
-      warning(this, I18n::tr("Commit rejected"),
-              I18n::tr("This registry value does not exist, so there is nothing to delete.\n\n%1").arg(keyText + " : " + valueName));
+      confirmCommit(this, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to delete."), /*allowContinue=*/false);
       return;
     }
-    targets.append({normKey, valueName.toStdString(), keyText + " : " + valueName});
+    targets.append({normKey, valueName.toStdString(), target});
   } else {
     if (!regkey::keyExists(normKey)) {
-      warning(this, I18n::tr("Commit rejected"), I18n::tr("This registry key does not exist, so there is nothing to delete.\n\n%1").arg(keyText));
+      confirmCommit(this, title, heading, target, I18n::tr("This registry key does not exist, so there is nothing to delete."), /*allowContinue=*/false);
       return;
     }
     for (const auto& k : regkey::collectKeyTree(normKey)) {
@@ -1722,11 +1845,8 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
   }
   const int total = static_cast<int>(targets.size());
 
-  const bool wholeKey = valueName.isEmpty();
-  const QString heading = wholeKey ? I18n::tr("Delete this registry key and its whole subtree, and commit the deletions to disk")
-                                   : I18n::tr("Delete this registry value, and commit the deletion to disk");
   const QString detail = wholeKey ? I18n::tr("%1 keys, including all their values and subkeys, will be deleted.").arg(total) : QString();
-  if (!confirmCommit(this, I18n::tr("Delete and commit"), heading, wholeKey ? keyText : (keyText + " : " + valueName), detail)) return;
+  if (!confirmCommit(this, title, heading, target, detail)) return;
 
   std::string err;
   auto filters = m_registry.readAll(&err);
@@ -1750,7 +1870,8 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
                                              static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
         }
         return res;
-      });
+      },
+      [](const RegCommitTarget& t) { return t.valueName.empty() ? regkey::keyExists(t.key) : regkey::valueExists(t.key, t.valueName); });
 }
 
 }  // namespace uwf::ui

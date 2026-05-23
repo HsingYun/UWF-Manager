@@ -77,11 +77,12 @@ class MainWindow : public QMainWindow {
   void refreshUsage();
 
   // commitFilePath / commitFileDeletionPath / commitRegistryKey / commitRegistryDeletionKey
-  // 共用的批处理收尾：>1 个目标弹模态进度条，逐个调用 commitOne，失败项汇总进
-  // showCommitReport。commitOne 返回单个目标的 CommitResult 并自行写失败日志；
-  // displayOf 给出进度条 / 报告里的展示串。模板定义在 .cpp（仅本 TU 内实例化）。
-  template <typename Target, typename DisplayFn, typename CommitFn>
-  void runCommitBatch(const QString& progressTitle, const QList<Target>& targets, DisplayFn displayOf, CommitFn commitOne);
+  // 共用的批处理收尾：>1 个目标弹模态进度条，逐个调用 commitOne，全部目标（成功 /
+  // 跳过 / 失败）汇总进 showCommitReport。commitOne 返回单个目标的 CommitResult 并自行
+  // 写失败日志；displayOf 给出进度条 / 报告里的展示串；existsFn 可选——删除操作传入它，
+  // 在 commit 前后各探一次"目标是否存在"，写进结果表。模板定义在 .cpp。
+  template <typename Target, typename DisplayFn, typename CommitFn, typename ExistsFn = decltype(nullptr)>
+  void runCommitBatch(const QString& progressTitle, const QList<Target>& targets, DisplayFn displayOf, CommitFn commitOne, ExistsFn existsFn = {});
 
   QTabWidget* m_tabs = nullptr;
   GlobalStatusPanel* m_global = nullptr;

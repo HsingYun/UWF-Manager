@@ -148,13 +148,13 @@
     </message>
     <message><source>Commit registry changes…</source><translation>提交注册表修改…</translation></message>
     <message>
-        <source>Enter a registry key (and optional value name) and commit changes to the registry.</source>
-        <translation>输入注册表键（可选值名），把修改提交到注册表。</translation>
+        <source>Enter a registry key (and optional value name) and commit changes to the registry. Leaving the value name empty commits every value under the key and all its subkeys (recursively).</source>
+        <translation>输入注册表键（可选值名），把修改提交到注册表。值名留空则递归提交该键及其所有子键中的每一个值。</translation>
     </message>
     <message><source>Delete and commit registry…</source><translation>删除并提交注册表…</translation></message>
     <message>
-        <source>Enter a registry key (and optional value name) to delete, and commit the deletion to the registry.</source>
-        <translation>输入要删除的注册表键（可选值名），把这次删除提交到注册表。</translation>
+        <source>Enter a registry key (and optional value name) to delete, and commit the deletion to the registry. Leaving the value name empty deletes the whole subtree (the key plus all its values and subkeys, recursively).</source>
+        <translation>输入要删除的注册表键（可选值名），把这次删除提交到注册表。值名留空则递归删除整棵子树（该键、它的所有值、以及它所有的子键）。</translation>
     </message>
     <message><source>File exclusions</source><translation>文件排除</translation></message>
     <message>
@@ -345,8 +345,12 @@
     <message><source>Enter a registry key path to add to the exclusion list.</source><translation>手动输入一个注册表键路径加入排除列表。</translation></message>
     <message><source>Add a registry key to the exclusion list, or enable a persistence switch.</source><translation>把一个注册表键加入排除列表，或开启一个持久化开关。</translation></message>
     <message><source>Registry key…</source><translation>注册表键…</translation></message>
-    <message><source>Enable DomainSecretKey</source><translation>开启 DomainSecretKey</translation></message>
-    <message><source>Enable TSCAL</source><translation>开启 TSCAL</translation></message>
+    <!-- 持久化开关名：source 直接写「英文全称 (英文短键)」，中文环境翻成
+         「中文术语 (英文短键)」。列表伪条目 / 添加菜单项 / 应用计划全程共用同一个
+         I18n key，口径一致。菜单项不再带「启用 / Enable」前缀——按钮本身已叫
+         「添加 / Add」，前缀语义重复。 -->
+    <message><source>Domain Secret Key (DomainSecretKey)</source><translation>域机密密钥 (DomainSecretKey)</translation></message>
+    <message><source>Terminal Services Client Access License (TSCAL)</source><translation>终端服务客户端访问许可证 (TSCAL)</translation></message>
     <message><source>Persist the domain secret key (machine account password) across UWF sessions.</source><translation>跨 UWF 会话持久化域机密密钥（计算机账户密码）。</translation></message>
     <message><source>Persist Terminal Services client access licenses across UWF sessions.</source><translation>跨 UWF 会话持久化终端服务客户端访问许可证。</translation></message>
     <message><source>· %1 persistence %2</source><translation>· %1 持久化 %2</translation></message>
@@ -441,20 +445,20 @@ Pending change: %3</source>
 
     <!-- Commit failure explanations -->
     <message>
-        <source>The file is in use by another process and cannot be saved right now.</source>
-        <translation>文件正被其他程序占用，暂时无法保存。</translation>
+        <source>The target was not found; there is nothing in the overlay to commit.</source>
+        <translation>未找到目标，覆盖层中没有可提交的内容。</translation>
     </message>
     <message>
-        <source>The file has no pending changes; nothing to save.</source>
-        <translation>该文件没有改动，无需保存。</translation>
+        <source>A parameter was rejected by the system (invalid path or argument).</source>
+        <translation>系统拒绝了传入的参数（路径或参数非法）。</translation>
     </message>
     <message>
-        <source>The path is invalid or improperly formatted.</source>
-        <translation>路径无效或格式不正确。</translation>
+        <source>The operation failed. The target may be in use by another process (e.g. an Explorer window browsing the folder, or the file is open). Close any program holding it and try again.</source>
+        <translation>操作失败。目标可能正被其他程序占用（如资源管理器正在浏览该目录、文件被某个程序打开）。请关闭占用它的程序后重试。</translation>
     </message>
     <message>
-        <source>System call failed (see log for details).</source>
-        <translation>系统调用失败（详情见日志）。</translation>
+        <source>The operation failed (see log for details).</source>
+        <translation>操作失败（详情见日志）。</translation>
     </message>
     <message><source>Operation rejected (code %1).</source><translation>操作被拒绝（代码 %1）。</translation></message>
     <message><source>Unknown cause.</source><translation>未知原因。</translation></message>
@@ -462,13 +466,13 @@ Pending change: %3</source>
     <!-- Commit report dialog -->
     <message><source>Commit canceled</source><translation>提交已取消</translation></message>
     <message><source>Commit result</source><translation>提交结果</translation></message>
+    <message><source>Succeeded</source><translation>成功</translation></message>
     <message><source>Skipped</source><translation>跳过</translation></message>
     <message><source>Failed</source><translation>失败</translation></message>
     <message>
         <source>%1 succeeded; %2 skipped; %3 failed.</source>
         <translation>成功 %1 个；跳过 %2 个；失败 %3 个。</translation>
     </message>
-    <message><source>%1 items committed successfully.</source><translation>已成功提交 %1 项。</translation></message>
     <message>
         <source>
 Canceled by user; %1 entries not processed.</source>
@@ -477,8 +481,13 @@ Canceled by user; %1 entries not processed.</source>
     </message>
     <message><source>Category</source><translation>类别</translation></message>
     <message><source>Path</source><translation>路径</translation></message>
+    <message><source>Existed before</source><translation>执行前存在</translation></message>
+    <message><source>Exists after</source><translation>执行后存在</translation></message>
     <message><source>Error code</source><translation>错误码</translation></message>
     <message><source>Reason</source><translation>原因</translation></message>
+    <message><source>Previous page</source><translation>上一页</translation></message>
+    <message><source>Next page</source><translation>下一页</translation></message>
+    <message><source>Page %1 / %2 · %3 entries total</source><translation>第 %1 / %2 页 · 共 %3 条</translation></message>
     <message><source>Copy selected rows</source><translation>复制选中行</translation></message>
     <message><source>Copy all</source><translation>复制全部</translation></message>
     <message><source>0 lines</source><translation>0 行</translation></message>
@@ -650,14 +659,10 @@ Continue?</source>
     </message>
     <message><source>Commit rejected</source><translation>提交被拒绝</translation></message>
     <message>
-        <source>This path is in the file exclusion list. UWF does not write it to the overlay, so committing it to disk is neither needed nor possible.
-
-Target: %1
-Exclusion: %2</source>
-        <translation>该路径已在文件排除列表中，UWF 不会把它写入覆盖层，因此也无需（也无法）提交到磁盘：
-
-目标：%1
-排除项：%2</translation>
+        <source>This path is in the file exclusion list.
+Exclusion: %1</source>
+        <translation>此路径在文件排除列表中。
+排除项：%1</translation>
     </message>
     <message><source>Nothing to commit</source><translation>无可提交内容</translation></message>
     <message><source>No files were found under %1.</source><translation>目录 %1 下递归遍历到 0 个文件。</translation></message>
@@ -699,33 +704,15 @@ Exclusion: %2</source>
     <!-- commitFileDeletionPath -->
     <message><source>Commit file deletion failed</source><translation>提交文件删除失败</translation></message>
     <message>
-        <source>This path does not exist, so there is nothing to delete.
-
-%1</source>
-        <translation>该路径不存在，没有可删除的内容。
-
-%1</translation>
-    </message>
-    <message>
-        <source>This path is in the file exclusion list. UWF does not track its deletion in the overlay, so committing the deletion is meaningless.
-
-Target: %1
-Exclusion: %2</source>
-        <translation>该路径已在文件排除列表中，UWF 不会为它维护覆盖层中的删除标记，所以「提交删除」没有意义：
-
-目标：%1
-排除项：%2</translation>
+        <source>This path does not exist, so there is nothing to delete.</source>
+        <translation>此路径不存在，没有可删除的内容。</translation>
     </message>
     <!-- commitRegistryKey -->
     <message>
-        <source>This key is in the registry exclusion list. UWF does not write it to the overlay, so committing it to disk is neither needed nor possible.
-
-Target: %1
-Exclusion: %2</source>
-        <translation>该键已在注册表排除列表中，UWF 不会把它写入覆盖层，因此也无需（也无法）提交到磁盘：
-
-目标：%1
-排除项：%2</translation>
+        <source>This key is in the registry exclusion list.
+Exclusion: %1</source>
+        <translation>此键在注册表排除列表中。
+排除项：%1</translation>
     </message>
     <message>
         <source>Failed to read registry filter: %1</source>
@@ -736,55 +723,25 @@ Exclusion: %2</source>
         <translation>找不到当前会话的注册表筛选记录。</translation>
     </message>
     <message>
-        <source>This registry value does not exist, so there is nothing to commit.
-
-%1</source>
-        <translation>该注册表值不存在，没有内容可提交。
-
-%1</translation>
+        <source>This registry value does not exist, so there is nothing to commit.</source>
+        <translation>此注册表值不存在，没有可提交的内容。</translation>
     </message>
     <message>
-        <source>This registry key does not exist, so there is nothing to commit.
-
-%1</source>
-        <translation>该注册表键不存在，没有内容可提交。
-
-%1</translation>
+        <source>This registry key does not exist, so there is nothing to commit.</source>
+        <translation>此注册表键不存在，没有可提交的内容。</translation>
     </message>
     <message>
-        <source>This registry key and its subkeys contain no values to commit.
-
-%1</source>
-        <translation>该注册表键及其子键中没有可提交的值。
-
-%1</translation>
+        <source>This registry key and its subkeys contain no values to commit.</source>
+        <translation>此注册表键及其子键中没有可提交的值。</translation>
     </message>
     <!-- commitRegistryDeletionKey -->
     <message>
-        <source>This key is in the registry exclusion list. UWF does not write it to the overlay, so committing its deletion to disk is neither needed nor possible.
-
-Target: %1
-Exclusion: %2</source>
-        <translation>该键已在注册表排除列表中，UWF 不会把它写入覆盖层，因此它的删除也无需（也无法）提交到磁盘：
-
-目标：%1
-排除项：%2</translation>
+        <source>This registry value does not exist, so there is nothing to delete.</source>
+        <translation>此注册表值不存在，没有可删除的内容。</translation>
     </message>
     <message>
-        <source>This registry value does not exist, so there is nothing to delete.
-
-%1</source>
-        <translation>该注册表值不存在，没有可删除的内容。
-
-%1</translation>
-    </message>
-    <message>
-        <source>This registry key does not exist, so there is nothing to delete.
-
-%1</source>
-        <translation>该注册表键不存在，没有可删除的内容。
-
-%1</translation>
+        <source>This registry key does not exist, so there is nothing to delete.</source>
+        <translation>此注册表键不存在，没有可删除的内容。</translation>
     </message>
     <!-- showPlan: Export commands button -->
     <message><source>Export commands…</source><translation>导出命令…</translation></message>

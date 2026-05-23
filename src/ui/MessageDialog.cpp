@@ -111,16 +111,18 @@ bool confirmCommit(QWidget* parent, const QString& title, const QString& heading
   targetLabel->setStyleSheet(QString("QLabel { border: 1px solid %1; border-radius: 4px; padding: 8px 10px; }").arg(mutedHex));
   layout->addWidget(targetLabel);
 
-  // 范围说明：次要色弱化；单项操作时 detail 为空，整行不渲染。
-  if (!detail.isEmpty()) {
+  // 范围说明：次要色弱化。allowContinue=false 时 detail 是"无法继续的原因"，
+  // 改放进下方警示横幅醒目展示，这里不再重复渲染。
+  if (!detail.isEmpty() && allowContinue) {
     auto* detailLabel = new QLabel(detail, dlg);
     detailLabel->setWordWrap(true);
     detailLabel->setStyleSheet(QString("color: %1;").arg(mutedHex));
     layout->addWidget(detailLabel);
   }
 
-  // 不可撤销警示——复用全局状态横幅的 warn 样式（橙色），与别处口径一致。
-  auto* warnBanner = new QLabel(I18n::tr("This action cannot be undone."), dlg);
+  // 警示横幅——复用全局状态横幅的 warn 样式（橙色）。可继续时提示"不可撤销"；
+  // "继续"被置灰时改为展示原因（detail），让用户一眼看到为何不能继续。
+  auto* warnBanner = new QLabel(allowContinue ? I18n::tr("This action cannot be undone.") : detail, dlg);
   warnBanner->setObjectName("statusBanner");
   warnBanner->setProperty("level", "warn");
   warnBanner->setWordWrap(true);

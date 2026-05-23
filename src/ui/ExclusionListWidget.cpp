@@ -272,10 +272,18 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
     connect(m_addFileAct, &QAction::triggered, this, &ExclusionListWidget::onAddFile);
     connect(m_addDirAct, &QAction::triggered, this, &ExclusionListWidget::onAddDir);
   } else {
-    m_persistDomainSecretKey.name = QStringLiteral("DomainSecretKey");
-    m_persistTSCAL.name = QStringLiteral("TSCAL");
-    // "添加"是下拉菜单：三选一——手填注册表键 / 开启 DomainSecretKey / 开启
+    // 名字格式固定为「全称 (英文短键)」：中文环境下走 zh_CN.ts 翻译成
+    // 「域机密密钥 (DomainSecretKey)」/「终端服务客户端访问许可证 (TSCAL)」，
+    // 英文环境保留 source 自身的「Domain Secret Key (DomainSecretKey)」/
+    // 「Terminal Services Client Access License (TSCAL)」。isPersistRow / 列表
+    // 展示 / 比较 / 添加菜单项 / 应用计划全程都用同一个 I18n key，口径一致。
+    const QString dskName = I18n::tr("Domain Secret Key (DomainSecretKey)");
+    const QString tscalName = I18n::tr("Terminal Services Client Access License (TSCAL)");
+    m_persistDomainSecretKey.name = dskName;
+    m_persistTSCAL.name = tscalName;
+    // "添加"是下拉菜单：三选一——手填注册表键 / 加入 DomainSecretKey / 加入
     // TSCAL。后两项把 UWF_RegistryFilter 的全局开关当伪条目，模拟普通排除的添加。
+    // 菜单项文本不再带"启用/Enable"前缀——按钮本身已叫"添加"，再叠一层语义重复。
     m_addBtn = new QPushButton(tm.iconWithColor(":/icons/add.svg", btnIconFg), I18n::tr("Add"), this);
     m_addBtn->setObjectName("primaryBtn");
     m_addBtn->setToolTip(I18n::tr("Add a registry key to the exclusion list, or enable a persistence switch."));
@@ -283,9 +291,9 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
     addMenu->setToolTipsVisible(true);
     m_addRegKeyAct = addMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Registry key…"));
     m_addRegKeyAct->setToolTip(I18n::tr("Enter a registry key path to add to the exclusion list."));
-    m_addDomainSecretAct = addMenu->addAction(I18n::tr("Enable DomainSecretKey"));
+    m_addDomainSecretAct = addMenu->addAction(dskName);
     m_addDomainSecretAct->setToolTip(I18n::tr("Persist the domain secret key (machine account password) across UWF sessions."));
-    m_addTscalAct = addMenu->addAction(I18n::tr("Enable TSCAL"));
+    m_addTscalAct = addMenu->addAction(tscalName);
     m_addTscalAct->setToolTip(I18n::tr("Persist Terminal Services client access licenses across UWF sessions."));
     m_addBtn->setMenu(addMenu);
     header->addWidget(m_addBtn);
@@ -732,15 +740,17 @@ void ExclusionListWidget::rebuild() {
   }
   sortList(pending);
   sortList(rest);
-  // 持久化开关伪条目恒排在最前（current 或 next 任一为真才显示）。
-  QStringList display;
+  // 持久化开关伪条目排在各自分组的最前：有改动的进"待应用"段、无改动的进
+  // "保持不变"段——既保证伪条目靠前，又不破坏"有改动的条目整体更靠前"这一背景。
+  QStringList pseudoPending, pseudoRest;
   if (m_kind == Kind::Registry) {
     for (const PersistFlag* f : {&m_persistDomainSecretKey, &m_persistTSCAL}) {
-      if (f->visible()) display << f->name;
+      if (!f->visible()) continue;
+      const bool modified = f->pendingNext.has_value() || f->baseCurrent != f->baseNext;
+      (modified ? pseudoPending : pseudoRest) << f->name;
     }
   }
-  display += pending;
-  display += rest;
+  QStringList display = pseudoPending + pending + pseudoRest + rest;
 
   int added = 0, removed = 0, changed = 0;
 

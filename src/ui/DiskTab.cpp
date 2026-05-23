@@ -171,7 +171,9 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   m_commitDirAct->setToolTip(I18n::tr("Pick a folder and commit overlay changes for every file inside it to disk."));
   if (m_showRegistry) {
     m_commitRegAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Commit registry changes…"));
-    m_commitRegAct->setToolTip(I18n::tr("Enter a registry key (and optional value name) and commit changes to the registry."));
+    m_commitRegAct->setToolTip(
+        I18n::tr("Enter a registry key (and optional value name) and commit changes to the registry. Leaving the value name empty commits every value under the "
+                 "key and all its subkeys (recursively)."));
   }
   commitMenu->addSeparator();
   m_commitFileDeleteAct = commitMenu->addAction(tm.icon(":/icons/file.svg"), I18n::tr("Delete and commit file…"));
@@ -180,7 +182,9 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   m_commitFolderDeleteAct->setToolTip(I18n::tr("Pick a folder to delete (recursively, with everything inside it) and commit the deletions to disk."));
   if (m_showRegistry) {
     m_commitRegDeleteAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Delete and commit registry…"));
-    m_commitRegDeleteAct->setToolTip(I18n::tr("Enter a registry key (and optional value name) to delete, and commit the deletion to the registry."));
+    m_commitRegDeleteAct->setToolTip(I18n::tr(
+        "Enter a registry key (and optional value name) to delete, and commit the deletion to the registry. Leaving the value name empty deletes the whole "
+        "subtree (the key plus all its values and subkeys, recursively)."));
   }
   m_commitBtn->setMenu(commitMenu);
   m_status->addTrailingAction(m_commitBtn);

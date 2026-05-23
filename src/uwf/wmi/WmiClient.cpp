@@ -540,9 +540,17 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
     }
   }
 
-  // 调试：枚举即将发给 ExecMethod 的 inParams 里的字段名 + 类型 + 当前值，
-  // 用于定位 "为什么 WBEM_E_INVALID_PARAMETER" —— 一眼看清 WMI schema 期望
-  // 的字段集与我们传的是否一致。
+  // 调试：枚举即将发给 ExecMethod 的 inParams 里的字段名 + 类型 + 当前值（含
+  // BSTR 的 UTF-16 原始字节十六进制 dump），用于定位 "为什么 WBEM_E_*" —— 一眼
+  // 看清 WMI schema 期望的字段集与我们传的是否一致、字符串里有没有隐藏字符。
+  auto wstrHex = [](const wchar_t* w, size_t len) {
+    std::string out;
+    for (size_t i = 0; i < len; ++i) {
+      if (i > 0) out += ' ';
+      out += std::format("{:04X}", static_cast<unsigned>(w[i]));
+    }
+    return out;
+  };
   if (inParams) {
     std::string dump;
     inParams->BeginEnumeration(WBEM_FLAG_NONSYSTEM_ONLY);
@@ -558,7 +566,13 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
         break;
       }
       if (!dump.empty()) dump += ", ";
-      dump += std::format("{}(vt={}, cim={}, val={})", wideToUtf8(name), static_cast<int>(v.vt), static_cast<int>(ctype), variantToValue(v).toString());
+      if (v.vt == VT_BSTR && v.bstrVal) {
+        const UINT blen = SysStringLen(v.bstrVal);
+        dump += std::format("{}(vt=BSTR, cim={}, len={}, val={}, hex=[{}])", wideToUtf8(name), static_cast<int>(ctype), blen, wideToUtf8(v.bstrVal),
+                            wstrHex(v.bstrVal, blen));
+      } else {
+        dump += std::format("{}(vt={}, cim={}, val={})", wideToUtf8(name), static_cast<int>(v.vt), static_cast<int>(ctype), variantToValue(v).toString());
+      }
       SysFreeString(name);
       VariantClear(&v);
     }
@@ -568,6 +582,10 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
 
   const auto pathW = utf8ToWide(objectPath);
   BSTR pathBstr = SysAllocString(pathW.c_str());
+  // 把 ExecMethod 真正下发的 path BSTR 也按 UTF-16 字节 dump 出来——和 PS 这边
+  // 的 __PATH 字面值比对，定位是不是 Qt → utf8 → wide 来回转换在中间塞了不可见
+  // 字符（BOM / NUL / 半形宽形差异等）。
+  UWF_LOG_D("wmi") << std::format("ExecMethod {} path bytes: len={}, hex=[{}]", methodName, pathW.size(), wstrHex(pathW.c_str(), pathW.size()));
   IWbemClassObject* outParams = nullptr;
   hr = d->services->ExecMethod(pathBstr, methodBstr, 0, nullptr, inParams, &outParams, nullptr);
   SysFreeString(pathBstr);
@@ -578,6 +596,46 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
     result.hresult = static_cast<int32_t>(hr);
     result.error = std::format("ExecMethod {}::{} failed: {}", objectPath, methodName, hrText(hr));
     UWF_LOG_E("wmi") << result.error;
+    // WMI 在 IErrorInfo / IWbemClassObject (error object) 上挂着 provider 返回
+    // 的扩展错误。GetErrorInfo() 拿到的 IErrorInfo 通常能 QI 出 IWbemClassObject
+    // 给出 __ExtendedStatus / Description / Operation / ParameterInfo 等。
+    {
+      IErrorInfo* errInfo = nullptr;
+      if (GetErrorInfo(0, &errInfo) == S_OK && errInfo) {
+        BSTR desc = nullptr;
+        if (errInfo->GetDescription(&desc) == S_OK && desc) {
+          UWF_LOG_E("wmi") << "  IErrorInfo.Description: " << wideToUtf8(desc);
+          SysFreeString(desc);
+        }
+        IWbemClassObject* errObj = nullptr;
+        if (errInfo->QueryInterface(IID_IWbemClassObject, reinterpret_cast<void**>(&errObj)) == S_OK && errObj) {
+          std::string edump;
+          errObj->BeginEnumeration(WBEM_FLAG_NONSYSTEM_ONLY);
+          while (true) {
+            BSTR ename = nullptr;
+            VARIANT ev;
+            CIMTYPE ect = 0;
+            VariantInit(&ev);
+            const HRESULT ehn = errObj->Next(0, &ename, &ev, &ect, nullptr);
+            if (ehn != WBEM_S_NO_ERROR) {
+              if (ename) SysFreeString(ename);
+              VariantClear(&ev);
+              break;
+            }
+            if (!edump.empty()) edump += ", ";
+            edump += std::format("{}={}", wideToUtf8(ename), variantToValue(ev).toString());
+            SysFreeString(ename);
+            VariantClear(&ev);
+          }
+          errObj->EndEnumeration();
+          UWF_LOG_E("wmi") << "  WMI error object: [" << edump << "]";
+          errObj->Release();
+        }
+        errInfo->Release();
+      } else {
+        UWF_LOG_E("wmi") << "  (no extended error info available)";
+      }
+    }
     if (outParams) outParams->Release();
     return result;
   }
