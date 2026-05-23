@@ -118,6 +118,7 @@ struct UwfSnapshot {
 enum class DiskSupport : int {
   Supported,          // NTFS / FAT(32)：UWF 完全支持（含文件排除 / commit）
   NotFixedLocalDisk,  // 不是固定本地磁盘（CD、软盘、网络盘等）
+  ExceedsMaxSize,     // 容量超过 UWF 单卷上限（16 TiB，见 config::kMaxProtectedVolumeBytes）
   FileSystemLimited,  // exFAT / ReFS 等：可保护卷，但不能加文件排除 / 提交文件
   QueryFailed,        // 调用 Win32 API 失败
 };

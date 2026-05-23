@@ -69,6 +69,12 @@ inline constexpr std::array<std::string_view, 4> kLtscEditionIds = {
 // Win32_LogicalDisk.DriveType：3 = 固定本地磁盘，UWF 仅支持保护这一类。
 inline constexpr int kDriveTypeFixedLocalDisk = 3;
 
+// UWF 单个受保护卷的容量上限（MS Learn UWF "保护范围"段：单个受保护卷最大
+// 16 TB）。按 16 TiB（= 16 × 2^40）解释——NTFS 默认簇大小的最大卷也是这个量级，
+// UWF 作为 NTFS 之上的过滤驱动几乎肯定继承该上限。即便官方实际指的是十进制 TB
+// （16 × 10^12），用 TiB 也只是稍严，不会放过不该放过的卷。
+inline constexpr uint64_t kMaxProtectedVolumeBytes = 16ULL << 40;
+
 // UWF 完整支持（可加文件排除 + 提交文件）的文件系统。大写存储，调用方先转
 // 大写再比对；不在此列的固定盘（exFAT / ReFS 等）只能保护、不能加文件排除。
 inline constexpr std::array<std::string_view, 3> kFullySupportedFileSystems = {

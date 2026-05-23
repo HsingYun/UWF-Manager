@@ -175,6 +175,10 @@ std::vector<core::DiskInfo> enumerateDisks(std::string* error) {
     const bool fullySupportedFs = std::ranges::find(config::kFullySupportedFileSystems, fs) != config::kFullySupportedFileSystems.end();
     if (driveType != config::kDriveTypeFixedLocalDisk) {
       d.support = DiskSupport::NotFixedLocalDisk;
+    } else if (d.totalBytes > config::kMaxProtectedVolumeBytes) {
+      // 超过 16 TiB——UWF 直接拒整个卷，比 FS 限制更彻底；FS 改成 NTFS 也救不回
+      // 来，所以排在 FileSystemLimited 之前判。
+      d.support = DiskSupport::ExceedsMaxSize;
     } else if (!fullySupportedFs) {
       // exFAT / ReFS 等：UWF 文档明确说"可保护卷，但不能加文件排除 /
       // 提交文件操作"——所以不是完全 unsupported，标 FileSystemLimited

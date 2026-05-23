@@ -116,6 +116,10 @@
         <translation>不支持的驱动器类型（仅支持本地固定磁盘）。</translation>
     </message>
     <message>
+        <source>Volume capacity exceeds the UWF limit of 16 TiB for a single protected volume.</source>
+        <translation>卷容量超过 UWF 单个受保护卷 16 TiB 的上限。</translation>
+    </message>
+    <message>
         <source>%1 file system: this volume can be protected, but file exclusions and per-file commit are not supported.</source>
         <translation>%1 文件系统：可以保护此卷，但不支持文件排除和单文件提交。</translation>
     </message>

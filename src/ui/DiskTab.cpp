@@ -30,6 +30,8 @@ std::string diskSupportText(core::DiskSupport s, const std::string& fileSystem) 
       return {};
     case core::DiskSupport::NotFixedLocalDisk:
       return I18n::tr("Unsupported drive type (only fixed local disks are supported).").toStdString();
+    case core::DiskSupport::ExceedsMaxSize:
+      return I18n::tr("Volume capacity exceeds the UWF limit of 16 TiB for a single protected volume.").toStdString();
     case core::DiskSupport::FileSystemLimited:
       return I18n::tr("%1 file system: this volume can be protected, but file exclusions and per-file commit are not supported.")
           .arg(QString::fromStdString(fileSystem))
