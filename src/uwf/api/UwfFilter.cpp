@@ -28,22 +28,18 @@ std::optional<api::FilterRow> UwfFilter::read(std::string* error) const {
 namespace {
 
 // 5 个写方法都是无参 ExecMethod、行为一致——只是方法名与日志面包屑不同。
-bool invoke(const WmiSession& session, const api::FilterRow& row, const char* methodName, std::string* error) {
-  const auto r = session.callMethod(row.path, methodName);
-  if (!r.ok()) {
-    if (error) *error = r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_Filter") << methodName << " ok";
-  return true;
+WmiResult invoke(const WmiSession& session, const api::FilterRow& row, const char* methodName) {
+  auto out = WmiResult::fromMethodResult(session.callMethod(row.path, methodName));
+  if (out.ok) UWF_LOG_I("UWF_Filter") << methodName << " ok";
+  return out;
 }
 
 }  // namespace
 
-bool UwfFilter::enable(const api::FilterRow& row, std::string* error) const { return invoke(m_session, row, "Enable", error); }
-bool UwfFilter::disable(const api::FilterRow& row, std::string* error) const { return invoke(m_session, row, "Disable", error); }
-bool UwfFilter::resetSettings(const api::FilterRow& row, std::string* error) const { return invoke(m_session, row, "ResetSettings", error); }
-bool UwfFilter::shutdownSystem(const api::FilterRow& row, std::string* error) const { return invoke(m_session, row, "ShutdownSystem", error); }
-bool UwfFilter::restartSystem(const api::FilterRow& row, std::string* error) const { return invoke(m_session, row, "RestartSystem", error); }
+WmiResult UwfFilter::enable(const api::FilterRow& row) const { return invoke(m_session, row, "Enable"); }
+WmiResult UwfFilter::disable(const api::FilterRow& row) const { return invoke(m_session, row, "Disable"); }
+WmiResult UwfFilter::resetSettings(const api::FilterRow& row) const { return invoke(m_session, row, "ResetSettings"); }
+WmiResult UwfFilter::shutdownSystem(const api::FilterRow& row) const { return invoke(m_session, row, "ShutdownSystem"); }
+WmiResult UwfFilter::restartSystem(const api::FilterRow& row) const { return invoke(m_session, row, "RestartSystem"); }
 
 }  // namespace uwf

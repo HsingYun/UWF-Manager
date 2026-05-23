@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "../wmi/WmiClient.h"
+#include "../wmi/WmiResult.h"
 #include "Types.h"
 
 namespace uwf {
@@ -25,8 +26,8 @@ class UwfOverlayConfig {
   // 读取某一会话的配置；找不到返回 nullopt。
   [[nodiscard]] std::optional<api::OverlayConfigRow> read(bool currentSession, std::string* error = nullptr) const;
 
-  bool setType(const api::OverlayConfigRow& row, api::OverlayType type, std::string* error = nullptr) const;
-  bool setMaximumSize(const api::OverlayConfigRow& row, uint32_t sizeMb, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult setType(const api::OverlayConfigRow& row, api::OverlayType type) const;
+  [[nodiscard]] WmiResult setMaximumSize(const api::OverlayConfigRow& row, uint32_t sizeMb) const;
 
  private:
   WmiSession& m_session;

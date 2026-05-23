@@ -51,10 +51,12 @@
 #include "../core/Config.h"
 #include "../util/DriveLetter.h"
 #include "../util/Log.h"
+#include "../util/PathMatch.h"
 #include "../util/RegistryKey.h"
 #include "../uwf/UwfSnapshot.h"
 #include "../uwf/api/UwfmgrCli.h"
 #include "../uwf/wmi/WmiError.h"
+#include "../uwf/wmi/WmiResult.h"
 #include "ApplyPlanDialog.h"
 #include "DiskTab.h"
 #include "GlobalStatusPanel.h"
@@ -352,24 +354,6 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
   dlg.exec();
 }
 
-// CommitFile / CommitFileDeletion 操作的是"当前会话"正在使用的 overlay，
-// 必须发给 CurrentSession=true 的实例，否则 WMI 直接拒掉。
-const api::VolumeRow* findCurrentVolume(const std::vector<api::VolumeRow>& rows, const std::string& driveLetter) {
-  for (const auto& r : rows) {
-    if (r.currentSession && r.driveLetter == driveLetter) return &r;
-  }
-  return nullptr;
-}
-
-// CommitRegistry / CommitRegistryDeletion 与 UWF_Volume 的 CommitFile 同理，
-// 必须发给 CurrentSession=true 的实例。
-const api::RegistryFilterRow* findCurrentRegistryFilter(const std::vector<api::RegistryFilterRow>& rows) {
-  for (const auto& r : rows) {
-    if (r.currentSession) return &r;
-  }
-  return nullptr;
-}
-
 // 盘符逻辑统一在 uwf::drive（见 src/util/DriveLetter.h）。下面两个 MainWindow
 // 内多处复用的函数只是 QString ↔ std::string 的边界适配，不含任何盘符逻辑。
 // extractDriveLetter 把 fromPath 区分出的"卷 GUID 路径解析失败"写进日志——
@@ -489,40 +473,6 @@ QString systemInfoHtml() {
   addWithKey("RAM", ram);
   addPlain(gpu);
   return rows.join("<br>");
-}
-
-// 去掉末尾的 \ 和 /；排除项可能写成 "C:\Foo\" 也可能写成 "C:\Foo"，
-// 统一后才能做稳定的前缀/相等比较。
-std::string stripTrailingSep(std::string s) {
-  while (!s.empty() && (s.back() == '\\' || s.back() == '/')) s.pop_back();
-  return s;
-}
-
-// 判断 target 是否等于 prefix 或者是它的后代。大小写不敏感，
-// 分隔符兼容 \ 与 /（注册表固定是 \）。两个参数都应先经 stripTrailingSep。
-bool pathIsExcludedBy(const std::string& target, const std::string& prefix) {
-  if (prefix.empty() || target.size() < prefix.size()) return false;
-  for (size_t i = 0; i < prefix.size(); ++i) {
-    auto a = static_cast<unsigned char>(target[i]);
-    auto b = static_cast<unsigned char>(prefix[i]);
-    if (a >= 'A' && a <= 'Z') a = a - 'A' + 'a';
-    if (b >= 'A' && b <= 'Z') b = b - 'A' + 'a';
-    if (a != b) return false;
-  }
-  if (target.size() == prefix.size()) return true;
-  const char next = target[prefix.size()];
-  return next == '\\' || next == '/';
-}
-
-// 在 excls 里找第一条"覆盖"了 target 的排除项；找不到返回空串。
-// 用原始字符串返回，便于在提示里原样展示给用户。
-std::string findCoveringExclusion(const std::vector<std::string>& excls, const std::string& target) {
-  const std::string t = stripTrailingSep(target);
-  for (const auto& e : excls) {
-    const std::string p = stripTrailingSep(e);
-    if (pathIsExcludedBy(t, p)) return e;
-  }
-  return {};
 }
 
 }  // namespace
@@ -1496,9 +1446,8 @@ void MainWindow::safeShutdown() {
     warning(this, I18n::tr("Safe shutdown failed"), I18n::tr("Failed to read filter state: %1").arg(QString::fromStdString(err)));
     return;
   }
-  std::string err2;
-  if (!m_filter.shutdownSystem(*row, &err2)) {
-    warning(this, I18n::tr("Safe shutdown failed"), I18n::tr("Shutdown failed: %1").arg(QString::fromStdString(err2)));
+  if (const auto r = m_filter.shutdownSystem(*row); !r.ok) {
+    warning(this, I18n::tr("Safe shutdown failed"), I18n::tr("Shutdown failed: %1").arg(QString::fromStdString(r.detail)));
   }
 }
 
@@ -1512,9 +1461,8 @@ void MainWindow::safeRestart() {
     warning(this, I18n::tr("Safe restart failed"), I18n::tr("Failed to read filter state: %1").arg(QString::fromStdString(err)));
     return;
   }
-  std::string err2;
-  if (!m_filter.restartSystem(*row, &err2)) {
-    warning(this, I18n::tr("Safe restart failed"), I18n::tr("Restart failed: %1").arg(QString::fromStdString(err2)));
+  if (const auto r = m_filter.restartSystem(*row); !r.ok) {
+    warning(this, I18n::tr("Safe restart failed"), I18n::tr("Restart failed: %1").arg(QString::fromStdString(r.detail)));
   }
 }
 
@@ -1561,12 +1509,15 @@ void MainWindow::runCommitBatch(const QString& progressTitle, const QList<Target
     row.path = displayOf(targets[i]);
     row.existedBefore = existedBefore;
     row.existsAfter = existsAfter;
-    if (res.outcome == CommitOutcome::Ok) {
+    // res 是统一的 WmiResult；commit 类的 Skipped / Failed 三档由 commitOutcome
+    // 派生（WBEM_E_NOT_FOUND → Skipped；其它非 ok → Failed）。
+    const auto outcome = commitOutcome(res);
+    if (outcome == CommitOutcome::Ok) {
       row.category = I18n::tr("Succeeded");
       row.errorCode = QStringLiteral("-");
       row.reason = QStringLiteral("-");
     } else {
-      row.category = res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed");
+      row.category = outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed");
       row.errorCode = formatErrorCode(res.hresult, res.returnValue);
       // kHasExists（删除操作传了 existsFn）== 操作类型是 Deletion——HRESULT 含义
       // 在 commit / deletion 间不同，文案要分。
@@ -1611,7 +1562,8 @@ void MainWindow::commitFilePath(const QString& path) {
     warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to read volume information: %1").arg(QString::fromStdString(err)));
     return;
   }
-  const auto* row = findCurrentVolume(volumes, dl.toStdString());
+  const auto dlStd = dl.toStdString();
+  const auto* row = api::findBySession(volumes, /*wantCurrent=*/true, [&](const api::VolumeRow& v) { return v.driveLetter == dlStd; });
   if (!row) {
     warning(this, I18n::tr("Commit failed"), I18n::tr("No current-session record found for volume %1.").arg(dl));
     return;
@@ -1650,7 +1602,7 @@ void MainWindow::commitFilePath(const QString& path) {
       [&](const QString& f) {
         const auto res = m_volume.commitFile(*row, f.toStdString());
         if (!res.detail.empty()) {
-          const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
           UWF_LOG_W("commit") << std::format("CommitFile {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(), static_cast<uint32_t>(res.hresult),
                                              res.returnValue, res.detail);
         }
@@ -1692,7 +1644,8 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
     warning(this, I18n::tr("Commit file deletion failed"), I18n::tr("Failed to read volume information: %1").arg(QString::fromStdString(err)));
     return;
   }
-  const auto* row = findCurrentVolume(volumes, dl.toStdString());
+  const auto dlStd = dl.toStdString();
+  const auto* row = api::findBySession(volumes, /*wantCurrent=*/true, [&](const api::VolumeRow& v) { return v.driveLetter == dlStd; });
   if (!row) {
     warning(this, I18n::tr("Commit file deletion failed"), I18n::tr("No current-session record found for volume %1.").arg(dl));
     return;
@@ -1734,7 +1687,7 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
       [&](const QString& f) {
         const auto res = m_volume.commitFileDeletion(*row, f.toStdString());
         if (!res.detail.empty()) {
-          const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
           UWF_LOG_W("commit") << std::format("CommitFileDeletion {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(),
                                              static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
         }
@@ -1813,7 +1766,7 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
     warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to read registry filter: %1").arg(QString::fromStdString(err)));
     return;
   }
-  const auto* row = findCurrentRegistryFilter(filters);
+  const auto* row = api::findBySession(filters, /*wantCurrent=*/true);
   if (!row) {
     warning(this, I18n::tr("Commit failed"), I18n::tr("No current-session registry filter record found."));
     return;
@@ -1824,7 +1777,7 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
       [&](const RegCommitTarget& t) {
         const auto res = m_registry.commitRegistry(*row, t.key, t.valueName);
         if (!res.detail.empty()) {
-          const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
           UWF_LOG_W("commit") << std::format("CommitRegistry {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
                                              static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
         }
@@ -1887,7 +1840,7 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
     warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to read registry filter: %1").arg(QString::fromStdString(err)));
     return;
   }
-  const auto* row = findCurrentRegistryFilter(filters);
+  const auto* row = api::findBySession(filters, /*wantCurrent=*/true);
   if (!row) {
     warning(this, I18n::tr("Commit failed"), I18n::tr("No current-session registry filter record found."));
     return;
@@ -1898,7 +1851,7 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
       [&](const RegCommitTarget& t) {
         const auto res = m_registry.commitRegistryDeletion(*row, t.key, t.valueName);
         if (!res.detail.empty()) {
-          const char* kind = res.outcome == CommitOutcome::Skipped ? "skipped" : "failed";
+          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
           UWF_LOG_W("commit") << std::format("CommitRegistryDeletion {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
                                              static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
         }

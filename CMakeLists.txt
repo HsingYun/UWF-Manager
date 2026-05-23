@@ -20,6 +20,10 @@ set(UWF_SOURCES
         src/util/RegistryKey.cpp
         src/util/StringUtil.h
         src/util/StringUtil.cpp
+        src/util/ByteFormat.h
+        src/util/ByteFormat.cpp
+        src/util/PathMatch.h
+        src/util/PathMatch.cpp
         src/core/Config.h
         src/core/UwfConfig.h
         src/core/UwfConfig.cpp
@@ -31,8 +35,8 @@ set(UWF_SOURCES
         src/uwf/wmi/WmiError.cpp
         src/uwf/wmi/WmiRowUtil.h
         src/uwf/wmi/WmiRowUtil.cpp
+        src/uwf/wmi/WmiResult.h
         src/uwf/api/Types.h
-        src/uwf/api/CommitResult.h
         src/uwf/api/UwfFilter.h
         src/uwf/api/UwfFilter.cpp
         src/uwf/api/UwfVolume.h

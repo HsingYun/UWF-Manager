@@ -86,30 +86,13 @@ class CommandTextEdit : public QTextEdit {
   }
 };
 
-// 配置类写操作（Protect/Unprotect/SetBindByDriveLetter/AddExclusion/
-// RemoveExclusion 等）要发给"下一次会话" (CurrentSession=false) 的实例。
+// 配置类写操作（Protect / Unprotect / SetBindByDriveLetter / AddExclusion /
+// RemoveExclusion / SetType / SetMaximumSize 等）一律发给 next session 实例。
+// SetType / SetMaximumSize 还要求 UWF_Filter.CurrentEnabled==false，否则
+// WMI 返回 WBEM_E_INVALID_PARAMETER (0x80041008)。下面 3 处查询都用统一的
+// api::findBySession（见 Types.h）。
 const api::VolumeRow* findNextVolume(const std::vector<api::VolumeRow>& rows, const std::string& driveLetter) {
-  for (const auto& r : rows) {
-    if (!r.currentSession && r.driveLetter == driveLetter) return &r;
-  }
-  return nullptr;
-}
-
-// SetType / SetMaximumSize 写入 CurrentSession=false 的实例（下次会话）。
-// 注意：这两个方法还要求 UWF_Filter.CurrentEnabled==false，否则 WMI 会返回
-// WBEM_E_INVALID_PARAMETER (0x80041008)。
-const api::OverlayConfigRow* findNextOverlayConfig(const std::vector<api::OverlayConfigRow>& rows) {
-  for (const auto& r : rows) {
-    if (!r.currentSession) return &r;
-  }
-  return nullptr;
-}
-
-const api::RegistryFilterRow* findNextRegistryFilter(const std::vector<api::RegistryFilterRow>& rows) {
-  for (const auto& r : rows) {
-    if (!r.currentSession) return &r;
-  }
-  return nullptr;
+  return api::findBySession(rows, /*wantCurrent=*/false, [&](const api::VolumeRow& v) { return v.driveLetter == driveLetter; });
 }
 
 api::OverlayType coreTypeToApi(core::OverlayType t) { return t == core::OverlayType::Disk ? api::OverlayType::Disk : api::OverlayType::RAM; }
@@ -448,11 +431,11 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       if (!row) {
         note(I18n::tr("✘ Failed to read filter state: %1").arg(QString::fromStdString(err)).toStdString());
       } else {
-        const bool ok = *m_changes.setFilterEnabled ? m_filter.enable(*row, &err) : m_filter.disable(*row, &err);
-        note(ok ? I18n::tr("✓ Filter: %1").arg(*m_changes.setFilterEnabled ? I18n::tr("Enabled") : I18n::tr("Disabled")).toStdString()
-                : I18n::tr("✘ Failed to %1 filter: %2")
-                      .arg(*m_changes.setFilterEnabled ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(err))
-                      .toStdString());
+        const auto r = *m_changes.setFilterEnabled ? m_filter.enable(*row) : m_filter.disable(*row);
+        note(r.ok ? I18n::tr("✓ Filter: %1").arg(*m_changes.setFilterEnabled ? I18n::tr("Enabled") : I18n::tr("Disabled")).toStdString()
+                  : I18n::tr("✘ Failed to %1 filter: %2")
+                        .arg(*m_changes.setFilterEnabled ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(r.detail))
+                        .toStdString());
       }
     }
 
@@ -462,16 +445,16 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       std::string err;
       if (auto overlay = m_overlay.read(&err)) {
         if (const auto v = m_changes.setOverlay.warningThresholdMb) {
-          if (m_overlay.setWarningThreshold(*overlay, *v, &err))
+          if (const auto r = m_overlay.setWarningThreshold(*overlay, *v); r.ok)
             note(I18n::tr("✓ Overlay warning threshold set to %1 MB").arg(*v).toStdString());
           else
-            note(I18n::tr("✘ Failed to set warning threshold: %1").arg(QString::fromStdString(err)).toStdString());
+            note(I18n::tr("✘ Failed to set warning threshold: %1").arg(QString::fromStdString(r.detail)).toStdString());
         }
         if (const auto v = m_changes.setOverlay.criticalThresholdMb) {
-          if (m_overlay.setCriticalThreshold(*overlay, *v, &err))
+          if (const auto r = m_overlay.setCriticalThreshold(*overlay, *v); r.ok)
             note(I18n::tr("✓ Overlay critical threshold set to %1 MB").arg(*v).toStdString());
           else
-            note(I18n::tr("✘ Failed to set critical threshold: %1").arg(QString::fromStdString(err)).toStdString());
+            note(I18n::tr("✘ Failed to set critical threshold: %1").arg(QString::fromStdString(r.detail)).toStdString());
         }
       } else {
         note(I18n::tr("✘ Failed to read overlay state: %1").arg(QString::fromStdString(err)).toStdString());
@@ -486,13 +469,13 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       } else {
         std::string err;
         const auto configs = m_overlayConfig.readAll(&err);
-        if (const auto* next = findNextOverlayConfig(configs)) {
+        if (const auto* next = api::findBySession(configs, /*wantCurrent=*/false)) {
           if (const auto t = m_changes.setOverlay.type) {
             const char* tStr = *t == core::OverlayType::RAM ? "RAM" : "Disk";
-            if (m_overlayConfig.setType(*next, coreTypeToApi(*t), &err))
+            if (const auto r = m_overlayConfig.setType(*next, coreTypeToApi(*t)); r.ok)
               note(I18n::tr("✓ Overlay type set to %1").arg(tStr).toStdString());
             else
-              note(I18n::tr("✘ Failed to set overlay type: %1").arg(QString::fromStdString(err)).toStdString());
+              note(I18n::tr("✘ Failed to set overlay type: %1").arg(QString::fromStdString(r.detail)).toStdString());
           }
           if (const auto v = m_changes.setOverlay.maximumSizeMb) {
             // 基于磁盘的覆盖层要求最大大小至少 1024 MB。type 未在本次 delta 中
@@ -500,10 +483,10 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
             const auto effType = m_changes.setOverlay.type.value_or(m_snapshot.next.overlay.type);
             if (effType == core::OverlayType::Disk && *v < config::kDiskOverlayMinSizeMb) {
               note(I18n::tr("✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.").arg(config::kDiskOverlayMinSizeMb).toStdString());
-            } else if (m_overlayConfig.setMaximumSize(*next, *v, &err)) {
+            } else if (const auto r = m_overlayConfig.setMaximumSize(*next, *v); r.ok) {
               note(I18n::tr("✓ Overlay maximum size set to %1 MB").arg(*v).toStdString());
             } else {
-              note(I18n::tr("✘ Failed to set maximum size: %1").arg(QString::fromStdString(err)).toStdString());
+              note(I18n::tr("✘ Failed to set maximum size: %1").arg(QString::fromStdString(r.detail)).toStdString());
             }
           }
         } else {
@@ -515,8 +498,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     // ── UWF_Volume ───────────────────────────────────────
     if (!m_changes.volumeProtect.empty() || !m_changes.volumeBindByVolumeName.empty() || !m_changes.addFileExclusions.empty() ||
         !m_changes.removeFileExclusions.empty()) {
-      std::string err;
-      auto volumes = m_volume.readAll(&err);
+      auto volumes = m_volume.readAll();
 
       // 找 next session row；找不到就让 ensureNextSessionEntry 从同卷的
       // current session 行复制 VolumeName 创建一份 next session 实例。
@@ -537,24 +519,23 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       for (const auto& [dl, wantProtect] : m_changes.volumeProtect) {
         auto v = getOrCreateNextVolume(dl);
         if (!v) continue;
-        const bool ok = wantProtect ? m_volume.protectVolume(*v, &err) : m_volume.unprotect(*v, &err);
-        note(ok ? I18n::tr("✓ Volume %1 protection: %2").arg(QString::fromStdString(dl), wantProtect ? I18n::tr("Enabled") : I18n::tr("Disabled")).toStdString()
-                : I18n::tr("✘ Failed to %1 protection on volume %2: %3")
-                      .arg(wantProtect ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(dl), QString::fromStdString(err))
-                      .toStdString());
+        const auto r = wantProtect ? m_volume.protectVolume(*v) : m_volume.unprotect(*v);
+        note(r.ok ? I18n::tr("✓ Volume %1 protection: %2").arg(QString::fromStdString(dl), wantProtect ? I18n::tr("Enabled") : I18n::tr("Disabled")).toStdString()
+                  : I18n::tr("✘ Failed to %1 protection on volume %2: %3")
+                        .arg(wantProtect ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(dl), QString::fromStdString(r.detail))
+                        .toStdString());
       }
 
       for (const auto& [dl, byVolumeName] : m_changes.volumeBindByVolumeName) {
         auto v = getOrCreateNextVolume(dl);
         if (!v) continue;
-        std::string e;
         // changes 里以"按卷 ID 绑定"为语义（byVolumeName）；UWF_Volume.SetBindByDriveLetter
         // 的入参 bBindByDriveLetter 语义相反，传参时取反。
-        const bool ok = m_volume.setBindByDriveLetter(*v, !byVolumeName, &e);
-        note(ok ? I18n::tr("✓ Volume %1 bind by: %2")
-                      .arg(QString::fromStdString(dl), byVolumeName ? I18n::tr("volume ID") : I18n::tr("drive letter"))
-                      .toStdString()
-                : I18n::tr("✘ Failed to set binding for volume %1: %2").arg(QString::fromStdString(dl), QString::fromStdString(e)).toStdString());
+        const auto r = m_volume.setBindByDriveLetter(*v, !byVolumeName);
+        note(r.ok ? I18n::tr("✓ Volume %1 bind by: %2")
+                        .arg(QString::fromStdString(dl), byVolumeName ? I18n::tr("volume ID") : I18n::tr("drive letter"))
+                        .toStdString()
+                  : I18n::tr("✘ Failed to set binding for volume %1: %2").arg(QString::fromStdString(dl), QString::fromStdString(r.detail)).toStdString());
       }
 
       for (const auto& [dl, paths] : m_changes.addFileExclusions) {
@@ -562,12 +543,11 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
         auto v = getOrCreateNextVolume(dl);
         if (!v) continue;
         for (const auto& path : paths) {
-          std::string e;
-          if (m_volume.addExclusion(*v, path, &e))
+          if (const auto r = m_volume.addExclusion(*v, path); r.ok)
             note(I18n::tr("✓ Volume %1 added file exclusion: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)).toStdString());
           else
             note(I18n::tr("✘ Volume %1 failed to add file exclusion %2: %3")
-                     .arg(QString::fromStdString(dl), QString::fromStdString(path), QString::fromStdString(e))
+                     .arg(QString::fromStdString(dl), QString::fromStdString(path), QString::fromStdString(r.detail))
                      .toStdString());
         }
       }
@@ -580,12 +560,11 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
         const auto* v = findNextVolume(volumes, dl);
         if (!v) continue;
         for (const auto& path : paths) {
-          std::string e;
-          if (m_volume.removeExclusion(*v, path, &e))
+          if (const auto r = m_volume.removeExclusion(*v, path); r.ok)
             note(I18n::tr("✓ Volume %1 removed file exclusion: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)).toStdString());
           else
             note(I18n::tr("✘ Volume %1 failed to remove file exclusion %2: %3")
-                     .arg(QString::fromStdString(dl), QString::fromStdString(path), QString::fromStdString(e))
+                     .arg(QString::fromStdString(dl), QString::fromStdString(path), QString::fromStdString(r.detail))
                      .toStdString());
         }
       }
@@ -596,30 +575,27 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
         m_changes.setPersistTSCAL) {
       std::string err;
       const auto regs = m_registry.readAll(&err);
-      const auto* next = findNextRegistryFilter(regs);
+      const auto* next = api::findBySession(regs, /*wantCurrent=*/false);
       if (!next) {
         note(I18n::tr("✘ Failed to read registry filter: %1").arg(QString::fromStdString(err)).toStdString());
       } else {
         for (const auto& k : m_changes.addRegistryExclusions) {
-          std::string e;
-          if (m_registry.addExclusion(*next, k, &e))
+          if (const auto r = m_registry.addExclusion(*next, k); r.ok)
             note(I18n::tr("✓ Added registry exclusion: %1").arg(QString::fromStdString(k)).toStdString());
           else
-            note(I18n::tr("✘ Failed to add registry exclusion %1: %2").arg(QString::fromStdString(k), QString::fromStdString(e)).toStdString());
+            note(I18n::tr("✘ Failed to add registry exclusion %1: %2").arg(QString::fromStdString(k), QString::fromStdString(r.detail)).toStdString());
         }
         for (const auto& k : m_changes.removeRegistryExclusions) {
-          std::string e;
-          if (m_registry.removeExclusion(*next, k, &e))
+          if (const auto r = m_registry.removeExclusion(*next, k); r.ok)
             note(I18n::tr("✓ Removed registry exclusion: %1").arg(QString::fromStdString(k)).toStdString());
           else
-            note(I18n::tr("✘ Failed to remove registry exclusion %1: %2").arg(QString::fromStdString(k), QString::fromStdString(e)).toStdString());
+            note(I18n::tr("✘ Failed to remove registry exclusion %1: %2").arg(QString::fromStdString(k), QString::fromStdString(r.detail)).toStdString());
         }
         // 两个持久化开关整实例 PutInstance：未改动的那个用 next 行现值兜底。
         if (m_changes.setPersistDomainSecretKey || m_changes.setPersistTSCAL) {
           const bool dsk = m_changes.setPersistDomainSecretKey.value_or(next->persistDomainSecretKey);
           const bool tscal = m_changes.setPersistTSCAL.value_or(next->persistTSCAL);
-          std::string e;
-          if (m_registry.setPersistFlags(*next, dsk, tscal, &e)) {
+          if (const auto r = m_registry.setPersistFlags(*next, dsk, tscal); r.ok) {
             if (m_changes.setPersistDomainSecretKey)
               note(I18n::tr("✓ %1 persistence: %2")
                        .arg(I18n::tr("Domain Secret Key (DomainSecretKey)"), *m_changes.setPersistDomainSecretKey ? I18n::tr("Enabled") : I18n::tr("Disabled"))
@@ -630,7 +606,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
                       .arg(I18n::tr("Terminal Services Client Access License (TSCAL)"), *m_changes.setPersistTSCAL ? I18n::tr("Enabled") : I18n::tr("Disabled"))
                       .toStdString());
           } else {
-            note(I18n::tr("✘ Failed to update registry persistence switches: %1").arg(QString::fromStdString(e)).toStdString());
+            note(I18n::tr("✘ Failed to update registry persistence switches: %1").arg(QString::fromStdString(r.detail)).toStdString());
           }
         }
       }

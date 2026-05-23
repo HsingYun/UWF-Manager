@@ -8,6 +8,7 @@
 #include <string>
 
 #include "../wmi/WmiClient.h"
+#include "../wmi/WmiResult.h"
 #include "Types.h"
 
 namespace uwf {
@@ -20,15 +21,15 @@ class UwfFilter {
   [[nodiscard]] std::optional<api::FilterRow> read(std::string* error = nullptr) const;
 
   // 在下次重启时启用 UWF。
-  bool enable(const api::FilterRow& row, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult enable(const api::FilterRow& row) const;
   // 在下次重启时禁用 UWF。
-  bool disable(const api::FilterRow& row, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult disable(const api::FilterRow& row) const;
   // 将 UWF 配置重置为原始设置。
-  bool resetSettings(const api::FilterRow& row, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult resetSettings(const api::FilterRow& row) const;
   // 安全关闭受 UWF 保护的系统（即使 overlay 已满）。
-  bool shutdownSystem(const api::FilterRow& row, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult shutdownSystem(const api::FilterRow& row) const;
   // 安全重启受 UWF 保护的系统（即使 overlay 已满）。
-  bool restartSystem(const api::FilterRow& row, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult restartSystem(const api::FilterRow& row) const;
 
  private:
   WmiSession& m_session;

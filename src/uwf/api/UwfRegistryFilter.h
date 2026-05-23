@@ -12,7 +12,7 @@
 #include <vector>
 
 #include "../wmi/WmiClient.h"
-#include "CommitResult.h"
+#include "../wmi/WmiResult.h"
 #include "Types.h"
 
 namespace uwf {
@@ -25,13 +25,13 @@ class UwfRegistryFilter {
 
   [[nodiscard]] std::optional<api::RegistryFilterRow> read(bool currentSession, std::string* error = nullptr) const;
 
-  bool addExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error = nullptr) const;
-  bool removeExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult addExclusion(const api::RegistryFilterRow& row, const std::string& registryKey) const;
+  [[nodiscard]] WmiResult removeExclusion(const api::RegistryFilterRow& row, const std::string& registryKey) const;
 
   // 写 UWF_RegistryFilter 的两个全局持久化开关。该类没有对应的 Set* 方法，只能
   // 整实例 PutInstance——本类属性只有 CurrentSession（键）+ 这两个布尔，故必须
   // 同时给出两个值（未改动的那个由调用方用现值兜底）。row 用于定位目标会话。
-  bool setPersistFlags(const api::RegistryFilterRow& row, bool persistDomainSecretKey, bool persistTSCAL, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult setPersistFlags(const api::RegistryFilterRow& row, bool persistDomainSecretKey, bool persistTSCAL) const;
 
   // 返回 true/false；error 非空说明调用失败。
   std::optional<bool> findExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error = nullptr) const;
@@ -40,12 +40,12 @@ class UwfRegistryFilter {
 
   // valueName 为空串 = 提交该键的「默认值」(Default)——CommitRegistry 只能逐个值
   // 提交，没有「提交整个键」的能力（实机验证见 knowledge/reference/11-uwf-api.html
-  // 的 CommitRegistry 一节）。结果分 Ok / Skipped / Failed（见 CommitResult）：指定
-  // 的值（valueName 为空时即默认值）在注册表中不存在时 UWF 返回 WBEM_E_NOT_FOUND。
-  CommitResult commitRegistry(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const;
+  // 的 CommitRegistry 一节）。结果归类用 commitOutcome()：指定的值（valueName
+  // 为空时即默认值）在注册表中不存在时 UWF 返回 WBEM_E_NOT_FOUND，归 Skipped。
+  [[nodiscard]] WmiResult commitRegistry(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const;
 
   // valueName 为空串 = 删除整项。
-  CommitResult commitRegistryDeletion(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const;
+  [[nodiscard]] WmiResult commitRegistryDeletion(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const;
 
  private:
   WmiSession& m_session;

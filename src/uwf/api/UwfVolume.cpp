@@ -80,142 +80,80 @@ std::vector<api::VolumeRow> UwfVolume::readAll(std::string* error) const {
   return out;
 }
 
-bool UwfVolume::protectVolume(const api::VolumeRow& row, std::string* error) const {
-  const auto r = m_session.callMethod(row.path, "Protect");
-  if (!r.ok()) {
-    if (error) *error = r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_Volume") << "Protect ok: dl=" << row.driveLetter;
-  return true;
+namespace {
+
+// 无参 ExecMethod（Protect / Unprotect / RemoveAllExclusions）的共享骨架。
+WmiResult invokeNoArg(const WmiSession& session, const api::VolumeRow& row, const char* method) {
+  auto out = WmiResult::fromMethodResult(session.callMethod(row.path, method));
+  if (out.ok) UWF_LOG_I("UWF_Volume") << method << " ok: dl=" << row.driveLetter;
+  return out;
 }
 
-bool UwfVolume::unprotect(const api::VolumeRow& row, std::string* error) const {
-  const auto r = m_session.callMethod(row.path, "Unprotect");
-  if (!r.ok()) {
-    if (error) *error = r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_Volume") << "Unprotect ok: dl=" << row.driveLetter;
-  return true;
-}
+}  // namespace
 
-CommitResult UwfVolume::commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const {
-  CommitResult out;
+WmiResult UwfVolume::protectVolume(const api::VolumeRow& row) const { return invokeNoArg(m_session, row, "Protect"); }
+WmiResult UwfVolume::unprotect(const api::VolumeRow& row) const { return invokeNoArg(m_session, row, "Unprotect"); }
+WmiResult UwfVolume::removeAllExclusions(const api::VolumeRow& row) const { return invokeNoArg(m_session, row, "RemoveAllExclusions"); }
+
+// CommitFile / CommitFileDeletion 共享前置校验 + WMI 调用骨架——除方法名外完全
+// 一致（路径剥盘符 → 校验 __PATH → 用 FileName 参数发 ExecMethod → 归类）。
+// 仿 UwfRegistryFilter::invokeCommit 的写法抽到一处，两个 public 方法各 1 行
+// 委托。实机 WMI schema 的参数名是 FileName（见 11-uwf-api.html 附录 B.1）。
+WmiResult UwfVolume::invokeFileCommit(const api::VolumeRow& row, const std::string& fileFullPath, const char* method) const {
   std::string stripErr;
   const auto normalized = stripVolumeDriveLetter(fileFullPath, row.driveLetter, &stripErr);
   if (!normalized) {
-    out.outcome = CommitOutcome::Failed;
-    out.detail = stripErr;
-    UWF_LOG_E("UWF_Volume") << "CommitFile rejected: " << stripErr;
-    return out;
+    UWF_LOG_E("UWF_Volume") << method << " rejected: " << stripErr;
+    return WmiResult::failed(std::move(stripErr));
   }
   if (row.path.empty()) {
-    out.outcome = CommitOutcome::Failed;
-    out.detail = "UWF_Volume row has empty __PATH; call readAll() first";
-    UWF_LOG_E("UWF_Volume") << "CommitFile rejected: empty __PATH; file=" << fileFullPath;
-    return out;
-  }
-
-  WmiRow in;
-  // 实机 WMI schema 的参数名是 FileName（见
-  // knowledge/reference/11-uwf-api.html 附录 B.1）。
-  in.emplace("FileName", WmiValue::fromString(*normalized));
-  const auto r = m_session.callMethod(row.path, "CommitFile", in);
-  out.hresult = r.hresult;
-  out.returnValue = r.returnValue;
-  if (r.ok()) {
-    out.outcome = CommitOutcome::Ok;
-    UWF_LOG_I("UWF_Volume") << std::format("CommitFile ok: dl={} file={}", row.driveLetter, *normalized);
-    return out;
-  }
-
-  out.detail = r.error;
-  out.outcome = classifyCommitFailure(r);
-  return out;
-}
-
-CommitResult UwfVolume::commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const {
-  CommitResult out;
-  std::string stripErr;
-  const auto normalized = stripVolumeDriveLetter(fileName, row.driveLetter, &stripErr);
-  if (!normalized) {
-    out.outcome = CommitOutcome::Failed;
-    out.detail = stripErr;
-    UWF_LOG_E("UWF_Volume") << "CommitFileDeletion rejected: " << stripErr;
-    return out;
-  }
-  if (row.path.empty()) {
-    out.outcome = CommitOutcome::Failed;
-    out.detail = "UWF_Volume row has empty __PATH; call readAll() first";
-    UWF_LOG_E("UWF_Volume") << "CommitFileDeletion rejected: empty __PATH; file=" << fileName;
-    return out;
+    UWF_LOG_E("UWF_Volume") << method << " rejected: empty __PATH; file=" << fileFullPath;
+    return WmiResult::failed("UWF_Volume row has empty __PATH; call readAll() first");
   }
 
   WmiRow in;
   in.emplace("FileName", WmiValue::fromString(*normalized));
-  const auto r = m_session.callMethod(row.path, "CommitFileDeletion", in);
-  out.hresult = r.hresult;
-  out.returnValue = r.returnValue;
-  if (r.ok()) {
-    out.outcome = CommitOutcome::Ok;
-    UWF_LOG_I("UWF_Volume") << std::format("CommitFileDeletion ok: dl={} file={}", row.driveLetter, *normalized);
-    return out;
-  }
-
-  out.detail = r.error;
-  out.outcome = classifyCommitFailure(r);
+  auto out = WmiResult::fromMethodResult(m_session.callMethod(row.path, method, in));
+  if (out.ok) UWF_LOG_I("UWF_Volume") << std::format("{} ok: dl={} file={}", method, row.driveLetter, *normalized);
   return out;
 }
 
-bool UwfVolume::setBindByDriveLetter(const api::VolumeRow& row, bool bBindByDriveLetter, std::string* error) const {
+WmiResult UwfVolume::commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const { return invokeFileCommit(row, fileFullPath, "CommitFile"); }
+
+WmiResult UwfVolume::commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const {
+  return invokeFileCommit(row, fileName, "CommitFileDeletion");
+}
+
+WmiResult UwfVolume::setBindByDriveLetter(const api::VolumeRow& row, bool bBindByDriveLetter) const {
   WmiRow in;
   in.emplace("bBindByDriveLetter", WmiValue::fromBool(bBindByDriveLetter));
-  const auto r = m_session.callMethod(row.path, "SetBindByDriveLetter", in);
-  if (!r.ok()) {
-    if (error) *error = r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_Volume") << std::format("SetBindByDriveLetter ok: dl={} bindByDriveLetter={}", row.driveLetter, bBindByDriveLetter);
-  return true;
+  auto out = WmiResult::fromMethodResult(m_session.callMethod(row.path, "SetBindByDriveLetter", in));
+  if (out.ok) UWF_LOG_I("UWF_Volume") << std::format("SetBindByDriveLetter ok: dl={} bindByDriveLetter={}", row.driveLetter, bBindByDriveLetter);
+  return out;
 }
 
-bool UwfVolume::addExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error) const {
-  const auto normalized = stripVolumeDriveLetter(fileName, row.driveLetter, error);
-  if (!normalized) return false;
+namespace {
+
+// AddExclusion / RemoveExclusion 共用：路径剥盘符 + 单个 FileName 参数。
+WmiResult invokeFileExclusion(const WmiSession& session, const api::VolumeRow& row, const char* method, const std::string& fileName) {
+  std::string stripErr;
+  const auto normalized = stripVolumeDriveLetter(fileName, row.driveLetter, &stripErr);
+  if (!normalized) return WmiResult::failed(std::move(stripErr));
   WmiRow in;
   in.emplace("FileName", WmiValue::fromString(*normalized));
-  const auto r = m_session.callMethod(row.path, "AddExclusion", in);
-  if (!r.ok()) {
-    if (error) *error = r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_Volume") << std::format("AddExclusion ok: dl={} file={}", row.driveLetter, *normalized);
-  return true;
+  auto out = WmiResult::fromMethodResult(session.callMethod(row.path, method, in));
+  if (out.ok) UWF_LOG_I("UWF_Volume") << std::format("{} ok: dl={} file={}", method, row.driveLetter, *normalized);
+  return out;
 }
 
-bool UwfVolume::removeExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error) const {
-  const auto normalized = stripVolumeDriveLetter(fileName, row.driveLetter, error);
-  if (!normalized) return false;
-  WmiRow in;
-  in.emplace("FileName", WmiValue::fromString(*normalized));
-  const auto r = m_session.callMethod(row.path, "RemoveExclusion", in);
-  if (!r.ok()) {
-    if (error) *error = r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_Volume") << std::format("RemoveExclusion ok: dl={} file={}", row.driveLetter, *normalized);
-  return true;
+}  // namespace
+
+WmiResult UwfVolume::addExclusion(const api::VolumeRow& row, const std::string& fileName) const {
+  return invokeFileExclusion(m_session, row, "AddExclusion", fileName);
 }
 
-bool UwfVolume::removeAllExclusions(const api::VolumeRow& row, std::string* error) const {
-  const auto r = m_session.callMethod(row.path, "RemoveAllExclusions");
-  if (!r.ok()) {
-    if (error) *error = r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_Volume") << "RemoveAllExclusions ok: dl=" << row.driveLetter;
-  return true;
+WmiResult UwfVolume::removeExclusion(const api::VolumeRow& row, const std::string& fileName) const {
+  return invokeFileExclusion(m_session, row, "RemoveExclusion", fileName);
 }
 
 std::optional<bool> UwfVolume::findExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error) const {
@@ -295,9 +233,8 @@ std::optional<api::VolumeRow> UwfVolume::ensureNextSessionEntry(const std::strin
   props.emplace("DriveLetter", WmiValue::fromString(driveLetter));
   props.emplace("VolumeName", WmiValue::fromString(volumeName));
 
-  std::string putErr;
-  if (!m_session.putInstance("UWF_Volume", props, &putErr)) {
-    if (error) *error = putErr;
+  if (const auto put = m_session.putInstance("UWF_Volume", props); !put.ok) {
+    if (error) *error = put.detail;
     return std::nullopt;
   }
   UWF_LOG_I("UWF_Volume") << std::format("ensureNextSessionEntry created: dl={} volumeName={}", driveLetter, volumeName);

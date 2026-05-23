@@ -30,6 +30,7 @@
 #include <utility>
 
 #include "../core/Config.h"
+#include "../util/ByteFormat.h"
 #include "../util/DriveLetter.h"
 #include "../uwf/api/UwfOverlay.h"
 #include "../uwf/wmi/WmiClient.h"
@@ -61,15 +62,9 @@ class PagedListWidget : public QListWidget {
   }
 };
 
-QString formatSize(qulonglong b) {
-  constexpr qulonglong KB = 1024;
-  constexpr qulonglong MB = KB * 1024;
-  constexpr qulonglong GB = MB * 1024;
-  if (b >= GB) return QString::number(static_cast<double>(b) / static_cast<double>(GB), 'f', 2) + " GB";
-  if (b >= MB) return QString::number(static_cast<double>(b) / static_cast<double>(MB), 'f', 1) + " MB";
-  if (b >= KB) return QString::number(static_cast<double>(b) / static_cast<double>(KB), 'f', 1) + " KB";
-  return QString::number(b) + " B";
-}
+// 字节格式化复用 util::formatBytes（DiskTab / GlobalStatusPanel 同源），
+// 返回 QString 套一层以便 QString::arg 拼接，不再单独维护这里的实现。
+QString formatSize(qulonglong b) { return QString::fromStdString(formatBytes(b)); }
 
 // 把 WMI 返回的原始 fileName（如 "\Users\foo:$DATA"、
 // "\$Secure:$SII:$INDEX_ALLOCATION" 或 "\foo:customstream:$DATA"）拼成绝对路径，

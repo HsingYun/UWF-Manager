@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "../wmi/WmiClient.h"
-#include "CommitResult.h"
+#include "../wmi/WmiResult.h"
 #include "Types.h"
 
 namespace uwf {
@@ -24,23 +24,23 @@ class UwfVolume {
 
   std::vector<api::VolumeRow> readAll(std::string* error = nullptr) const;
 
-  bool protectVolume(const api::VolumeRow& row, std::string* error = nullptr) const;
-  bool unprotect(const api::VolumeRow& row, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult protectVolume(const api::VolumeRow& row) const;
+  [[nodiscard]] WmiResult unprotect(const api::VolumeRow& row) const;
 
-  CommitResult commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const;
+  [[nodiscard]] WmiResult commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const;
 
   // 语义：删除一个**当前仍存在**的受保护文件——CommitFileDeletion 由方法自身把
   // 该文件从覆盖层与物理卷一并删除，并非"提交一个已发生的删除"。因此调用方应先
-  // 校验"该路径当前确实存在"（文件不存在时方法回 WBEM_E_NOT_FOUND）。
-  CommitResult commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const;
+  // 校验"该路径当前确实存在"（文件不存在时方法回 WBEM_E_NOT_FOUND，归 Skipped）。
+  [[nodiscard]] WmiResult commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const;
 
   // 对应 UWF_Volume.SetBindByDriveLetter(boolean bBindByDriveLetter) 官方签名：
   // bBindByDriveLetter=true 表示按盘符绑定（松绑定），false 表示按卷名绑定（紧绑定）。
-  bool setBindByDriveLetter(const api::VolumeRow& row, bool bBindByDriveLetter, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult setBindByDriveLetter(const api::VolumeRow& row, bool bBindByDriveLetter) const;
 
-  bool addExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error = nullptr) const;
-  bool removeExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error = nullptr) const;
-  bool removeAllExclusions(const api::VolumeRow& row, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult addExclusion(const api::VolumeRow& row, const std::string& fileName) const;
+  [[nodiscard]] WmiResult removeExclusion(const api::VolumeRow& row, const std::string& fileName) const;
+  [[nodiscard]] WmiResult removeAllExclusions(const api::VolumeRow& row) const;
 
   std::optional<bool> findExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error = nullptr) const;
 
@@ -55,6 +55,9 @@ class UwfVolume {
   std::optional<api::VolumeRow> ensureNextSessionEntry(const std::string& driveLetter, std::string* error = nullptr) const;
 
  private:
+  // CommitFile / CommitFileDeletion 共享的实现——除方法名外两者完全一致。
+  WmiResult invokeFileCommit(const api::VolumeRow& row, const std::string& fileFullPath, const char* method) const;
+
   WmiSession& m_session;
 };
 

@@ -9,32 +9,21 @@ namespace uwf {
 
 namespace {
 
-// CommitRegistry / CommitRegistryDeletion 共用的调用 + 结果归类——两者除方法名
-// 外完全相同。失败按 classifyCommitFailure 分 Skipped / Failed（见 CommitResult.h）。
-CommitResult invokeCommit(const WmiSession& session, const std::string& path, const char* method, const std::string& registryKey,
-                          const std::string& valueName) {
-  CommitResult out;
+// CommitRegistry / CommitRegistryDeletion 共用的调用骨架——两者除方法名外
+// 完全相同。结果走 WmiResult；失败分类（Skipped / Failed）由调用方按需用
+// commitOutcome() 派生，见 WmiResult.h。
+WmiResult invokeCommit(const WmiSession& session, const std::string& path, const char* method, const std::string& registryKey, const std::string& valueName) {
   if (path.empty()) {
-    out.outcome = CommitOutcome::Failed;
-    out.detail = "UWF_RegistryFilter row has empty __PATH; call read() first";
     UWF_LOG_E("UWF_RegistryFilter") << "commit rejected: empty __PATH; method=" << method;
-    return out;
+    return WmiResult::failed("UWF_RegistryFilter row has empty __PATH; call read() first");
   }
   WmiRow in;
   // 实机 schema 的参数名是 "Registrykey"（小写 k）；WMI 参数名大小写不敏感，
   // 传 "RegistryKey" 同样生效。
   in.emplace("RegistryKey", WmiValue::fromString(registryKey));
   in.emplace("ValueName", WmiValue::fromString(valueName));
-  const auto r = session.callMethod(path, method, in);
-  out.hresult = r.hresult;
-  out.returnValue = r.returnValue;
-  if (r.ok()) {
-    out.outcome = CommitOutcome::Ok;
-    UWF_LOG_I("UWF_RegistryFilter") << std::format("{} ok: key={} value={}", method, registryKey, valueName);
-    return out;
-  }
-  out.detail = r.error;
-  out.outcome = classifyCommitFailure(r);
+  auto out = WmiResult::fromMethodResult(session.callMethod(path, method, in));
+  if (out.ok) UWF_LOG_I("UWF_RegistryFilter") << std::format("{} ok: key={} value={}", method, registryKey, valueName);
   return out;
 }
 
@@ -65,45 +54,40 @@ std::optional<api::RegistryFilterRow> UwfRegistryFilter::read(bool currentSessio
   return std::nullopt;
 }
 
-bool UwfRegistryFilter::addExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error) const {
+namespace {
+
+// AddExclusion / RemoveExclusion 共用：单个 RegistryKey 参数 + 简单 ok/fail。
+WmiResult invokeExclusion(const WmiSession& session, const api::RegistryFilterRow& row, const char* method, const std::string& registryKey) {
   WmiRow in;
   in.emplace("RegistryKey", WmiValue::fromString(registryKey));
-  const auto r = m_session.callMethod(row.path, "AddExclusion", in);
-  if (!r.ok()) {
-    if (error) *error = r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_RegistryFilter") << "AddExclusion ok: key=" << registryKey;
-  return true;
+  auto out = WmiResult::fromMethodResult(session.callMethod(row.path, method, in));
+  if (out.ok) UWF_LOG_I("UWF_RegistryFilter") << method << " ok: key=" << registryKey;
+  return out;
 }
 
-bool UwfRegistryFilter::removeExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error) const {
-  WmiRow in;
-  in.emplace("RegistryKey", WmiValue::fromString(registryKey));
-  const auto r = m_session.callMethod(row.path, "RemoveExclusion", in);
-  if (!r.ok()) {
-    if (error) *error = r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_RegistryFilter") << "RemoveExclusion ok: key=" << registryKey;
-  return true;
+}  // namespace
+
+WmiResult UwfRegistryFilter::addExclusion(const api::RegistryFilterRow& row, const std::string& registryKey) const {
+  return invokeExclusion(m_session, row, "AddExclusion", registryKey);
 }
 
-bool UwfRegistryFilter::setPersistFlags(const api::RegistryFilterRow& row, bool persistDomainSecretKey, bool persistTSCAL, std::string* error) const {
+WmiResult UwfRegistryFilter::removeExclusion(const api::RegistryFilterRow& row, const std::string& registryKey) const {
+  return invokeExclusion(m_session, row, "RemoveExclusion", registryKey);
+}
+
+WmiResult UwfRegistryFilter::setPersistFlags(const api::RegistryFilterRow& row, bool persistDomainSecretKey, bool persistTSCAL) const {
   // UWF_RegistryFilter 的键属性是 CurrentSession；PutInstance(CREATE_OR_UPDATE)
   // 按键定位实例。本类属性只有 CurrentSession + 这两个布尔，全部给出即整实例更新。
   WmiRow props;
   props.emplace("CurrentSession", WmiValue::fromBool(row.currentSession));
   props.emplace("PersistDomainSecretKey", WmiValue::fromBool(persistDomainSecretKey));
   props.emplace("PersistTSCAL", WmiValue::fromBool(persistTSCAL));
-  std::string putErr;
-  if (!m_session.putInstance("UWF_RegistryFilter", props, &putErr)) {
-    if (error) *error = putErr;
-    return false;
+  auto out = m_session.putInstance("UWF_RegistryFilter", props);
+  if (out.ok) {
+    UWF_LOG_I("UWF_RegistryFilter") << std::format("setPersistFlags ok: session={} dsk={} tscal={}", row.currentSession ? "current" : "next",
+                                                   persistDomainSecretKey, persistTSCAL);
   }
-  UWF_LOG_I("UWF_RegistryFilter") << std::format("setPersistFlags ok: session={} dsk={} tscal={}", row.currentSession ? "current" : "next",
-                                                 persistDomainSecretKey, persistTSCAL);
-  return true;
+  return out;
 }
 
 std::optional<bool> UwfRegistryFilter::findExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error) const {
@@ -146,11 +130,11 @@ std::vector<api::ExcludedRegistryKey> UwfRegistryFilter::getExclusions(const api
   return out;
 }
 
-CommitResult UwfRegistryFilter::commitRegistry(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const {
+WmiResult UwfRegistryFilter::commitRegistry(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const {
   return invokeCommit(m_session, row.path, "CommitRegistry", registryKey, valueName);
 }
 
-CommitResult UwfRegistryFilter::commitRegistryDeletion(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const {
+WmiResult UwfRegistryFilter::commitRegistryDeletion(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const {
   return invokeCommit(m_session, row.path, "CommitRegistryDeletion", registryKey, valueName);
 }
 

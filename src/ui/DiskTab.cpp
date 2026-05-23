@@ -14,6 +14,7 @@
 #include <QTabWidget>
 #include <format>
 
+#include "../util/ByteFormat.h"
 #include "../util/DriveLetter.h"
 #include "ExclusionListWidget.h"
 #include "I18n.h"
@@ -67,20 +68,6 @@ std::string shortVolumeId(const std::string& vn) {
   return vn;
 }
 
-// 把字节数格式化成 "X.XX GB / MB / KB"。
-std::string fmtBytes(uint64_t bytes) {
-  constexpr double KB = 1024.0;
-  constexpr double MB = 1024.0 * 1024.0;
-  constexpr double GB = 1024.0 * 1024.0 * 1024.0;
-  constexpr double TB = 1024.0 * 1024.0 * 1024.0 * 1024.0;
-  const auto b = static_cast<double>(bytes);
-  if (b >= TB) return std::format("{:.2f} TB", b / TB);
-  if (b >= GB) return std::format("{:.2f} GB", b / GB);
-  if (b >= MB) return std::format("{:.1f} MB", b / MB);
-  if (b >= KB) return std::format("{:.1f} KB", b / KB);
-  return std::format("{} B", bytes);
-}
-
 // 把磁盘信息拼成单行 heading：盘符加粗，后面跟能拿到的字段。
 // 拿不到的字段直接略过，不展示 "(未知)" 之类占位。
 QString renderDiskHeading(const core::DiskInfo& d) {
@@ -94,7 +81,7 @@ QString renderDiskHeading(const core::DiskInfo& d) {
   if (!d.label.empty()) add(d.label);
   if (!d.fileSystem.empty()) add(d.fileSystem);
   if (d.totalBytes > 0) {
-    add(I18n::tr("%1 free / %2").arg(QString::fromStdString(fmtBytes(d.freeBytes)), QString::fromStdString(fmtBytes(d.totalBytes))).toStdString());
+    add(I18n::tr("%1 free / %2").arg(QString::fromStdString(formatBytes(d.freeBytes)), QString::fromStdString(formatBytes(d.totalBytes))).toStdString());
   }
   if (!d.volumeName.empty()) {
     add(std::format("<span style='font-family:Consolas,monospace'>{}</span>", shortVolumeId(d.volumeName)));

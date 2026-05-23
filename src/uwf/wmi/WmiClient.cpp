@@ -11,6 +11,7 @@
 
 #include "../../util/Log.h"
 #include "../../util/StringUtil.h"
+#include "WmiResult.h"
 
 namespace uwf {
 
@@ -433,10 +434,14 @@ std::vector<WmiRow> WmiSession::query(const std::string& wql, std::string* error
     ULONG got = 0;
     hr = enumerator->Next(static_cast<LONG>(WBEM_INFINITE), 1, &obj, &got);
     if (FAILED(hr)) {
-      // 枚举中途失败：rows 里已收集的是不完整结果。记日志并经 error 上报，
-      // 避免截断的结果被调用方当成完整结果（少几行而毫无征兆）。
-      if (error) *error = std::format("enumeration failed after {} row(s): {}", rows.size(), hrText(hr));
-      UWF_LOG_E("wmi") << std::format("query: Next failed after {} row(s); wql={}; {}", rows.size(), wql, hrText(hr));
+      // 枚举中途失败：rows 里已收集的是**残缺**结果。返回残缺数据 + 仅靠 *error
+      // 上报曾让调用方默默用了少几行的数据（"为什么 D: 卷不见了？"——其实是
+      // enumeration 在 D: 之前断了）。这里清空 rows 强制调用方走错误分支：要么
+      // 弹警告、要么重试，绝不让残缺数据冒充完整结果。
+      const auto droppedCount = rows.size();
+      rows.clear();
+      if (error) *error = std::format("enumeration failed after {} row(s): {}", droppedCount, hrText(hr));
+      UWF_LOG_E("wmi") << std::format("query: Next failed after {} row(s) (dropping partial result); wql={}; {}", droppedCount, wql, hrText(hr));
       break;
     }
     if (got == 0 || !obj) break;  // 正常枚举到底
@@ -681,11 +686,10 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
   return result;
 }
 
-bool WmiSession::putInstance(const std::string& className, const WmiRow& props, std::string* error) const {
+WmiResult WmiSession::putInstance(const std::string& className, const WmiRow& props) const {
   if (!d->connected) {
-    if (error) *error = "WMI session not connected";
     UWF_LOG_E("wmi") << "putInstance rejected: session not connected; class=" << className;
-    return false;
+    return WmiResult::failed("WMI session not connected");
   }
 
   // 1) 拿到类的 blueprint —— SpawnInstance 要从 class object 出发。
@@ -696,8 +700,7 @@ bool WmiSession::putInstance(const std::string& className, const WmiRow& props, 
     HRESULT hr = d->services->GetObject(clsBstr, 0, nullptr, &classObj, nullptr);
     SysFreeString(clsBstr);
     if (FAILED(hr) || !classObj) {
-      if (error) *error = std::format("GetObject({}) failed: {}", className, hrText(hr));
-      return false;
+      return WmiResult::failed(std::format("GetObject({}) failed: {}", className, hrText(hr)));
     }
   }
 
@@ -705,10 +708,7 @@ bool WmiSession::putInstance(const std::string& className, const WmiRow& props, 
   IWbemClassObject* inst = nullptr;
   HRESULT hr = classObj->SpawnInstance(0, &inst);
   classObj->Release();
-  if (FAILED(hr) || !inst) {
-    if (error) *error = std::format("SpawnInstance({}) failed: {}", className, hrText(hr));
-    return false;
-  }
+  if (FAILED(hr) || !inst) return WmiResult::failed(std::format("SpawnInstance({}) failed: {}", className, hrText(hr)));
 
   // 3) 设置每个属性。WMI 对 BOOL key 期望 VT_BOOL，对 string 期望 VT_BSTR，
   //    valueToVariant 已经按 WmiValue::Kind 选好；对 UInt 用 VT_I4
@@ -732,31 +732,36 @@ bool WmiSession::putInstance(const std::string& className, const WmiRow& props, 
   if (callResult) callResult->Release();
   inst->Release();
   if (FAILED(hr)) {
-    if (error) *error = std::format("PutInstance({}) failed: {}", className, hrText(hr));
     UWF_LOG_E("wmi") << std::format("putInstance failed: class={}; {}", className, hrText(hr));
-    return false;
+    WmiResult out = WmiResult::failed(std::format("PutInstance({}) failed: {}", className, hrText(hr)));
+    out.hresult = static_cast<int32_t>(hr);
+    return out;
   }
   UWF_LOG_I("wmi") << std::format("putInstance ok: class={} props={}", className, props.size());
-  return true;
+  WmiResult out;
+  out.ok = true;
+  return out;
 }
 
-bool WmiSession::deleteInstance(const std::string& objectPath, std::string* error) const {
+WmiResult WmiSession::deleteInstance(const std::string& objectPath) const {
   if (!d->connected) {
-    if (error) *error = "WMI session not connected";
     UWF_LOG_E("wmi") << "deleteInstance rejected: session not connected; path=" << objectPath;
-    return false;
+    return WmiResult::failed("WMI session not connected");
   }
   const auto pathW = utf8ToWide(objectPath);
   BSTR pathBstr = SysAllocString(pathW.c_str());
   HRESULT hr = d->services->DeleteInstance(pathBstr, 0, nullptr, nullptr);
   SysFreeString(pathBstr);
   if (FAILED(hr)) {
-    if (error) *error = std::format("DeleteInstance({}) failed: {}", objectPath, hrText(hr));
     UWF_LOG_E("wmi") << std::format("deleteInstance failed: path={}; {}", objectPath, hrText(hr));
-    return false;
+    WmiResult out = WmiResult::failed(std::format("DeleteInstance({}) failed: {}", objectPath, hrText(hr)));
+    out.hresult = static_cast<int32_t>(hr);
+    return out;
   }
   UWF_LOG_I("wmi") << "deleteInstance ok: path=" << objectPath;
-  return true;
+  WmiResult out;
+  out.ok = true;
+  return out;
 }
 
 bool initComOnce(std::string* error) {

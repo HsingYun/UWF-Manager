@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "../wmi/WmiClient.h"
+#include "../wmi/WmiResult.h"
 #include "Types.h"
 
 namespace uwf {
@@ -30,8 +31,8 @@ class UwfOverlay {
   std::vector<api::OverlayFileInfo> getOverlayFiles(const api::OverlayRow& row, const std::string& volume, std::string* error = nullptr,
                                                     int32_t* hresult = nullptr) const;
 
-  bool setWarningThreshold(const api::OverlayRow& row, uint32_t sizeMb, std::string* error = nullptr) const;
-  bool setCriticalThreshold(const api::OverlayRow& row, uint32_t sizeMb, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult setWarningThreshold(const api::OverlayRow& row, uint32_t sizeMb) const;
+  [[nodiscard]] WmiResult setCriticalThreshold(const api::OverlayRow& row, uint32_t sizeMb) const;
 
  private:
   WmiSession& m_session;

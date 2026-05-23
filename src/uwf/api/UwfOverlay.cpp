@@ -89,36 +89,26 @@ std::vector<api::OverlayFileInfo> UwfOverlay::getOverlayFiles(const api::Overlay
   return out;
 }
 
-bool UwfOverlay::setWarningThreshold(const api::OverlayRow& row, const uint32_t sizeMb, std::string* error) const {
-  if (row.path.empty()) {
-    if (error) *error = "UWF_Overlay row has empty __PATH; call read() first";
-    return false;
-  }
+namespace {
+
+// SetWarningThreshold / SetCriticalThreshold 共享前置校验 + WMI 调用骨架。
+WmiResult invokeSetThreshold(const WmiSession& session, const api::OverlayRow& row, const char* method, uint32_t sizeMb) {
+  if (row.path.empty()) return WmiResult::failed("UWF_Overlay row has empty __PATH; call read() first");
   WmiRow inputs;
   inputs.emplace("size", WmiValue::fromUInt(sizeMb));
-  const auto r = m_session.callMethod(row.path, "SetWarningThreshold", inputs);
-  if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_Overlay::SetWarningThreshold returned {}", r.returnValue) : r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_Overlay") << "SetWarningThreshold ok: size=" << sizeMb << "MB";
-  return true;
+  auto out = WmiResult::fromMethodResult(session.callMethod(row.path, method, inputs));
+  if (out.ok) UWF_LOG_I("UWF_Overlay") << method << " ok: size=" << sizeMb << "MB";
+  return out;
 }
 
-bool UwfOverlay::setCriticalThreshold(const api::OverlayRow& row, const uint32_t sizeMb, std::string* error) const {
-  if (row.path.empty()) {
-    if (error) *error = "UWF_Overlay row has empty __PATH; call read() first";
-    return false;
-  }
-  WmiRow inputs;
-  inputs.emplace("size", WmiValue::fromUInt(sizeMb));
-  const auto r = m_session.callMethod(row.path, "SetCriticalThreshold", inputs);
-  if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_Overlay::SetCriticalThreshold returned {}", r.returnValue) : r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_Overlay") << "SetCriticalThreshold ok: size=" << sizeMb << "MB";
-  return true;
+}  // namespace
+
+WmiResult UwfOverlay::setWarningThreshold(const api::OverlayRow& row, const uint32_t sizeMb) const {
+  return invokeSetThreshold(m_session, row, "SetWarningThreshold", sizeMb);
+}
+
+WmiResult UwfOverlay::setCriticalThreshold(const api::OverlayRow& row, const uint32_t sizeMb) const {
+  return invokeSetThreshold(m_session, row, "SetCriticalThreshold", sizeMb);
 }
 
 }  // namespace uwf

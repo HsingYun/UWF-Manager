@@ -20,6 +20,11 @@
 
 namespace uwf {
 
+// 前向声明：putInstance / deleteInstance 返回 WmiResult，但 WmiResult.h 反过来
+// 依赖本文件（用 WmiMethodResult / WmiError）。.cpp 实现处会 include WmiResult.h，
+// 调用方也会 include 它，所以 header 这里只需要 forward decl 即可断开循环。
+struct WmiResult;
+
 class WmiValue {
  public:
   enum class Kind { None, Bool, Int, UInt, Double, String };
@@ -114,12 +119,12 @@ class WmiSession {
   // 用 props 创建（或更新）一个 WMI 实例。className 是类名（如 "UWF_Volume"），
   // props 必须包含全部 key 字段（如 UWF_Volume 的 CurrentSession / DriveLetter
   // / VolumeName）。WBEM_FLAG_CREATE_OR_UPDATE：不存在则创建，已存在则更新。
-  // 返回 true 表示 PutInstance 成功；caller 之后自己 query 拿 __PATH（不在这里
-  // 读，因为 SpawnInstance 出来的 inst 在 Put 后 __PATH 仍可能为空）。
-  [[nodiscard]] bool putInstance(const std::string& className, const WmiRow& props, std::string* error = nullptr) const;
+  // 返回 WmiResult.ok 表示 PutInstance 成功；caller 之后自己 query 拿 __PATH
+  // （不在这里读，因为 SpawnInstance 出来的 inst 在 Put 后 __PATH 仍可能为空）。
+  [[nodiscard]] WmiResult putInstance(const std::string& className, const WmiRow& props) const;
 
   // 删除一个 WMI 实例（DeleteInstance），objectPath 用 __PATH 或 relative path。
-  [[nodiscard]] bool deleteInstance(const std::string& objectPath, std::string* error = nullptr) const;
+  [[nodiscard]] WmiResult deleteInstance(const std::string& objectPath) const;
 
  private:
   struct Impl;

@@ -32,36 +32,24 @@ std::optional<api::OverlayConfigRow> UwfOverlayConfig::read(bool currentSession,
   return std::nullopt;
 }
 
-bool UwfOverlayConfig::setType(const api::OverlayConfigRow& row, api::OverlayType type, std::string* error) const {
-  if (row.path.empty()) {
-    if (error) *error = "UWF_OverlayConfig row has empty __PATH; call read() first";
-    return false;
-  }
+WmiResult UwfOverlayConfig::setType(const api::OverlayConfigRow& row, api::OverlayType type) const {
+  if (row.path.empty()) return WmiResult::failed("UWF_OverlayConfig row has empty __PATH; call read() first");
   WmiRow inputs;
   inputs.emplace("type", WmiValue::fromUInt(static_cast<uint32_t>(type)));
-  const auto r = m_session.callMethod(row.path, "SetType", inputs);
-  if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_OverlayConfig::SetType returned {}", r.returnValue) : r.error;
-    return false;
+  auto out = WmiResult::fromMethodResult(m_session.callMethod(row.path, "SetType", inputs));
+  if (out.ok) {
+    UWF_LOG_I("UWF_OverlayConfig") << std::format("SetType ok: type={} ({})", static_cast<uint32_t>(type), type == api::OverlayType::Disk ? "Disk" : "RAM");
   }
-  UWF_LOG_I("UWF_OverlayConfig") << std::format("SetType ok: type={} ({})", static_cast<uint32_t>(type), type == api::OverlayType::Disk ? "Disk" : "RAM");
-  return true;
+  return out;
 }
 
-bool UwfOverlayConfig::setMaximumSize(const api::OverlayConfigRow& row, uint32_t sizeMb, std::string* error) const {
-  if (row.path.empty()) {
-    if (error) *error = "UWF_OverlayConfig row has empty __PATH; call read() first";
-    return false;
-  }
+WmiResult UwfOverlayConfig::setMaximumSize(const api::OverlayConfigRow& row, uint32_t sizeMb) const {
+  if (row.path.empty()) return WmiResult::failed("UWF_OverlayConfig row has empty __PATH; call read() first");
   WmiRow inputs;
   inputs.emplace("size", WmiValue::fromUInt(sizeMb));
-  const auto r = m_session.callMethod(row.path, "SetMaximumSize", inputs);
-  if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_OverlayConfig::SetMaximumSize returned {}", r.returnValue) : r.error;
-    return false;
-  }
-  UWF_LOG_I("UWF_OverlayConfig") << "SetMaximumSize ok: size=" << sizeMb << "MB";
-  return true;
+  auto out = WmiResult::fromMethodResult(m_session.callMethod(row.path, "SetMaximumSize", inputs));
+  if (out.ok) UWF_LOG_I("UWF_OverlayConfig") << "SetMaximumSize ok: size=" << sizeMb << "MB";
+  return out;
 }
 
 }  // namespace uwf

@@ -17,6 +17,7 @@
 #include <format>
 
 #include "../core/Config.h"
+#include "../util/ByteFormat.h"
 #include "I18n.h"
 #include "OverlayUsageBar.h"
 #include "SwitchButton.h"
@@ -130,21 +131,6 @@ void setComboValue(QComboBox* c, const QVariant& v) {
       return;
     }
   }
-}
-
-// 把 MB 数值挑到"最紧凑"的单位显示：整除就用整数，否则保留两位小数。
-// 常见 RAM 容量（8/16/32/64 GB）会落到整数分支，输出最短。
-std::string fmtMbAdaptive(uint32_t mb) {
-  constexpr uint64_t GB = 1024ULL;
-  constexpr uint64_t TB = 1024ULL * 1024;
-  constexpr uint64_t PB = 1024ULL * 1024 * 1024;
-  if (mb >= PB && mb % PB == 0) return std::format("{} PB", mb / PB);
-  if (mb >= TB && mb % TB == 0) return std::format("{} TB", mb / TB);
-  if (mb >= GB && mb % GB == 0) return std::format("{} GB", mb / GB);
-  if (mb >= PB) return std::format("{:.2f} PB", static_cast<double>(mb) / static_cast<double>(PB));
-  if (mb >= TB) return std::format("{:.2f} TB", static_cast<double>(mb) / static_cast<double>(TB));
-  if (mb >= GB) return std::format("{:.2f} GB", static_cast<double>(mb) / static_cast<double>(GB));
-  return std::format("{} MB", mb);
 }
 
 }  // namespace
@@ -383,7 +369,7 @@ void GlobalStatusPanel::refreshTypeDependentUi() {
 
   if (m_maxLabel) {
     if (isRam && m_totalRamMb > 0) {
-      m_maxLabel->setText(I18n::tr("Maximum size · RAM %1").arg(QString::fromStdString(fmtMbAdaptive(m_totalRamMb))));
+      m_maxLabel->setText(I18n::tr("Maximum size · RAM %1").arg(QString::fromStdString(formatMb(m_totalRamMb))));
     } else {
       m_maxLabel->setText(I18n::tr("Maximum size"));
     }
