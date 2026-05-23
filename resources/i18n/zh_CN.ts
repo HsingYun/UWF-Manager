@@ -256,7 +256,7 @@
     <message><source>Page %1 / %2 · %3 file(s) total</source><translation>第 %1 / %2 页 · 共 %3 个文件</translation></message>
     <message>
         <source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure. Wait a few seconds and click &quot;View overlay files&quot; again, often it succeeds on retry.</source>
-        <translation>WMI 提供程序在枚举覆盖层文件时崩溃。这是 UWF_Overlay.GetOverlayFiles 在覆盖层较大或磁盘 I/O 繁忙时的已知不稳定行为。等几秒后再点一次"查看覆盖层文件"，多数情况下重试就能成功。</translation>
+        <translation>WMI 提供程序在枚举覆盖层文件时崩溃。这是 UWF_Overlay.GetOverlayFiles 在覆盖层较大或磁盘 I/O 繁忙时的已知不稳定行为。等几秒后再点一次「查看覆盖层文件」，多数情况下重试就能成功。</translation>
     </message>
     <message>
         <source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source>
@@ -435,7 +435,7 @@ Pending change: %3</source>
     </message>
     <message>
         <source>&lt;p&gt;A graphical front-end for managing the UWF filter state, overlay, and file / registry exclusions. Most changes take effect after the next reboot.&lt;/p&gt;&lt;p&gt;Source code: &lt;a href=&quot;%3&quot;&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href=&quot;mailto:%1&quot;&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;This program is released under the &lt;a href=&quot;%2&quot;&gt;GNU General Public License v3.0&lt;/a&gt;; the full license text is included in the LICENSE file shipped with this program.&lt;/p&gt;&lt;p&gt;This program is free software: you may redistribute it and / or modify it under the terms of the GPL v3. It is provided &quot;as is&quot;, without any warranty.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;UWF 的图形化管理界面：筛选器状态、覆盖层、文件与注册表排除。多数变更在下次重启后生效。&lt;/p&gt;&lt;p&gt;源代码仓库：&lt;a href=&quot;%3&quot;&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href=&quot;mailto:%1&quot;&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;本程序采用 &lt;a href=&quot;%2&quot;&gt;GNU General Public License v3.0&lt;/a&gt; 协议发布；完整协议文本见随程序分发的 LICENSE 文件。&lt;/p&gt;&lt;p&gt;本程序为自由软件，您可以在 GPL v3 条款下重新分发或修改本程序。本程序按"原样"提供，不附带任何形式的担保。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;UWF 的图形化管理界面：筛选器状态、覆盖层、文件与注册表排除。多数变更在下次重启后生效。&lt;/p&gt;&lt;p&gt;源代码仓库：&lt;a href=&quot;%3&quot;&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href=&quot;mailto:%1&quot;&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;本程序采用 &lt;a href=&quot;%2&quot;&gt;GNU General Public License v3.0&lt;/a&gt; 协议发布；完整协议文本见随程序分发的 LICENSE 文件。&lt;/p&gt;&lt;p&gt;本程序为自由软件，您可以在 GPL v3 条款下重新分发或修改本程序。本程序按「原样」提供，不附带任何形式的担保。&lt;/p&gt;</translation>
     </message>
     <message><source>About UWF Manager</source><translation>关于 UWF 管理器</translation></message>
     <message>
@@ -447,6 +447,10 @@ Pending change: %3</source>
     <message>
         <source>The target was not found; there is nothing in the overlay to commit.</source>
         <translation>未找到目标，覆盖层中没有可提交的内容。</translation>
+    </message>
+    <message>
+        <source>Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It will disappear on reboot; commit-delete is neither needed nor possible.</source>
+        <translation>目标不在物理卷 / 持久化注册表上——它只存在于覆盖层中（在 UWF 保护下新建，从未提交过）。重启后会自动消失，无需也无法用「提交删除」处理。</translation>
     </message>
     <message>
         <source>A parameter was rejected by the system (invalid path or argument).</source>
@@ -513,14 +517,6 @@ Canceled by user; %1 entries not processed.</source>
         <translation>切换到卷 %1 的保护设置与文件排除列表。%2</translation>
     </message>
     <message><source>Failed to read volume information</source><translation>读取卷信息失败</translation></message>
-    <message>
-        <source>Error: %1
-
-Please verify that the UWF feature is enabled and that this program is running as administrator.</source>
-        <translation>错误：%1
-
-请确认已启用 UWF 功能，并以管理员身份运行。</translation>
-    </message>
     <message><source>UWF namespace is not available</source><translation>UWF 命名空间不可用</translation></message>
     <message><source>Refreshed · %1 volumes</source><translation>已刷新 · 共 %1 个卷</translation></message>
 
@@ -532,7 +528,7 @@ Please verify that the UWF feature is enabled and that this program is running a
     <message><source>· Overlay critical threshold → %1 MB</source><translation>· 覆盖层 严重阈值 → %1 MB</translation></message>
     <message>
         <source>⚠ Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source>
-        <translation>⚠ 修改类型 / 最大大小前需先停用筛选器并重启，否则系统会拒绝。</translation>
+        <translation>⚠ 启用筛选器期间无法修改类型 / 最大大小，需先停用筛选器并重启。</translation>
     </message>
     <message><source>· Volume %1 protection %2</source><translation>· 卷 %1 保护 %2</translation></message>
     <message>
@@ -570,7 +566,7 @@ Please verify that the UWF feature is enabled and that this program is running a
     <message><source>Result</source><translation>应用结果</translation></message>
     <message><source>✘ Failed to read filter state: %1</source><translation>✘ 读取筛选器状态失败：%1</translation></message>
     <message><source>✓ Filter: %1</source><translation>✓ 筛选器：%1</translation></message>
-    <message><source>✘ Failed to %1 filter: %2</source><translation>✘ %1筛选器失败：%2</translation></message>
+    <message><source>✘ Failed to %1 filter: %2</source><translation>✘ %1 筛选器失败：%2</translation></message>
     <message><source>✓ Overlay warning threshold set to %1 MB</source><translation>✓ 覆盖层 警告阈值设为 %1 MB</translation></message>
     <message><source>✘ Failed to set warning threshold: %1</source><translation>✘ 设置警告阈值失败：%1</translation></message>
     <message><source>✓ Overlay critical threshold set to %1 MB</source><translation>✓ 覆盖层 严重阈值设为 %1 MB</translation></message>
@@ -590,14 +586,14 @@ Please verify that the UWF feature is enabled and that this program is running a
     <message><source>✓ Volume %1 protection: %2</source><translation>✓ 卷 %1 保护：%2</translation></message>
     <message>
         <source>✘ Failed to %1 protection on volume %2: %3</source>
-        <translation>✘ %1卷 %2 保护失败：%3</translation>
+        <translation>✘ 卷 %2 %1 保护失败：%3</translation>
     </message>
     <message><source>✓ Volume %1 bind by: %2</source><translation>✓ 卷 %1 绑定方式：%2</translation></message>
     <message><source>✘ Failed to set binding for volume %1: %2</source><translation>✘ 卷 %1 绑定方式设置失败：%2</translation></message>
     <message><source>✓ Volume %1 added file exclusion: %2</source><translation>✓ 卷 %1 新增文件排除：%2</translation></message>
     <message>
         <source>✘ Volume %1 failed to add file exclusion %2: %3</source>
-        <translation>✘ 卷 %1 新增文件排除 %2 失败:%3</translation>
+        <translation>✘ 卷 %1 新增文件排除 %2 失败：%3</translation>
     </message>
     <message><source>✓ Volume %1 removed file exclusion: %2</source><translation>✓ 卷 %1 移除文件排除：%2</translation></message>
     <message>
@@ -657,15 +653,13 @@ Continue?</source>
         <source>No current-session record found for volume %1.</source>
         <translation>找不到卷 %1 的当前会话记录。</translation>
     </message>
-    <message><source>Commit rejected</source><translation>提交被拒绝</translation></message>
     <message>
         <source>This path is in the file exclusion list.
 Exclusion: %1</source>
         <translation>此路径在文件排除列表中。
 排除项：%1</translation>
     </message>
-    <message><source>Nothing to commit</source><translation>无可提交内容</translation></message>
-    <message><source>No files were found under %1.</source><translation>目录 %1 下递归遍历到 0 个文件。</translation></message>
+    <message><source>No files were found under %1.</source><translation>目录 %1 下没有任何文件。</translation></message>
     <message><source>Commit to disk</source><translation>提交到磁盘</translation></message>
     <message><source>Committing…</source><translation>正在提交…</translation></message>
 
@@ -814,7 +808,7 @@ uwfmgr registry add-exclusion HKLM\Software\MyApp</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>路径不在本卷，或本卷不支持文件排除（如 exFAT / ReFS）</translation></message>
     <message><source>Rejected by UWF&apos;s blacklist (system file / Windows / pagefile / etc.)</source><translation>被 UWF 黑名单拒绝（系统文件 / Windows / 分页文件等）</translation></message>
     <message><source>Same command was already issued earlier in this batch</source><translation>本次导入中此前已出现过相同命令</translation></message>
-    <message><source>Pending filter %1</source><translation>待应用：筛选器%1</translation></message>
+    <message><source>Pending filter %1</source><translation>待应用：%1 筛选器</translation></message>
     <message><source>Filter is already in the target state</source><translation>筛选器已经处于目标状态</translation></message>
     <message><source>Pending overlay type → %1</source><translation>待应用：覆盖层类型 → %1</translation></message>
     <message><source>Overlay type already %1</source><translation>覆盖层类型已经是 %1</translation></message>
@@ -825,7 +819,7 @@ uwfmgr registry add-exclusion HKLM\Software\MyApp</translation></message>
     <message><source>Pending overlay %1 → %2 MB</source><translation>待应用：覆盖层 %1 → %2 MB</translation></message>
     <message><source>Overlay %1 already %2 MB</source><translation>覆盖层 %1 已经是 %2 MB</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>未知的卷 %1（没有该盘符对应的 UWF 可保护磁盘）</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>待应用：卷 %1 保护%2</translation></message>
+    <message><source>Pending volume %1 protection %2</source><translation>待应用：卷 %1 %2 保护</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>卷 %1 的保护状态已是目标值</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>路径 %1 没有盘符，无法定位到卷 TAB</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>没有盘符 %1 对应的 UWF 可保护磁盘</translation></message>
