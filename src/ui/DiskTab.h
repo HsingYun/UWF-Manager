@@ -78,11 +78,10 @@ class DiskTab : public QWidget {
   void statusHint(const QString& text, int msec);
   void commitFileRequested(const QString& path);
   void commitFileDeletionRequested(const QString& path);
-  // wholeKey=true 表示 "整键递归"——valueName 被忽略；wholeKey=false 时
-  // valueName 是要操作的具体值（空串 = (默认) 值）。两种状态都可能产出
-  // valueName="" ，必须靠 wholeKey 区分语义。
-  void commitRegistryRequested(const QString& key, const QString& valueName, bool wholeKey);
-  void commitRegistryDeletionRequested(const QString& key, const QString& valueName, bool wholeKey);
+  // valueName 空串 = 整键递归；非空 = 操作单个命名值。(Default) 在 picker
+  // 层恒禁用，故 valueName 非空时必然是真实值名，"空=递归"无歧义。
+  void commitRegistryRequested(const QString& key, const QString& valueName);
+  void commitRegistryDeletionRequested(const QString& key, const QString& valueName);
 
  private slots:
   void onCommitFile();

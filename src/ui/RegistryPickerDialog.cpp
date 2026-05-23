@@ -151,9 +151,8 @@ void RegistryPickerDialog::buildUi() {
   m_okBtn = btns->button(QDialogButtonBox::Ok);
   m_okBtn->setEnabled(false);
   connect(btns, &QDialogButtonBox::accepted, this, [this] {
-    // wholeKey 由"值表当前无选中"决定——Exclusion 模式下 wholeKey 没意义，强制 false。
-    const bool whole = supportsValueSelection() && m_valueTable && m_valueTable->selectedItems().isEmpty();
-    m_result = Result{currentKeyPath(), currentValueName(), whole};
+    // valueName 空 = 整键递归（值表无选中或 Exclusion 模式整表禁选）；非空 = 命名值。
+    m_result = Result{currentKeyPath(), currentValueName()};
     accept();
   });
   connect(btns, &QDialogButtonBox::rejected, this, [this] {

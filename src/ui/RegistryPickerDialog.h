@@ -9,7 +9,7 @@
 //                    = 整键递归（上层按"最深子键先删"的顺序逐个 delete-commit）。
 //                    注意 WMI 层 (key, "") 是删键本身（非默认值），递归交给上层。
 //   - Exclusion   —— UWF_RegistryFilter::AddExclusion。WMI 不收值名，所以值表
-//                    只展示、整表禁用选择，OK 永远返回 (key, "", wholeKey=false)。
+//                    只展示、整表禁用选择，OK 永远返回 (key, "")。
 //
 // **三种模式下 (Default) 行恒禁用**——
 //   CommitValue: 默认值很少有人单独维护，不暴露成单选项；要 commit 走整键递归
@@ -54,11 +54,10 @@ class RegistryPickerDialog : public QDialog {
 
   struct Result {
     QString key;        // 归一长写键路径（HKEY_LOCAL_MACHINE\...）
-    QString valueName;  // 选中行的真实值名；wholeKey=true 时无意义。
-                        // Exclusion 永远空；(Default) 在所有模式都禁选，故不会出现空串。
-    bool wholeKey = false;  // 值表无选中 = 用户意图"整键递归"（CommitValue / DeleteValue
-                            // 时这种语义和"提交单个空名值"不同，必须靠这个 bool 区分）。
-                            // Exclusion 永远 false（值表禁选、用不到）。
+    QString valueName;  // 选中行的真实值名；空串 = 用户意图"整键递归"。
+                        // (Default) 在所有模式都禁选，故 valueName 非空时必然是真实
+                        // 命名值——"空串=整键递归"的语义因此无歧义，不再需要单独的
+                        // wholeKey 字段。Exclusion 模式永远空（值表整表禁选）。
   };
 
   // 注册表树里每个 key 的三态可用性。详见类注释。

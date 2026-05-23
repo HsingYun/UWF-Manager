@@ -295,18 +295,17 @@ void DiskTab::onCommitFolderDelete() {
 }
 
 void DiskTab::onCommitRegistry() {
-  // picker 的 wholeKey=true（值表空选中）→ MainWindow 递归提交整棵子树；
-  // wholeKey=false 时 valueName 是要提交的命名值（(Default) 已在 picker 里禁选，
-  // 默认值要走整键递归一并 commit）。
+  // valueName 空（值表无选中）→ MainWindow 递归提交整棵子树；非空 → 命名值
+  // 单独 commit。(Default) 已在 picker 里禁选，默认值要走整键递归一并 commit。
   const auto target = RegistryPickerDialog::pick(RegistryPickerDialog::Mode::CommitValue, I18n::tr("Commit registry changes"), this);
   if (!target) return;
-  emit commitRegistryRequested(target->key, target->valueName, target->wholeKey);
+  emit commitRegistryRequested(target->key, target->valueName);
 }
 
 void DiskTab::onCommitRegistryDelete() {
   const auto target = RegistryPickerDialog::pick(RegistryPickerDialog::Mode::DeleteValue, I18n::tr("Commit registry deletion"), this);
   if (!target) return;
-  emit commitRegistryDeletionRequested(target->key, target->valueName, target->wholeKey);
+  emit commitRegistryDeletionRequested(target->key, target->valueName);
 }
 
 int DiskTab::activeInfoTabIndex() const { return m_infoTabs ? m_infoTabs->currentIndex() : 0; }
