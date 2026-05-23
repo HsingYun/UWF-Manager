@@ -16,6 +16,7 @@
 
 #include "../util/ByteFormat.h"
 #include "../util/DriveLetter.h"
+#include "DialogHelpers.h"
 #include "ExclusionListWidget.h"
 #include "I18n.h"
 #include "OverlayFilesDialog.h"
@@ -265,40 +266,32 @@ void DiskTab::refreshThemedIcons() {
 
 void DiskTab::onCommitFile() {
   if (!supported()) return;
-  const QString dl = driveLetter();
-  const QString base = dl.isEmpty() ? QDir::homePath() : dl + "\\";
-  const QString path = QFileDialog::getOpenFileName(this, I18n::tr("Select a file to commit to disk"), base);
+  const QString path = QFileDialog::getOpenFileName(this, I18n::tr("Select a file to commit to disk"), dialogBasePath(driveLetter()));
   if (path.isEmpty()) return;
   emit commitFileRequested(QDir::toNativeSeparators(path));
 }
 
 void DiskTab::onCommitDir() {
   if (!supported()) return;
-  const QString dl = driveLetter();
-  const QString base = dl.isEmpty() ? QDir::homePath() : dl + "\\";
-  const QString path = QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder to commit to disk"), base);
+  const QString path = QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder to commit to disk"), dialogBasePath(driveLetter()));
   if (path.isEmpty()) return;
   emit commitFileRequested(QDir::toNativeSeparators(path));
 }
 
 void DiskTab::onCommitFileDelete() {
   if (!supported()) return;
-  const QString dl = driveLetter();
-  const QString base = dl.isEmpty() ? QDir::homePath() : dl + "\\";
   // CommitFileDeletion 删除的是一个**当前仍存在**的文件，所以直接用文件选择框
   // 挑现存文件即可。
-  const QString path = QFileDialog::getOpenFileName(this, I18n::tr("Select a file whose deletion you want to commit"), base);
+  const QString path = QFileDialog::getOpenFileName(this, I18n::tr("Select a file whose deletion you want to commit"), dialogBasePath(driveLetter()));
   if (path.isEmpty()) return;
   emit commitFileDeletionRequested(QDir::toNativeSeparators(path));
 }
 
 void DiskTab::onCommitFolderDelete() {
   if (!supported()) return;
-  const QString dl = driveLetter();
-  const QString base = dl.isEmpty() ? QDir::homePath() : dl + "\\";
   // 文件夹删除同样作用于"当前存在"的目录——用文件夹选择器挑现存目录；递归删除
   // （子文件 / 子目录 / 目录本身）交给 MainWindow::commitFileDeletionPath。
-  const QString path = QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder whose deletion you want to commit"), base);
+  const QString path = QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder whose deletion you want to commit"), dialogBasePath(driveLetter()));
   if (path.isEmpty()) return;
   emit commitFileDeletionRequested(QDir::toNativeSeparators(path));
 }

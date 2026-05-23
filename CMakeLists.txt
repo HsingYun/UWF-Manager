@@ -60,6 +60,9 @@ set(UWF_SOURCES
         src/ui/CommitBatch.h
         src/ui/CommitReportDialog.h
         src/ui/CommitReportDialog.cpp
+        src/ui/DialogHelpers.h
+        src/ui/TransientLabel.h
+        src/ui/TransientLabel.cpp
         src/ui/LogViewerDialog.h
         src/ui/LogViewerDialog.cpp
         src/ui/TableText.h

@@ -58,6 +58,7 @@
 #include "LogViewerDialog.h"
 #include "MessageDialog.h"
 #include "ThemeManager.h"
+#include "TransientLabel.h"
 #include "TrayController.h"
 #include "uwf_version.h"
 
@@ -507,8 +508,8 @@ void MainWindow::buildUi() {
   // 默认文案换成机器基本信息（OS / CPU / RAM / GPU），悬停事件会临时覆盖。
   // 留 AutoText：默认文案里有 HTML 标签会按 RichText 渲染；
   // 普通 tooltip 是纯文本则按 PlainText 渲染，不怕里面的 & / < 被解析走样。
-  m_hoverHintDefault = systemInfoHtml();
-  m_hoverHint->setText(m_hoverHintDefault);
+  m_hoverCtl = new TransientLabel(m_hoverHint, m_hoverHint);
+  m_hoverCtl->setBaseline(systemInfoHtml());
   globalLayout->addWidget(m_hoverHint, 0);
   globalWrap->setObjectName("globalWrap");
   globalWrap->setFixedWidth(420);
@@ -532,22 +533,11 @@ void MainWindow::buildUi() {
   m_statusText->setObjectName("statusBarLabel");
   statusBar()->addPermanentWidget(m_statusText, 1);
 
-  // 临时提示通过一个 singleShot QTimer 覆盖 m_statusText，
-  // 到期后恢复 baseline（来自 refresh / updatePendingSummary 的常驻文案）。
-  // 必须走这条路径，因为 statusBar()->showMessage() 被 stretch=1 的
-  // permanent widget 挤没空间，显示不出来。
-  m_hintTimer = new QTimer(this);
-  m_hintTimer->setSingleShot(true);
-  connect(m_hintTimer, &QTimer::timeout, this, [this]() { m_statusText->setText(m_statusBaseline); });
-
-  // 鼠标离开控件后的"短延迟回到默认提示"定时器 —— 延迟是为了避免光标在
-  // 相邻控件之间移动时文字先变空再变回去造成的闪烁。
-  m_hoverClearTimer = new QTimer(this);
-  m_hoverClearTimer->setSingleShot(true);
-  m_hoverClearTimer->setInterval(120);
-  connect(m_hoverClearTimer, &QTimer::timeout, this, [this]() {
-    if (m_hoverHint) m_hoverHint->setText(m_hoverHintDefault);
-  });
+  // 状态栏走 TransientLabel：setBaseline = refresh / updatePendingSummary 的
+  // 常驻文案，flash() = DiskTab 临时提示（覆盖几秒后自动回基线）。直接用
+  // statusBar()->showMessage 走不通——stretch=1 的 permanent widget 把它挤没
+  // 显示空间。
+  m_statusCtl = new TransientLabel(m_statusText, m_statusText);
 
   // buildUi 末尾统一应用一次主题：toolbar 图标、disk tab 图标、hover hint
   // 默认文案都按当前主题色生成（构造期间 connect 时 m_hoverHint 还是 null，
@@ -584,8 +574,8 @@ void MainWindow::rebuildUi() {
     statusBar()->removeWidget(m_statusText);
     m_statusText->deleteLater();
   }
-  if (m_hintTimer) m_hintTimer->deleteLater();
-  if (m_hoverClearTimer) m_hoverClearTimer->deleteLater();
+  // m_statusCtl / m_hoverCtl 的 QObject parent 设为对应 label，label 上面
+  // deleteLater 时它们一起 deleteLater——不需要单独管。
 
   // 重置所有指针成员；buildUi 会重新填充。
   m_actRefresh = m_actImport = m_actPlan = m_actShutdown = m_actRestart = nullptr;
@@ -594,10 +584,8 @@ void MainWindow::rebuildUi() {
   m_global = nullptr;
   m_hoverHint = nullptr;
   m_statusText = nullptr;
-  m_hintTimer = m_hoverClearTimer = nullptr;
+  m_statusCtl = m_hoverCtl = nullptr;
   m_diskTabs.clear();
-  m_statusBaseline.clear();
-  m_hoverHintDefault.clear();
 
   buildUi();
   refresh();
@@ -620,8 +608,7 @@ void MainWindow::rebuildUi() {
 }
 
 void MainWindow::showTransientHint(const QString& text, const int msec) const {
-  m_statusText->setText(text);
-  m_hintTimer->start(msec);
+  if (m_statusCtl) m_statusCtl->flash(text, msec);
 }
 
 void MainWindow::showEvent(QShowEvent* ev) {
@@ -663,17 +650,18 @@ void MainWindow::refreshThemedUi() {
       m_tabs->setTabIcon(idx, ic);
     }
   }
-  // hoverHint 默认 HTML 含 inline color，主题切换后重新生成。
-  m_hoverHintDefault = systemInfoHtml();
-  if (m_hoverHint && (!m_hintTimer || !m_hintTimer->isActive())) {
-    m_hoverHint->setText(m_hoverHintDefault);
-  }
+  // hoverHint 默认 HTML 含 inline color，主题切换后重新生成；处于 hover
+  // transient 时 TransientLabel 内部会自动延后到回基线时再刷。
+  if (m_hoverCtl) m_hoverCtl->setBaseline(systemInfoHtml());
 }
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
   // hover 到任意带 hoverHint 属性（或 toolTip）的控件，就把说明塞到右侧面板的
-  // 提示框里；离开时清空。走 qApp 级事件过滤器才能捕获所有子控件。
-  if (!m_hoverHint) return QMainWindow::eventFilter(obj, ev);
+  // 提示框里；离开时延迟回基线。走 qApp 级事件过滤器才能捕获所有子控件。
+  // restoreAfter 用 120ms：光标在相邻控件之间移动时下一次 enter 会立刻 show，
+  // 取消未到期的恢复，避免文字闪烁。
+  constexpr int kHoverRestoreMs = 120;
+  if (!m_hoverCtl) return QMainWindow::eventFilter(obj, ev);
   const auto type = ev->type();
   // 屏蔽原生 tooltip 气泡：截停 ToolTip 事件，说明文字只在右下角面板里。
   if (type == QEvent::ToolTip) return true;
@@ -688,14 +676,13 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
       const QAction* act = menu->activeAction();
       const QString tip = act ? act->toolTip() : QString();
       if (act && !tip.isEmpty() && tip != act->text()) {
-        if (m_hoverClearTimer) m_hoverClearTimer->stop();
-        m_hoverHint->setText(tip);
-      } else if (m_hoverClearTimer) {
-        // 当前项没有专门 toolTip：让面板回到默认（用 clear timer 抗闪烁）。
-        m_hoverClearTimer->start();
+        m_hoverCtl->show(tip);
+      } else {
+        // 当前项没有专门 toolTip：让面板回到默认（用 delay 抗闪烁）。
+        m_hoverCtl->restoreAfter(kHoverRestoreMs);
       }
     } else if (type == QEvent::Leave || type == QEvent::HoverLeave || type == QEvent::Hide) {
-      if (m_hoverClearTimer) m_hoverClearTimer->start();
+      m_hoverCtl->restoreAfter(kHoverRestoreMs);
     }
     return QMainWindow::eventFilter(obj, ev);
   }
@@ -716,8 +703,7 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
       if (idx >= 0) {
         const QString tip = bar->tabToolTip(idx);
         if (!tip.isEmpty()) {
-          if (m_hoverClearTimer) m_hoverClearTimer->stop();
-          m_hoverHint->setText(tip);
+          m_hoverCtl->show(tip);
           return QMainWindow::eventFilter(obj, ev);
         }
       }
@@ -725,13 +711,10 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
     QWidget* cur = w;
     while (cur && cur->toolTip().isEmpty() && cur != this) cur = cur->parentWidget();
     if (cur && !cur->toolTip().isEmpty()) {
-      if (m_hoverClearTimer) m_hoverClearTimer->stop();
-      m_hoverHint->setText(cur->toolTip());
+      m_hoverCtl->show(cur->toolTip());
     }
   } else if (type == QEvent::Leave || type == QEvent::HoverLeave) {
-    // 离开时延迟恢复默认说明；如果马上移到另一个带 tooltip 的控件上，
-    // 下一次 Enter 会 stop() 这个定时器，避免文字反复闪一下。
-    if (m_hoverClearTimer) m_hoverClearTimer->start();
+    m_hoverCtl->restoreAfter(kHoverRestoreMs);
   }
   return QMainWindow::eventFilter(obj, ev);
 }
@@ -754,8 +737,7 @@ void MainWindow::updatePendingSummary() {
                (t->pendingPersistDomainSecretKey().has_value() ? 1 : 0) + (t->pendingPersistTSCAL().has_value() ? 1 : 0);
   }
   const QString msg = pending > 0 ? I18n::tr("%1 pending change(s) (not yet written to the system)").arg(pending) : I18n::tr("No pending changes");
-  m_statusBaseline = msg;
-  if (!m_hintTimer->isActive()) m_statusText->setText(m_statusBaseline);
+  if (m_statusCtl) m_statusCtl->setBaseline(msg);
 }
 
 void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
@@ -869,8 +851,7 @@ void MainWindow::refresh() {
   m_global->setControlsEnabled(uwfAvailable && elevated);
   for (auto& t : m_diskTabs)
     if (t) t->applySnapshot(m_snapshot);
-  m_statusBaseline = I18n::tr("Refreshed · %1 volumes").arg(disks.size());
-  if (!m_hintTimer->isActive()) m_statusText->setText(m_statusBaseline);
+  if (m_statusCtl) m_statusCtl->setBaseline(I18n::tr("Refreshed · %1 volumes").arg(disks.size()));
   const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
   UWF_LOG_I("ui") << std::format("refresh done: disks={} uwfAvailable={} currentVolumes={} nextVolumes={} elapsedMs={}", disks.size(), m_snapshot.uwfAvailable,
                                  m_snapshot.current.volumes.size(), m_snapshot.next.volumes.size(), elapsedMs);

@@ -22,6 +22,7 @@ namespace uwf::ui {
 class DiskTab;
 class GlobalStatusPanel;
 class TrayController;
+class TransientLabel;
 enum class Theme;
 
 class MainWindow : public QMainWindow {
@@ -80,11 +81,14 @@ class MainWindow : public QMainWindow {
   GlobalStatusPanel* m_global = nullptr;
   QLabel* m_statusText = nullptr;
   QLabel* m_hoverHint = nullptr;
-  QTimer* m_hintTimer = nullptr;
-  QTimer* m_hoverClearTimer = nullptr;
+  // 状态栏与右下角悬停提示框都按"基线文本 + 临时覆盖、到点回基线"的模式跑——
+  // 各自包给一个 TransientLabel，把过去散在 buildUi / rebuildUi / eventFilter /
+  // updatePendingSummary 几处的 QTimer + 基线字符串成员收成对象。
+  // 父对象设为对应 QLabel：rebuildUi 删 label 时控制器自动跟着 deleteLater，
+  // 不必单独管理生命周期。
+  TransientLabel* m_statusCtl = nullptr;
+  TransientLabel* m_hoverCtl = nullptr;
   QTimer* m_usageTimer = nullptr;  // 5s 周期刷新 Usage 数据
-  QString m_statusBaseline;
-  QString m_hoverHintDefault;
 
   // 引用方式持有 toolbar 6 个 action，主题切换时按当前主题前景色重染 svg。
   QAction* m_actRefresh = nullptr;
