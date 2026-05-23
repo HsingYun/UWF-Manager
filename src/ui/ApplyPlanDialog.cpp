@@ -520,10 +520,12 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
         auto v = getOrCreateNextVolume(dl);
         if (!v) continue;
         const auto r = wantProtect ? m_volume.protectVolume(*v) : m_volume.unprotect(*v);
-        note(r.ok ? I18n::tr("✓ Volume %1 protection: %2").arg(QString::fromStdString(dl), wantProtect ? I18n::tr("Enabled") : I18n::tr("Disabled")).toStdString()
-                  : I18n::tr("✘ Failed to %1 protection on volume %2: %3")
-                        .arg(wantProtect ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(dl), QString::fromStdString(r.detail))
-                        .toStdString());
+        note(
+            r.ok
+                ? I18n::tr("✓ Volume %1 protection: %2").arg(QString::fromStdString(dl), wantProtect ? I18n::tr("Enabled") : I18n::tr("Disabled")).toStdString()
+                : I18n::tr("✘ Failed to %1 protection on volume %2: %3")
+                      .arg(wantProtect ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(dl), QString::fromStdString(r.detail))
+                      .toStdString());
       }
 
       for (const auto& [dl, byVolumeName] : m_changes.volumeBindByVolumeName) {

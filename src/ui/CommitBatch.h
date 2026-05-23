@@ -27,7 +27,8 @@ class QWidget;
 namespace uwf::ui {
 
 template <typename Target, typename DisplayFn, typename CommitFn, typename ExistsFn = decltype(nullptr)>
-void runCommitBatch(QWidget* parent, const QString& progressTitle, const QList<Target>& targets, DisplayFn displayOf, CommitFn commitOne, ExistsFn existsFn = {}) {
+void runCommitBatch(QWidget* parent, const QString& progressTitle, const QList<Target>& targets, DisplayFn displayOf, CommitFn commitOne,
+                    ExistsFn existsFn = {}) {
   const int total = static_cast<int>(targets.size());
 
   // 进度条只在多目标时弹；单目标一两次 WMI 调用，弹窗反因 show 计时 / autoClose
