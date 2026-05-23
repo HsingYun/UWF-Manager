@@ -16,14 +16,18 @@
 //   DeleteValue: WMI 的 (key, "") 不是删默认值而是删键本身，单选默认值语义会误导
 //   Exclusion:   值表整表禁选，连带也无法选默认值
 //
-// Exclusion 模式可注入 availability checker：树里每个节点都跑一次，按三态结果
-// 决定该节点的可选性 / 可展开性：
+// 三种模式默认都套同一个 availability checker（standardAvailability）——
+// UWF 的 CommitRegistry / CommitRegistryDeletion / AddExclusion 实测都
+// 只接受相同的 6 前缀白名单（HKLM\BCD00000000 / SYSTEM / SOFTWARE / SAM /
+// SECURITY / COMPONENTS 下的子键），所以 picker 在 UI 层就把不可能的路径
+// 灰掉，避免让用户提交后才看到 cryptic 的 0x80041008。树里每个节点都跑一次，
+// 按三态结果决定该节点的可选性 / 可展开性：
 //   - Selectable   —— 路径合法，可选 + 可展开
 //   - ContainerOnly —— 路径不合法，但子树里可能含合法 key，可展开但不可选
 //   - Pruned       —— 路径不合法且子树里也不可能有合法 key，灰字 + 禁选 + 禁展开
-// 调用方通常用 forbidRegExclusionReason + UWF 白名单覆盖判定实现。CommitValue /
-// DeleteValue 模式的 checker 忽略——合法性 UWF 自己回报，树节点全 Selectable。
-// 三态的视觉反馈是足够直观的入场教育，本对话框不再额外画 hint 横幅。
+// 调用方通常无需自带 checker；只有当某场景需要更严的规则（比如再叠加
+// 用户级 deny list）才走 setAvailabilityChecker。三态视觉反馈足够直观，
+// 本对话框不再额外画 hint 横幅。
 //
 // 静态便捷 pick() 一行调用 + 阻塞执行；要更细的控制（pre-select 某个 key、
 // 自定义按钮等）可以直接 new + exec()，取 result()。
@@ -47,9 +51,9 @@ class RegistryPickerDialog : public QDialog {
   Q_OBJECT
  public:
   enum class Mode {
-    CommitValue,   // 配 CommitRegistry：可选值名；不选 = 整键递归
-    DeleteValue,   // 配 CommitRegistryDeletion：可选值名；不选 = 整键递归
-    Exclusion,     // 配 AddExclusion：值表只展示、整表禁选，结果永远 (key, "")
+    CommitValue,  // 配 CommitRegistry：可选值名；不选 = 整键递归
+    DeleteValue,  // 配 CommitRegistryDeletion：可选值名；不选 = 整键递归
+    Exclusion,    // 配 AddExclusion：值表只展示、整表禁选，结果永远 (key, "")
   };
 
   struct Result {
@@ -62,9 +66,9 @@ class RegistryPickerDialog : public QDialog {
 
   // 注册表树里每个 key 的三态可用性。详见类注释。
   enum class KeyAvailability {
-    Selectable,      // 路径合法：可选 + 可展开
-    ContainerOnly,   // 路径不合法但子树含合法 key：可展开、不可选
-    Pruned,          // 路径不合法且不含合法 key：灰字 + 禁选 + 禁展开
+    Selectable,     // 路径合法：可选 + 可展开
+    ContainerOnly,  // 路径不合法但子树含合法 key：可展开、不可选
+    Pruned,         // 路径不合法且不含合法 key：灰字 + 禁选 + 禁展开
   };
 
   // 用 AvailabilityChecker 类型而不是裸函数指针：调用方常用 lambda 包一层（捕获
@@ -73,10 +77,15 @@ class RegistryPickerDialog : public QDialog {
 
   RegistryPickerDialog(Mode mode, const QString& title, QWidget* parent = nullptr);
 
-  // 注入三态可用性判定（仅 Exclusion mode 生效）。populateRootHives / loadChildren
-  // 每次新建节点时调一次，决定该节点的 flags + 是否带占位子节点；OK 按钮则按
-  // 当前选中节点的判定结果决定可用性。
+  // 覆盖默认的 standardAvailability。populateRootHives / loadChildren 每次新建
+  // 节点时都会调一次（无注入时跑 standardAvailability），决定该节点的 flags +
+  // 是否带占位子节点；OK 按钮则按当前选中节点的判定结果决定可用性。
   void setAvailabilityChecker(AvailabilityChecker checker);
+
+  // 默认 checker：6 前缀白名单 + $MACHINE.ACC 黑名单，与 UWF 三大写入入口
+  // (CommitRegistry / CommitRegistryDeletion / AddExclusion) 的合法路径口径
+  // 一致。除非要叠加更严的判定，调用方一般不必关心这个函数。
+  [[nodiscard]] static KeyAvailability standardAvailability(const QString& key);
 
   // 预先选中一个键路径——节点不存在时尽量展开到最深可达层。
   // 在 show() 前调用最稳；运行中也可以用，会触发地址栏 + 树同步。

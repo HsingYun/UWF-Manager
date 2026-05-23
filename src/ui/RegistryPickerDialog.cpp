@@ -16,6 +16,7 @@
 #include <QVBoxLayout>
 #include <algorithm>
 
+#include "../core/Config.h"
 #include "../util/RegistryKey.h"
 #include "I18n.h"
 #include "ThemeManager.h"
@@ -174,7 +175,9 @@ void RegistryPickerDialog::populateRootHives() {
     item->setData(0, kPathRole, hivePath);
     item->setData(0, kLoadedRole, false);
     // 顶层 hive 永远 hasRealSubkeys=true——5 个 hive 在装了系统的机器上都非空。
-    // Exclusion 模式下 HKCU 等会被 availability 判为 Pruned → 不加占位子节点。
+    // 三种模式默认共用 standardAvailability：HKLM 会被判 ContainerOnly（子树里
+    // 有合法 6-prefix），其余 hive（HKCU / HKCR / HKU / HKCC）一律 Pruned → 不加
+    // 占位子节点，根本展不开。
     applyAvailability(item, hivePath, /*hasRealSubkeys=*/true);
     if (hive == "HKEY_LOCAL_MACHINE") hklmItem = item;
   }
@@ -199,8 +202,14 @@ void RegistryPickerDialog::loadChildren(QTreeWidgetItem* item) {
   // 展开箭头）；但 navigateTo 会强制 loadChildren——这里再兜一层，Pruned 一律
   // 不下钻，避免地址栏拼一个无效路径就枚举出整棵 HKCU。
   if (availabilityOf(path) == KeyAvailability::Pruned) return;
+  // HKLM 根下的 PERSISTENT_SOFTWARE / PERSISTENT_SYSTEM 是 UWF 在内核侧挂的
+  // 物理盘直通 hive（绕过 overlay，反映真实落盘内容）。它们由 UWF 自己使用，
+  // 用户从不会想 commit / exclude；regedit GUI 也过滤掉了，picker 跟齐。
+  // 命中条件够窄（仅 HKLM 一层 + 严格 PERSISTENT_ 前缀），不会误伤用户键。
+  const bool atHklmRoot = path == QLatin1String("HKEY_LOCAL_MACHINE");
   const auto children = regkey::subkeyNames(path.toStdString());
   for (const auto& name : children) {
+    if (atHklmRoot && name.starts_with("PERSISTENT_")) continue;
     auto* child = new QTreeWidgetItem(item, QStringList{QString::fromStdString(name)});
     child->setIcon(0, iconForKey());
     const QString childPath = path + '\\' + QString::fromStdString(name);
@@ -238,8 +247,41 @@ void RegistryPickerDialog::applyAvailability(QTreeWidgetItem* item, const QStrin
 }
 
 RegistryPickerDialog::KeyAvailability RegistryPickerDialog::availabilityOf(const QString& key) const {
-  // 未注入 checker（CommitValue / DeleteValue）——全部 Selectable。
-  return m_availability ? m_availability(key) : KeyAvailability::Selectable;
+  // 未注入 checker → 跑默认的 standardAvailability（6 前缀白名单 + $MACHINE.ACC 黑名单）。
+  return m_availability ? m_availability(key) : standardAvailability(key);
+}
+
+RegistryPickerDialog::KeyAvailability RegistryPickerDialog::standardAvailability(const QString& key) {
+  // 树节点路径都来自实机 RegEnumKey，syntax 已干净——不必复查首字符 / 连续反斜杠之类，
+  // 只关心"是否在 6 前缀白名单内"和"是否是 $MACHINE.ACC 黑名单"。
+  const QString upper = QString::fromStdString(regkey::normalize(key.toStdString())).toUpper();
+  if (upper.isEmpty()) return KeyAvailability::Pruned;
+
+  // 黑名单：$MACHINE.ACC（域机器账户密钥）—— UWF 明确禁排，且单独 commit 它
+  // 会破坏域信任，所有模式一律 Pruned。
+  if (upper == QLatin1String(config::kForbiddenRegistryKeyMachineAccount.data(), static_cast<qsizetype>(config::kForbiddenRegistryKeyMachineAccount.size()))) {
+    return KeyAvailability::Pruned;
+  }
+
+  // 白名单：必须是 6 前缀之一的真子键（前缀以 "\" 结尾，故还需多一个字符）。
+  for (const auto sv : config::kAllowedRegistryRootPrefixes) {
+    const QLatin1String prefix(sv.data(), static_cast<qsizetype>(sv.size()));
+    if (upper.startsWith(prefix) && upper.size() > prefix.size()) {
+      return KeyAvailability::Selectable;
+    }
+  }
+
+  // 不在白名单，但若 key 是某 prefix 的祖先 / 自身 = prefix 去尾，则子树里有合法 key →
+  // ContainerOnly（可展开、不可选）。两种情况：
+  //   - key+'\\' 是 prefix 的前缀  ⇒ prefix 在 key 之下，key 是它的祖先
+  //   - prefix 是 key+'\\' 的前缀  ⇒ key 等于某 prefix 去掉尾部 '\\'
+  const QString withSep = upper + '\\';
+  for (const auto sv : config::kAllowedRegistryRootPrefixes) {
+    const QLatin1String prefix(sv.data(), static_cast<qsizetype>(sv.size()));
+    if (withSep.startsWith(prefix)) return KeyAvailability::ContainerOnly;
+    if (QString(prefix).startsWith(withSep)) return KeyAvailability::ContainerOnly;
+  }
+  return KeyAvailability::Pruned;
 }
 
 void RegistryPickerDialog::onItemExpanded(QTreeWidgetItem* item) { loadChildren(item); }
@@ -440,7 +482,7 @@ void RegistryPickerDialog::preselectKey(const QString& key) {
 }
 
 std::optional<RegistryPickerDialog::Result> RegistryPickerDialog::pick(Mode mode, const QString& title, QWidget* parent, AvailabilityChecker checker,
-                                                                      const QString& preselectKey) {
+                                                                       const QString& preselectKey) {
   RegistryPickerDialog dlg(mode, title, parent);
   if (checker) dlg.setAvailabilityChecker(std::move(checker));
   if (!preselectKey.isEmpty()) dlg.preselectKey(preselectKey);
