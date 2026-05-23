@@ -114,8 +114,11 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
   // 路径列默认给得最宽。Reason 不能再用 ResizeToContents——它有时是一长串中文
   // （"目标可能正被其他程序占用…"）会把整张表撑爆，挤掉路径列变成 "C..."。
   // 横向滚动模式已开（ScrollPerPixel），列宽总和 > 表宽时用户可以横向滚动看全。
+  // 同时打开 stretchLastSection：对话框被拖宽时，多出的空间归 Reason 列自动吃掉，
+  // 表头 / 单元格一起伸到对话框边——否则末列右侧只见空白表头条而格子不跟。
+  // Interactive + stretchLast 不冲突：前面几列仍可手动拖宽，Reason 列被动跟随。
   hh->setSectionResizeMode(QHeaderView::Interactive);
-  hh->setStretchLastSection(false);
+  hh->setStretchLastSection(true);
   int initialCol = 0;
   hh->resizeSection(initialCol++, 70);   // Category：「成功」/「跳过」/「失败」
   hh->resizeSection(initialCol++, 520);  // Path：大头——典型 Windows 路径
@@ -124,7 +127,7 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
     hh->resizeSection(initialCol++, 100);  // Exists after
   }
   hh->resizeSection(initialCol++, 120);  // Error code：「0x80041001」
-  hh->resizeSection(initialCol++, 360);  // Reason：可能很长，给 360 起；用户可拖宽
+  hh->resizeSection(initialCol++, 360);  // Reason：默认 360，对话框更宽时自动撑满剩余
   lay->addWidget(table, 1);
 
   const QString yes = I18n::tr("Yes");
