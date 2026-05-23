@@ -5,19 +5,15 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QApplication>
-#include <QClipboard>
 #include <QCursor>
 #include <QDateTime>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QDirIterator>
 #include <QEvent>
-#include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QHBoxLayout>
-#include <QHeaderView>
 #include <QHoverEvent>
 #include <QIcon>
 #include <QKeySequence>
@@ -26,17 +22,13 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QProgressDialog>
 #include <QPushButton>
-#include <QSet>
-#include <QShortcut>
 #include <QStatusBar>
 #include <QStyle>
 #include <QStyleOption>
 #include <QSvgRenderer>
 #include <QTabBar>
 #include <QTabWidget>
-#include <QTableWidgetItem>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -45,7 +37,6 @@
 #include <algorithm>
 #include <chrono>
 #include <format>
-#include <memory>
 #include <string_view>
 
 #include "../core/Config.h"
@@ -55,16 +46,17 @@
 #include "../util/RegistryKey.h"
 #include "../uwf/UwfSnapshot.h"
 #include "../uwf/api/UwfmgrCli.h"
-#include "../uwf/wmi/WmiError.h"
 #include "../uwf/wmi/WmiResult.h"
 #include "ApplyPlanDialog.h"
+#include "CommitBatch.h"
+#include "CommitReportDialog.h"
 #include "DiskTab.h"
 #include "GlobalStatusPanel.h"
 #include "I18n.h"
+#include "ImportApplier.h"
 #include "ImportDialog.h"
 #include "LogViewerDialog.h"
 #include "MessageDialog.h"
-#include "TableText.h"
 #include "ThemeManager.h"
 #include "TrayController.h"
 #include "uwf_version.h"
@@ -123,236 +115,12 @@ class ToolbarExtIcon : public QObject {
   }
 };
 
-// 批量提交 / 删除结果里单个目标的记录——成功、跳过、失败全都进这里。
-struct CommitReportRow {
-  QString category;   // "成功" / "跳过" / "失败"
-  QString path;       // 完整路径 / 注册表键
-  QString errorCode;  // "0x80041001" 之类，成功为 "-"
-  QString reason;     // 面向普通用户的解释，成功为 "-"
-  // 仅删除操作填充：执行前 / 后目标是否存在。提交操作留 nullopt，结果表不显示这两列。
-  std::optional<bool> existedBefore;
-  std::optional<bool> existsAfter;
-};
-
 // 一次注册表递归提交 / 删除批处理里的单个目标。
 struct RegCommitTarget {
   std::string key;        // 归一化后的长写键路径
   std::string valueName;  // 值名；提交时空串 = (Default) 值，删除时空串 = 该键本身
   QString display;        // 报告对话框 "路径" 列的展示串
 };
-
-// 把 HRESULT / UWF returnValue 翻译成普通用户看得懂的一句话。
-// 不在这里暴露 "WBEM_E_*" / "ExecMethod" 这些实现术语——那些进日志。
-// isDeletion 区分 Commit{File,Registry}（=false）vs Commit{File,Registry}Deletion
-// （=true）——两类操作下同一个 HRESULT 含义不同，文案得分别写：
-//   * NotFound 对 Commit：overlay 里没有该目标的待提交改动。
-//   * NotFound 对 Deletion：目标不在物理盘 / 持久化 hive 上——只活在 overlay 里，
-//     重启就没；本来就不需要也无法用提交删除。
-QString explainCommitFailure(int32_t hresult, uint32_t returnValue, bool isDeletion) {
-  if (hresult != 0) {
-    switch (uwf::WmiError(hresult).code()) {
-      // WBEM_E_FAILED（0x80041001）是一般性失败码，没有确定原因。实测最常见
-      // 的一种诱因：目标被其他进程占着 handle（例如资源管理器正在浏览该目录、
-      // 文本编辑器打开了文件、regedit 打开了键、AV 在扫描），UWF 看到非
-      // 0 引用计数就拒。措辞要带"可能"避免误导——其它原因（权限、UWF 内部
-      // 状态等）也会落到同一个 HRESULT，无法仅凭代码区分。
-      case uwf::WmiErrorCode::Failed:
-        return I18n::tr(
-            "The operation failed. The target may be in use by another process (e.g. an Explorer window browsing the folder, or the file is open). Close any "
-            "program holding it and try again.");
-      case uwf::WmiErrorCode::NotFound:
-        if (isDeletion) {
-          return I18n::tr(
-              "Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It "
-              "will disappear on reboot; commit-delete is neither needed nor possible.");
-        }
-        return I18n::tr("The target was not found; there is nothing in the overlay to commit.");
-      case uwf::WmiErrorCode::InvalidParameter:
-        return I18n::tr("A parameter was rejected by the system (invalid path or argument).");
-      default:
-        return I18n::tr("The operation failed (see log for details).");
-    }
-  }
-  if (returnValue != 0) return I18n::tr("Operation rejected (code %1).").arg(returnValue);
-  return I18n::tr("Unknown cause.");
-}
-
-QString formatErrorCode(int32_t hresult, uint32_t returnValue) {
-  // %08X：大写 8 位定宽十六进制；显示 "0x" 小写前缀更符合 Win32 文档惯例。
-  if (hresult != 0) return QString::asprintf("0x%08X", static_cast<uint32_t>(hresult));
-  if (returnValue != 0) return QString("rv=%1").arg(returnValue);
-  return "-";
-}
-
-// 结果对话框：每次提交 / 删除后都弹出，无论成功失败都列出全部目标。
-// 列：类别 / 路径 / [删除操作额外的"执行前存在""执行后存在"] / 错误码 / 原因。
-// 大批量（十万条级）分页展示，每页 kReportPageSize 行。用普通 QDialog 而非
-// QMessageBox，避免 Windows 提示音。
-void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int canceledRemaining = 0) {
-  constexpr int kReportPageSize = 200;
-
-  // 删除操作才填了"执行前 / 后是否存在"；提交操作为 nullopt，那两列不出现。
-  // 提前算：决定要不要多两列、影响默认窗宽。下方表头处复用同一份判定。
-  const bool showExistence = !rows.isEmpty() && rows.front().existedBefore.has_value();
-
-  QDialog dlg(parent);
-  dlg.setWindowTitle(canceledRemaining > 0 ? I18n::tr("Commit canceled") : I18n::tr("Commit result"));
-  dlg.resize(showExistence ? 1300 : 1180, 520);
-  auto* lay = new QVBoxLayout(&dlg);
-
-  const QString okLabel = I18n::tr("Succeeded");
-  const QString skipLabel = I18n::tr("Skipped");
-  int okN = 0, skipN = 0, failN = 0;
-  for (const auto& r : rows) {
-    if (r.category == okLabel)
-      ++okN;
-    else if (r.category == skipLabel)
-      ++skipN;
-    else
-      ++failN;
-  }
-  QString summaryText = I18n::tr("%1 succeeded; %2 skipped; %3 failed.").arg(okN).arg(skipN).arg(failN);
-  if (canceledRemaining > 0) summaryText += I18n::tr("\nCanceled by user; %1 entries not processed.").arg(canceledRemaining);
-  auto* summary = new QLabel(summaryText);
-  summary->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  lay->addWidget(summary);
-
-  QStringList headers{I18n::tr("Category"), I18n::tr("Path")};
-  if (showExistence) headers << I18n::tr("Existed before") << I18n::tr("Exists after");
-  headers << I18n::tr("Error code") << I18n::tr("Reason");
-  const int colCount = static_cast<int>(headers.size());
-
-  auto* table = new QTableWidget(0, colCount, &dlg);
-  table->setHorizontalHeaderLabels(headers);
-  table->verticalHeader()->setVisible(false);
-  table->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  table->setSelectionBehavior(QAbstractItemView::SelectRows);
-  table->setSelectionMode(QAbstractItemView::ExtendedSelection);
-  table->setTextElideMode(Qt::ElideMiddle);
-  table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
-  auto* hh = table->horizontalHeader();
-  // 全部 Interactive：QHeaderView 文档明确 Stretch / ResizeToContents 都禁止用户拖动
-  // 列宽；只有 Interactive / Fixed 让用户拖。给每列一个合理初值（按内容典型宽度），
-  // 路径列默认给得最宽。Reason 不能再用 ResizeToContents——它有时是一长串中文
-  // （"目标可能正被其他程序占用…"）会把整张表撑爆，挤掉路径列变成 "C..."。
-  // 横向滚动模式已开（ScrollPerPixel），列宽总和 > 表宽时用户可以横向滚动看全。
-  hh->setSectionResizeMode(QHeaderView::Interactive);
-  hh->setStretchLastSection(false);
-  int initialCol = 0;
-  hh->resizeSection(initialCol++, 70);   // Category：「成功」/「跳过」/「失败」
-  hh->resizeSection(initialCol++, 520);  // Path：大头——典型 Windows 路径
-  if (showExistence) {
-    hh->resizeSection(initialCol++, 100);  // Existed before：「是」/「否」+ 表头宽度
-    hh->resizeSection(initialCol++, 100);  // Exists after
-  }
-  hh->resizeSection(initialCol++, 120);  // Error code：「0x80041001」
-  hh->resizeSection(initialCol++, 360);  // Reason：可能很长，给 360 起；用户可拖宽
-  lay->addWidget(table, 1);
-
-  const QString yes = I18n::tr("Yes");
-  const QString no = I18n::tr("No");
-  const int pageCount = rows.isEmpty() ? 1 : (static_cast<int>(rows.size()) + kReportPageSize - 1) / kReportPageSize;
-
-  auto fillPage = [&](int page) {
-    const int start = page * kReportPageSize;
-    const int end = std::min<int>(start + kReportPageSize, static_cast<int>(rows.size()));
-    table->setRowCount(end - start);
-    for (int i = start; i < end; ++i) {
-      const auto& r = rows[i];
-      const int vr = i - start;
-      int c = 0;
-      table->setItem(vr, c++, new QTableWidgetItem(r.category));
-      auto* pathItem = new QTableWidgetItem(r.path);
-      pathItem->setToolTip(r.path);
-      table->setItem(vr, c++, pathItem);
-      if (showExistence) {
-        table->setItem(vr, c++, new QTableWidgetItem(r.existedBefore.value_or(false) ? yes : no));
-        table->setItem(vr, c++, new QTableWidgetItem(r.existsAfter.value_or(false) ? yes : no));
-      }
-      table->setItem(vr, c++, new QTableWidgetItem(r.errorCode));
-      auto* reasonItem = new QTableWidgetItem(r.reason);
-      reasonItem->setToolTip(r.reason);
-      table->setItem(vr, c++, reasonItem);
-    }
-  };
-
-  // 分页栏常驻显示——即使只有一页也保留，让"分页 + 总条数"这两条信息一直可见，
-  // 同时和 LogViewerDialog 的体感一致。按钮按状态置灰，标签固定写"第 X / Y 页 · 共 N 条"。
-  int currentPage = 0;
-  auto* pageBar = new QHBoxLayout();
-  auto* prevBtn = new QPushButton(I18n::tr("Previous page"), &dlg);
-  auto* nextBtn = new QPushButton(I18n::tr("Next page"), &dlg);
-  auto* pageLabel = new QLabel(&dlg);
-  pageBar->addStretch();
-  pageBar->addWidget(prevBtn);
-  pageBar->addWidget(pageLabel);
-  pageBar->addWidget(nextBtn);
-  pageBar->addStretch();
-  lay->addLayout(pageBar);
-
-  const int totalRows = static_cast<int>(rows.size());
-  auto refreshPage = [&]() {
-    fillPage(currentPage);
-    pageLabel->setText(I18n::tr("Page %1 / %2 · %3 entries total").arg(currentPage + 1).arg(pageCount).arg(totalRows));
-    prevBtn->setEnabled(currentPage > 0);
-    nextBtn->setEnabled(currentPage + 1 < pageCount);
-  };
-  QObject::connect(prevBtn, &QPushButton::clicked, &dlg, [&] {
-    if (currentPage > 0) {
-      --currentPage;
-      refreshPage();
-    }
-  });
-  QObject::connect(nextBtn, &QPushButton::clicked, &dlg, [&] {
-    if (currentPage + 1 < pageCount) {
-      ++currentPage;
-      refreshPage();
-    }
-  });
-  refreshPage();
-
-  // "复制全部"复制所有行（不止当前页），直接从 rows 拼 TSV。
-  auto allRowsToText = [&] {
-    QString out = headers.join('\t');
-    for (const auto& r : rows) {
-      out += '\n' + r.category + '\t' + r.path;
-      if (showExistence) {
-        out += '\t';
-        out += r.existedBefore.value_or(false) ? yes : no;
-        out += '\t';
-        out += r.existsAfter.value_or(false) ? yes : no;
-      }
-      out += '\t' + r.errorCode + '\t' + r.reason;
-    }
-    return out;
-  };
-
-  auto* copyShortcut = new QShortcut(QKeySequence::Copy, table);
-  copyShortcut->setContext(Qt::WidgetShortcut);
-  QObject::connect(copyShortcut, &QShortcut::activated, table, [table] {
-    const auto txt = tableSelectionToText(table);
-    if (!txt.isEmpty()) QGuiApplication::clipboard()->setText(txt);
-  });
-  table->setContextMenuPolicy(Qt::CustomContextMenu);
-  QObject::connect(table, &QWidget::customContextMenuRequested, table, [table, allRowsToText](const QPoint& pos) {
-    QMenu menu;
-    auto* copySel = menu.addAction(I18n::tr("Copy selected rows"));
-    auto* copyAll = menu.addAction(I18n::tr("Copy all"));
-    copySel->setEnabled(!table->selectedRanges().isEmpty());
-    QObject::connect(copySel, &QAction::triggered, [table] { QGuiApplication::clipboard()->setText(tableSelectionToText(table)); });
-    QObject::connect(copyAll, &QAction::triggered, [allRowsToText] { QGuiApplication::clipboard()->setText(allRowsToText()); });
-    menu.exec(table->viewport()->mapToGlobal(pos));
-  });
-
-  auto* btns = new QDialogButtonBox;
-  const auto* copyAllBtn = btns->addButton(I18n::tr("Copy all"), QDialogButtonBox::ActionRole);
-  QObject::connect(copyAllBtn, &QPushButton::clicked, &dlg, [allRowsToText] { QGuiApplication::clipboard()->setText(allRowsToText()); });
-  const auto* closeBtn = btns->addButton(I18n::tr("Close"), QDialogButtonBox::AcceptRole);
-  QObject::connect(closeBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
-  lay->addWidget(btns);
-
-  dlg.exec();
-}
 
 // 盘符逻辑统一在 uwf::drive（见 src/util/DriveLetter.h）。下面两个 MainWindow
 // 内多处复用的函数只是 QString ↔ std::string 的边界适配，不含任何盘符逻辑。
@@ -1120,204 +888,7 @@ void MainWindow::showPlan() {
 
 void MainWindow::showImport() {
   ImportDialog dlg(this);
-  // applier：把每条 UwfmgrCommand 转成对应的 UI 操作（驱动 m_global 或对应
-  // 盘符的 DiskTab）。报告里的"重复"分两种：
-  //   1) within-batch：同一次 Import 文本里出现两条等价命令，第二条标 Duplicate；
-  //   2) state no-op：命令应用后控件值未变（比如 filter 已经处于目标 enable
-  //      状态）；importXxx 返回 false 时归到这里。
-  // 都归并到 ImportReportRow::Status::Duplicate。
-  dlg.setApplier([this](const QList<api::UwfmgrCommand>& cmds) -> QList<ImportReportRow> {
-    QList<ImportReportRow> out;
-    out.reserve(cmds.size());
-
-    // within-batch 去重的 canonical key：kind + 大小写无关化的 arg0。
-    QSet<QString> seen;
-    auto canon = [](const api::UwfmgrCommand& c) {
-      const QString a0 = c.args.empty() ? QString{} : QString::fromStdString(c.args[0]).toLower();
-      return QString::number(static_cast<int>(c.kind)) + QChar('|') + a0;
-    };
-
-    auto findTab = [this](const QString& dl) -> DiskTab* {
-      for (auto& t : m_diskTabs) {
-        if (t && t->driveLetter().compare(dl, Qt::CaseInsensitive) == 0) return t.data();
-      }
-      return nullptr;
-    };
-
-    auto outcomeToRow = [](const api::UwfmgrCommand& c, ExclusionListWidget::ImportOutcome o, const QString& kindLabel) {
-      ImportReportRow r;
-      r.lineNo = c.sourceLineNo;
-      r.lineText = QString::fromStdString(c.rawLine).trimmed();
-      switch (o) {
-        case ExclusionListWidget::ImportOutcome::Applied:
-          r.status = ImportReportRow::Status::Success;
-          r.detail = I18n::tr("Queued as a pending %1 change").arg(kindLabel);
-          break;
-        case ExclusionListWidget::ImportOutcome::NoOp:
-          r.status = ImportReportRow::Status::Duplicate;
-          r.detail = I18n::tr("Already in the target state — no-op");
-          break;
-        case ExclusionListWidget::ImportOutcome::RejectedNotOnVolume:
-          r.status = ImportReportRow::Status::Failed;
-          r.detail = I18n::tr("Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)");
-          break;
-        case ExclusionListWidget::ImportOutcome::RejectedForbidden:
-          r.status = ImportReportRow::Status::Failed;
-          r.detail = I18n::tr("Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)");
-          break;
-      }
-      return r;
-    };
-
-    for (const auto& c : cmds) {
-      ImportReportRow r;
-      r.lineNo = c.sourceLineNo;
-      r.lineText = QString::fromStdString(c.rawLine).trimmed();
-
-      // 解析阶段失败的命令直接打包：
-      // - Unsupported = 整段没识别 → Status::Unsupported；
-      // - 其它非 None / Comment = cat/verb 已认出但参数非法 → Status::Failed。
-      // parseErrorMessage 把 enum 翻译成中文（来自 ImportDialog.cpp 的 helper）。
-      if (c.parseError != api::ParseError::None && c.parseError != api::ParseError::Comment) {
-        r.status = c.parseError == api::ParseError::Unsupported ? ImportReportRow::Status::Unsupported : ImportReportRow::Status::Failed;
-        r.detail = parseErrorMessage(c.parseError, QString::fromStdString(c.parseErrorContext));
-        out.append(r);
-        continue;
-      }
-
-      // within-batch dedup：第二条等价命令标 Duplicate，跳过 apply。
-      const QString key = canon(c);
-      if (seen.contains(key)) {
-        r.status = ImportReportRow::Status::Duplicate;
-        r.detail = I18n::tr("Same command was already issued earlier in this batch");
-        out.append(r);
-        continue;
-      }
-      seen.insert(key);
-
-      // 把 args[0] 提到 QString 一次，下面分支统一用。args[0] 永远存在，因为
-      // parser 只有在 args 完整时才把 parseError 设回 None；上面的 parseError 检查
-      // 已经把缺参数的全部过滤掉了。
-      const QString a0 = c.args.empty() ? QString{} : QString::fromStdString(c.args[0]);
-
-      switch (c.kind) {
-        case api::UwfmgrKind::FilterEnable:
-        case api::UwfmgrKind::FilterDisable: {
-          const bool want = c.kind == api::UwfmgrKind::FilterEnable;
-          const bool changed = m_global ? m_global->importFilterEnabled(want) : false;
-          r.status = changed ? ImportReportRow::Status::Success : ImportReportRow::Status::Duplicate;
-          r.detail =
-              changed ? I18n::tr("Pending filter %1").arg(want ? I18n::tr("enable") : I18n::tr("disable")) : I18n::tr("Filter is already in the target state");
-          break;
-        }
-        case api::UwfmgrKind::OverlaySetType: {
-          const auto t = a0 == QStringLiteral("Disk") ? core::OverlayType::Disk : core::OverlayType::RAM;
-          const bool changed = m_global ? m_global->importOverlayType(t) : false;
-          r.status = changed ? ImportReportRow::Status::Success : ImportReportRow::Status::Duplicate;
-          r.detail = changed ? I18n::tr("Pending overlay type → %1").arg(a0) : I18n::tr("Overlay type already %1").arg(a0);
-          break;
-        }
-        case api::UwfmgrKind::OverlaySetSize:
-        case api::UwfmgrKind::OverlaySetWarningThreshold:
-        case api::UwfmgrKind::OverlaySetCriticalThreshold: {
-          bool ok = false;
-          const auto mb = a0.toUInt(&ok);
-          if (!ok) {
-            r.status = ImportReportRow::Status::Failed;
-            r.detail = I18n::tr("Invalid size value: %1").arg(a0);
-            break;
-          }
-          bool changed = false;
-          QString label;
-          if (c.kind == api::UwfmgrKind::OverlaySetSize) {
-            label = I18n::tr("maximum size");
-            changed = m_global ? m_global->importOverlayMaxMb(mb) : false;
-          } else if (c.kind == api::UwfmgrKind::OverlaySetWarningThreshold) {
-            label = I18n::tr("warning threshold");
-            changed = m_global ? m_global->importOverlayWarnMb(mb) : false;
-          } else {
-            label = I18n::tr("critical threshold");
-            changed = m_global ? m_global->importOverlayCritMb(mb) : false;
-          }
-          r.status = changed ? ImportReportRow::Status::Success : ImportReportRow::Status::Duplicate;
-          r.detail = changed ? I18n::tr("Pending overlay %1 → %2 MB").arg(label).arg(mb) : I18n::tr("Overlay %1 already %2 MB").arg(label).arg(mb);
-          break;
-        }
-        case api::UwfmgrKind::VolumeProtect:
-        case api::UwfmgrKind::VolumeUnprotect: {
-          auto* tab = findTab(a0);
-          if (!tab) {
-            r.status = ImportReportRow::Status::Failed;
-            r.detail = I18n::tr("Unknown volume %1 (no UWF-eligible disk with that drive letter)").arg(a0);
-            break;
-          }
-          const bool want = c.kind == api::UwfmgrKind::VolumeProtect;
-          const bool changed = tab->importProtect(want);
-          r.status = changed ? ImportReportRow::Status::Success : ImportReportRow::Status::Duplicate;
-          r.detail = changed ? I18n::tr("Pending volume %1 protection %2").arg(a0, want ? I18n::tr("enable") : I18n::tr("disable"))
-                             : I18n::tr("Volume %1 is already in the target protection state").arg(a0);
-          break;
-        }
-        case api::UwfmgrKind::FileAddExclusion:
-        case api::UwfmgrKind::FileRemoveExclusion: {
-          const QString native = QDir::toNativeSeparators(a0);
-          // 路径需要 "<盘符>:" 前缀来路由到对应 DiskTab；缺前缀 → 没办法定位。
-          const QString dl = extractDriveLetter(native);
-          if (dl.isEmpty()) {
-            r.status = ImportReportRow::Status::Failed;
-            r.detail = I18n::tr("Path %1 has no drive letter; cannot route to a volume tab").arg(native);
-            break;
-          }
-          auto* tab = findTab(dl);
-          if (!tab) {
-            r.status = ImportReportRow::Status::Failed;
-            r.detail = I18n::tr("No UWF-eligible disk for drive letter %1").arg(dl);
-            break;
-          }
-          const auto outcome = c.kind == api::UwfmgrKind::FileAddExclusion ? tab->importAddFileExclusion(native) : tab->importRemoveFileExclusion(native);
-          r = outcomeToRow(c, outcome, I18n::tr("file exclusion"));
-          break;
-        }
-        case api::UwfmgrKind::RegistryAddExclusion:
-        case api::UwfmgrKind::RegistryRemoveExclusion: {
-          // 注册表排除是全局的，只挂在系统盘 TAB 上。其它 TAB 的 import* 在
-          // m_regs == null 时直接返回 RejectedNotOnVolume，所以这里依次尝试
-          // 每个 TAB——第一个非 RejectedNotOnVolume 的结果即视作系统盘 TAB
-          // 的处理结果。所有 TAB 都拒说明压根没有系统盘 TAB。
-          bool dispatched = false;
-          for (auto& t : m_diskTabs) {
-            if (!t) continue;
-            const auto outcome = c.kind == api::UwfmgrKind::RegistryAddExclusion ? t->importAddRegistryExclusion(a0) : t->importRemoveRegistryExclusion(a0);
-            if (outcome != ExclusionListWidget::ImportOutcome::RejectedNotOnVolume) {
-              r = outcomeToRow(c, outcome, I18n::tr("registry exclusion"));
-              dispatched = true;
-              break;
-            }
-          }
-          if (!dispatched) {
-            r.status = ImportReportRow::Status::Failed;
-            r.detail = I18n::tr("Registry exclusions are only available on the system drive tab, which is not present");
-          }
-          break;
-        }
-        case api::UwfmgrKind::Unknown:
-          // 解析阶段 Unknown 已在前面分支处理了；落到这里说明 parseError
-          // 是 None 而 kind 又是 Unknown，理论上不会发生，安全兜底。
-          r.status = ImportReportRow::Status::Unsupported;
-          r.detail = I18n::tr("Unsupported command");
-          break;
-      }
-      out.append(r);
-    }
-
-    // 导入命令逐条 setValue 写入，不触发 spinbox 的 editingFinished，约束链
-    // （warn ≤ crit ≤ max）不会自动收紧、range 也停在导入时放宽的状态。批量
-    // 导入结束补一次收紧，让面板回到自洽——否则之后任意一次无关交互触发
-    // reconfigureRanges 时会静默改写导入值。
-    if (m_global) m_global->finishImport();
-    return out;
-  });
-
+  dlg.setApplier([this](const QList<api::UwfmgrCommand>& cmds) { return applyImportCommands(cmds, m_global, m_diskTabs); });
   dlg.exec();
 }
 
@@ -1466,73 +1037,6 @@ void MainWindow::safeRestart() {
   }
 }
 
-template <typename Target, typename DisplayFn, typename CommitFn, typename ExistsFn>
-void MainWindow::runCommitBatch(const QString& progressTitle, const QList<Target>& targets, DisplayFn displayOf, CommitFn commitOne, ExistsFn existsFn) {
-  const int total = static_cast<int>(targets.size());
-
-  // 进度条只在多目标时弹；单目标一两次 WMI 调用，弹窗反因 show 计时 / autoClose
-  // 的时序问题残留在屏上。setValue 内部 processEvents——必须 WindowModal，否则
-  // commit 半途用户点别处会嵌套触发同一份 m_writeSession（WMI 不可重入）。
-  std::unique_ptr<QProgressDialog> progress;
-  if (total > 1) {
-    progress = std::make_unique<QProgressDialog>(I18n::tr("Committing…"), I18n::tr("Cancel"), 0, total, this);
-    progress->setWindowTitle(progressTitle);
-    progress->setWindowModality(Qt::WindowModal);
-    progress->setMinimumDuration(500);
-    progress->setAutoClose(true);
-    progress->setAutoReset(false);
-    Q_ASSERT(progress->windowModality() == Qt::WindowModal);
-  }
-
-  // existsFn 为 decltype(nullptr) 即调用方（提交操作）未传——整段 constexpr 跳过；
-  // 删除操作传入它，在 commit 前后各探一次目标是否存在。
-  constexpr bool kHasExists = !std::is_same_v<ExistsFn, decltype(nullptr)>;
-
-  bool canceled = false;
-  QList<CommitReportRow> allRows;
-  for (int i = 0; i < total; ++i) {
-    if (progress) {
-      progress->setValue(i);
-      if (progress->wasCanceled()) {
-        canceled = true;
-        break;
-      }
-      const QString d = displayOf(targets[i]);
-      progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(total).arg(d.size() > 80 ? ("…" + d.right(79)) : d));
-    }
-    std::optional<bool> existedBefore, existsAfter;
-    if constexpr (kHasExists) existedBefore = existsFn(targets[i]);
-    const auto res = commitOne(targets[i]);
-    if constexpr (kHasExists) existsAfter = existsFn(targets[i]);
-
-    CommitReportRow row;
-    row.path = displayOf(targets[i]);
-    row.existedBefore = existedBefore;
-    row.existsAfter = existsAfter;
-    // res 是统一的 WmiResult；commit 类的 Skipped / Failed 三档由 commitOutcome
-    // 派生（WBEM_E_NOT_FOUND → Skipped；其它非 ok → Failed）。
-    const auto outcome = commitOutcome(res);
-    if (outcome == CommitOutcome::Ok) {
-      row.category = I18n::tr("Succeeded");
-      row.errorCode = QStringLiteral("-");
-      row.reason = QStringLiteral("-");
-    } else {
-      row.category = outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed");
-      row.errorCode = formatErrorCode(res.hresult, res.returnValue);
-      // kHasExists（删除操作传了 existsFn）== 操作类型是 Deletion——HRESULT 含义
-      // 在 commit / deletion 间不同，文案要分。
-      row.reason = explainCommitFailure(res.hresult, res.returnValue, kHasExists);
-    }
-    allRows.append(std::move(row));
-  }
-  if (progress) {
-    progress->setValue(total);
-    progress->close();
-  }
-  const int untouched = canceled ? (total - static_cast<int>(allRows.size())) : 0;
-  showCommitReport(this, allRows, untouched);
-}
-
 void MainWindow::commitFilePath(const QString& path) {
   if (path.isEmpty()) return;
 
@@ -1580,10 +1084,13 @@ void MainWindow::commitFilePath(const QString& path) {
   }
 
   // UWF_Volume.CommitFile 只认单个文件条目；给目录会返回 WBEM_E_NOT_FOUND。
-  // 所以目录提交 = 递归遍历目录下所有文件挨个 commit。
+  // 所以目录提交 = 递归遍历目录下所有文件挨个 commit。NoSymLinks 跳过重解析点
+  // （junction / mount point / 符号链接）——Win 上 QFileInfo::isSymLink 对全部
+  // 重解析点返回 true，QDirIterator 据此既不列出也不递归进入，避免跨卷漫游和
+  // 自引用 junction 形成的死循环。
   QStringList targets;
   if (isDir) {
-    QDirIterator it(path, QDir::Files | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    QDirIterator it(path, QDir::Files | QDir::NoSymLinks | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
     while (it.hasNext()) targets << QDir::toNativeSeparators(it.next());
   } else {
     targets << path;
@@ -1598,7 +1105,7 @@ void MainWindow::commitFilePath(const QString& path) {
   if (!confirmCommit(this, title, heading, path, detail)) return;
 
   runCommitBatch(
-      I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; },
+      this, I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; },
       [&](const QString& f) {
         const auto res = m_volume.commitFile(*row, f.toStdString());
         if (!res.detail.empty()) {
@@ -1662,15 +1169,16 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
   }
 
   // CommitFileDeletion 不接受非空目录、也不递归——目录删除 = 把子文件、子目录、
-  // 目录本身按"最深的先删"收齐，逐个调用；删到某目录时其内容已清空。
+  // 目录本身按"最深的先删"收齐，逐个调用；删到某目录时其内容已清空。NoSymLinks
+  // 见 commitFilePath 的同名注释——跳过 reparse point 避免跨卷漫游。
   QStringList targets;
   int fileCount = 0;
   int subdirCount = 0;
   if (isDir) {
-    QDirIterator fileIt(path, QDir::Files | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    QDirIterator fileIt(path, QDir::Files | QDir::NoSymLinks | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
     while (fileIt.hasNext()) targets << QDir::toNativeSeparators(fileIt.next());
     fileCount = static_cast<int>(targets.size());
-    QDirIterator dirIt(path, QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    QDirIterator dirIt(path, QDir::Dirs | QDir::NoSymLinks | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
     while (dirIt.hasNext()) targets << QDir::toNativeSeparators(dirIt.next());
     subdirCount = static_cast<int>(targets.size()) - fileCount;
     targets << QDir::toNativeSeparators(path);  // 目录本身——排序后最浅、最后删
@@ -1683,7 +1191,7 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
   if (!confirmCommit(this, title, heading, path, detail)) return;
 
   runCommitBatch(
-      title, targets, [](const QString& f) { return f; },
+      this, title, targets, [](const QString& f) { return f; },
       [&](const QString& f) {
         const auto res = m_volume.commitFileDeletion(*row, f.toStdString());
         if (!res.detail.empty()) {
@@ -1773,7 +1281,7 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
   }
 
   runCommitBatch(
-      I18n::tr("Commit to disk"), targets, [](const RegCommitTarget& t) { return t.display; },
+      this, I18n::tr("Commit to disk"), targets, [](const RegCommitTarget& t) { return t.display; },
       [&](const RegCommitTarget& t) {
         const auto res = m_registry.commitRegistry(*row, t.key, t.valueName);
         if (!res.detail.empty()) {
@@ -1847,7 +1355,7 @@ void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& va
   }
 
   runCommitBatch(
-      I18n::tr("Delete and commit"), targets, [](const RegCommitTarget& t) { return t.display; },
+      this, I18n::tr("Delete and commit"), targets, [](const RegCommitTarget& t) { return t.display; },
       [&](const RegCommitTarget& t) {
         const auto res = m_registry.commitRegistryDeletion(*row, t.key, t.valueName);
         if (!res.detail.empty()) {

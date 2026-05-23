@@ -57,6 +57,9 @@ set(UWF_SOURCES
         src/ui/TrayController.cpp
         src/ui/ApplyPlanDialog.h
         src/ui/ApplyPlanDialog.cpp
+        src/ui/CommitBatch.h
+        src/ui/CommitReportDialog.h
+        src/ui/CommitReportDialog.cpp
         src/ui/LogViewerDialog.h
         src/ui/LogViewerDialog.cpp
         src/ui/TableText.h
@@ -73,6 +76,8 @@ set(UWF_SOURCES
         src/ui/OverlayFilesDialog.cpp
         src/ui/ImportDialog.h
         src/ui/ImportDialog.cpp
+        src/ui/ImportApplier.h
+        src/ui/ImportApplier.cpp
         src/ui/SwitchButton.h
         src/ui/SwitchButton.cpp
         src/ui/OverlayUsageBar.h
