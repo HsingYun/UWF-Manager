@@ -16,11 +16,13 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGuiApplication>
+#include <QHBoxLayout>
 #include <QHeaderView>
 #include <QHoverEvent>
 #include <QIcon>
 #include <QKeySequence>
 #include <QLabel>
+#include <QMap>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
@@ -38,7 +40,6 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
-#include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QWidget>
 #include <algorithm>
@@ -154,7 +155,9 @@ QString explainCommitFailure(int32_t hresult, uint32_t returnValue, bool isDelet
       // 0 引用计数就拒。措辞要带"可能"避免误导——其它原因（权限、UWF 内部
       // 状态等）也会落到同一个 HRESULT，无法仅凭代码区分。
       case uwf::WmiErrorCode::Failed:
-        return I18n::tr("The operation failed. The target may be in use by another process (e.g. an Explorer window browsing the folder, or the file is open). Close any program holding it and try again.");
+        return I18n::tr(
+            "The operation failed. The target may be in use by another process (e.g. an Explorer window browsing the folder, or the file is open). Close any "
+            "program holding it and try again.");
       case uwf::WmiErrorCode::NotFound:
         if (isDeletion) {
           return I18n::tr(
@@ -1038,6 +1041,17 @@ void MainWindow::updatePendingSummary() {
 }
 
 void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
+  // 重建前按盘符记下两件事，重建后尽量还原——避免 refresh 把用户的"上下文"
+  // 都跳走：
+  //   1) 当前选中的卷（外层 TAB 的盘符）；
+  //   2) 每个 DiskTab 内层"文件 / 注册表排除"TAB 的索引（仅系统盘有 1=注册表）。
+  // 内层索引用 int 而不是 tabText，因为 text 受 i18n 影响（切语言后不稳定）；
+  // 索引在所有语言下都稳定。
+  const QString prevDriveLetter = m_tabs->currentIndex() >= 0 ? m_tabs->tabText(m_tabs->currentIndex()) : QString();
+  QMap<QString, int> prevInfoTab;
+  for (const auto& t : m_diskTabs)
+    if (t) prevInfoTab.insert(t->driveLetter(), t->activeInfoTabIndex());
+
   // QTabWidget::clear() 只摘掉标签页、不销毁页面控件——上一轮的 DiskTab 会继续
   // 作为 m_tabs 的子对象存活，每次 refresh 泄漏一组（要到下次 rebuildUi 删掉
   // m_tabs 才被连带回收）。这里先显式 deleteLater 回收旧的一组。用 deleteLater
@@ -1045,9 +1059,6 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
   // 同步 delete 会销毁正在执行回调的对象。
   for (const auto& t : m_diskTabs)
     if (t) t->deleteLater();
-  // 重建会把所有标签页摘掉、当前索引重置到第 0 个——记下刷新前选中卷的盘符
-  // （tabText 即盘符），重建后尽量切回，避免 refresh 把用户正看的 TAB 跳走。
-  const QString prevDriveLetter = m_tabs->currentIndex() >= 0 ? m_tabs->tabText(m_tabs->currentIndex()) : QString();
   m_tabs->clear();
   m_diskTabs.clear();
   const QString sysDl = systemDriveLetter();
@@ -1065,6 +1076,10 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
     } else {
       const QString sysExtra = isSys ? I18n::tr(" (System drive: also manages the global registry exclusion list here.)") : QString();
       m_tabs->setTabToolTip(idx, I18n::tr("Switch to protection settings and file exclusions for volume %1.%2").arg(label, sysExtra));
+    }
+    // 还原本卷内层 TAB 的选中索引。原本不在（磁盘新插入）→ 保持默认 0。
+    if (const auto it = prevInfoTab.constFind(label); it != prevInfoTab.constEnd()) {
+      tab->setActiveInfoTabIndex(it.value());
     }
     m_diskTabs.push_back(tab);
     connect(tab, &DiskTab::pendingChanged, this, &MainWindow::updatePendingSummary);
@@ -1438,25 +1453,24 @@ void MainWindow::showAbout() {
   uwfNote->setTextFormat(Qt::RichText);
   uwfNote->setTextInteractionFlags(Qt::TextSelectableByMouse);
   uwfNote->setWordWrap(true);
-  uwfNote->setText(I18n::tr(
-      "<p><b>This program depends on the Windows Unified Write Filter (UWF).</b> UWF Manager does not perform write "
-      "filtering itself; the actual write protection is provided by the UWF feature built into Windows. This program "
-      "only configures and manages UWF, and requires UWF to be installed and enabled on the system.</p>"
-      "<p>When UWF is first enabled on a device, it makes the following changes to the system to improve UWF "
-      "performance:</p>"
-      "<ul>"
-      "<li>Paging files are disabled.</li>"
-      "<li>System Restore is disabled.</li>"
-      "<li>SuperFetch is disabled.</li>"
-      "<li>The file indexing service is turned off.</li>"
-      "<li>The defragmentation service is turned off.</li>"
-      "<li>Fast boot is disabled.</li>"
-      "<li>The BCD setting bootstatuspolicy is set to ignoreallfailures.</li>"
-      "</ul>"
-      "<p>After UWF is enabled, these settings can be changed as needed. For example, the paging file can be moved "
-      "to an unprotected volume and paging re-enabled.</p>"));
-  uwfNote->setStyleSheet(QStringLiteral("QLabel { border-top: 1px solid %1; padding-top: 10px; }")
-                             .arg(ThemeManager::instance().color(Sem::FgMuted).name()));
+  uwfNote->setText(
+      I18n::tr("<p><b>This program depends on the Windows Unified Write Filter (UWF).</b> UWF Manager does not perform write "
+               "filtering itself; the actual write protection is provided by the UWF feature built into Windows. This program "
+               "only configures and manages UWF, and requires UWF to be installed and enabled on the system.</p>"
+               "<p>When UWF is first enabled on a device, it makes the following changes to the system to improve UWF "
+               "performance:</p>"
+               "<ul>"
+               "<li>Paging files are disabled.</li>"
+               "<li>System Restore is disabled.</li>"
+               "<li>SuperFetch is disabled.</li>"
+               "<li>The file indexing service is turned off.</li>"
+               "<li>The defragmentation service is turned off.</li>"
+               "<li>Fast boot is disabled.</li>"
+               "<li>The BCD setting bootstatuspolicy is set to ignoreallfailures.</li>"
+               "</ul>"
+               "<p>After UWF is enabled, these settings can be changed as needed. For example, the paging file can be moved "
+               "to an unprotected volume and paging re-enabled.</p>"));
+  uwfNote->setStyleSheet(QStringLiteral("QLabel { border-top: 1px solid %1; padding-top: 10px; }").arg(ThemeManager::instance().color(Sem::FgMuted).name()));
   layout->addWidget(uwfNote);
 
   auto* btns = new QDialogButtonBox(&dlg);
@@ -1656,8 +1670,8 @@ void MainWindow::commitFileDeletionPath(const QString& path) {
   const QFileInfo fi(path);
   const bool isDir = fi.isDir();
   const QString title = I18n::tr("Delete and commit");
-  const QString heading = isDir ? I18n::tr("Delete this folder and its contents, and commit the deletions to disk")
-                                : I18n::tr("Delete this file, and commit the deletion to disk");
+  const QString heading =
+      isDir ? I18n::tr("Delete this folder and its contents, and commit the deletions to disk") : I18n::tr("Delete this file, and commit the deletion to disk");
 
   const QString dl = extractDriveLetter(path);
   if (dl.isEmpty()) {

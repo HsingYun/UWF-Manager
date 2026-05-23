@@ -171,9 +171,9 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   m_commitDirAct->setToolTip(I18n::tr("Pick a folder and commit overlay changes for every file inside it to disk."));
   if (m_showRegistry) {
     m_commitRegAct = commitMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Commit registry changes…"));
-    m_commitRegAct->setToolTip(
-        I18n::tr("Enter a registry key (and optional value name) and commit changes to the registry. Leaving the value name empty commits every value under the "
-                 "key and all its subkeys (recursively)."));
+    m_commitRegAct->setToolTip(I18n::tr(
+        "Enter a registry key (and optional value name) and commit changes to the registry. Leaving the value name empty commits every value under the "
+        "key and all its subkeys (recursively)."));
   }
   commitMenu->addSeparator();
   m_commitFileDeleteAct = commitMenu->addAction(tm.icon(":/icons/file.svg"), I18n::tr("Delete and commit file…"));
@@ -378,6 +378,12 @@ void DiskTab::onCommitRegistryDelete() {
                                     "the key, all of its values, and all of its subkeys."));
   if (!target) return;
   emit commitRegistryDeletionRequested(target->first, target->second);
+}
+
+int DiskTab::activeInfoTabIndex() const { return m_infoTabs ? m_infoTabs->currentIndex() : 0; }
+
+void DiskTab::setActiveInfoTabIndex(int index) {
+  if (m_infoTabs && index >= 0 && index < m_infoTabs->count()) m_infoTabs->setCurrentIndex(index);
 }
 
 void DiskTab::markUnsupported() const {

@@ -291,9 +291,10 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
     addMenu->setToolTipsVisible(true);
     m_addRegKeyAct = addMenu->addAction(tm.icon(":/icons/registry.svg"), I18n::tr("Registry key…"));
     m_addRegKeyAct->setToolTip(I18n::tr("Enter a registry key path to add to the exclusion list."));
-    m_addDomainSecretAct = addMenu->addAction(dskName);
+    // 两个持久化伪条目用专属图标——和列表行的图标口径一致：钥匙 = 域机密、证书 = TSCAL。
+    m_addDomainSecretAct = addMenu->addAction(tm.icon(":/icons/key.svg"), dskName);
     m_addDomainSecretAct->setToolTip(I18n::tr("Persist the domain secret key (machine account password) across UWF sessions."));
-    m_addTscalAct = addMenu->addAction(tscalName);
+    m_addTscalAct = addMenu->addAction(tm.icon(":/icons/license.svg"), tscalName);
     m_addTscalAct->setToolTip(I18n::tr("Persist Terminal Services client access licenses across UWF sessions."));
     m_addBtn->setMenu(addMenu);
     header->addWidget(m_addBtn);
@@ -426,6 +427,8 @@ void ExclusionListWidget::refreshThemedIcons() {
   if (m_addFileAct) m_addFileAct->setIcon(tm.icon(":/icons/file.svg"));
   if (m_addDirAct) m_addDirAct->setIcon(tm.icon(":/icons/folder.svg"));
   if (m_addRegKeyAct) m_addRegKeyAct->setIcon(tm.icon(":/icons/registry.svg"));
+  if (m_addDomainSecretAct) m_addDomainSecretAct->setIcon(tm.icon(":/icons/key.svg"));
+  if (m_addTscalAct) m_addTscalAct->setIcon(tm.icon(":/icons/license.svg"));
   if (m_rmBtn) {
     m_rmBtn->setIcon(tm.iconWithColor(":/icons/remove.svg", btnIconFg));
   }
@@ -794,7 +797,18 @@ void ExclusionListWidget::rebuild() {
 
     item->setText(entry);
     item->setForeground(fg);
-    const QIcon baseIcon = m_kind == Kind::File ? iconForFileEntry(entry) : tm.icon(":/icons/registry.svg");
+    // 注册表 TAB 下的两个伪条目（DomainSecretKey / TSCAL）用专属图标，跟普通
+    // 注册表排除区分开：DomainSecretKey 用钥匙、TSCAL 用证书；其它走默认。
+    QIcon baseIcon;
+    if (m_kind == Kind::File) {
+      baseIcon = iconForFileEntry(entry);
+    } else if (flag == &m_persistDomainSecretKey) {
+      baseIcon = tm.icon(":/icons/key.svg");
+    } else if (flag == &m_persistTSCAL) {
+      baseIcon = tm.icon(":/icons/license.svg");
+    } else {
+      baseIcon = tm.icon(":/icons/registry.svg");
+    }
     item->setIcon(composeWithBadge(baseIcon, badge));
 
     const QString pendingText =

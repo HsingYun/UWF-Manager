@@ -24,8 +24,7 @@ void sortSnapshot(UwfSnapshot& snapshot) {
 
 bool PendingChanges::empty() const {
   return !setFilterEnabled && setOverlay.empty() && volumeProtect.empty() && volumeBindByVolumeName.empty() && addFileExclusions.empty() &&
-         removeFileExclusions.empty() && addRegistryExclusions.empty() && removeRegistryExclusions.empty() && !setPersistDomainSecretKey &&
-         !setPersistTSCAL;
+         removeFileExclusions.empty() && addRegistryExclusions.empty() && removeRegistryExclusions.empty() && !setPersistDomainSecretKey && !setPersistTSCAL;
 }
 
 void PendingChanges::clear() {

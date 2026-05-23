@@ -38,6 +38,11 @@ class DiskTab : public QWidget {
   void markLimitedFileSystem() const;
 
   [[nodiscard]] QString driveLetter() const { return QString::fromStdString(m_disk.driveLetter); }
+  // 内层"文件 / 注册表排除"TAB 的当前索引——MainWindow 在 refresh 重建 DiskTab
+  // 时按盘符记录 / 恢复，避免 refresh 把用户正看的内层 TAB 跳回 0。索引在不同
+  // 语言下都稳定（0=文件，1=注册表，仅系统盘有 1）；返回 0 用作未初始化兜底。
+  [[nodiscard]] int activeInfoTabIndex() const;
+  void setActiveInfoTabIndex(int index);
   // 卷是否可被 UWF 保护——含 NTFS/FAT 完全支持 + exFAT/ReFS 等 limited
   // 支持。Limited 卷允许 protect 开关与绑定方式，但禁用文件排除 / commit。
   [[nodiscard]] bool supported() const { return m_disk.support == core::DiskSupport::Supported || m_disk.support == core::DiskSupport::FileSystemLimited; }

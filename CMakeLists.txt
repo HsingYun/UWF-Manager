@@ -104,6 +104,8 @@ qt_add_resources(UWF "app_resources"
         resources/icons/file.svg
         resources/icons/folder.svg
         resources/icons/registry.svg
+        resources/icons/key.svg
+        resources/icons/license.svg
         resources/icons/arrow_up_dark.svg
         resources/icons/arrow_down_dark.svg
         resources/icons/arrow_up_light.svg

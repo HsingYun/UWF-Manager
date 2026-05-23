@@ -83,8 +83,7 @@ bool confirm(QWidget* parent, const QString& title, const QString& text) {
   return accepted;
 }
 
-bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail,
-                   bool allowContinue) {
+bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail, bool allowContinue) {
   auto* dlg = new QDialog(parent);
   dlg->setWindowTitle(title);
 
