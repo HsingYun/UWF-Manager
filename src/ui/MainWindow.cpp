@@ -140,17 +140,27 @@ struct RegCommitTarget {
 
 // 把 HRESULT / UWF returnValue 翻译成普通用户看得懂的一句话。
 // 不在这里暴露 "WBEM_E_*" / "ExecMethod" 这些实现术语——那些进日志。
-QString explainCommitFailure(int32_t hresult, uint32_t returnValue) {
+// isDeletion 区分 Commit{File,Registry}（=false）vs Commit{File,Registry}Deletion
+// （=true）——两类操作下同一个 HRESULT 含义不同，文案得分别写：
+//   * NotFound 对 Commit：overlay 里没有该目标的待提交改动。
+//   * NotFound 对 Deletion：目标不在物理盘 / 持久化 hive 上——只活在 overlay 里，
+//     重启就没；本来就不需要也无法用提交删除。
+QString explainCommitFailure(int32_t hresult, uint32_t returnValue, bool isDeletion) {
   if (hresult != 0) {
     switch (uwf::WmiError(hresult).code()) {
       // WBEM_E_FAILED（0x80041001）是一般性失败码，没有确定原因。实测最常见
       // 的一种诱因：目标被其他进程占着 handle（例如资源管理器正在浏览该目录、
-      // 文本编辑器打开了文件、AV 在扫描），UWF CommitFileDeletion 看到非
+      // 文本编辑器打开了文件、regedit 打开了键、AV 在扫描），UWF 看到非
       // 0 引用计数就拒。措辞要带"可能"避免误导——其它原因（权限、UWF 内部
       // 状态等）也会落到同一个 HRESULT，无法仅凭代码区分。
       case uwf::WmiErrorCode::Failed:
         return I18n::tr("The operation failed. The target may be in use by another process (e.g. an Explorer window browsing the folder, or the file is open). Close any program holding it and try again.");
       case uwf::WmiErrorCode::NotFound:
+        if (isDeletion) {
+          return I18n::tr(
+              "Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It "
+              "will disappear on reboot; commit-delete is neither needed nor possible.");
+        }
         return I18n::tr("The target was not found; there is nothing in the overlay to commit.");
       case uwf::WmiErrorCode::InvalidParameter:
         return I18n::tr("A parameter was rejected by the system (invalid path or argument).");
@@ -1544,7 +1554,9 @@ void MainWindow::runCommitBatch(const QString& progressTitle, const QList<Target
     } else {
       row.category = res.outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed");
       row.errorCode = formatErrorCode(res.hresult, res.returnValue);
-      row.reason = explainCommitFailure(res.hresult, res.returnValue);
+      // kHasExists（删除操作传了 existsFn）== 操作类型是 Deletion——HRESULT 含义
+      // 在 commit / deletion 间不同，文案要分。
+      row.reason = explainCommitFailure(res.hresult, res.returnValue, kHasExists);
     }
     allRows.append(std::move(row));
   }
@@ -1758,15 +1770,22 @@ void MainWindow::commitRegistryKey(const QString& key, const QString& valueName)
       confirmCommit(this, title, heading, target, I18n::tr("This registry key does not exist, so there is nothing to commit."), /*allowContinue=*/false);
       return;
     }
+    // UWF 的 CommitRegistry 是逐值提交——ValueName="" 提交的是键的 (Default)
+    // 值，默认值不存在则返回 NOT_FOUND；UWF 没有"提交键本身（不带任何值）"的
+    // 能力。这里递归收集每一个键，并保证**每个键都至少 emit 一次** (k, "")
+    // 尝试，让 UWF 在结果表里对该键诚实表态——OK 或 NOT_FOUND——而不是 UI 凭
+    // valueNames 是否为空就跳过。命名值另外逐个 emit；若 (Default) 已在
+    // valueNames 中（即已被设过），则跳过额外的 (k, "") 避免重复行。
     for (const auto& k : regkey::collectKeyTree(normKey)) {
       const QString kText = QString::fromStdString(k);
-      for (const auto& vn : regkey::valueNames(k)) {
+      const auto vns = regkey::valueNames(k);
+      const bool defaultAlreadyInVns = std::ranges::any_of(vns, [](const std::string& s) { return s.empty(); });
+      if (!defaultAlreadyInVns) {
+        targets.append({k, std::string{}, kText + " : (Default)"});
+      }
+      for (const auto& vn : vns) {
         targets.append({k, vn, vn.empty() ? (kText + " : (Default)") : (kText + " : " + QString::fromStdString(vn))});
       }
-    }
-    if (targets.isEmpty()) {
-      confirmCommit(this, title, heading, target, I18n::tr("This registry key and its subkeys contain no values to commit."), /*allowContinue=*/false);
-      return;
     }
   }
   const int total = static_cast<int>(targets.size());

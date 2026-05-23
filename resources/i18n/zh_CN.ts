@@ -724,10 +724,6 @@ Exclusion: %1</source>
         <source>This registry key does not exist, so there is nothing to commit.</source>
         <translation>此注册表键不存在，没有可提交的内容。</translation>
     </message>
-    <message>
-        <source>This registry key and its subkeys contain no values to commit.</source>
-        <translation>此注册表键及其子键中没有可提交的值。</translation>
-    </message>
     <!-- commitRegistryDeletionKey -->
     <message>
         <source>This registry value does not exist, so there is nothing to delete.</source>
