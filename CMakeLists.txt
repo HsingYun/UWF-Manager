@@ -53,6 +53,10 @@ set(UWF_SOURCES
         src/uwf/UwfSnapshot.cpp
         src/ui/MainWindow.h
         src/ui/MainWindow.cpp
+        src/ui/AboutDialog.h
+        src/ui/AboutDialog.cpp
+        src/ui/CommitDispatcher.h
+        src/ui/CommitDispatcher.cpp
         src/ui/TrayController.h
         src/ui/TrayController.cpp
         src/ui/ApplyPlanDialog.h

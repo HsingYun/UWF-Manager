@@ -3,6 +3,7 @@
 #include <QMainWindow>
 #include <QPointer>
 #include <QVector>
+#include <memory>
 
 #include "../core/UwfConfig.h"
 #include "../uwf/api/UwfFilter.h"
@@ -11,6 +12,7 @@
 #include "../uwf/api/UwfRegistryFilter.h"
 #include "../uwf/api/UwfVolume.h"
 #include "../uwf/wmi/WmiClient.h"
+#include "CommitDispatcher.h"
 
 class QTabWidget;
 class QLabel;
@@ -115,11 +117,14 @@ class MainWindow : public QMainWindow {
   UwfFilter m_filter{m_writeSession};
   UwfOverlay m_overlay{m_writeSession};
   UwfOverlayConfig m_overlayConfig{m_writeSession};
-  UwfVolume m_volume{m_writeSession};
-  UwfRegistryFilter m_registry{m_writeSession};
 
   QVector<QPointer<DiskTab>> m_diskTabs;
   core::UwfSnapshot m_snapshot;
+  // 4 个 commit{File,FileDeletion,Registry,RegistryDeletion}Path 槽实际工作都
+  // 在这里头：CommitDispatcher 自己持有 UwfVolume / UwfRegistryFilter 包装，
+  // 共享 m_writeSession + 引用 m_snapshot + m_usageTimer。在 m_usageTimer 构造
+  // 之后 emplace。
+  std::unique_ptr<CommitDispatcher> m_commit;
 
   // 兼容模式标志与系统标识（系统版本未通过校验时为 true）。提示文案每次
   // buildUi 按当前语言现翻译，故只存原始数据：rebuildUi 重建面板时连带重译。

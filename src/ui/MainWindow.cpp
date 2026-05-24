@@ -9,11 +9,7 @@
 #include <QCursor>
 #include <QDateTime>
 #include <QDialog>
-#include <QDialogButtonBox>
-#include <QDir>
-#include <QDirIterator>
 #include <QEvent>
-#include <QFileInfo>
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QHoverEvent>
@@ -24,7 +20,6 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QPushButton>
 #include <QStatusBar>
 #include <QStyle>
 #include <QStyleOption>
@@ -49,9 +44,8 @@
 #include "../uwf/UwfSnapshot.h"
 #include "../uwf/api/UwfmgrCli.h"
 #include "../uwf/wmi/WmiResult.h"
+#include "AboutDialog.h"
 #include "ApplyPlanDialog.h"
-#include "CommitBatch.h"
-#include "CommitReportDialog.h"
 #include "DiskTab.h"
 #include "GlobalStatusPanel.h"
 #include "I18n.h"
@@ -71,27 +65,7 @@ namespace {
 // 旧的 warnSelectable / confirmYesNo helper 已迁移到 ui::dialogs（QDialog 实现，
 // 走 app font，避免 QMessageBox 的中文渲染糊问题）。
 using uwf::ui::dialogs::confirm;
-using uwf::ui::dialogs::confirmCommit;
 using uwf::ui::dialogs::warning;
-
-// 在作用域内暂停一个 QTimer，离开作用域时恢复（仅当它原本就在运行）。给 commit
-// 这类内部会 processEvents 的操作用——防止占用刷新定时器在 WMI 写入半途触发、
-// 对同一个 m_writeSession 发起重入调用（窗口模态拦不住 QTimer 超时）。
-class ScopedTimerPause {
- public:
-  explicit ScopedTimerPause(QTimer* timer) : m_timer(timer), m_wasActive(timer && timer->isActive()) {
-    if (m_wasActive) m_timer->stop();
-  }
-  ~ScopedTimerPause() {
-    if (m_wasActive && m_timer) m_timer->start();
-  }
-  ScopedTimerPause(const ScopedTimerPause&) = delete;
-  ScopedTimerPause& operator=(const ScopedTimerPause&) = delete;
-
- private:
-  QTimer* m_timer;
-  bool m_wasActive;
-};
 
 // QToolBar 溢出时最右侧的扩展按钮（qt_toolbar_ext_button）：被 QSS 的
 // `QToolBar QToolButton` 规则命中后转由 QStyleSheetStyle 渲染，后者既不画
@@ -118,23 +92,8 @@ class ToolbarExtIcon : public QObject {
   }
 };
 
-// 一次注册表递归提交 / 删除批处理里的单个目标。
-struct RegCommitTarget {
-  std::string key;        // 归一化后的长写键路径
-  std::string valueName;  // 值名；提交时空串 = (Default) 值，删除时空串 = 该键本身
-  QString display;        // 报告对话框 "路径" 列的展示串
-};
-
-// 盘符逻辑统一在 uwf::drive（见 src/util/DriveLetter.h）。下面两个 MainWindow
-// 内多处复用的函数只是 QString ↔ std::string 的边界适配，不含任何盘符逻辑。
-// extractDriveLetter 把 fromPath 区分出的"卷 GUID 路径解析失败"写进日志——
-// 调用方只关心拿没拿到盘符，但失败原因值得留痕。
-QString extractDriveLetter(const QString& path) {
-  std::string err;
-  const std::string dl = drive::fromPath(path.toStdString(), &err);
-  if (dl.empty() && !err.empty()) UWF_LOG_W("ui") << "extractDriveLetter: " << err;
-  return QString::fromStdString(dl);
-}
+// 盘符逻辑统一在 uwf::drive（见 src/util/DriveLetter.h）。本函数只做 QString
+// ↔ std::string 的边界适配，不含任何盘符逻辑。
 QString systemDriveLetter() { return QString::fromStdString(drive::systemLetter()); }
 
 // RtlGetVersion 是唯一一个在 Windows 8.1+ 上仍返回真实版本号（而不是被
@@ -275,6 +234,12 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
   m_usageTimer->setInterval(5000);
   connect(m_usageTimer, &QTimer::timeout, this, &MainWindow::refreshUsage);
   m_usageTimer->start();
+
+  // 4 个 commit{File,FileDeletion,Registry,RegistryDeletion}Path 槽的实际工作都
+  // 在 CommitDispatcher 里跑——这里只需把 4 个槽变成代理。注意构造时点：要在
+  // m_usageTimer 创建之后，因为 dispatcher 会把它当 ScopedTimerPause 的对象。
+  m_commit = std::make_unique<CommitDispatcher>(m_writeSession, m_snapshot, m_usageTimer, this);
+
   // 首屏 rebuildUi 不在 ctor 里同步触发——widget 此时还没 show，Qt 一些 polish
   // / 几何计算在 widget 真正进入 shown 状态前结果不稳定，会跟后续"切主题 /
   // 切语言时已 shown 状态下的 rebuildUi"产生差异。改放到 showEvent 第一次
@@ -908,112 +873,7 @@ void MainWindow::showImport() {
 }
 
 void MainWindow::showAbout() {
-  // 改用普通 QDialog 而非 QMessageBox：QMessageBox 内部 label 走另一条
-  // 字体路径，全局 app.setFont() 设置的 hinting / styleStrategy 不会传播过去，
-  // 中文渲染会"糊"。QDialog + QLabel 跟其它对话框一样能继承 app font。
-  QDialog dlg(this);
-  dlg.setWindowTitle(I18n::tr("About UWF Manager"));
-  dlg.setMinimumWidth(520);
-
-  auto* layout = new QVBoxLayout(&dlg);
-  layout->setContentsMargins(20, 16, 20, 12);
-  layout->setSpacing(10);
-
-  // 头部：左侧软件 logo，右侧标题 + 版本号竖排。
-  auto* header = new QHBoxLayout();
-  header->setSpacing(14);
-
-  // app.svg 是矢量 logo（同时用作窗口 / 托盘图标），渲染成 64×64 放在左侧。
-  auto* logo = new QLabel(&dlg);
-  logo->setPixmap(QIcon(QStringLiteral(":/icons/app.svg")).pixmap(64, 64));
-  logo->setFixedSize(64, 64);
-  header->addWidget(logo);
-
-  auto* titleBox = new QVBoxLayout();
-  titleBox->setSpacing(2);
-
-  // 标题：手动用 QLabel + 大字号 + bold（YaHei 真实字重 700）替代 <h3>，
-  // 避免 QTextDocument 的 <h3> 默认合成粗体（同样的 hinting 问题）。
-  auto* title = new QLabel(I18n::tr("Unified Write Filter (UWF) Manager"), &dlg);
-  QFont titleFont = title->font();
-  titleFont.setBold(true);
-  titleFont.setPointSizeF(titleFont.pointSizeF() + 3);
-  title->setFont(titleFont);
-  title->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  titleBox->addWidget(title);
-
-  // 版本号紧贴标题下方、弱化显示。UWF_VER_STRING 由 cmake/GitVersion.cmake
-  // 在构建期注入 git 短哈希（无 git 仓库时回退为 "1.0.0.0"）。用内联 color
-  // 走富文本，理由同 body：避开 QSS / palette 对 QLabel 文字色的干扰。
-  auto* version = new QLabel(&dlg);
-  version->setTextFormat(Qt::RichText);
-  version->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  // 版本号与 "powered by Qt …" 都不进 tr：版本号无需翻译，"powered by Qt" 是
-  // Qt 官方品牌标语。
-  const QString verText =
-      QStringLiteral("Version %1").arg(QString::fromLatin1(UWF_VER_STRING)) + QStringLiteral(" · powered by Qt %1").arg(QString::fromLatin1(qVersion()));
-  version->setText(QStringLiteral("<span style=\"color:%1\">%2</span>").arg(ThemeManager::instance().color(Sem::FgMuted).name(), verText));
-  titleBox->addWidget(version);
-
-  header->addLayout(titleBox, 1);
-  layout->addLayout(header);
-
-  auto* body = new QLabel(&dlg);
-  body->setTextFormat(Qt::RichText);
-  body->setTextInteractionFlags(Qt::TextBrowserInteraction);
-  body->setOpenExternalLinks(true);
-  body->setWordWrap(true);
-  // 之前试过 QPalette::Link 设主题 accent，但 Qt 在 light 主题下 QLabel 的
-  // 富文本链接颜色经常被 QTextDocument 的默认值覆盖（看着仍是无对比度的浅蓝）。
-  // 改用 inline `style="color:..."` 注到每个 <a> 标签，绕开 palette / QSS 的所有
-  // 干扰。<code> 标签去掉的原因同上：会切到 Courier New 的中文 fallback 渲染糊。
-  QString html = I18n::tr(
-                     "<p>A graphical front-end for managing the UWF filter state, overlay, and file / registry exclusions. Most changes take effect after "
-                     "the next reboot.</p>"
-                     "<p>Source code: <a href=\"%3\">%3</a></p>"
-                     "<p>Copyright © 2026 HsingYun &lt;<a href=\"mailto:%1\">%1</a>&gt;</p>"
-                     "<p>This program is released under the <a href=\"%2\">GNU General Public License v3.0</a>; the full license text is included in the "
-                     "LICENSE file shipped with this program.</p>"
-                     "<p>This program is free software: you may redistribute it and / or modify it under the terms of the GPL v3. It is provided \"as is\", "
-                     "without any warranty.</p>")
-                     .arg("iakext@gmail.com", "https://www.gnu.org/licenses/gpl-3.0.html", "https://github.com/HsingYun/UWF-Manager");
-  const QString linkColor = ThemeManager::instance().color(Sem::Accent).name();
-  html.replace(QStringLiteral("<a "), QStringLiteral("<a style=\"color:%1\" ").arg(linkColor));
-  body->setText(html);
-  // body 吸收纵向拉伸：对话框拉高时多余空间归 body，header（logo + 标题 + 版本）保持紧凑、不被拉开。
-  layout->addWidget(body, 1);
-
-  // UWF 行为提示：说明本程序只是 UWF 的图形配置前端（写入过滤由系统 UWF 完成、且依赖
-  // 系统已装并启用 UWF），以及 UWF 首次启用会对系统做的更改。单独一个 label，顶部描边与正文分块。
-  auto* uwfNote = new QLabel(&dlg);
-  uwfNote->setTextFormat(Qt::RichText);
-  uwfNote->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  uwfNote->setWordWrap(true);
-  uwfNote->setText(
-      I18n::tr("<p><b>This program depends on the Windows Unified Write Filter (UWF).</b> UWF Manager does not perform write "
-               "filtering itself; the actual write protection is provided by the UWF feature built into Windows. This program "
-               "only configures and manages UWF, and requires UWF to be installed and enabled on the system.</p>"
-               "<p>When UWF is first enabled on a device, it makes the following changes to the system to improve UWF "
-               "performance:</p>"
-               "<ul>"
-               "<li>Paging files are disabled.</li>"
-               "<li>System Restore is disabled.</li>"
-               "<li>SuperFetch is disabled.</li>"
-               "<li>The file indexing service is turned off.</li>"
-               "<li>The defragmentation service is turned off.</li>"
-               "<li>Fast boot is disabled.</li>"
-               "<li>The BCD setting bootstatuspolicy is set to ignoreallfailures.</li>"
-               "</ul>"
-               "<p>After UWF is enabled, these settings can be changed as needed. For example, the paging file can be moved "
-               "to an unprotected volume and paging re-enabled.</p>"));
-  uwfNote->setStyleSheet(QStringLiteral("QLabel { border-top: 1px solid %1; padding-top: 10px; }").arg(ThemeManager::instance().color(Sem::FgMuted).name()));
-  layout->addWidget(uwfNote);
-
-  auto* btns = new QDialogButtonBox(&dlg);
-  auto* closeBtn = btns->addButton(I18n::tr("Close"), QDialogButtonBox::AcceptRole);
-  connect(closeBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
-  layout->addWidget(btns);
-
+  AboutDialog dlg(this);
   dlg.exec();
 }
 
@@ -1052,331 +912,12 @@ void MainWindow::safeRestart() {
   }
 }
 
-void MainWindow::commitFilePath(const QString& path) {
-  if (path.isEmpty()) return;
-
-  // 多文件 commit 的 QProgressDialog::setValue 会 processEvents；占用刷新定时器
-  // 不受窗口模态约束，可能在 commit 半途触发、对同一个 m_writeSession 发起重入
-  // WMI 调用。整段 commit 暂停该定时器，离开作用域自动恢复。
-  const ScopedTimerPause usagePause(m_usageTimer);
-
-  // 标题 / heading 提前算出来：用户面前的前置校验（排除列表、空目录等）失败时
-  // 复用同一个 confirmCommit 版式，"继续"置灰、原因塞进警示区——和成功路径走
-  // 一致的视觉语言，不再用一个单独的 warning() 弹窗打断。
-  const QFileInfo fi(path);
-  const bool isDir = fi.isDir();
-  const QString title = I18n::tr("Commit to disk");
-  const QString heading = isDir ? I18n::tr("Commit this folder's overlay changes to disk") : I18n::tr("Commit this file's overlay changes to disk");
-
-  // 从路径解析盘符，定位到对应的 next-session VolumeRow。
-  const QString dl = extractDriveLetter(path);
-  if (dl.isEmpty()) {
-    warning(this, I18n::tr("Commit failed"), I18n::tr("The path has no drive letter; cannot identify the target volume."));
-    return;
-  }
-
-  std::string err;
-  auto volumes = m_volume.readAll(&err);
-  if (!err.empty()) {
-    warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to read volume information: %1").arg(QString::fromStdString(err)));
-    return;
-  }
-  const auto dlStd = dl.toStdString();
-  const auto* row = api::findBySession(volumes, /*wantCurrent=*/true, [&](const api::VolumeRow& v) { return v.driveLetter == dlStd; });
-  if (!row) {
-    warning(this, I18n::tr("Commit failed"), I18n::tr("No current-session record found for volume %1.").arg(dl));
-    return;
-  }
-
-  // 排除列表用 volumeName (Win32_Volume.DeviceID) 作键，按当前会话的运行态判断。
-  if (auto it = m_snapshot.current.fileExclusions.find(row->volumeName); it != m_snapshot.current.fileExclusions.end()) {
-    const std::string hit = findCoveringExclusion(it->second, path.toStdString());
-    if (!hit.empty()) {
-      confirmCommit(this, title, heading, path, I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
-                    /*allowContinue=*/false);
-      return;
-    }
-  }
-
-  // UWF_Volume.CommitFile 只认单个文件条目；给目录会返回 WBEM_E_NOT_FOUND。
-  // 所以目录提交 = 递归遍历目录下所有文件挨个 commit。NoSymLinks 跳过重解析点
-  // （junction / mount point / 符号链接）——Win 上 QFileInfo::isSymLink 对全部
-  // 重解析点返回 true，QDirIterator 据此既不列出也不递归进入，避免跨卷漫游和
-  // 自引用 junction 形成的死循环。
-  QStringList targets;
-  if (isDir) {
-    QDirIterator it(path, QDir::Files | QDir::NoSymLinks | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
-    while (it.hasNext()) targets << QDir::toNativeSeparators(it.next());
-  } else {
-    targets << path;
-  }
-
-  if (isDir && targets.isEmpty()) {
-    confirmCommit(this, title, heading, path, I18n::tr("No files were found under %1.").arg(path), /*allowContinue=*/false);
-    return;
-  }
-
-  const QString detail = isDir ? I18n::tr("%1 files in this folder and all its subfolders will be committed.").arg(targets.size()) : QString();
-  if (!confirmCommit(this, title, heading, path, detail)) return;
-
-  runCommitBatch(
-      this, I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; },
-      [&](const QString& f) {
-        const auto res = m_volume.commitFile(*row, f.toStdString());
-        if (!res.detail.empty()) {
-          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
-          UWF_LOG_W("commit") << std::format("CommitFile {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(), static_cast<uint32_t>(res.hresult),
-                                             res.returnValue, res.detail);
-        }
-        return res;
-      });
-}
-
-void MainWindow::commitFileDeletionPath(const QString& path) {
-  if (path.isEmpty()) return;
-
-  // 多目标删除会弹 QProgressDialog（setValue 内部 processEvents）——和 commitFilePath
-  // 同理，整段暂停占用刷新定时器，防止半途重入 m_writeSession。
-  const ScopedTimerPause usagePause(m_usageTimer);
-
-  // 标题 / heading 提前算（fi.isDir() 在路径不存在时返回 false，正好作为"按文件
-  // 删除"的默认 heading）。用户面前的前置校验失败统一走 confirmCommit + 灰按钮。
-  const QFileInfo fi(path);
-  const bool isDir = fi.isDir();
-  const QString title = I18n::tr("Delete and commit");
-  const QString heading =
-      isDir ? I18n::tr("Delete this folder and its contents, and commit the deletions to disk") : I18n::tr("Delete this file, and commit the deletion to disk");
-
-  const QString dl = extractDriveLetter(path);
-  if (dl.isEmpty()) {
-    warning(this, I18n::tr("Commit file deletion failed"), I18n::tr("The path has no drive letter; cannot identify the target volume."));
-    return;
-  }
-
-  // 核心校验：CommitFileDeletion 由方法自身执行删除，目标（文件或目录）必须**仍
-  // 存在**。不存在就没有可删的东西——走灰按钮对话框告知。
-  if (!fi.exists()) {
-    confirmCommit(this, title, heading, path, I18n::tr("This path does not exist, so there is nothing to delete."), /*allowContinue=*/false);
-    return;
-  }
-
-  std::string err;
-  const auto volumes = m_volume.readAll(&err);
-  if (!err.empty()) {
-    warning(this, I18n::tr("Commit file deletion failed"), I18n::tr("Failed to read volume information: %1").arg(QString::fromStdString(err)));
-    return;
-  }
-  const auto dlStd = dl.toStdString();
-  const auto* row = api::findBySession(volumes, /*wantCurrent=*/true, [&](const api::VolumeRow& v) { return v.driveLetter == dlStd; });
-  if (!row) {
-    warning(this, I18n::tr("Commit file deletion failed"), I18n::tr("No current-session record found for volume %1.").arg(dl));
-    return;
-  }
-
-  // 落在文件排除列表里的路径，UWF 不在覆盖层维护，提交删除无意义。
-  if (auto it = m_snapshot.current.fileExclusions.find(row->volumeName); it != m_snapshot.current.fileExclusions.end()) {
-    const std::string hit = findCoveringExclusion(it->second, path.toStdString());
-    if (!hit.empty()) {
-      confirmCommit(this, title, heading, path, I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
-                    /*allowContinue=*/false);
-      return;
-    }
-  }
-
-  // CommitFileDeletion 不接受非空目录、也不递归——目录删除 = 把子文件、子目录、
-  // 目录本身按"最深的先删"收齐，逐个调用；删到某目录时其内容已清空。NoSymLinks
-  // 见 commitFilePath 的同名注释——跳过 reparse point 避免跨卷漫游。
-  QStringList targets;
-  int fileCount = 0;
-  int subdirCount = 0;
-  if (isDir) {
-    QDirIterator fileIt(path, QDir::Files | QDir::NoSymLinks | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
-    while (fileIt.hasNext()) targets << QDir::toNativeSeparators(fileIt.next());
-    fileCount = static_cast<int>(targets.size());
-    QDirIterator dirIt(path, QDir::Dirs | QDir::NoSymLinks | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
-    while (dirIt.hasNext()) targets << QDir::toNativeSeparators(dirIt.next());
-    subdirCount = static_cast<int>(targets.size()) - fileCount;
-    targets << QDir::toNativeSeparators(path);  // 目录本身——排序后最浅、最后删
-    std::sort(targets.begin(), targets.end(), [](const QString& a, const QString& b) { return a.count('\\') > b.count('\\'); });
-  } else {
-    targets << path;
-  }
-
-  const QString detail = isDir ? I18n::tr("%1 files and %2 subfolders will be deleted.").arg(fileCount).arg(subdirCount) : QString();
-  if (!confirmCommit(this, title, heading, path, detail)) return;
-
-  runCommitBatch(
-      this, title, targets, [](const QString& f) { return f; },
-      [&](const QString& f) {
-        const auto res = m_volume.commitFileDeletion(*row, f.toStdString());
-        if (!res.detail.empty()) {
-          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
-          UWF_LOG_W("commit") << std::format("CommitFileDeletion {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(),
-                                             static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-        }
-        return res;
-      },
-      [](const QString& f) { return QFileInfo::exists(f); });
-}
-
-void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) {
-  if (key.isEmpty()) return;
-
-  // 多目标提交会弹 QProgressDialog（setValue 内部 processEvents）——暂停占用刷新
-  // 定时器，防止半途重入 m_writeSession。
-  const ScopedTimerPause usagePause(m_usageTimer);
-
-  // 注册表键先归一成长写 hive（HKLM\… → HKEY_LOCAL_MACHINE\…）：UWF 覆盖层、排除
-  // 列表都按长写键路径索引，跳过归一会匹配不到。
-  const std::string normKey = regkey::normalize(key.toStdString());
-  if (normKey.empty()) return;
-  const QString keyText = QString::fromStdString(normKey);
-
-  // valueName 空 = 整键递归（picker 值表无选中）；非空 = 单个命名值。
-  // (Default) 已在 picker 层禁选，所以单值路径下 valueName 必然是真实命名值，
-  // 不会出现"key : "的裸冒号尾巴。
-  const bool wholeKey = valueName.isEmpty();
-  const QString title = I18n::tr("Commit to disk");
-  const QString heading = wholeKey ? I18n::tr("Commit this registry key and its whole subtree to disk") : I18n::tr("Commit this registry value to disk");
-  const QString target = wholeKey ? keyText : (keyText + " : " + valueName);
-
-  // 注册表排除是全局的，比对当前运行会话即可。覆盖 = 键相等或为其祖先。
-  const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
-  if (!hit.empty()) {
-    confirmCommit(this, title, heading, target, I18n::tr("This key is in the registry exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
-                  /*allowContinue=*/false);
-    return;
-  }
-
-  // 目标清单：单值 = 只提交那一个值；整键 = 递归展开整棵键子树的每一个值——
-  // CommitRegistry 只能逐值提交，"提交整键"由这里展开成逐值调用。
-  QList<RegCommitTarget> targets;
-  if (!wholeKey) {
-    if (!regkey::valueExists(normKey, valueName.toStdString())) {
-      confirmCommit(this, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to commit."), /*allowContinue=*/false);
-      return;
-    }
-    targets.append({normKey, valueName.toStdString(), target});
-  } else {
-    if (!regkey::keyExists(normKey)) {
-      confirmCommit(this, title, heading, target, I18n::tr("This registry key does not exist, so there is nothing to commit."), /*allowContinue=*/false);
-      return;
-    }
-    // UWF 的 CommitRegistry 是逐值提交——ValueName="" 提交的是键的 (Default)
-    // 值，默认值不存在则返回 NOT_FOUND；UWF 没有"提交键本身（不带任何值）"的
-    // 能力。这里递归展开成 valueNames 里实际存在的每一个值——valueNames 里没空串
-    // （键未设过默认值）就不再硬塞 (k, "")，省一次必然 NOT_FOUND 的 WMI 调用，
-    // 也让结果表里不再出现一堆无意义的 Skipped 行。代价是没值的纯结构 key
-    // 整个被跳过——CommitRegistry 本来对它就什么都做不了，跳过是对的。
-    for (const auto& k : regkey::collectKeyTree(normKey)) {
-      const QString kText = QString::fromStdString(k);
-      for (const auto& vn : regkey::valueNames(k)) {
-        targets.append({k, vn, vn.empty() ? (kText + " : (Default)") : (kText + " : " + QString::fromStdString(vn))});
-      }
-    }
-  }
-  const int total = static_cast<int>(targets.size());
-
-  const QString detail = wholeKey ? I18n::tr("%1 values in this key and all its subkeys will be committed.").arg(total) : QString();
-  if (!confirmCommit(this, title, heading, target, detail)) return;
-
-  std::string err;
-  auto filters = m_registry.readAll(&err);
-  if (!err.empty()) {
-    warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to read registry filter: %1").arg(QString::fromStdString(err)));
-    return;
-  }
-  const auto* row = api::findBySession(filters, /*wantCurrent=*/true);
-  if (!row) {
-    warning(this, I18n::tr("Commit failed"), I18n::tr("No current-session registry filter record found."));
-    return;
-  }
-
-  runCommitBatch(
-      this, I18n::tr("Commit to disk"), targets, [](const RegCommitTarget& t) { return t.display; },
-      [&](const RegCommitTarget& t) {
-        const auto res = m_registry.commitRegistry(*row, t.key, t.valueName);
-        if (!res.detail.empty()) {
-          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
-          UWF_LOG_W("commit") << std::format("CommitRegistry {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
-                                             static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-        }
-        return res;
-      });
-}
-
-void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& valueName) {
-  if (key.isEmpty()) return;
-
-  const ScopedTimerPause usagePause(m_usageTimer);
-
-  // 同 commitRegistryKey：先归一成长写 hive。
-  const std::string normKey = regkey::normalize(key.toStdString());
-  if (normKey.empty()) return;
-  const QString keyText = QString::fromStdString(normKey);
-
-  // valueName 空 = 整键递归；非空 = 单个命名值。(Default) 已在 picker 层禁选。
-  const bool wholeKey = valueName.isEmpty();
-  const QString title = I18n::tr("Delete and commit");
-  const QString heading = wholeKey ? I18n::tr("Delete this registry key and its whole subtree, and commit the deletions to disk")
-                                   : I18n::tr("Delete this registry value, and commit the deletion to disk");
-  const QString target = wholeKey ? keyText : (keyText + " : " + valueName);
-
-  const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
-  if (!hit.empty()) {
-    confirmCommit(this, title, heading, target, I18n::tr("This key is in the registry exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
-                  /*allowContinue=*/false);
-    return;
-  }
-
-  // 目标清单：单值 = 只删那一个值；整键 = 递归整棵键子树。CommitRegistryDeletion
-  // 由方法自身执行删除，目标必须仍存在；它不递归——CommitRegistryDeletion(key,"")
-  // 只能删叶子键，故按 collectKeyTree 的后序（最深子键在前）逐个删。
-  QList<RegCommitTarget> targets;
-  if (!wholeKey) {
-    if (!regkey::valueExists(normKey, valueName.toStdString())) {
-      confirmCommit(this, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to delete."), /*allowContinue=*/false);
-      return;
-    }
-    targets.append({normKey, valueName.toStdString(), target});
-  } else {
-    if (!regkey::keyExists(normKey)) {
-      confirmCommit(this, title, heading, target, I18n::tr("This registry key does not exist, so there is nothing to delete."), /*allowContinue=*/false);
-      return;
-    }
-    for (const auto& k : regkey::collectKeyTree(normKey)) {
-      targets.append({k, std::string{}, QString::fromStdString(k)});
-    }
-  }
-  const int total = static_cast<int>(targets.size());
-
-  const QString detail = wholeKey ? I18n::tr("%1 keys, including all their values and subkeys, will be deleted.").arg(total) : QString();
-  if (!confirmCommit(this, title, heading, target, detail)) return;
-
-  std::string err;
-  auto filters = m_registry.readAll(&err);
-  if (!err.empty()) {
-    warning(this, I18n::tr("Commit failed"), I18n::tr("Failed to read registry filter: %1").arg(QString::fromStdString(err)));
-    return;
-  }
-  const auto* row = api::findBySession(filters, /*wantCurrent=*/true);
-  if (!row) {
-    warning(this, I18n::tr("Commit failed"), I18n::tr("No current-session registry filter record found."));
-    return;
-  }
-
-  runCommitBatch(
-      this, I18n::tr("Delete and commit"), targets, [](const RegCommitTarget& t) { return t.display; },
-      [&](const RegCommitTarget& t) {
-        const auto res = m_registry.commitRegistryDeletion(*row, t.key, t.valueName);
-        if (!res.detail.empty()) {
-          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
-          UWF_LOG_W("commit") << std::format("CommitRegistryDeletion {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
-                                             static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-        }
-        return res;
-      },
-      [](const RegCommitTarget& t) { return t.valueName.empty() ? regkey::keyExists(t.key) : regkey::valueExists(t.key, t.valueName); });
-}
+// 4 个 commit 槽自身只是 dispatcher 的代理——拿到 DiskTab / ExclusionListWidget /
+// OverlayFilesDialog / 命令行的转发后，所有 batch 提交流程在 CommitDispatcher
+// 里跑（含目标枚举、排除冲突预校验、QProgressDialog、结果对话框）。
+void MainWindow::commitFilePath(const QString& path) { m_commit->commitFilePath(path); }
+void MainWindow::commitFileDeletionPath(const QString& path) { m_commit->commitFileDeletionPath(path); }
+void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) { m_commit->commitRegistryKey(key, valueName); }
+void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& valueName) { m_commit->commitRegistryDeletionKey(key, valueName); }
 
 }  // namespace uwf::ui
