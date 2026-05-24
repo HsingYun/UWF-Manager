@@ -19,7 +19,6 @@
 #include <QTextEdit>
 #include <QTextStream>
 #include <QVBoxLayout>
-#include <algorithm>
 #include <format>
 #include <optional>
 #include <string>
@@ -375,18 +374,24 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     }
     QTextStream ts(&out);
     ts.setEncoding(QStringConverter::Utf8);
+    // 走 src/uwf/api/UwfmgrCli 的集中渲染器，"PendingChanges / SessionSnapshot →
+    // uwfmgr 命令" 的映射只在那里维护。m_changeCmds / m_snapshotCmds 还要给 UI
+    // 展示交错塞中文 comment，导出纯命令时不再从它们抠 cmd 字段抄一遍同样的映射。
+    // 注：多盘 pending 改动时，导出按"命令类型"聚合（renderPendingChanges 遍历
+    // PendingChanges 的 std::map），与展示按 tab 聚合的顺序略不同；命令集合与
+    // 回放效果完全一致。
+    const auto changeCmds = api::renderPendingChanges(m_changes);
+    const auto snapshotCmds = api::renderSession(m_snapshot.current);
     int written = 0;
-    for (const auto& c : m_changeCmds) {
-      if (c.cmd.empty()) continue;
-      ts << QString::fromStdString(c.cmd) << '\n';
+    for (const auto& c : changeCmds) {
+      ts << QString::fromStdString(api::renderCommand(c)) << '\n';
       ++written;
     }
-    if (written > 0 && std::ranges::any_of(m_snapshotCmds, [](const auto& c) { return !c.cmd.empty(); })) {
+    if (!changeCmds.empty() && !snapshotCmds.empty()) {
       ts << '\n';
     }
-    for (const auto& c : m_snapshotCmds) {
-      if (c.cmd.empty()) continue;
-      ts << QString::fromStdString(c.cmd) << '\n';
+    for (const auto& c : snapshotCmds) {
+      ts << QString::fromStdString(api::renderCommand(c)) << '\n';
       ++written;
     }
     if (!out.commit()) {
