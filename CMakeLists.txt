@@ -4,6 +4,9 @@ project(UWF LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# ASan+UBSan
+option(UWF_SANITIZE "Build with AddressSanitizer + UBSan (Clang/GCC only)" ON)
+
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(tools)
 
@@ -180,11 +183,23 @@ else ()
             -Werror=sign-conversion
             -Werror=narrowing
     )
-    target_link_options(UWF PRIVATE
-            -static
-            -static-libgcc
-            -static-libstdc++
-            -fuse-ld=lld
-            -Wl,-Bstatic
-    )
+    if (UWF_SANITIZE)
+        target_compile_options(UWF PRIVATE
+                -fsanitize=address,undefined
+                -fno-omit-frame-pointer
+                -fno-sanitize-recover=all
+        )
+        target_link_options(UWF PRIVATE
+                -fsanitize=address,undefined
+                -fuse-ld=lld
+        )
+    else ()
+        target_link_options(UWF PRIVATE
+                -static
+                -static-libgcc
+                -static-libstdc++
+                -fuse-ld=lld
+                -Wl,-Bstatic
+        )
+    endif ()
 endif ()
