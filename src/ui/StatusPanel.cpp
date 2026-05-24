@@ -121,7 +121,8 @@ void StatusPanel::setUnsupported(const QString& reason) {
   m_banner->setText("⚠ " + I18n::tr("This volume is not supported by UWF: ") + reason);
   m_banner->setProperty("level", "warn");
   m_banner->show();
-  for (auto* w : findChildren<QWidget*>())
+  const auto children = findChildren<QWidget*>();
+  for (auto* w : children)
     if (w != m_banner) w->setEnabled(false);
   m_banner->setEnabled(true);
 }
@@ -140,7 +141,8 @@ void StatusPanel::setData(const core::VolumeRecord* cvol, const core::VolumeReco
   // sticky notice（如 FS 受限提示、调试用 banner）保留显示；只在没有 notice
   // 时把上一轮 setUnsupported 的横幅清掉。
   if (!m_hasStickyNotice) m_banner->hide();
-  for (auto* w : findChildren<QWidget*>()) w->setEnabled(true);
+  const auto children = findChildren<QWidget*>();
+  for (auto* w : children) w->setEnabled(true);
 
   m_hasVolume = (cvol != nullptr || nvol != nullptr);
   m_baselineProtect = nvol ? nvol->isProtected : (cvol ? cvol->isProtected : false);

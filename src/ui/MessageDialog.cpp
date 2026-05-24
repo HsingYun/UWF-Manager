@@ -44,7 +44,10 @@ DialogParts build(QWidget* parent, const QString& title, const QString& text) {
   // 完整显示；只有极长文本才会折到 760 上限，避免对话框宽到溢出屏幕。
   const QFontMetrics fm(body->fontMetrics());
   int widest = 0;
-  for (const auto& line : text.split('\n')) widest = std::max(widest, fm.horizontalAdvance(line));
+  // 绑到 const 变量再 range-loop——直接 for (... : text.split('\n')) 会让
+  // range-loop 隐式调非 const begin() 触发 Qt 容器隐式共享的 detach 检查。
+  const QStringList lines = text.split('\n');
+  for (const auto& line : lines) widest = std::max(widest, fm.horizontalAdvance(line));
   const auto margins = layout->contentsMargins();
   dlg->setMinimumWidth(std::clamp(widest + margins.left() + margins.right(), 360, 760));
 

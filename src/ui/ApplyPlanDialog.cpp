@@ -58,7 +58,8 @@ class CommandTextEdit : public QTextEdit {
 
   void contextMenuEvent(QContextMenuEvent* e) override {
     QMenu* menu = createStandardContextMenu();
-    for (const QAction* act : menu->actions()) {
+    const auto actions = menu->actions();
+    for (const QAction* act : actions) {
       if (act->shortcut() == QKeySequence::Copy) {
         disconnect(act, nullptr, this, nullptr);
         QObject::connect(act, &QAction::triggered, this, &CommandTextEdit::copyFiltered);
@@ -76,8 +77,9 @@ class CommandTextEdit : public QTextEdit {
     // selection().toPlainText() 用 \n 做段落分隔，比 selectedText() 的
     // U+2029 PARAGRAPH SEPARATOR 直接好用。
     const QString sel = cur.selection().toPlainText();
+    const QStringList lines = sel.split('\n');
     QStringList kept;
-    for (const QString& line : sel.split('\n')) {
+    for (const QString& line : lines) {
       if (line.trimmed().startsWith("::")) continue;
       kept << line;
     }
@@ -190,15 +192,19 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
             {I18n::tr("− File exclusion  %1  %2").arg(QString::fromStdString(dlStd), p).toStdString(), cli(api::UwfmgrKind::FileRemoveExclusion, {ps})});
       }
     }
-    for (const auto& p : t->pendingRegAdded()) {
-      const std::string ps = p.toStdString();
-      m_changes.addRegistryExclusions.push_back(ps);
-      m_changeCmds.push_back({I18n::tr("+ Registry exclusion  %1").arg(p).toStdString(), cli(api::UwfmgrKind::RegistryAddExclusion, {ps})});
+    if (const auto regAdded = t->pendingRegAdded(); !regAdded.isEmpty()) {
+      for (const auto& p : regAdded) {
+        const std::string ps = p.toStdString();
+        m_changes.addRegistryExclusions.push_back(ps);
+        m_changeCmds.push_back({I18n::tr("+ Registry exclusion  %1").arg(p).toStdString(), cli(api::UwfmgrKind::RegistryAddExclusion, {ps})});
+      }
     }
-    for (const auto& p : t->pendingRegRemoved()) {
-      const std::string ps = p.toStdString();
-      m_changes.removeRegistryExclusions.push_back(ps);
-      m_changeCmds.push_back({I18n::tr("− Registry exclusion  %1").arg(p).toStdString(), cli(api::UwfmgrKind::RegistryRemoveExclusion, {ps})});
+    if (const auto regRemoved = t->pendingRegRemoved(); !regRemoved.isEmpty()) {
+      for (const auto& p : regRemoved) {
+        const std::string ps = p.toStdString();
+        m_changes.removeRegistryExclusions.push_back(ps);
+        m_changeCmds.push_back({I18n::tr("− Registry exclusion  %1").arg(p).toStdString(), cli(api::UwfmgrKind::RegistryRemoveExclusion, {ps})});
+      }
     }
     // UWF_RegistryFilter 的两个全局持久化开关——无对应 uwfmgr CLI，cmd 留空。
     if (const auto v = t->pendingPersistDomainSecretKey()) {
@@ -415,8 +421,9 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     commitBtn->setEnabled(false);
     std::vector<std::string> outcome;
 
-    // 每一步单独收集错误，不因单点失败终止其它写入。
-    auto note = [&](const std::string& line) { outcome.push_back(line); };
+    // 每一步单独收集错误，不因单点失败终止其它写入。同步辅助、跟 outcome
+    // 同一栈帧；clazy 的 lambda-in-connect 看 [&] 就报警，行尾抑制。
+    auto note = [&](const std::string& line) { outcome.push_back(line); };  // clazy:exclude=lambda-in-connect
 
     if (!m_session.isConnected()) {
       std::string err;
@@ -509,15 +516,19 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       // current session 行复制 VolumeName 创建一份 next session 实例。
       // 返回 by value，同时把新 row append 到 volumes 让后续的 caller 也
       // 能命中（避免对同一卷的多个 pending 改动重复触发 PutInstance）。
+      // [&] 同步辅助、跟 outcome / volumes / note 同一栈帧；clazy 在每个
+      // captured-by-ref 变量的使用行报警，逐行抑制。
       auto getOrCreateNextVolume = [&](const std::string& dl) -> std::optional<api::VolumeRow> {
-        if (const auto* hit = findNextVolume(volumes, dl)) return *hit;
+        if (const auto* hit = findNextVolume(volumes, dl)) return *hit;  // clazy:exclude=lambda-in-connect
         std::string e;
         auto created = m_volume.ensureNextSessionEntry(dl, &e);
         if (!created) {
-          note(I18n::tr("✘ Volume %1: failed to register with UWF: %2").arg(QString::fromStdString(dl), QString::fromStdString(e)).toStdString());
+          note(I18n::tr("✘ Volume %1: failed to register with UWF: %2")  // clazy:exclude=lambda-in-connect
+                   .arg(QString::fromStdString(dl), QString::fromStdString(e))
+                   .toStdString());
           return std::nullopt;
         }
-        volumes.push_back(*created);
+        volumes.push_back(*created);  // clazy:exclude=lambda-in-connect
         return created;
       };
 

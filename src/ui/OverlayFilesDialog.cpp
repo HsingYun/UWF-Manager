@@ -458,7 +458,7 @@ void OverlayFilesDialog::onExportClicked() {
   }
 
   qulonglong total = 0;
-  for (const auto& e : m_entries) total += e.fileSize;
+  for (const auto& e : std::as_const(m_entries)) total += e.fileSize;
 
   QTextStream ts(&out);
   ts.setEncoding(QStringConverter::Utf8);
@@ -470,7 +470,7 @@ void OverlayFilesDialog::onExportClicked() {
   ts << "# Note: list is approximate; files smaller than the disk cluster size (typically 4 KB) may be missing.\n";
   ts << "#\n";
   ts << "# type\tsize_bytes\tsize_human\tpath\n";
-  for (const auto& e : m_entries) {
+  for (const auto& e : std::as_const(m_entries)) {
     ts << (e.isDirectory ? "dir" : "file") << '\t' << e.fileSize << '\t' << formatSize(e.fileSize) << '\t' << e.absolutePath << '\n';
   }
 

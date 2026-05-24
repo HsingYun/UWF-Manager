@@ -211,8 +211,8 @@ void RegistryPickerDialog::buildUi() {
   m_valueTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
   // 表头左对齐——cell 内容是左对齐，表头默认居中会跟 cell 错位，看着别扭。
   m_valueTable->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-  m_valueTable->horizontalHeader()->resizeSection(0, 200);  // Name
-  m_valueTable->horizontalHeader()->resizeSection(1, 130);  // Type（REG_RESOURCE_REQUIREMENTS_LIST 是最长的）
+  m_valueTable->horizontalHeader()->resizeSection(0, 200);        // Name
+  m_valueTable->horizontalHeader()->resizeSection(1, 130);        // Type（REG_RESOURCE_REQUIREMENTS_LIST 是最长的）
   m_valueTable->horizontalHeader()->setStretchLastSection(true);  // Data
   // Data 列上 PathElideDelegate——接管文本 paint，绕开 Qt 默认 elision 在 1.25× DPI
   // 下把 elide 宽度算小的 bug（见 PathElideDelegate.h）。

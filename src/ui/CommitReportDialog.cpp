@@ -132,8 +132,8 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
   hh->setSectionResizeMode(1, QHeaderView::ResizeToContents);  // Path
   hh->setStretchLastSection(true);
   int initialCol = 0;
-  hh->resizeSection(initialCol++, 70);   // Category：「成功」/「跳过」/「失败」
-  ++initialCol;                          // Path 列宽由 ResizeToContents 决定，跳过 resizeSection
+  hh->resizeSection(initialCol++, 70);  // Category：「成功」/「跳过」/「失败」
+  ++initialCol;                         // Path 列宽由 ResizeToContents 决定，跳过 resizeSection
   if (showExistence) {
     hh->resizeSection(initialCol++, 100);  // Existed before：「是」/「否」+ 表头宽度
     hh->resizeSection(initialCol++, 100);  // Exists after
@@ -141,7 +141,7 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
   hh->setSectionResizeMode(initialCol++, QHeaderView::ResizeToContents);  // Error code
   // Path / Reason 套 PathElideDelegate——绕开 Qt 默认 paint 路径在非 100% DPI 下
   // 把 elide 宽度算小、cell 明明够宽却显示成 "C:..." 的 bug（详见 PathElideDelegate.h）。
-  table->setItemDelegateForColumn(1, new PathElideDelegate(table));               // Path
+  table->setItemDelegateForColumn(1, new PathElideDelegate(table));             // Path
   table->setItemDelegateForColumn(colCount - 1, new PathElideDelegate(table));  // Reason（最后一列）
   lay->addWidget(table, 1);
 
@@ -235,8 +235,10 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
     auto* copySel = menu.addAction(I18n::tr("Copy selected rows"));
     auto* copyAll = menu.addAction(I18n::tr("Copy all"));
     copySel->setEnabled(!table->selectedRanges().isEmpty());
-    QObject::connect(copySel, &QAction::triggered, [table] { QGuiApplication::clipboard()->setText(tableSelectionToText(table)); });
-    QObject::connect(copyAll, &QAction::triggered, [allRowsToText] { QGuiApplication::clipboard()->setText(allRowsToText()); });
+    // 用 &menu 当 context——actions 跟 menu 同生命周期，menu 析构时连接自动断；
+    // 不加 context 的话 clazy 会报 connect-3arg-lambda（lambda 可能在 actions 死后被调）。
+    QObject::connect(copySel, &QAction::triggered, &menu, [table] { QGuiApplication::clipboard()->setText(tableSelectionToText(table)); });
+    QObject::connect(copyAll, &QAction::triggered, &menu, [allRowsToText] { QGuiApplication::clipboard()->setText(allRowsToText()); });
     menu.exec(table->viewport()->mapToGlobal(pos));
   });
 

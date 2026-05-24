@@ -265,7 +265,7 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
 
   auto* copyShortcut = new QShortcut(QKeySequence::Copy, table);
   copyShortcut->setContext(Qt::WidgetShortcut);
-  connect(copyShortcut, &QShortcut::activated, [table]() {
+  connect(copyShortcut, &QShortcut::activated, table, [table]() {
     const auto txt = tableSelectionToText(table);
     if (!txt.isEmpty()) QGuiApplication::clipboard()->setText(txt);
   });
@@ -276,8 +276,10 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
     auto* copySel = menu.addAction(I18n::tr("Copy selected rows"));
     auto* copyAll = menu.addAction(I18n::tr("Copy current page"));
     copySel->setEnabled(!table->selectedRanges().isEmpty());
-    QObject::connect(copySel, &QAction::triggered, [table]() { QGuiApplication::clipboard()->setText(tableSelectionToText(table)); });
-    QObject::connect(copyAll, &QAction::triggered, [table]() { QGuiApplication::clipboard()->setText(tableAllToText(table)); });
+    // 用 &menu 当 context——actions 跟 menu 同生命周期，menu 析构时连接自动断；
+    // 不加 context 的话 clazy 会报 connect-3arg-lambda（lambda 可能在 actions 死后被调）。
+    QObject::connect(copySel, &QAction::triggered, &menu, [table]() { QGuiApplication::clipboard()->setText(tableSelectionToText(table)); });
+    QObject::connect(copyAll, &QAction::triggered, &menu, [table]() { QGuiApplication::clipboard()->setText(tableAllToText(table)); });
     menu.exec(table->viewport()->mapToGlobal(pos));
   });
 

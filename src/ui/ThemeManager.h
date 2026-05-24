@@ -58,7 +58,9 @@ class ThemeManager : public QObject {
   [[nodiscard]] QColor color(Sem s) const;
 
  signals:
-  void themeChanged(Theme t);
+  // 信号参数必须全限定——MOC 按字面解析 header，跨 TU 的 queued connection
+  // 会按字符串匹配类型名，写成 `Theme` 而非 `uwf::ui::Theme` 时匹配会失败。
+  void themeChanged(uwf::ui::Theme t);
 
  private:
   ThemeManager();

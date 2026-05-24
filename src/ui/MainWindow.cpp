@@ -35,6 +35,7 @@
 #include <chrono>
 #include <format>
 #include <string_view>
+#include <utility>
 
 #include "../core/Config.h"
 #include "../util/DriveLetter.h"
@@ -728,7 +729,7 @@ void MainWindow::updatePendingSummary() {
     if (warningThresholdMb) ++pending;
     if (criticalThresholdMb) ++pending;
   }
-  for (const auto& t : m_diskTabs) {
+  for (const auto& t : std::as_const(m_diskTabs)) {
     if (!t) continue;
     if (t->pendingVolumeProtected()) ++pending;
     if (t->pendingBindByVolumeName()) ++pending;
@@ -748,7 +749,7 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
   // 索引在所有语言下都稳定。
   const QString prevDriveLetter = m_tabs->currentIndex() >= 0 ? m_tabs->tabText(m_tabs->currentIndex()) : QString();
   QMap<QString, int> prevInfoTab;
-  for (const auto& t : m_diskTabs)
+  for (const auto& t : std::as_const(m_diskTabs))
     if (t) prevInfoTab.insert(t->driveLetter(), t->activeInfoTabIndex());
 
   // QTabWidget::clear() 只摘掉标签页、不销毁页面控件——上一轮的 DiskTab 会继续
@@ -756,7 +757,7 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
   // m_tabs 才被连带回收）。这里先显式 deleteLater 回收旧的一组。用 deleteLater
   // 而非 delete：rebuildTabs 可能经由某个 DiskTab 自己的信号回调间接调进来，
   // 同步 delete 会销毁正在执行回调的对象。
-  for (const auto& t : m_diskTabs)
+  for (const auto& t : std::as_const(m_diskTabs))
     if (t) t->deleteLater();
   m_tabs->clear();
   m_diskTabs.clear();

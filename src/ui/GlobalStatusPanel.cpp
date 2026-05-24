@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <climits>
 #include <format>
+#include <utility>
 
 #include "../core/Config.h"
 #include "../util/ByteFormat.h"
@@ -43,7 +44,7 @@ class ClampingSpinBox : public QSpinBox {
     if (state != QValidator::Invalid) return state;
     QString body = stripFix(input);
     if (body.isEmpty()) return QValidator::Intermediate;
-    for (QChar c : body)
+    for (QChar c : std::as_const(body))
       if (!c.isDigit()) return QValidator::Invalid;
     return QValidator::Intermediate;
   }
@@ -416,7 +417,8 @@ void GlobalStatusPanel::setControlsEnabled(const bool enabled) const {
 void GlobalStatusPanel::setData(const core::SessionSnapshot& cur, const core::SessionSnapshot& nxt, const core::OverlayRuntime& rt) {
   m_available = true;
   m_banner->hide();
-  for (auto* w : findChildren<QWidget*>()) w->setEnabled(true);
+  const auto children = findChildren<QWidget*>();
+  for (auto* w : children) w->setEnabled(true);
 
   // 当前会话已启用 UWF 时，类型 / 最大大小不允许改（WMI 会拒），禁用并亮起
   // ? 徽标提示用户操作步骤。Qt 默认 disabled 控件不会改 cursor，再显式设

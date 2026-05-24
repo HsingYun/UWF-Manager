@@ -15,6 +15,7 @@
 #include <QTableWidget>
 #include <QTextStream>
 #include <QVBoxLayout>
+#include <utility>
 
 #include "I18n.h"
 #include "MessageDialog.h"
@@ -89,7 +90,7 @@ void appendUwfmgrLinesFromFile(QPlainTextEdit* target, const QString& path) {
                 .arg(QFileInfo(path).fileName())
                 .arg(matched.size())
                 .arg(matched.size() == 1 ? QString() : QStringLiteral("s"));
-    for (const auto& l : matched) {
+    for (const auto& l : std::as_const(matched)) {
       block += l;
       block += QChar('\n');
     }

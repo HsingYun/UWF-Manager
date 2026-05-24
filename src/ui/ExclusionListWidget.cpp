@@ -27,6 +27,7 @@
 #include <QVBoxLayout>
 #include <cmath>
 #include <string_view>
+#include <utility>
 
 #include "../core/Config.h"
 #include "../util/DriveLetter.h"
@@ -136,7 +137,7 @@ QString forbidRegExclusionReason(const QString& rawKey) {
   if (input.startsWith('\\')) return I18n::tr("Registry key cannot start with a backslash.");
   if (input.contains("\\\\")) return I18n::tr("The path contains consecutive backslashes; this is not valid.");
   if (input.contains('/')) return I18n::tr("Registry paths use backslash `\\` as the separator; do not use forward slash `/`.");
-  for (QChar c : input) {
+  for (QChar c : std::as_const(input)) {
     if (c.unicode() < 0x20) return I18n::tr("The path contains invisible control characters; this is not valid.");
   }
 
@@ -540,7 +541,8 @@ void ExclusionListWidget::setReadOnly(bool ro) {
   m_readOnly = ro;
   m_filter->setEnabled(!ro);
   m_list->setEnabled(!ro);
-  for (auto* btn : findChildren<QPushButton*>()) btn->setEnabled(!ro);
+  const auto buttons = findChildren<QPushButton*>();
+  for (auto* btn : buttons) btn->setEnabled(!ro);
 }
 
 void ExclusionListWidget::setCommitEnabled(bool enabled) { m_commitEnabled = enabled; }
@@ -585,7 +587,7 @@ void ExclusionListWidget::addPendingEntry(const QString& raw) {
 
   if (m_kind == Kind::File) {
     p = QDir::toNativeSeparators(p);
-    if (!m_driveLetter.isEmpty() && !p.toUpper().startsWith(m_driveLetter + "\\") && p.toUpper() != m_driveLetter) {
+    if (!m_driveLetter.isEmpty() && !p.startsWith(m_driveLetter + "\\", Qt::CaseInsensitive) && p.compare(m_driveLetter, Qt::CaseInsensitive) != 0) {
       const QString body =
           I18n::tr("The selected path %1 is not on volume %2, and therefore cannot be added as an exclusion for this volume.").arg(p, m_driveLetter);
       dialogs::warning(this, I18n::tr("Path is not on this volume"), body);
@@ -624,7 +626,7 @@ ExclusionListWidget::ImportOutcome ExclusionListWidget::importAdd(const QString&
 
   if (m_kind == Kind::File) {
     p = QDir::toNativeSeparators(p);
-    if (!m_driveLetter.isEmpty() && !p.toUpper().startsWith(m_driveLetter + "\\") && p.toUpper() != m_driveLetter) {
+    if (!m_driveLetter.isEmpty() && !p.startsWith(m_driveLetter + "\\", Qt::CaseInsensitive) && p.compare(m_driveLetter, Qt::CaseInsensitive) != 0) {
       return ImportOutcome::RejectedNotOnVolume;
     }
     if (!forbidExclusionReason(p, m_driveLetter).isEmpty()) {
@@ -681,7 +683,8 @@ ExclusionListWidget::ImportOutcome ExclusionListWidget::importRemove(const QStri
 
 void ExclusionListWidget::onRemove() {
   if (m_readOnly) return;
-  for (auto* it : m_list->selectedItems()) {
+  const auto selected = m_list->selectedItems();
+  for (auto* it : selected) {
     const QString text = it->data(Qt::UserRole).toString();
     // 持久化开关伪条目：移除 = 撤销待开启，或把已开启的标记为待关闭。
     if (isPersistRow(text)) {
@@ -715,10 +718,10 @@ void ExclusionListWidget::rebuild() {
       all << s;
     }
   };
-  for (const auto& s : m_added) pushUnique(s);
-  for (const auto& s : m_removed) pushUnique(s);
-  for (const auto& s : m_current) pushUnique(s);
-  for (const auto& s : m_next) pushUnique(s);
+  for (const auto& s : std::as_const(m_added)) pushUnique(s);
+  for (const auto& s : std::as_const(m_removed)) pushUnique(s);
+  for (const auto& s : std::as_const(m_current)) pushUnique(s);
+  for (const auto& s : std::as_const(m_next)) pushUnique(s);
 
   // 排序规则：所有"带标记"的条目（新增 / 删除，无论是否已应用）排在前排，
   // 后面是"保持不变"的条目；前后两段各自按字母顺序。
@@ -731,7 +734,7 @@ void ExclusionListWidget::rebuild() {
   // 会被误判成"无变化"沉到 rest——可它明明带着红色删除标记，理应和其它待删项一起排在前排。
   QStringList pending;
   QStringList rest;
-  for (const auto& entry : all) {
+  for (const auto& entry : std::as_const(all)) {
     const bool inCurrent = m_current.contains(entry, Qt::CaseInsensitive);
     const bool inNextBase = m_next.contains(entry, Qt::CaseInsensitive);
     const bool userAdded = m_added.contains(entry);
@@ -758,7 +761,7 @@ void ExclusionListWidget::rebuild() {
 
   int added = 0, removed = 0, changed = 0;
 
-  for (const auto& entry : display) {
+  for (const auto& entry : std::as_const(display)) {
     auto* item = new QListWidgetItem();
     item->setData(Qt::UserRole, entry);
 
