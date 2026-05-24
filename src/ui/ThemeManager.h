@@ -45,13 +45,14 @@ class ThemeManager : public QObject {
   // 读取 Windows 注册表 AppsUseLightTheme；非 Windows 或读失败时返回 Dark。
   static Theme detectSystemTheme();
 
-  // 把 svg 资源里的 dark 前景 #E8EAED 替换成当前主题的前景色，按 size
-  // 渲染到 QPixmap 后包装成 QIcon。
-  [[nodiscard]] QIcon icon(const QString& resourcePath, const QSize& size = QSize(32, 32)) const;
+  // 把 svg 资源里的 dark 前景 #E8EAED 替换成当前主题的前景色，包装成 QIcon。
+  // 真实渲染尺寸由 caller 决定（toolbar iconSize / pixmap(...)），ThemedSvgIconEngine
+  // 每次按目标尺寸矢量绘制——HiDPI 下零位图缩放损失。
+  [[nodiscard]] QIcon icon(const QString& resourcePath) const;
 
   // 用指定的颜色染色 svg，不跟随主题。适合用在带强烈背景色的 fill 按钮
   // （primary / danger）上：背景永远是品牌色，icon 颜色也得固定才好看。
-  static QIcon iconWithColor(const QString& resourcePath, const QColor& fg, const QSize& size = QSize(32, 32));
+  static QIcon iconWithColor(const QString& resourcePath, const QColor& fg);
 
   // 取语义色。HTML/RichText 中用 .name()（"#RRGGBB"）即可。
   [[nodiscard]] QColor color(Sem s) const;
