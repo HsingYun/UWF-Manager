@@ -73,6 +73,7 @@ set(UWF_SOURCES
         src/ui/LogViewerDialog.cpp
         src/ui/TableText.h
         src/ui/TableText.cpp
+        src/ui/PathElideDelegate.h
         src/ui/DiskTab.h
         src/ui/DiskTab.cpp
         src/ui/StatusPanel.h

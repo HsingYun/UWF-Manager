@@ -30,6 +30,7 @@
 #include "../util/Log.h"
 #include "../util/PostGate.h"
 #include "I18n.h"
+#include "PathElideDelegate.h"
 #include "TableText.h"
 
 namespace uwf::ui {
@@ -69,15 +70,17 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   auto* hh = table->horizontalHeader();
   hh->setSectionResizeMode(0, QHeaderView::Interactive);
   hh->setSectionResizeMode(1, QHeaderView::Interactive);
-  hh->setSectionResizeMode(2, QHeaderView::Interactive);
+  // Tag 列按内容定宽——最长 tag 是 "UWF_RegistryFilter"，让 Qt 自己量；
+  // 不再像以前那样手动加裕度（之前是为了绕 paint 时 elide 宽度被算小的 bug，
+  // 现在套了 PathElideDelegate 解决了根因，不需要 padding 兜底）。
+  hh->setSectionResizeMode(2, QHeaderView::ResizeToContents);
   hh->setSectionResizeMode(3, QHeaderView::Stretch);
   table->setColumnWidth(0, 110);
   table->setColumnWidth(1, 50);
-  // Tag 列默认宽度 = 最长 tag（"UWF_RegistryFilter"，18 字符）实测文本宽 +
-  // 约 4 个字符宽的裕度（覆盖单元格内边距 / 装饰）。固定 24px 裕度不够——
-  // UWF_OverlayConfig 等仍会被 elide 成 "…"。Interactive 模式，可手动拖窄。
-  table->setColumnWidth(
-      2, table->fontMetrics().horizontalAdvance(QStringLiteral("UWF_RegistryFilter")) + table->fontMetrics().horizontalAdvance(QStringLiteral("MMMM")));
+  // Tag / Message 套 PathElideDelegate——绕开 Qt 默认 paint 路径在非 100% DPI 下
+  // 把 elide 宽度算小的 bug（详见 PathElideDelegate.h）。
+  table->setItemDelegateForColumn(2, new PathElideDelegate(table));
+  table->setItemDelegateForColumn(3, new PathElideDelegate(table));
   table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
   table->verticalHeader()->setDefaultSectionSize(kRowHeight);
   table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);

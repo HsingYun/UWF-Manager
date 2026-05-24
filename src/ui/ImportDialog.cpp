@@ -18,6 +18,7 @@
 
 #include "I18n.h"
 #include "MessageDialog.h"
+#include "PathElideDelegate.h"
 #include "ThemeManager.h"
 
 namespace uwf::ui {
@@ -158,6 +159,10 @@ ImportDialog::ImportDialog(QWidget* parent) : QDialog(parent) {
   // 拖动；Detail（Stretch）吸收剩余宽度。
   m_report->setColumnWidth(2, 380);
   m_report->verticalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  // Command / Detail 两列文本可能很长，套 PathElideDelegate 绕开 Qt 默认 paint
+  // 在非 100% DPI 下把 elide 宽度算小的 bug（详见 PathElideDelegate.h）。
+  m_report->setItemDelegateForColumn(2, new PathElideDelegate(m_report));
+  m_report->setItemDelegateForColumn(3, new PathElideDelegate(m_report));
   m_report->setMinimumHeight(160);
   m_report->hide();
   layout->addWidget(m_report, 1);

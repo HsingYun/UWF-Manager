@@ -21,6 +21,7 @@
 #include "../core/Config.h"
 #include "../util/RegistryKey.h"
 #include "I18n.h"
+#include "PathElideDelegate.h"
 #include "ThemeManager.h"
 
 namespace uwf::ui {
@@ -136,7 +137,7 @@ RegistryPickerDialog::RegistryPickerDialog(Mode mode, const QString& title, QWid
   setWindowTitle(title);
   // 默认尺寸：三种模式都展示 "树 + 值表" 两栏，给 1000 宽够展开常见的注册表键名
   // （HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\... 类）+ 装下值表三列。
-  // setMinimumSize 防止用户把对话框拖到 Data 列被压成 "C:..." 的窘境。
+  // 最小尺寸防止把对话框拖太小后地址栏 / 底部按钮挤崩。
   resize(1000, 600);
   setMinimumSize(720, 480);
   buildUi();
@@ -202,14 +203,20 @@ void RegistryPickerDialog::buildUi() {
   // mouseTracking 必须开在 viewport 上——QTableView 本体的设置不会自动传播给 viewport，
   // 而 QSS 的 ::item:hover 是在 viewport 内 hover 时才触发。两个都开是稳妥写法。
   m_valueTable->setMouseTracking(true);
-  // Name / Type 固定起步宽度（Interactive 允许用户拖拽微调）；Data 走 stretchLastSection
-  // 永远吃 viewport 剩余宽度——这样 Data 列永远等于"能填多宽就填多宽"，"…"只在 viewport
-  // 真容不下时才出现，避免出现 H scrollbar 把 Data 压成 "C:..." 的尴尬。用户仍可拖
-  // Type/Data 边界调整起点。每个 cell 的 tooltip 兜底超长内容。
+  // Data 列内容超出列宽时按像素横向滚动，比默认按整列跳动平滑。
+  m_valueTable->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
+  // 列宽语义：Name / Type 固定起步宽度（Interactive 允许用户拖拽微调）；Data 走
+  // stretchLastSection 永远吃 viewport 剩余宽度。每个 cell 的 tooltip 兜底超长
+  // 内容（Data 被压成 "..." 时仍能 hover 看全）。
   m_valueTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+  // 表头左对齐——cell 内容是左对齐，表头默认居中会跟 cell 错位，看着别扭。
+  m_valueTable->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   m_valueTable->horizontalHeader()->resizeSection(0, 200);  // Name
   m_valueTable->horizontalHeader()->resizeSection(1, 130);  // Type（REG_RESOURCE_REQUIREMENTS_LIST 是最长的）
   m_valueTable->horizontalHeader()->setStretchLastSection(true);  // Data
+  // Data 列上 PathElideDelegate——接管文本 paint，绕开 Qt 默认 elision 在 1.25× DPI
+  // 下把 elide 宽度算小的 bug（见 PathElideDelegate.h）。
+  m_valueTable->setItemDelegateForColumn(2, new PathElideDelegate(m_valueTable));
   connect(m_valueTable, &QTableWidget::itemSelectionChanged, this, &RegistryPickerDialog::onValueSelectionChanged);
   // 值表 viewport 上单击空白 → 清掉选中（valueName 回到空）。Qt 默认不会清，
   // 这里走 eventFilter 自己处理。仅 m_valueTable 创建之后才能挂——viewport 在

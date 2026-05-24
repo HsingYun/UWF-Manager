@@ -18,6 +18,7 @@
 
 #include "../uwf/wmi/WmiError.h"
 #include "I18n.h"
+#include "PathElideDelegate.h"
 #include "TableText.h"
 
 namespace uwf::ui {
@@ -76,6 +77,12 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
   QDialog dlg(parent);
   dlg.setWindowTitle(canceledRemaining > 0 ? I18n::tr("Commit canceled") : I18n::tr("Commit result"));
   dlg.resize(showExistence ? 1300 : 1180, 520);
+  // 给一个合理的尺寸下限：Path / ErrorCode 走 ResizeToContents 不再有"被挤成
+  // C:..."的风险、Reason 由 stretchLastSection 撑剩余空间，但对话框拖得太窄仍然
+  // 影响摘要 / 分页栏 / 按钮的可读性。900 / 1100 是经验值——能让常见路径 +
+  // 常见错误码 + 短中文 reason 一行全部不滚动地显示完。垂直 360 保留表至少
+  // 8 行 + 分页栏 + 按钮。
+  dlg.setMinimumSize(showExistence ? 1100 : 900, 360);
   auto* lay = new QVBoxLayout(&dlg);
 
   const QString okLabel = I18n::tr("Succeeded");
@@ -109,25 +116,33 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
   table->setTextElideMode(Qt::ElideMiddle);
   table->setHorizontalScrollMode(QAbstractItemView::ScrollPerPixel);
   auto* hh = table->horizontalHeader();
-  // 全部 Interactive：QHeaderView 文档明确 Stretch / ResizeToContents 都禁止用户拖动
-  // 列宽；只有 Interactive / Fixed 让用户拖。给每列一个合理初值（按内容典型宽度），
-  // 路径列默认给得最宽。Reason 不能再用 ResizeToContents——它有时是一长串中文
-  // （"目标可能正被其他程序占用…"）会把整张表撑爆，挤掉路径列变成 "C..."。
-  // 横向滚动模式已开（ScrollPerPixel），列宽总和 > 表宽时用户可以横向滚动看全。
-  // 同时打开 stretchLastSection：对话框被拖宽时，多出的空间归 Reason 列自动吃掉，
-  // 表头 / 单元格一起伸到对话框边——否则末列右侧只见空白表头条而格子不跟。
-  // Interactive + stretchLast 不冲突：前面几列仍可手动拖宽，Reason 列被动跟随。
+  // 列宽语义：**总宽 = max(视口宽, 所有列内容宽之和)**，表头永远跟着表格走、
+  // 不会出现表头比内容窄一截的视觉断裂。具体做法：
+  //   - Path / Error code 等"会随数据变化"的列 → ResizeToContents 按本批最长
+  //     内容定列宽，不会被压成 "C:..."；
+  //   - Reason（最后一列）→ stretchLastSection 接管："剩余空间归它"——视口
+  //     比内容总和宽时它拉到边，反之它被压到 minimumSectionSize 让表内出横向
+  //     滚动条（ScrollPerPixel 已开）；
+  //   - Category / 存在性两列内容形态稳定（「成功/跳过/失败」、「是/否」），
+  //     Interactive 起步固定宽度即可，用户也可拖拽微调。
+  // Reason 内容超宽时靠 ElideMiddle + cell tooltip 兜底。
   hh->setSectionResizeMode(QHeaderView::Interactive);
+  // 表头左对齐——cell 内容是左对齐，表头默认居中会跟 cell 错位，看着别扭。
+  hh->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+  hh->setSectionResizeMode(1, QHeaderView::ResizeToContents);  // Path
   hh->setStretchLastSection(true);
   int initialCol = 0;
   hh->resizeSection(initialCol++, 70);   // Category：「成功」/「跳过」/「失败」
-  hh->resizeSection(initialCol++, 520);  // Path：大头——典型 Windows 路径
+  ++initialCol;                          // Path 列宽由 ResizeToContents 决定，跳过 resizeSection
   if (showExistence) {
     hh->resizeSection(initialCol++, 100);  // Existed before：「是」/「否」+ 表头宽度
     hh->resizeSection(initialCol++, 100);  // Exists after
   }
-  hh->resizeSection(initialCol++, 120);  // Error code：「0x80041001」
-  hh->resizeSection(initialCol++, 360);  // Reason：默认 360，对话框更宽时自动撑满剩余
+  hh->setSectionResizeMode(initialCol++, QHeaderView::ResizeToContents);  // Error code
+  // Path / Reason 套 PathElideDelegate——绕开 Qt 默认 paint 路径在非 100% DPI 下
+  // 把 elide 宽度算小、cell 明明够宽却显示成 "C:..." 的 bug（详见 PathElideDelegate.h）。
+  table->setItemDelegateForColumn(1, new PathElideDelegate(table));               // Path
+  table->setItemDelegateForColumn(colCount - 1, new PathElideDelegate(table));  // Reason（最后一列）
   lay->addWidget(table, 1);
 
   const QString yes = I18n::tr("Yes");
