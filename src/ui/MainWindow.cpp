@@ -2,11 +2,13 @@
 
 #include <windows.h>
 
+#include <QAbstractItemView>
 #include <QAction>
 #include <QActionGroup>
 #include <QApplication>
 #include <QCursor>
 #include <QDateTime>
+#include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QDirIterator>
@@ -662,6 +664,15 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
   // 取消未到期的恢复，避免文字闪烁。
   constexpr int kHoverRestoreMs = 120;
   if (!m_hoverCtl) return QMainWindow::eventFilter(obj, ev);
+  // QDialog 子控件原样放行——对话框走原生 QToolTip 矩形气泡，不复用主窗口
+  // 右下角的 hint 面板：模态对话框遮住面板的话面板里的字根本看不到，且每个
+  // 对话框上下文独立、和主窗口的 baseline 没关系。RegistryPickerDialog 的
+  // Name/Type/Data cell 就指望这条放行让原生 tooltip 弹出来。
+  // 走 QObject::parent() 链而不是 window()——QMenu 之类的 popup 自身是 top-level，
+  // 但它们的 QObject 父链仍指回触发它们的 widget，能正确判断是不是属于对话框。
+  for (QObject* p = obj; p; p = p->parent()) {
+    if (qobject_cast<QDialog*>(p)) return QMainWindow::eventFilter(obj, ev);
+  }
   const auto type = ev->type();
   // 屏蔽原生 tooltip 气泡：截停 ToolTip 事件，说明文字只在右下角面板里。
   if (type == QEvent::ToolTip) return true;
@@ -702,6 +713,29 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
       const int idx = bar->tabAt(pos);
       if (idx >= 0) {
         const QString tip = bar->tabToolTip(idx);
+        if (!tip.isEmpty()) {
+          m_hoverCtl->show(tip);
+          return QMainWindow::eventFilter(obj, ev);
+        }
+      }
+    }
+    // QListWidget / QTableWidget / QTreeWidget 的 item tooltip 存在
+    // QListWidgetItem / QTableWidgetItem 上，view 自身的 toolTip() 是空的；
+    // 走下方通用的 parent 链拿不到。事件落在 viewport 上（hover/move 都是），
+    // 这里按命中坐标反查 index，把 Qt::ToolTipRole 推到提示框。命中空白或
+    // item 没设 tooltip 时不 return，落到 parent 链兜底（让 view 自身的
+    // toolTip——若有——仍能展示）。
+    if (auto* view = qobject_cast<QAbstractItemView*>(w->parentWidget()); view && view->viewport() == w) {
+      QPoint pos;
+      if (auto* me = dynamic_cast<QMouseEvent*>(ev))
+        pos = me->pos();
+      else if (auto* he = dynamic_cast<QHoverEvent*>(ev))
+        pos = he->position().toPoint();
+      else
+        pos = w->mapFromGlobal(QCursor::pos());
+      const QModelIndex idx = view->indexAt(pos);
+      if (idx.isValid()) {
+        const QString tip = idx.data(Qt::ToolTipRole).toString();
         if (!tip.isEmpty()) {
           m_hoverCtl->show(tip);
           return QMainWindow::eventFilter(obj, ev);

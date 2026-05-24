@@ -110,7 +110,7 @@ QString formatValuePreview(uint32_t type, const std::vector<uint8_t>& data) {
     case REG_QWORD: {
       if (data.size() < 8) return I18n::tr("(empty)");
       uint64_t v = 0;
-      for (int i = 0; i < 8; ++i) v |= static_cast<uint64_t>(data[i]) << (i * 8);
+      for (size_t i = 0; i < 8; ++i) v |= static_cast<uint64_t>(data[i]) << (i * 8);
       return QString::asprintf("0x%016llX (%llu)", static_cast<unsigned long long>(v), static_cast<unsigned long long>(v));
     }
     default: {
@@ -134,9 +134,11 @@ QString formatValuePreview(uint32_t type, const std::vector<uint8_t>& data) {
 
 RegistryPickerDialog::RegistryPickerDialog(Mode mode, const QString& title, QWidget* parent) : QDialog(parent), m_mode(mode) {
   setWindowTitle(title);
-  // 默认尺寸：三种模式都展示 "树 + 值表" 两栏，给 900 宽够展开常见的注册表
-  // 键名（HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\... 类）。
-  resize(900, 560);
+  // 默认尺寸：三种模式都展示 "树 + 值表" 两栏，给 1000 宽够展开常见的注册表键名
+  // （HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\... 类）+ 装下值表三列。
+  // setMinimumSize 防止用户把对话框拖到 Data 列被压成 "C:..." 的窘境。
+  resize(1000, 600);
+  setMinimumSize(720, 480);
   buildUi();
   populateRootHives();
 }
@@ -197,19 +199,32 @@ void RegistryPickerDialog::buildUi() {
   m_valueTable->setSelectionBehavior(QAbstractItemView::SelectRows);
   // Exclusion 模式整表禁选——AddExclusion 不收 ValueName，值表纯展示。
   m_valueTable->setSelectionMode(supportsValueSelection() ? QAbstractItemView::SingleSelection : QAbstractItemView::NoSelection);
+  // mouseTracking 必须开在 viewport 上——QTableView 本体的设置不会自动传播给 viewport，
+  // 而 QSS 的 ::item:hover 是在 viewport 内 hover 时才触发。两个都开是稳妥写法。
+  m_valueTable->setMouseTracking(true);
+  // Name / Type 固定起步宽度（Interactive 允许用户拖拽微调）；Data 走 stretchLastSection
+  // 永远吃 viewport 剩余宽度——这样 Data 列永远等于"能填多宽就填多宽"，"…"只在 viewport
+  // 真容不下时才出现，避免出现 H scrollbar 把 Data 压成 "C:..." 的尴尬。用户仍可拖
+  // Type/Data 边界调整起点。每个 cell 的 tooltip 兜底超长内容。
   m_valueTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-  m_valueTable->horizontalHeader()->setStretchLastSection(true);  // Data 列吸收剩余宽度
-  m_valueTable->horizontalHeader()->resizeSection(0, 200);        // Name
-  m_valueTable->horizontalHeader()->resizeSection(1, 130);        // Type（REG_RESOURCE_REQUIREMENTS_LIST 是最长的）
+  m_valueTable->horizontalHeader()->resizeSection(0, 200);  // Name
+  m_valueTable->horizontalHeader()->resizeSection(1, 130);  // Type（REG_RESOURCE_REQUIREMENTS_LIST 是最长的）
+  m_valueTable->horizontalHeader()->setStretchLastSection(true);  // Data
   connect(m_valueTable, &QTableWidget::itemSelectionChanged, this, &RegistryPickerDialog::onValueSelectionChanged);
   // 值表 viewport 上单击空白 → 清掉选中（valueName 回到空）。Qt 默认不会清，
   // 这里走 eventFilter 自己处理。仅 m_valueTable 创建之后才能挂——viewport 在
   // QAbstractScrollArea 内部生成，它存在了才可监听。
   m_valueTable->viewport()->installEventFilter(this);
+  // 关键：QSS 的 ::item:hover 需要 viewport 自身开 mouseTracking——widget 上设的
+  // 不会自动传到 viewport。只设 widget 那条，鼠标按下移动才有事件，纯 hover 无效。
+  m_valueTable->viewport()->setMouseTracking(true);
 
   split->addWidget(m_valueTable);
-  split->setStretchFactor(0, 2);
+  // 比例 1:3 + 初始 sizes：树 1/4 + 值表 3/4——dialog 默认 1000，值表起步 ~750，
+  // 扣除 Name 200 + Type 130 + V scrollbar 17 + 边框，Data 还有 ~400px 起步宽度。
+  split->setStretchFactor(0, 1);
   split->setStretchFactor(1, 3);
+  split->setSizes({250, 750});
   root->addWidget(split, 1);
 
   // 底部"当前选择"展示：键一行，支持值选择的模式额外加值一行。Exclusion 不
@@ -227,8 +242,11 @@ void RegistryPickerDialog::buildUi() {
     root->addWidget(m_valueLabel);
   }
 
-  auto* btns = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-  m_okBtn = btns->button(QDialogButtonBox::Ok);
+  // 显式 I18n::tr 的按钮——不走 QDialogButtonBox::Ok / Cancel 标准枚举，那条路径
+  // 的文案来自 Qt 内置 qt_zh_CN.qm（我们没加载），会卡在英文。
+  auto* btns = new QDialogButtonBox(this);
+  m_okBtn = btns->addButton(I18n::tr("OK"), QDialogButtonBox::AcceptRole);
+  btns->addButton(I18n::tr("Cancel"), QDialogButtonBox::RejectRole);
   m_okBtn->setEnabled(false);
   connect(btns, &QDialogButtonBox::accepted, this, [this] {
     // valueName 空 = 整键递归（值表无选中或 Exclusion 模式整表禁选）；非空 = 命名值。
@@ -437,7 +455,9 @@ void RegistryPickerDialog::refreshValueTable(const QString& keyPath) {
     if (!rowSelectable) nameItem->setFlags(Qt::NoItemFlags);
     m_valueTable->setItem(row, 0, nameItem);
 
-    auto* typeItem = new QTableWidgetItem(QString::fromStdString(regkey::valueTypeName(v.type)));
+    const QString typeText = QString::fromStdString(regkey::valueTypeName(v.type));
+    auto* typeItem = new QTableWidgetItem(typeText);
+    typeItem->setToolTip(typeText);  // REG_RESOURCE_REQUIREMENTS_LIST 超过列宽时 hover 还原全名
     if (!rowSelectable) typeItem->setFlags(Qt::NoItemFlags);
     m_valueTable->setItem(row, 1, typeItem);
 

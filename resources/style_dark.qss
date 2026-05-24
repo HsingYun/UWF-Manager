@@ -245,6 +245,16 @@ QLabel#hoverHintBox {
     padding: 10px 12px;
 }
 
+/* Modern tooltip：复用 hoverHintBox 调色，padding 缩紧、color 提到正文级让小字
+   也读得清。全局生效——所有 setToolTip 的控件都跟这个样式。 */
+QToolTip {
+    background: #1F2226;
+    color: #E8EAED;
+    border: 1px solid #2E323A;
+    border-radius: 6px;
+    padding: 6px 10px;
+}
+
 QWidget#globalWrap {
     background: #1B1D20;
     border-left: 1px solid #2E323A;
@@ -630,6 +640,13 @@ QTableWidget {
 
 QTableWidget::item {
     padding: 4px 6px;
+}
+
+/* Row hover：鼠标停在某行上加一层淡蓝高亮——视觉反馈"我在这一行"，配合
+   tooltip 出现前的 ~700ms 等待，让用户知道 hover 已被识别。0.18 在深色底
+   上才肉眼能明确看出。 */
+QTableWidget::item:hover {
+    background: rgba(76, 139, 245, 0.18);
 }
 
 QHeaderView::section {

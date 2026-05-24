@@ -18,8 +18,6 @@
     <message><source>Apply</source><translation>应用</translation></message>
     <message><source>Add</source><translation>添加</translation></message>
     <message><source>Remove</source><translation>移除</translation></message>
-    <message><source>Keep</source><translation>保留</translation></message>
-    <message><source>Already removed</source><translation>已移除</translation></message>
     <message><source>Yes</source><translation>是</translation></message>
     <message><source>No</source><translation>否</translation></message>
     <message><source>File…</source><translation>文件…</translation></message>
@@ -392,12 +390,11 @@
     <message><source>Cannot add this exclusion</source><translation>不能添加此排除项</translation></message>
     <message>
         <source>Current session: %1
-Next session (saved on disk): %2
-Pending change: %3</source>
+Next session: %2</source>
         <translation>当前会话：%1
-下次会话（磁盘已保存）：%2
-本次待应用：%3</translation>
+下次会话：%2</translation>
     </message>
+    <message><source>Pending change: %1</source><translation>本次待应用：%1</translation></message>
     <message>
         <source>%1 entries · %2 to add · %3 to remove in next session · %4 pending</source>
         <translation>共 %1 项 · 下次会话将新增 %2 · 移除 %3 · 待应用 %4</translation>

@@ -726,9 +726,9 @@ void ExclusionListWidget::rebuild() {
   // (userAdded / userRemoved) 或基线在当前 / 下次会话间本就有增删差异
   // (inCurrent != inNextBase)。
   //
-  // 不能用 inCurrent != inNextFinal：删除一个"仅下次会话存在、当前未生效"的
-  // 条目时，inCurrent 与 inNextFinal 同为 false，会被误判成"无变化"沉到
-  // rest——可它明明带着红色删除标记，理应和其它待删项一起排在前排。
+  // 不能改用"考虑用户改动后的最终 next 态"（即 (inNextBase || userAdded) && !userRemoved）
+  // 来比对：删除一个"仅下次会话存在、当前未生效"的条目时，inCurrent 和它都为 false，
+  // 会被误判成"无变化"沉到 rest——可它明明带着红色删除标记，理应和其它待删项一起排在前排。
   QStringList pending;
   QStringList rest;
   for (const auto& entry : all) {
@@ -769,7 +769,6 @@ void ExclusionListWidget::rebuild() {
     const bool inNextBase = flag ? flag->baseNext : m_next.contains(entry, Qt::CaseInsensitive);
     const bool userAdded = flag ? (flag->pendingNext == true) : m_added.contains(entry);
     const bool userRemoved = flag ? (flag->pendingNext == false) : m_removed.contains(entry);
-    const bool inNextFinal = (inNextBase || userAdded) && !userRemoved;
 
     Badge badge = Badge::None;
     QBrush fg;
@@ -812,12 +811,14 @@ void ExclusionListWidget::rebuild() {
     }
     item->setIcon(composeWithBadge(baseIcon, badge));
 
-    const QString pendingText =
-        userAdded ? I18n::tr("Add") : (userRemoved ? I18n::tr("Remove") : (inNextFinal ? I18n::tr("Keep") : I18n::tr("Already removed")));
     const QString yes = I18n::tr("Yes");
     const QString no = I18n::tr("No");
-    const QString tip =
-        I18n::tr("Current session: %1\nNext session (saved on disk): %2\nPending change: %3").arg(inCurrent ? yes : no, inNextBase ? yes : no, pendingText);
+    QString tip = I18n::tr("Current session: %1\nNext session: %2").arg(inCurrent ? yes : no, inNextBase ? yes : no);
+    // 第三行只在用户本次会话真的标了 add/remove 时才出现：上两行已经把"现在 / 下次"
+    // 状态摆清了，没有 pending 还硬塞一行"无变化"纯属噪声。
+    if (userAdded || userRemoved) {
+      tip += '\n' + I18n::tr("Pending change: %1").arg(userAdded ? I18n::tr("Add") : I18n::tr("Remove"));
+    }
     item->setToolTip(tip);
     m_list->addItem(item);
   }
