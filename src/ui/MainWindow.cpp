@@ -858,6 +858,15 @@ void MainWindow::refresh() {
 }
 
 void MainWindow::showPlan() {
+  // 工具栏按钮 focusPolicy 是 Qt::NoFocus，点它不会让正在编辑的 spinbox 失焦；
+  // 而阈值 / 最大尺寸等 spinbox 关了 keyboardTracking（见 GlobalStatusPanel），
+  // 新输入的值要等 editingFinished（失焦或回车）才提交。不先逼当前编辑器提交，
+  // 下面 ApplyPlanDialog 构造时 pendingOverlay() 就会读到改动前的旧值——首次预览
+  // 漏掉刚输入的阈值，要等 exec() 弹框抢走焦点提交后、第二次点开才正常。读取
+  // pending 前主动清掉焦点，触发 editingFinished 把在编辑的值落定（顺带跑一次
+  // 约束链钳值，使预览与实际写入口径一致）。
+  if (QWidget* fw = QApplication::focusWidget()) fw->clearFocus();
+
   // 收集待应用变更、渲染命令预览、二次确认后写入 WMI 都在 ApplyPlanDialog
   // 里完成；这里只负责把变更来源（GlobalStatusPanel + 各 DiskTab）和写会话
   // 交给它。applied() 用 QueuedConnection 接：等对话框这一轮事件循环回落
