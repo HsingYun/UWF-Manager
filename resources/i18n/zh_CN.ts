@@ -20,6 +20,8 @@
     <message><source>Remove</source><translation>移除</translation></message>
     <message><source>Yes</source><translation>是</translation></message>
     <message><source>No</source><translation>否</translation></message>
+    <message><source>Excluded</source><translation>排除</translation></message>
+    <message><source>Not excluded</source><translation>不排除</translation></message>
     <message><source>File…</source><translation>文件…</translation></message>
     <message><source>Folder…</source><translation>文件夹…</translation></message>
     <message><source>volume ID</source><translation>卷 ID</translation></message>
@@ -388,6 +390,10 @@
     </message>
     <message><source>Path is not on this volume</source><translation>路径不在当前卷</translation></message>
     <message><source>Cannot add this exclusion</source><translation>不能添加此排除项</translation></message>
+    <message><source>File: %1</source><translation>文件：%1</translation></message>
+    <message><source>Folder: %1</source><translation>文件夹：%1</translation></message>
+    <message><source>Registry: %1</source><translation>注册表：%1</translation></message>
+    <message><source>On first UWF initialization, the system excludes registry entries of this type by default; thereafter, exclusion follows the modified setting.</source><translation>UWF 首次初始化后，系统默认排除此类注册表项；此后将按修改后的设置进行排除。</translation></message>
     <message>
         <source>Current session: %1
 Next session: %2</source>

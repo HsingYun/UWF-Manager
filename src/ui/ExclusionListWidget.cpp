@@ -170,18 +170,20 @@ void sortList(QStringList& list) {
   list.removeDuplicates();
 }
 
-// 文件排除项：磁盘上存在的才能判断是目录还是文件；否则按路径启发式猜。
-// 以 `\` 结尾、或没有扩展名 → 当目录，其它 → 当文件。
+// 文件排除项是目录还是文件：磁盘上存在就按真实类型；否则按路径启发式猜——
+// 以 `\` 或 `/` 结尾、或没有扩展名 → 当目录，其它 → 当文件。tooltip 的类型
+// 标签与下面的图标都走这一个判定，保证图标和文字口径一致。
+bool fileEntryIsDir(const QString& path) {
+  const QFileInfo fi(path);
+  if (fi.exists()) return fi.isDir();
+  if (path.endsWith('\\') || path.endsWith('/')) return true;
+  return fi.suffix().isEmpty();
+}
+
+// 文件排除项：按 fileEntryIsDir 的判定给文件夹 / 文件图标。
 QIcon iconForFileEntry(const QString& path) {
   auto& tm = ThemeManager::instance();
-  QFileInfo fi(path);
-  if (fi.exists()) {
-    return fi.isDir() ? tm.icon(":/icons/folder.svg") : tm.icon(":/icons/file.svg");
-  }
-  if (path.endsWith('\\') || path.endsWith('/')) {
-    return tm.icon(":/icons/folder.svg");
-  }
-  return fi.suffix().isEmpty() ? tm.icon(":/icons/folder.svg") : tm.icon(":/icons/file.svg");
+  return tm.icon(fileEntryIsDir(path) ? ":/icons/folder.svg" : ":/icons/file.svg");
 }
 
 enum class Badge { None, Add, Remove };
@@ -814,11 +816,25 @@ void ExclusionListWidget::rebuild() {
     }
     item->setIcon(composeWithBadge(baseIcon, badge));
 
-    const QString yes = I18n::tr("Yes");
-    const QString no = I18n::tr("No");
-    QString tip = I18n::tr("Current session: %1\nNext session: %2").arg(inCurrent ? yes : no, inNextBase ? yes : no);
-    // 第三行只在用户本次会话真的标了 add/remove 时才出现：上两行已经把"现在 / 下次"
-    // 状态摆清了，没有 pending 还硬塞一行"无变化"纯属噪声。
+    // 第一行：普通条目放"类型 + 完整路径 / 键全名"（列表项文字可能因相对路径或宽度
+    // 截断看不全，这里补全）；持久化伪条目（DomainSecretKey / TSCAL）没有真实路径，
+    // 换成说明这两项的默认排除行为：UWF 首次初始化时默认排除，此后按修改结果。底层
+    // 开关默认 true，但 UI 已把 true/false 抽象成"排除 / 不排除"，文案里不出现 true/false。
+    QString tip;
+    if (flag) {
+      tip += I18n::tr("On first UWF initialization, the system excludes registry entries of this type by default; thereafter, exclusion follows the modified setting.") + '\n';
+    } else {
+      const QString full = entryFullPath(item);
+      if (m_kind == Kind::File)
+        tip += (fileEntryIsDir(entry) ? I18n::tr("Folder: %1") : I18n::tr("File: %1")).arg(full) + '\n';
+      else
+        tip += I18n::tr("Registry: %1").arg(full) + '\n';
+    }
+    const QString excluded = I18n::tr("Excluded");
+    const QString notExcluded = I18n::tr("Not excluded");
+    tip += I18n::tr("Current session: %1\nNext session: %2").arg(inCurrent ? excluded : notExcluded, inNextBase ? excluded : notExcluded);
+    // 末行只在用户本次会话真的标了 add/remove 时才出现：上面已把"现在 / 下次"状态
+    // 摆清了，没有 pending 还硬塞一行"无变化"纯属噪声。
     if (userAdded || userRemoved) {
       tip += '\n' + I18n::tr("Pending change: %1").arg(userAdded ? I18n::tr("Add") : I18n::tr("Remove"));
     }
