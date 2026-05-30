@@ -75,7 +75,7 @@
         <translation>覆盖层的类型 / 最大大小只能在筛选器停用时修改：
 1. 用上方的「筛选状态」开关停用筛选器
 2. 重启电脑（重启后筛选器为停用状态）
-3. 再来修改此项</translation>
+3. 重新尝试修改此项</translation>
     </message>
     <message>
         <source>Overlay storage location. RAM is faster but consumes memory; Disk uses the system drive and offers more capacity. Both are discarded on reboot.</source>
