@@ -4,7 +4,9 @@ A Qt GUI for the Windows Unified Write Filter (UWF) — a convenient graphical f
 
 [简体中文](README.zh_CN.md)
 
-![Screenshot](snapshot/snapshot.png)
+![Screenshot](snapshot/snapshot.1.png)
+
+![Screenshot](snapshot/snapshot.2.png)
 
 ## About UWF
 
