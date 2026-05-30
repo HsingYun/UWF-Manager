@@ -56,6 +56,7 @@
 #include "ImportApplier.h"
 #include "ImportDialog.h"
 #include "LogViewerDialog.h"
+#include "MarqueeHintBox.h"
 #include "MessageDialog.h"
 #include "ThemeManager.h"
 #include "TransientLabel.h"
@@ -476,7 +477,10 @@ void MainWindow::buildUi() {
   // 行再硬断，第一行照样空着；WrapAnywhere 才是逐字符填满每行、键紧接"注册表："往下
   // 排。配成只读 / 无边框 / 关滚动条 / 不可交互，外观仍由 QSS #hoverHintBox 提供
   // （圆角灰底）。
-  m_hoverHint = new QTextBrowser(this);
+  // MarqueeHintBox（QTextBrowser 子类）：英文下个别提示（域机密密钥 / TSCAL 的默认
+  // 排除说明）超过这 110px 放不下，本类在溢出时自动循环来回滚动让全文都能看到；
+  // 放得下时静止。其余配置照旧——它对外仍是个普通 QTextBrowser。
+  m_hoverHint = new MarqueeHintBox(this);
   m_hoverHint->setObjectName("hoverHintBox");
   m_hoverHint->setWordWrapMode(QTextOption::WrapAnywhere);
   m_hoverHint->setFrameShape(QFrame::NoFrame);

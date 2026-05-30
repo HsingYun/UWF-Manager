@@ -14,6 +14,11 @@ TransientLabel::TransientLabel(QWidget* label, QObject* parent) : QObject(parent
 }
 
 void TransientLabel::applyText(const QString& text) {
+  // 文本没变就不重复 setText：悬停时 MouseMove 会连发同一段提示，重复 setText 既
+  // 是无谓的重排，也会打断 MarqueeHintBox 这类靠 textChanged 判定"内容真的换了"
+  // 的下游（否则鼠标一抖就把自动滚动复位回顶部）。
+  if (text == m_current) return;
+  m_current = text;
   // m_label 可能是 QLabel 或 QTextBrowser——两者都有 setText 槽，用 invokeMethod
   // 统一驱动，避免把本类绑死到某个具体控件类型。同线程下 AutoConnection 即同步调用。
   if (m_label) QMetaObject::invokeMethod(m_label, "setText", Q_ARG(QString, text));

@@ -822,7 +822,7 @@ void ExclusionListWidget::rebuild() {
     // 开关默认 true，但 UI 已把 true/false 抽象成"排除 / 不排除"，文案里不出现 true/false。
     QString tip;
     if (flag) {
-      tip += I18n::tr("On first UWF initialization, the system excludes registry entries of this type by default; thereafter, exclusion follows the modified setting.") + '\n';
+      tip += I18n::tr("Excluded by default; change it anytime.") + '\n';
     } else {
       const QString full = entryFullPath(item);
       if (m_kind == Kind::File)

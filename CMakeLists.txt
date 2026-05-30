@@ -72,6 +72,8 @@ set(UWF_SOURCES
         src/ui/RegistryPickerDialog.cpp
         src/ui/TransientLabel.h
         src/ui/TransientLabel.cpp
+        src/ui/MarqueeHintBox.h
+        src/ui/MarqueeHintBox.cpp
         src/ui/LogViewerDialog.h
         src/ui/LogViewerDialog.cpp
         src/ui/TableText.h

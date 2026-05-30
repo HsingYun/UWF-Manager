@@ -54,6 +54,7 @@ class TransientLabel : public QObject {
 
   QWidget* m_label;
   QString m_baseline;
+  QString m_current;  // 上一次真正推给 label 的文本，用于 applyText 去重
   QTimer* m_timer;
   bool m_showing = false;
 };
