@@ -323,7 +323,7 @@ void OverlayFilesDialog::onLoadFinished(QVector<OverlayFileEntry> entries, const
     if (hresult == static_cast<int32_t>(RPC_E_SERVERFAULT)) {
       hint = I18n::tr(
           "The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay "
-          "is large or under I/O pressure. Wait a few seconds and click \"View overlay files\" again, often it succeeds on retry.");
+          "is large or under I/O pressure.");
     } else if (wbem == WmiErrorCode::OutOfMemory || wbem == WmiErrorCode::NotSupported) {
       hint = I18n::tr(
           "Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; "

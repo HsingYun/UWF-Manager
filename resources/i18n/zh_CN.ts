@@ -263,8 +263,8 @@
     <message><source>No files</source><translation>无文件</translation></message>
     <message><source>Page %1 / %2 · %3 file(s) total</source><translation>第 %1 / %2 页 · 共 %3 个文件</translation></message>
     <message>
-        <source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure. Wait a few seconds and click &quot;View overlay files&quot; again, often it succeeds on retry.</source>
-        <translation>WMI 提供程序在枚举覆盖层文件时崩溃。这是 UWF_Overlay.GetOverlayFiles 在覆盖层较大或磁盘 I/O 繁忙时的已知不稳定行为。等几秒后再点击一次「查看覆盖层文件」，多数情况下重试就能成功。</translation>
+        <source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure.</source>
+        <translation>WMI 提供程序在枚举覆盖层文件时崩溃。这是 UWF_Overlay.GetOverlayFiles 在覆盖层较大或磁盘 I/O 繁忙时的已知不稳定行为。</translation>
     </message>
     <message>
         <source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source>
