@@ -12,6 +12,7 @@
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QIcon>
+#include <QItemSelectionModel>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidgetItem>
@@ -350,6 +351,11 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
   connect(m_list, &QListWidget::customContextMenuRequested, this, [this](const QPoint& pos) {
     auto* item = m_list->itemAt(pos);
     if (!item) return;
+    // 右键菜单的每一项都只作用于被点中的这一条（复制路径 / 打开文件夹 / 提交单条
+    // 改动），并不支持多选批量。列表是 ExtendedSelection，若保留原有多选高亮，会让
+    // 人误以为菜单操作对整个选区生效——这里先把选区收敛成右键的这一条，让高亮范围
+    // 与菜单作用范围一致。（"移除所选"走顶部按钮，仍按多选语义，不受此影响。）
+    m_list->setCurrentItem(item, QItemSelectionModel::ClearAndSelect);
     const QString full = entryFullPath(item);
     if (full.isEmpty()) return;
 
