@@ -47,7 +47,7 @@
     <message><source>Protection:</source><translation>保护状态：</translation></message>
     <message>
         <source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source>
-        <translation>UWF 识别本卷的方式。盘符直观，但增减其它磁盘等情况下盘符可能被重新分配，绑定会失效；卷 ID 不随盘符变化，更稳定。</translation>
+        <translation>UWF 识别本卷的方式。盘符直观，但增减其他磁盘等情况下盘符可能被重新分配，绑定会失效；卷 ID 不随盘符变化，更稳定。</translation>
     </message>
     <message><source>Bind by:</source><translation>绑定方式：</translation></message>
     <message>
@@ -264,7 +264,7 @@
     <message><source>Page %1 / %2 · %3 file(s) total</source><translation>第 %1 / %2 页 · 共 %3 个文件</translation></message>
     <message>
         <source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure. Wait a few seconds and click &quot;View overlay files&quot; again, often it succeeds on retry.</source>
-        <translation>WMI 提供程序在枚举覆盖层文件时崩溃。这是 UWF_Overlay.GetOverlayFiles 在覆盖层较大或磁盘 I/O 繁忙时的已知不稳定行为。等几秒后再点一次「查看覆盖层文件」，多数情况下重试就能成功。</translation>
+        <translation>WMI 提供程序在枚举覆盖层文件时崩溃。这是 UWF_Overlay.GetOverlayFiles 在覆盖层较大或磁盘 I/O 繁忙时的已知不稳定行为。等几秒后再点击一次「查看覆盖层文件」，多数情况下重试就能成功。</translation>
     </message>
     <message>
         <source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source>
@@ -364,7 +364,7 @@
     <message><source>· %1 persistence %2</source><translation>· %1 持久化 %2</translation></message>
     <message><source>✓ %1 persistence: %2</source><translation>✓ %1 持久化：%2</translation></message>
     <message><source>✘ Failed to update registry persistence switches: %1</source><translation>✘ 更新注册表持久化开关失败：%1</translation></message>
-    <message><source>Remove selected</source><translation>删除所选</translation></message>
+    <message><source>Remove selected</source><translation>移除所选</translation></message>
     <message>
         <source>Remove the selected entries from the exclusion list. Takes effect after Apply.</source>
         <translation>从排除列表中移除选中项（应用后生效）。</translation>
@@ -559,7 +559,7 @@ Canceled by user; %1 entries not processed.</source>
     <message><source>Review and apply changes</source><translation>变更预览 · 应用</translation></message>
     <message>
         <source>Below is the full configuration in uwfmgr command form. &lt;span style='color:%1'&gt;Pending changes&lt;/span&gt;, if any, are shown in a separate section first. Click &lt;span style='color:%2'&gt;Apply&lt;/span&gt; to write the changes to the system (most take effect after the next reboot).</source>
-        <translation>以下以 uwfmgr 命令形式列出当前所有配置；若有&lt;span style='color:%1'&gt;待应用的变更&lt;/span&gt;会先单独成段。确认后点 &lt;span style='color:%2'&gt;应用&lt;/span&gt;，本程序会真实写入系统（多数在下次重启后生效）。</translation>
+        <translation>以下以 uwfmgr 命令形式列出当前所有配置；若有&lt;span style='color:%1'&gt;待应用的变更&lt;/span&gt;会先单独成段。确认后点击 &lt;span style='color:%2'&gt;应用&lt;/span&gt;，本程序会真实写入系统（多数在下次重启后生效）。</translation>
     </message>
     <message><source>Confirm apply</source><translation>确认应用</translation></message>
     <message>
