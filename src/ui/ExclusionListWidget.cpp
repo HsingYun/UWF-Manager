@@ -830,6 +830,8 @@ void ExclusionListWidget::rebuild() {
       else
         tip += I18n::tr("Registry: %1").arg(full) + '\n';
     }
+    // 头部（类型 + 路径 / 默认说明）与下面的会话状态之间空一行，做视觉分组。
+    tip += '\n';
     const QString excluded = I18n::tr("Excluded");
     const QString notExcluded = I18n::tr("Not excluded");
     tip += I18n::tr("Current session: %1\nNext session: %2").arg(inCurrent ? excluded : notExcluded, inNextBase ? excluded : notExcluded);
