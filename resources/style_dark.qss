@@ -237,7 +237,7 @@ QLabel#panelTitle {
     padding: 2px 0 8px 2px;
 }
 
-QLabel#hoverHintBox {
+QTextBrowser#hoverHintBox {
     background: #1F2226;
     border: 1px solid #2E323A;
     border-radius: 8px;

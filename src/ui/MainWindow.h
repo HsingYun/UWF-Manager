@@ -16,6 +16,7 @@
 
 class QTabWidget;
 class QLabel;
+class QTextBrowser;
 class QTimer;
 class QAction;
 
@@ -84,12 +85,12 @@ class MainWindow : public QMainWindow {
   QTabWidget* m_tabs = nullptr;
   GlobalStatusPanel* m_global = nullptr;
   QLabel* m_statusText = nullptr;
-  QLabel* m_hoverHint = nullptr;
+  QTextBrowser* m_hoverHint = nullptr;
   // 状态栏与右下角悬停提示框都按"基线文本 + 临时覆盖、到点回基线"的模式跑——
   // 各自包给一个 TransientLabel，把过去散在 buildUi / rebuildUi / eventFilter /
   // updatePendingSummary 几处的 QTimer + 基线字符串成员收成对象。
-  // 父对象设为对应 QLabel：rebuildUi 删 label 时控制器自动跟着 deleteLater，
-  // 不必单独管理生命周期。
+  // 父对象设为对应 widget（状态栏 QLabel / 悬停框 QTextBrowser）：rebuildUi 删
+  // widget 时控制器自动跟着 deleteLater，不必单独管理生命周期。
   TransientLabel* m_statusCtl = nullptr;
   TransientLabel* m_hoverCtl = nullptr;
   QTimer* m_usageTimer = nullptr;  // 5s 周期刷新 Usage 数据

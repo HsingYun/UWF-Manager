@@ -26,6 +26,9 @@
 #include <QSvgRenderer>
 #include <QTabBar>
 #include <QTabWidget>
+#include <QTextBrowser>
+#include <QTextDocument>
+#include <QTextOption>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -466,16 +469,30 @@ void MainWindow::buildUi() {
   // 顶部全局设置拿走所有可拉伸空间，里面的 QScrollArea 会在高度不足时
   // 自己滚动；tips 区用固定高度贴底。
   globalLayout->addWidget(m_global, 1);
-  m_hoverHint = new QLabel(this);
+  // 用 QTextBrowser 而非 QLabel：QLabel 的自动换行只能在词边界断，遇到没有空格
+  // 的长串（注册表键 HKEY_LOCAL_MACHINE\... 整串无断点）只能在中文前缀"注册表："
+  // 处断一次、余下整段溢出裁掉。改用 QTextBrowser + WrapAnywhere（任意字符断行）。
+  // 别用 WrapAtWordBoundaryOrAnywhere——它"优先词边界"，会把超长的键整体先甩到下一
+  // 行再硬断，第一行照样空着；WrapAnywhere 才是逐字符填满每行、键紧接"注册表："往下
+  // 排。配成只读 / 无边框 / 关滚动条 / 不可交互，外观仍由 QSS #hoverHintBox 提供
+  // （圆角灰底）。
+  m_hoverHint = new QTextBrowser(this);
   m_hoverHint->setObjectName("hoverHintBox");
-  m_hoverHint->setWordWrap(true);
+  m_hoverHint->setWordWrapMode(QTextOption::WrapAnywhere);
+  m_hoverHint->setFrameShape(QFrame::NoFrame);
+  m_hoverHint->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  m_hoverHint->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   m_hoverHint->setTextInteractionFlags(Qt::NoTextInteraction);
+  m_hoverHint->setFocusPolicy(Qt::NoFocus);
+  // document margin 归零，内边距完全交给 QSS 的 padding，与原 QLabel 视觉对齐。
+  m_hoverHint->document()->setDocumentMargin(0);
+  // viewport 透明，让 QSS 画在 frame 上的圆角灰底透出来（否则文本区方角会盖角）。
+  m_hoverHint->viewport()->setAutoFillBackground(false);
   m_hoverHint->setFixedHeight(110);
   m_hoverHint->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  m_hoverHint->setAlignment(Qt::AlignLeft | Qt::AlignTop);
-  // 默认文案换成机器基本信息（OS / CPU / RAM / GPU），悬停事件会临时覆盖。
-  // 留 AutoText：默认文案里有 HTML 标签会按 RichText 渲染；
-  // 普通 tooltip 是纯文本则按 PlainText 渲染，不怕里面的 & / < 被解析走样。
+  // 默认文案是机器基本信息（OS / CPU / RAM / GPU）的 HTML，悬停事件临时覆盖成
+  // 纯文本 tooltip。QTextBrowser::setText 走 Qt::mightBeRichText 自动判别：HTML
+  // 基线按富文本渲染，纯文本 tooltip 按纯文本渲染，里面的 & / < 不会被解析走样。
   m_hoverCtl = new TransientLabel(m_hoverHint, m_hoverHint);
   m_hoverCtl->setBaseline(systemInfoHtml());
   globalLayout->addWidget(m_hoverHint, 0);

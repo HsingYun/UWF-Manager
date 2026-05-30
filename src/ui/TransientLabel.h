@@ -1,6 +1,6 @@
 #pragma once
 
-// QLabel + 内嵌单次定时器：一个"基线文本"和若干次"临时覆盖"——临时覆盖到点
+// 目标 widget + 内嵌单次定时器：一个"基线文本"和若干次"临时覆盖"——临时覆盖到点
 // 后自动回基线，新的覆盖到来时取消未到期的恢复。
 //
 // MainWindow 的状态栏（updatePendingSummary / showTransientHint）与右下角悬停
@@ -8,13 +8,14 @@
 // QTimer::isActive() 检查拼出来，调用方得自己关心"是否处于 transient"。这里
 // 把它收成单个对象，调用方只看 setBaseline / show / restoreAfter / flash 四个动作。
 //
-// label 由外部持有（通常已塞进 layout 或 statusBar），本类只读写它的 setText。
-// QObject 父子关系按调用方习惯走——传 parent 进构造即可。
+// 目标 widget 由外部持有（通常已塞进 layout 或 statusBar），可以是 QLabel 或
+// QTextBrowser——本类只通过 setText 槽驱动它（QMetaObject::invokeMethod 调用，不
+// 绑死具体类型）。QObject 父子关系按调用方习惯走——传 parent 进构造即可。
 
 #include <QObject>
 #include <QString>
 
-class QLabel;
+class QWidget;
 class QTimer;
 
 namespace uwf::ui {
@@ -22,7 +23,7 @@ namespace uwf::ui {
 class TransientLabel : public QObject {
   Q_OBJECT
  public:
-  explicit TransientLabel(QLabel* label, QObject* parent = nullptr);
+  explicit TransientLabel(QWidget* label, QObject* parent = nullptr);
 
   // 设新基线。当前正在 transient 时只更基线值，不立刻刷 label——避免覆盖用户
   // 还在看的临时提示；处于基线状态时同步刷 label。
@@ -47,7 +48,11 @@ class TransientLabel : public QObject {
   [[nodiscard]] bool isShowing() const { return m_showing; }
 
  private:
-  QLabel* m_label;
+  // m_label 可能是 QLabel 或 QTextBrowser；两者都有 setText 槽，统一用 invokeMethod
+  // 驱动，避免把本类绑死到某个具体控件类型。
+  void applyText(const QString& text);
+
+  QWidget* m_label;
   QString m_baseline;
   QTimer* m_timer;
   bool m_showing = false;
