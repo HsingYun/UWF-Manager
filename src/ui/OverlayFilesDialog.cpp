@@ -43,10 +43,11 @@ namespace uwf::ui {
 
 namespace {
 
-// 每个列表项显式声明的行高（sizeHint 高度）。QSS（exclusionList::item）会再
-// 叠加 padding 与 border，故 pageSize 计算用的实际行高由 rowHeight() 实测得出，
-// 不直接用本常量。
-constexpr int kBaseRowHeight = 22;
+// rowHeight() 实测失败时的回退行高。实际行高由构造函数里给列表设置的局部 QSS
+// 决定：min-height 30 撑起内容盒（图标仅 16px，不给下限整行会矮塌、选中蓝底缩成
+// 中间细窄一条），上下 padding 各 4px、底边 1px border，合计 30 + 8 + 1 = 39px。
+// 改这里或那段 QSS 时两处数值要同步。
+constexpr int kBaseRowHeight = 39;
 
 // QListWidget 子类：viewport 尺寸变化时回调，让对话框按新高度重算单页行数。
 // 与日志查看器的 PagedTable 同一思路；无 Q_OBJECT，纯虚函数 override。
@@ -145,10 +146,17 @@ OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, QWidget* pare
   layout->addLayout(loadingRow);
 
   auto* list = new PagedListWidget(this);
-  list->setSelectionMode(QAbstractItemView::ExtendedSelection);
+  // 单选即可：本对话框对选中项没有任何批量操作（右键菜单只作用于点中的那条，
+  // 导出走全量 m_entries），放开多选只会让用户误以为能批量处理。
+  list->setSelectionMode(QAbstractItemView::SingleSelection);
   list->setIconSize({16, 16});
   // 复用 ExclusionListWidget 的 QSS class，跟随 dark/light 主题。
   list->setObjectName("exclusionList");
+  // 单独给本列表抬高行高：min-height 把内容盒下限撑到 30px（图标仅 16px，不设
+  // 下限整行会矮塌、选中蓝底缩成中间细窄一条），上下 padding 收到 4px 让选中底色
+  // 几乎铺满整行。只作用于这个 widget，不改共享的 #exclusionList 规则，排除列表
+  // TAB 行高不受影响。数值改动请同步 kBaseRowHeight 回退值。
+  list->setStyleSheet(QStringLiteral("QListWidget#exclusionList::item { min-height: 30px; padding-top: 4px; padding-bottom: 4px; }"));
   list->setContextMenuPolicy(Qt::CustomContextMenu);
   // 单页行数随 viewport 高度走，永不出垂直滚动条（与日志查看器一致）。
   list->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -500,8 +508,7 @@ void OverlayFilesDialog::renderPage() {
   for (int i = start; i < end; ++i) {
     const auto& e = m_entries[i];
     auto* item = new QListWidgetItem();
-    // 统一行高——pageSize 的计算依赖每行等高（实测值含 QSS padding / border）。
-    item->setSizeHint(QSize(0, kBaseRowHeight));
+    // 行高由列表的局部 QSS（min-height + padding）统一决定，每行等高，pageSize 可据此分页。
     // 目录条目（来自 :$INDEX_ALLOCATION）显示 folder 图标，避免剥掉后缀
     // 后用户分不清这条到底是文件还是目录。
     item->setIcon(tm.icon(e.isDirectory ? ":/icons/folder.svg" : ":/icons/file.svg"));
@@ -549,7 +556,6 @@ int OverlayFilesDialog::rowHeight() {
   const bool empty = m_list->count() == 0;
   if (empty) {
     auto* probe = new QListWidgetItem(QStringLiteral("probe"));
-    probe->setSizeHint(QSize(0, kBaseRowHeight));
     m_list->addItem(probe);
   }
   const int h = m_list->sizeHintForRow(0);
