@@ -27,6 +27,24 @@ bool PendingChanges::empty() const {
          removeFileExclusions.empty() && addRegistryExclusions.empty() && removeRegistryExclusions.empty() && !setPersistDomainSecretKey && !setPersistTSCAL;
 }
 
+std::size_t PendingChanges::count() const {
+  std::size_t n = 0;
+  if (setFilterEnabled) ++n;
+  if (setOverlay.type) ++n;
+  if (setOverlay.maximumSizeMb) ++n;
+  if (setOverlay.warningThresholdMb) ++n;
+  if (setOverlay.criticalThresholdMb) ++n;
+  n += volumeProtect.size();
+  n += volumeBindByVolumeName.size();
+  for (const auto& kv : addFileExclusions) n += kv.second.size();
+  for (const auto& kv : removeFileExclusions) n += kv.second.size();
+  n += addRegistryExclusions.size();
+  n += removeRegistryExclusions.size();
+  if (setPersistDomainSecretKey) ++n;
+  if (setPersistTSCAL) ++n;
+  return n;
+}
+
 void PendingChanges::clear() {
   setFilterEnabled.reset();
   setOverlay = {};

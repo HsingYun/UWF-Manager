@@ -64,6 +64,8 @@ set(UWF_SOURCES
         src/ui/TrayController.cpp
         src/ui/ApplyPlanDialog.h
         src/ui/ApplyPlanDialog.cpp
+        src/ui/PendingCollect.h
+        src/ui/PendingCollect.cpp
         src/ui/CommitBatch.h
         src/ui/CommitReportDialog.h
         src/ui/CommitReportDialog.cpp

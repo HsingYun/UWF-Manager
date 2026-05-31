@@ -30,6 +30,7 @@
 #include "GlobalStatusPanel.h"
 #include "I18n.h"
 #include "MessageDialog.h"
+#include "PendingCollect.h"
 #include "ThemeManager.h"
 
 namespace uwf::ui {
@@ -181,37 +182,11 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       m_overlayConfig(m_session),
       m_volume(m_session),
       m_registry(m_session) {
-  // ── 收集 user 待应用的改动到 core::PendingChanges ───────────────
-  // 这里只采集"和基线不同"的数据；至于每个字段映射成哪条 uwfmgr 命令、参数
-  // 怎么拼，全部交给下面的 api::renderPendingChanges（命令映射的唯一真相源，
-  // 导出按钮走的也是它），UI 不再自己决定。
-  if (auto v = global->pendingFilterEnabled()) m_changes.setFilterEnabled = *v;
-  m_changes.setOverlay = global->pendingOverlay();
-
-  for (auto& t : diskTabs) {
-    if (!t || !t->supported()) continue;
-    const std::string dlStd = t->driveLetter().toStdString();
-
-    if (auto v = t->pendingVolumeProtected()) m_changes.volumeProtect[dlStd] = *v;
-    if (auto v = t->pendingBindByVolumeName()) m_changes.volumeBindByVolumeName[dlStd] = *v;
-    // 注意只在有 pending 时才 access map[dlStd]——map 的 operator[] 会无端
-    // 插入空 entry，commit 分支后续 for-each 会因此误以为这个卷有变更并尝试
-    // 注册它（"为何改 D: 时连 F: 也被注册"的根因）。
-    if (const auto added = t->pendingFileAdded(); !added.isEmpty()) {
-      auto& bucket = m_changes.addFileExclusions[dlStd];
-      for (const auto& p : added) bucket.push_back(p.toStdString());
-    }
-    if (const auto removed = t->pendingFileRemoved(); !removed.isEmpty()) {
-      auto& bucket = m_changes.removeFileExclusions[dlStd];
-      for (const auto& p : removed) bucket.push_back(p.toStdString());
-    }
-    if (const auto regAdded = t->pendingRegAdded(); !regAdded.isEmpty())
-      for (const auto& p : regAdded) m_changes.addRegistryExclusions.push_back(p.toStdString());
-    if (const auto regRemoved = t->pendingRegRemoved(); !regRemoved.isEmpty())
-      for (const auto& p : regRemoved) m_changes.removeRegistryExclusions.push_back(p.toStdString());
-    if (const auto v = t->pendingPersistDomainSecretKey()) m_changes.setPersistDomainSecretKey = *v;
-    if (const auto v = t->pendingPersistTSCAL()) m_changes.setPersistTSCAL = *v;
-  }
+  // 收集待应用的改动到 core::PendingChanges——只采集"和基线不同"的数据。
+  // 遍历逻辑与 MainWindow 状态栏计数共用 collectPending（见 PendingCollect）。
+  // 至于每个字段映射成哪条 uwfmgr 命令、参数怎么拼，全部交给下面的
+  // api::renderPendingChanges（命令映射的唯一真相源，导出按钮走的也是它）。
+  m_changes = collectPending(global, diskTabs);
 
   // ── 待变更命令行 ──────────────────────────────────
   // CLI 可表达的改动全部经 api::renderPendingChanges 渲染，UI 只把 kind 翻成中文
@@ -295,21 +270,15 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     return out;
   };
 
-  // 待变更条目数：跳过那条"筛选器开启时无法改类型/大小"的 ⚠ 提示行（它没有
-  // 对应的真实改动），其余每条 comment 都是一处改动。放进标题让数量一目了然。
-  int pendingCount = 0;
-  for (const auto& c : m_changeCmds) {
-    if (!c.comment.empty() && !QString::fromStdString(c.comment).startsWith(QChar(0x26A0))) ++pendingCount;
-  }
-
   QString defaultHtml;
   // 外层 wrapper 显式声明 font-family，让所有内部 div 继承——不写的话
   // QTextEdit 的 RichText 引擎对中文字符会按字体表自由 fallback，多段中
   // 后面的段标题偶尔会落到宋体，跟其它段视觉上不一致。
   defaultHtml += "<div style=\"font-family:'Segoe UI','Microsoft YaHei UI','Microsoft YaHei',sans-serif\">";
   if (!m_changeCmds.empty()) {
-    // 待变更段标题用强调色（蓝）+ 数量，其余跟当前配置段一致。
-    defaultHtml += formatBlockHtml(I18n::tr("Pending changes (%1)").arg(pendingCount), m_changeCmds, accent);
+    // 待变更段标题用强调色（蓝）+ 数量（与状态栏同口径 PendingChanges::count），
+    // 其余跟当前配置段一致。
+    defaultHtml += formatBlockHtml(I18n::tr("Pending changes (%1)").arg(m_changes.count()), m_changeCmds, accent);
   }
   defaultHtml += formatBlockHtml(I18n::tr("Current session configuration"), m_snapshotCmds, mutedFaint);
   defaultHtml += "</div>";

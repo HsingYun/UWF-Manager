@@ -11,6 +11,7 @@
 //   - *Mb 结尾的数值字段单位均为 MB，与 WMI Schema 保持一致；
 //   - bindByDriveLetter == true 表示按盘符绑定，false 表示按卷 ID 绑定。
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <optional>
@@ -155,6 +156,10 @@ struct PendingChanges {
   std::optional<bool> setPersistTSCAL;
 
   [[nodiscard]] bool empty() const;
+  // 待变更条目数：filter 1 + overlay 每个被设字段各 1 + 每个卷的 protect/bind
+  // 各 1 + 每条文件/注册表增删各 1 + 每个持久化开关 1。状态栏摘要与预览标题
+  // 的数量都用它，保证两处计数口径一致。
+  [[nodiscard]] std::size_t count() const;
   void clear();
 };
 

@@ -58,6 +58,7 @@
 #include "LogViewerDialog.h"
 #include "MarqueeHintBox.h"
 #include "MessageDialog.h"
+#include "PendingCollect.h"
 #include "ThemeManager.h"
 #include "TransientLabel.h"
 #include "TrayController.h"
@@ -741,22 +742,9 @@ bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
 }
 
 void MainWindow::updatePendingSummary() {
-  qsizetype pending = 0;
-  if (m_global->pendingFilterEnabled()) ++pending;
-  {
-    const auto [type, maximumSizeMb, warningThresholdMb, criticalThresholdMb] = m_global->pendingOverlay();
-    if (type) ++pending;
-    if (maximumSizeMb) ++pending;
-    if (warningThresholdMb) ++pending;
-    if (criticalThresholdMb) ++pending;
-  }
-  for (const auto& t : std::as_const(m_diskTabs)) {
-    if (!t) continue;
-    if (t->pendingVolumeProtected()) ++pending;
-    if (t->pendingBindByVolumeName()) ++pending;
-    pending += t->pendingFileAdded().size() + t->pendingFileRemoved().size() + t->pendingRegAdded().size() + t->pendingRegRemoved().size() +
-               (t->pendingPersistDomainSecretKey().has_value() ? 1 : 0) + (t->pendingPersistTSCAL().has_value() ? 1 : 0);
-  }
+  // 与 ApplyPlanDialog 共用同一次遍历（collectPending）+ 同一计数口径
+  // （PendingChanges::count），避免状态栏摘要和预览标题各算各的、容易漂。
+  const std::size_t pending = collectPending(m_global, m_diskTabs).count();
   const QString msg = pending > 0 ? I18n::tr("%1 pending change(s) (not yet written to the system)").arg(pending) : I18n::tr("No pending changes");
   if (m_statusCtl) m_statusCtl->setBaseline(msg);
 }
