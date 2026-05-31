@@ -4,7 +4,7 @@
 #include <QLocale>
 #include <QTranslator>
 
-namespace uwf {
+namespace uwf::ui {
 
 namespace {
 
@@ -79,4 +79,4 @@ void I18n::setLang(const Lang l) {
   applyLang(l);
 }
 
-}  // namespace uwf
+}  // namespace uwf::ui

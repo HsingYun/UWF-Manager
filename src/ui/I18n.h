@@ -22,7 +22,7 @@
 #include <QCoreApplication>
 #include <QString>
 
-namespace uwf {
+namespace uwf::ui {
 
 class I18n {
   Q_DECLARE_TR_FUNCTIONS(uwf)
@@ -46,4 +46,4 @@ class I18n {
   Lang m_lang;
 };
 
-}  // namespace uwf
+}  // namespace uwf::ui

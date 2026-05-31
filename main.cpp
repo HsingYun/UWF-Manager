@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     app.setFont(f);
   }
 
-  (void)uwf::I18n::instance();
+  (void)uwf::ui::I18n::instance();
 
   UWF_LOG_I("main") << "UWF manager started; pid=" << QCoreApplication::applicationPid();
 
