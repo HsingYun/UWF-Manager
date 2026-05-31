@@ -15,6 +15,13 @@ QTranslator& translator() {
   return t;
 }
 
+// Qt 自带控件（标准右键菜单的 复制/全选、标准对话框按钮等）的文案由 Qt 官方
+// qtbase 翻译包提供
+QTranslator& qtBaseTranslator() {
+  static QTranslator t;
+  return t;
+}
+
 // 把 translator 切到目标语言：始终先 removeTranslator 让状态归零，再按
 // 目标语言决定要不要重新 install。
 //   - En：英文是源语言，不需要 .qm；remove 之后 tr() 直接返回 source。
@@ -26,11 +33,16 @@ QTranslator& translator() {
 // 个 translator 多次 Qt 自己会处理（先 remove 等价于幂等）。
 void applyLang(const I18n::Lang l) {
   auto& t = translator();
+  auto& qt = qtBaseTranslator();
   QCoreApplication::removeTranslator(&t);
+  QCoreApplication::removeTranslator(&qt);
   switch (l) {
     case I18n::Lang::En:
       return;
     case I18n::Lang::Zh_CN:
+      if (qt.load(":/i18n/qt/zh_CN.qm")) {
+        QCoreApplication::installTranslator(&qt);
+      }
       if (t.load(":/i18n/zh_CN.qm")) {
         QCoreApplication::installTranslator(&t);
       }
