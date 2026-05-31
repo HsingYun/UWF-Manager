@@ -28,8 +28,8 @@ set(UWF_SOURCES
         src/util/PathMatch.h
         src/util/PathMatch.cpp
         src/core/Config.h
-        src/core/UwfConfig.h
-        src/core/UwfConfig.cpp
+        src/core/UwfModel.h
+        src/core/UwfModel.cpp
         src/core/RegistryExclusionPolicy.h
         src/core/RegistryExclusionPolicy.cpp
         src/uwf/SystemCheck.h

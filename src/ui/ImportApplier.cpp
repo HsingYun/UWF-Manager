@@ -5,7 +5,7 @@
 #include <QSet>
 #include <QString>
 
-#include "../core/UwfConfig.h"
+#include "../core/UwfModel.h"
 #include "../util/DriveLetter.h"
 #include "../util/Log.h"
 #include "DiskTab.h"

@@ -8,7 +8,7 @@
 #include <QPointer>
 #include <QVector>
 
-#include "../core/UwfConfig.h"
+#include "../core/UwfModel.h"
 
 namespace uwf::ui {
 

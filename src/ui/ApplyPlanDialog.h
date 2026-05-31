@@ -14,7 +14,7 @@
 #include <string>
 #include <vector>
 
-#include "../core/UwfConfig.h"
+#include "../core/UwfModel.h"
 #include "../uwf/api/UwfFilter.h"
 #include "../uwf/api/UwfOverlay.h"
 #include "../uwf/api/UwfOverlayConfig.h"

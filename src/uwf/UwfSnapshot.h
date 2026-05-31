@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include "../core/UwfConfig.h"
+#include "../core/UwfModel.h"
 
 namespace uwf {
 

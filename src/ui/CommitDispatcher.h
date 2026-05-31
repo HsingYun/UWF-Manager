@@ -7,7 +7,7 @@
 
 #include <QString>
 
-#include "../core/UwfConfig.h"
+#include "../core/UwfModel.h"
 #include "../uwf/api/UwfRegistryFilter.h"
 #include "../uwf/api/UwfVolume.h"
 #include "../uwf/wmi/WmiClient.h"

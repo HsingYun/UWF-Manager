@@ -5,7 +5,7 @@
 #include <optional>
 #include <string>
 
-#include "../core/UwfConfig.h"
+#include "../core/UwfModel.h"
 // 完整 include（不是前向声明）：本文件 public API 暴露
 // ExclusionListWidget::ImportOutcome 这个嵌套枚举类型，前向声明无法满足。
 #include "ExclusionListWidget.h"

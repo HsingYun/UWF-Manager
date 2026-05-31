@@ -3,7 +3,7 @@
 #include <QWidget>
 #include <optional>
 
-#include "../core/UwfConfig.h"
+#include "../core/UwfModel.h"
 
 class QLabel;
 class QComboBox;
