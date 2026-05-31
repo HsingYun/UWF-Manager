@@ -276,12 +276,14 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   const QString mutedTint = QString("rgba(%1,%2,%3,0.06)").arg(mutedColor.red()).arg(mutedColor.green()).arg(mutedColor.blue());
   const QString fg = ThemeManager::instance().color(Sem::Fg).name();
 
-  auto formatBlockHtml = [&](const QString& title, const std::vector<Cmd>& items) {
+  // titleColor 决定标题字色：待变更段用强调色（蓝）让它跳出来，当前配置段
+  // 仍用灰；其余样式两段完全一致。
+  auto formatBlockHtml = [&](const QString& title, const std::vector<Cmd>& items, const QString& titleColor) {
     QString html;
-    // 段标题：弱化处理（淡灰底 + 灰字 + 不加粗 + 小字号），让"命令"成为
-    // 视觉主角。plain-text 形式以 ":: " 起头让 CommandTextEdit 复制时跳过。
+    // 段标题：淡灰底 + 小字号，让"命令"成为视觉主角。plain-text 形式以
+    // ":: " 起头让 CommandTextEdit 复制时跳过。
     html += QString("<div style='background:%1;color:%2;padding:3px 10px;border-radius:3px;font-size:9pt;margin:8px 0 2px 0'>:: %3</div>")
-                .arg(mutedTint, mutedFaint, title.toHtmlEscaped());
+                .arg(mutedTint, titleColor, title.toHtmlEscaped());
     for (const auto& c : items) {
       if (!c.comment.empty()) {
         // 注释行用更淡的灰色 + 小字号，肉眼一眼能区分这是装饰文字而非命令。
@@ -306,15 +308,23 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     return out;
   };
 
+  // 待变更条目数：跳过那条"筛选器开启时无法改类型/大小"的 ⚠ 提示行（它没有
+  // 对应的真实改动），其余每条 comment 都是一处改动。放进标题让数量一目了然。
+  int pendingCount = 0;
+  for (const auto& c : m_changeCmds) {
+    if (!c.comment.empty() && !QString::fromStdString(c.comment).startsWith(QChar(0x26A0))) ++pendingCount;
+  }
+
   QString defaultHtml;
   // 外层 wrapper 显式声明 font-family，让所有内部 div 继承——不写的话
   // QTextEdit 的 RichText 引擎对中文字符会按字体表自由 fallback，多段中
   // 后面的段标题偶尔会落到宋体，跟其它段视觉上不一致。
   defaultHtml += "<div style=\"font-family:'Segoe UI','Microsoft YaHei UI','Microsoft YaHei',sans-serif\">";
   if (!m_changeCmds.empty()) {
-    defaultHtml += formatBlockHtml(I18n::tr("Pending changes"), m_changeCmds);
+    // 待变更段标题用强调色（蓝）+ 数量，其余跟当前配置段一致。
+    defaultHtml += formatBlockHtml(I18n::tr("Pending changes (%1)").arg(pendingCount), m_changeCmds, accent);
   }
-  defaultHtml += formatBlockHtml(I18n::tr("Current session configuration"), m_snapshotCmds);
+  defaultHtml += formatBlockHtml(I18n::tr("Current session configuration"), m_snapshotCmds, mutedFaint);
   defaultHtml += "</div>";
 
   auto joinLines = [](const std::vector<std::string>& lines) {

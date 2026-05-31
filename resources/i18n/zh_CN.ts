@@ -554,7 +554,7 @@ Canceled by user; %1 entries not processed.</source>
     <message><source>Volume %1 protection %2</source><translation>卷 %1 保护 %2</translation></message>
     <message><source>File exclusion %1 %2</source><translation>文件排除 %1 %2</translation></message>
     <message><source>Registry exclusion %1</source><translation>注册表排除 %1</translation></message>
-    <message><source>Pending changes</source><translation>待应用的变更</translation></message>
+    <message><source>Pending changes (%1)</source><translation>待应用的变更 (%1)</translation></message>
     <message><source>Current session configuration</source><translation>当前会话配置</translation></message>
     <message><source>Review and apply changes</source><translation>变更预览 · 应用</translation></message>
     <message>
