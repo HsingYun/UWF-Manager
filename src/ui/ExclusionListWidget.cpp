@@ -31,6 +31,7 @@
 #include <utility>
 
 #include "../core/Config.h"
+#include "../core/RegistryExclusionPolicy.h"
 #include "../util/DriveLetter.h"
 #include "../util/RegistryKey.h"
 #include "DialogHelpers.h"
@@ -117,16 +118,14 @@ QString forbidExclusionReason(const QString& rawPath, const QString& volumeDl) {
 }
 
 // uwf::regkey::normalize 的 QString 包装——把注册表键归一成长写 hive 形式
-// （HKLM\... → HKEY_LOCAL_MACHINE\...）。注册表键的存储 / 展示 / 校验全部先过
-// 这一步，口径才统一。
+// （HKLM\... → HKEY_LOCAL_MACHINE\...）。注册表键的存储 / 展示全部先过这一步，
+// 口径才统一。
 QString normRegKey(const QString& key) { return QString::fromStdString(regkey::normalize(key.toStdString())); }
 
 // 注册表排除规则：
 //   1. 路径不得包含非法字符（控制字符、正斜杠、`\\` 空段、引导反斜杠等）；
-//   2. 必须是以下 6 个允许顶层键的子键：
-//        HKEY_LOCAL_MACHINE 下的 BCD00000000 / SYSTEM / SOFTWARE /
-//        SAM / SECURITY / COMPONENTS；
-//   3. 不得是 HKEY_LOCAL_MACHINE\SECURITY\Policy\Secrets\$MACHINE.ACC。
+//   2. 白 / 黑名单判定（6 前缀白名单 + $MACHINE.ACC 黑名单）统一交给
+//      core::classifyRegistryExclusion——和 RegistryPickerDialog 共用同一份规则。
 // 命中返回中文原因，否则返回空串。
 QString forbidRegExclusionReason(const QString& rawKey) {
   QString input = rawKey.trimmed();
@@ -142,28 +141,20 @@ QString forbidRegExclusionReason(const QString& rawKey) {
     if (c.unicode() < 0x20) return I18n::tr("The path contains invisible control characters; this is not valid.");
   }
 
-  // 归一成长写 hive 后再比对黑 / 白名单——简写 / 长写的口径统一交给 uwf::regkey。
-  const QString upper = normRegKey(input).toUpper();
-
-  // 黑名单：$MACHINE.ACC。放在白名单检查之前——它在 SECURITY 下能通过白名单，
-  // 必须先单独挡掉。
-  if (upper == l1(config::kForbiddenRegistryKeyMachineAccount))
-    return I18n::tr(
-        "HKLM\\SECURITY\\Policy\\Secrets\\$MACHINE.ACC cannot be excluded; this is the domain machine account secret, which UWF documentation explicitly "
-        "forbids excluding.");
-
-  // 白名单：必须是 6 个允许顶层键的"子键"（不是顶层键本身，所以前缀末尾
-  // 的 "\" 之后还得至少有一个字符）。
-  for (const auto prefix : config::kAllowedRegistryRootPrefixes) {
-    const QLatin1String p = l1(prefix);
-    if (upper.startsWith(p) && upper.size() > p.size()) {
+  switch (core::classifyRegistryExclusion(input.toStdString())) {
+    case core::RegExclusionClass::Allowed:
       return {};  // 合法
-    }
+    case core::RegExclusionClass::MachineAccount:
+      return I18n::tr(
+          "HKLM\\SECURITY\\Policy\\Secrets\\$MACHINE.ACC cannot be excluded; this is the domain machine account secret, which UWF documentation explicitly "
+          "forbids excluding.");
+    case core::RegExclusionClass::Container:
+    case core::RegExclusionClass::OutOfScope:
+      return I18n::tr(
+          "UWF only allows exclusions under the following top-level registry keys. Please pick a specific subkey under one of them:\n  HKLM\\BCD00000000\n  "
+          "HKLM\\SYSTEM\n  HKLM\\SOFTWARE\n  HKLM\\SAM\n  HKLM\\SECURITY\n  HKLM\\COMPONENTS");
   }
-
-  return I18n::tr(
-      "UWF only allows exclusions under the following top-level registry keys. Please pick a specific subkey under one of them:\n  HKLM\\BCD00000000\n  "
-      "HKLM\\SYSTEM\n  HKLM\\SOFTWARE\n  HKLM\\SAM\n  HKLM\\SECURITY\n  HKLM\\COMPONENTS");
+  return {};
 }
 
 void sortList(QStringList& list) {

@@ -18,7 +18,7 @@
 #include <QVBoxLayout>
 #include <algorithm>
 
-#include "../core/Config.h"
+#include "../core/RegistryExclusionPolicy.h"
 #include "../util/RegistryKey.h"
 #include "I18n.h"
 #include "PathElideDelegate.h"
@@ -356,34 +356,17 @@ RegistryPickerDialog::KeyAvailability RegistryPickerDialog::availabilityOf(const
 }
 
 RegistryPickerDialog::KeyAvailability RegistryPickerDialog::standardAvailability(const QString& key) {
-  // 树节点路径都来自实机 RegEnumKey，syntax 已干净——不必复查首字符 / 连续反斜杠之类，
-  // 只关心"是否在 6 前缀白名单内"和"是否是 $MACHINE.ACC 黑名单"。
-  const QString upper = QString::fromStdString(regkey::normalize(key.toStdString())).toUpper();
-  if (upper.isEmpty()) return KeyAvailability::Pruned;
-
-  // 黑名单：$MACHINE.ACC（域机器账户密钥）—— UWF 明确禁排，且单独 commit 它
-  // 会破坏域信任，所有模式一律 Pruned。
-  if (upper == QLatin1String(config::kForbiddenRegistryKeyMachineAccount.data(), static_cast<qsizetype>(config::kForbiddenRegistryKeyMachineAccount.size()))) {
-    return KeyAvailability::Pruned;
-  }
-
-  // 白名单：必须是 6 前缀之一的真子键（前缀以 "\" 结尾，故还需多一个字符）。
-  for (const auto sv : config::kAllowedRegistryRootPrefixes) {
-    const QLatin1String prefix(sv.data(), static_cast<qsizetype>(sv.size()));
-    if (upper.startsWith(prefix) && upper.size() > prefix.size()) {
+  // 树节点路径都来自实机 RegEnumKey，syntax 已干净——不必复查首字符 / 连续反斜杠
+  // 之类。白 / 黑名单判定（6 前缀白名单 + $MACHINE.ACC 黑名单 + 祖先节点可展开）
+  // 统一交给 core::classifyRegistryExclusion——和 ExclusionListWidget 共用同一份规则。
+  switch (core::classifyRegistryExclusion(key.toStdString())) {
+    case core::RegExclusionClass::Allowed:
       return KeyAvailability::Selectable;
-    }
-  }
-
-  // 不在白名单，但若 key 是某 prefix 的祖先 / 自身 = prefix 去尾，则子树里有合法 key →
-  // ContainerOnly（可展开、不可选）。两种情况：
-  //   - key+'\\' 是 prefix 的前缀  ⇒ prefix 在 key 之下，key 是它的祖先
-  //   - prefix 是 key+'\\' 的前缀  ⇒ key 等于某 prefix 去掉尾部 '\\'
-  const QString withSep = upper + '\\';
-  for (const auto sv : config::kAllowedRegistryRootPrefixes) {
-    const QLatin1String prefix(sv.data(), static_cast<qsizetype>(sv.size()));
-    if (withSep.startsWith(prefix)) return KeyAvailability::ContainerOnly;
-    if (QString(prefix).startsWith(withSep)) return KeyAvailability::ContainerOnly;
+    case core::RegExclusionClass::Container:
+      return KeyAvailability::ContainerOnly;
+    case core::RegExclusionClass::MachineAccount:  // 域机器账户密钥：UWF 明确禁排，所有模式一律 Pruned
+    case core::RegExclusionClass::OutOfScope:
+      return KeyAvailability::Pruned;
   }
   return KeyAvailability::Pruned;
 }

@@ -30,6 +30,8 @@ set(UWF_SOURCES
         src/core/Config.h
         src/core/UwfConfig.h
         src/core/UwfConfig.cpp
+        src/core/RegistryExclusionPolicy.h
+        src/core/RegistryExclusionPolicy.cpp
         src/uwf/SystemCheck.h
         src/uwf/SystemCheck.cpp
         src/uwf/wmi/WmiClient.h
