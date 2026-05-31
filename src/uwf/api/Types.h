@@ -34,7 +34,7 @@ struct ExcludedRegistryKey {
 };
 
 // UWF_OverlayFile — UWF_Overlay.GetOverlayFiles 返回的 EmbeddedInstance。
-struct OverlayFileInfo {
+struct OverlayFileRow {
   std::string fileName;  // 文件名（相对卷的路径）
   uint64_t fileSize = 0;
 };

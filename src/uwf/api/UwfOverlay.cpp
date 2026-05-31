@@ -45,9 +45,9 @@ std::optional<api::OverlayRow> UwfOverlay::read(std::string* error) const {
   return r;
 }
 
-std::vector<api::OverlayFileInfo> UwfOverlay::getOverlayFiles(const api::OverlayRow& row, const std::string& volume, std::string* error,
+std::vector<api::OverlayFileRow> UwfOverlay::getOverlayFiles(const api::OverlayRow& row, const std::string& volume, std::string* error,
                                                               int32_t* hresult) const {
-  std::vector<api::OverlayFileInfo> out;
+  std::vector<api::OverlayFileRow> out;
   if (hresult) *hresult = 0;
   if (row.path.empty()) {
     if (error) *error = "UWF_Overlay row has empty __PATH; call read() first";
@@ -74,7 +74,7 @@ std::vector<api::OverlayFileInfo> UwfOverlay::getOverlayFiles(const api::Overlay
   out.reserve(it->second.size());
   uint64_t totalBytes = 0;
   for (const auto& item : it->second) {
-    api::OverlayFileInfo info;
+    api::OverlayFileRow info;
     info.fileName = rowutil::readExcludedKey(item, "FileName");
     if (const auto direct = rowutil::getUInt64(item, "FileSize"); direct != 0) {
       info.fileSize = direct;
