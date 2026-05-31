@@ -34,9 +34,8 @@
 #include "../core/RegistryExclusionPolicy.h"
 #include "../util/DriveLetter.h"
 #include "../util/RegistryKey.h"
-#include "DialogHelpers.h"
+#include "Dialogs.h"
 #include "I18n.h"
-#include "MessageDialog.h"
 #include "RegistryPickerDialog.h"
 #include "ThemeManager.h"
 #include "UiUtil.h"
@@ -531,7 +530,7 @@ void ExclusionListWidget::onFilterChanged(const QString& text) {
 void ExclusionListWidget::onAddFile() {
   if (m_readOnly) return;
   const QStringList paths =
-      QFileDialog::getOpenFileNames(this, I18n::tr("Select files to add to the exclusion list (multiple selection allowed)"), dialogBasePath(m_driveLetter));
+      QFileDialog::getOpenFileNames(this, I18n::tr("Select files to add to the exclusion list (multiple selection allowed)"), dialogs::dialogBasePath(m_driveLetter));
   for (const auto& p : paths) addPendingEntry(p);
 }
 
@@ -539,7 +538,7 @@ void ExclusionListWidget::onAddDir() {
   if (m_readOnly) return;
   // Windows 原生目录选择框不支持多选，这里用原生框（好看），
   // 需要添加多个目录就多次点击"添加文件夹"。
-  const QString path = QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder to add to the exclusion list"), dialogBasePath(m_driveLetter));
+  const QString path = QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder to add to the exclusion list"), dialogs::dialogBasePath(m_driveLetter));
   if (path.isEmpty()) return;
   addPendingEntry(path);
 }

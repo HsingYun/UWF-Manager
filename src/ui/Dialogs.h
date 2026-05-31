@@ -1,16 +1,23 @@
 #pragma once
 
-// QMessageBox 替代品。原生 QMessageBox 的内部 label 走单独的字体路径，
-// 全局 app.setFont() 上设的 hinting / styleStrategy 不会传播过去，中文
-// 在 9-10pt 下渲染明显糊。这里用 QDialog + QLabel 自己拼，文字直接继承
-// app font。同时 warning/information 默认让文本可选中复制（排查 WMI 错误
-// 时方便贴日志），confirm 默认按钮是 Cancel（更安全）。
+// uwf::ui::dialogs —— 全工程共用的对话框辅助。两类：
+//   1) QMessageBox 替代品（warning / information / confirm / confirmCommit）。
+//      原生 QMessageBox 的内部 label 走单独的字体路径，全局 app.setFont() 上设的
+//      hinting / styleStrategy 不会传播过去，中文在 9-10pt 下渲染明显糊。这里用
+//      QDialog + QLabel 自己拼，文字直接继承 app font。warning/information 默认让
+//      文本可选中复制（排查 WMI 错误时方便贴日志），confirm 默认按钮是 Cancel。
+//   2) dialogBasePath —— 文件 / 文件夹选择框的默认起始目录。
 
+#include <QDir>
 #include <QString>
 
 class QWidget;
 
 namespace uwf::ui::dialogs {
+
+// 文件 / 文件夹选择对话框的默认 base 路径：盘符已知就用其根目录，否则用用户
+// home。DiskTab 的 commit 入口、ExclusionListWidget 的添加按钮共用。
+[[nodiscard]] inline QString dialogBasePath(const QString& driveLetter) { return driveLetter.isEmpty() ? QDir::homePath() : driveLetter + "\\"; }
 
 void warning(QWidget* parent, const QString& title, const QString& text);
 void information(QWidget* parent, const QString& title, const QString& text);

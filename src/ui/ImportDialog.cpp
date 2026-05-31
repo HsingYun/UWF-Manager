@@ -18,7 +18,7 @@
 #include <utility>
 
 #include "I18n.h"
-#include "MessageDialog.h"
+#include "Dialogs.h"
 #include "PathElideDelegate.h"
 #include "ThemeManager.h"
 

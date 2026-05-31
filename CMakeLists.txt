@@ -71,7 +71,6 @@ set(UWF_SOURCES
         src/ui/CommitBatch.h
         src/ui/CommitReportDialog.h
         src/ui/CommitReportDialog.cpp
-        src/ui/DialogHelpers.h
         src/ui/RegistryPickerDialog.h
         src/ui/RegistryPickerDialog.cpp
         src/ui/TransientLabel.h
@@ -110,8 +109,8 @@ set(UWF_SOURCES
         src/ui/UiUtil.h
         src/ui/UiUtil.cpp
         src/ui/Pager.h
-        src/ui/MessageDialog.h
-        src/ui/MessageDialog.cpp
+        src/ui/Dialogs.h
+        src/ui/Dialogs.cpp
 )
 
 qt_add_executable(UWF WIN32 ${UWF_SOURCES})

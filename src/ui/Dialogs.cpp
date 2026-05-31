@@ -1,4 +1,4 @@
-#include "MessageDialog.h"
+#include "Dialogs.h"
 
 #include <QDialog>
 #include <QDialogButtonBox>

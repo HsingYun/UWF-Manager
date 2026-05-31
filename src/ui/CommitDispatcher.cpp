@@ -18,7 +18,7 @@
 #include "../uwf/wmi/WmiResult.h"
 #include "CommitBatch.h"
 #include "I18n.h"
-#include "MessageDialog.h"
+#include "Dialogs.h"
 #include "UiUtil.h"
 
 namespace uwf::ui {

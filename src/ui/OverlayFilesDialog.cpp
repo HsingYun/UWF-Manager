@@ -36,7 +36,7 @@
 #include "../uwf/wmi/WmiClient.h"
 #include "../uwf/wmi/WmiError.h"
 #include "I18n.h"
-#include "MessageDialog.h"
+#include "Dialogs.h"
 #include "ThemeManager.h"
 #include "UiUtil.h"
 

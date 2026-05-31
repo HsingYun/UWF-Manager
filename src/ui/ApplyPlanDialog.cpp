@@ -29,7 +29,7 @@
 #include "DiskTab.h"
 #include "GlobalStatusPanel.h"
 #include "I18n.h"
-#include "MessageDialog.h"
+#include "Dialogs.h"
 #include "PendingCollect.h"
 #include "ThemeManager.h"
 

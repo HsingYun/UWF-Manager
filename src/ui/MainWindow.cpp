@@ -57,7 +57,7 @@
 #include "ImportDialog.h"
 #include "LogViewerDialog.h"
 #include "MarqueeHintBox.h"
-#include "MessageDialog.h"
+#include "Dialogs.h"
 #include "PendingCollect.h"
 #include "ThemeManager.h"
 #include "TransientLabel.h"
