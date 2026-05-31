@@ -57,6 +57,7 @@ StatusPanel::StatusPanel(QWidget* parent) : QWidget(parent) {
 
   m_protectCur = new QLabel("—");
   m_protectCur->setObjectName("statusCurLabel");
+  m_protectCur->setTextFormat(Qt::RichText);  // 启用/停用状态走富文本（绿/红，见 enabledStateLabel）
   m_protectCur->setToolTip(I18n::tr("Protection state of this volume in the current session (read-only)."));
   m_protectNext = new SwitchButton();
   m_protectNext->setToolTip(I18n::tr("Protect this volume in the next session. Writes to this volume are redirected to the overlay and discarded on reboot."));
@@ -141,8 +142,7 @@ void StatusPanel::setData(const core::VolumeRecord* cvol, const core::VolumeReco
   const auto* bindSrc = nvol ? nvol : cvol;
   m_baselineBindByVolumeName = bindSrc ? !bindSrc->bindByDriveLetter : false;
 
-  const QString curProtectText = cvol ? (cvol->isProtected ? I18n::tr("Enabled") : I18n::tr("Disabled")) : QStringLiteral("—");
-  m_protectCur->setText(curProtectText);
+  m_protectCur->setText(cvol ? enabledStateLabel(cvol->isProtected) : QStringLiteral("—"));
 
   if (m_hasVolume) {
     m_protectNext->blockSignals(true);

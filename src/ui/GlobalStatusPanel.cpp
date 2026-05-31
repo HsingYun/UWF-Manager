@@ -177,6 +177,7 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
 
   m_filterCur = new QLabel("—");
   m_filterCur->setObjectName("statusCurLabel");
+  m_filterCur->setTextFormat(Qt::RichText);  // 启用/停用状态走富文本（绿/红，见 enabledStateLabel）
   m_filterCur->setToolTip(I18n::tr("UWF filter state in the current session (read-only)."));
   m_filterNext = new SwitchButton();
   m_filterNext->setToolTip(
@@ -423,7 +424,7 @@ void GlobalStatusPanel::setData(const core::SessionSnapshot& cur, const core::Se
   m_typeLockedHint->setVisible(overlayConfigLocked);
   m_maxLockedHint->setVisible(overlayConfigLocked);
 
-  m_filterCur->setText(cur.filter.enabled ? I18n::tr("Enabled") : I18n::tr("Disabled"));
+  m_filterCur->setText(enabledStateLabel(cur.filter.enabled));
 
   m_baselineFilter = nxt.filter;
   m_baselineOverlay = nxt.overlay;

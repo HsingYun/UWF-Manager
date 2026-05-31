@@ -13,6 +13,8 @@
 
 #include "../util/DriveLetter.h"
 #include "../util/Log.h"
+#include "I18n.h"
+#include "ThemeManager.h"
 
 namespace uwf::ui {
 
@@ -67,6 +69,12 @@ void markDirty(QWidget* w, bool dirty) {
   w->setProperty("dirty", dirty);
   w->style()->unpolish(w);
   w->style()->polish(w);
+}
+
+QString enabledStateLabel(bool enabled) {
+  const QString color = ThemeManager::instance().color(enabled ? Sem::AddOk : Sem::Danger).name();
+  const QString text = enabled ? I18n::tr("Enabled") : I18n::tr("Disabled");
+  return QStringLiteral("<span style=\"color:%1\">%2</span>").arg(color, text.toHtmlEscaped());
 }
 
 }  // namespace uwf::ui
