@@ -170,7 +170,7 @@ OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, QWidget* pare
   m_summary->setTextInteractionFlags(Qt::TextSelectableByMouse);
   layout->addWidget(m_summary);
 
-  // 分页导航：与日志查看器一致的 «‹ ›» 布局。点击只改 m_currentPage 后重渲染
+  // 分页导航：与日志查看器一致的 «‹ ›» 布局。点击只改 m_pager.currentPage 后重渲染
   // 当前页，不触发任何 WMI 读取。
   auto* pageRow = new QHBoxLayout();
   m_firstBtn = new QPushButton(QStringLiteral("«"), this);
@@ -190,21 +190,21 @@ OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, QWidget* pare
   pageRow->addStretch(1);
   layout->addLayout(pageRow);
 
-  // 导航按钮只调整 m_currentPage——越界由 renderPage() 统一夹取回合法区间。
+  // 导航按钮只调整 m_pager.currentPage——越界由 renderPage() 统一夹取回合法区间。
   connect(m_firstBtn, &QPushButton::clicked, this, [this]() {
-    m_currentPage = 0;
+    m_pager.goFirst();
     renderPage();
   });
   connect(m_prevBtn, &QPushButton::clicked, this, [this]() {
-    --m_currentPage;
+    m_pager.goPrev();
     renderPage();
   });
   connect(m_nextBtn, &QPushButton::clicked, this, [this]() {
-    ++m_currentPage;
+    m_pager.goNext(static_cast<int>(m_entries.size()));
     renderPage();
   });
   connect(m_lastBtn, &QPushButton::clicked, this, [this]() {
-    m_currentPage = pageCount() - 1;
+    m_pager.goLast(static_cast<int>(m_entries.size()));
     renderPage();
   });
 
@@ -374,7 +374,7 @@ void OverlayFilesDialog::onLoadFinished(QVector<OverlayFileEntry> entries, const
 
   m_entries = std::move(entries);
   m_loaded = true;
-  m_currentPage = 0;
+  m_pager.goFirst();
   m_summary->setText(I18n::tr("%1 file(s) in overlay").arg(m_entries.size()));
   if (!m_entries.isEmpty()) m_exportBtn->setEnabled(true);
 
@@ -469,13 +469,12 @@ void OverlayFilesDialog::renderPage() {
   if (!m_list) return;
 
   const int total = static_cast<int>(m_entries.size());
-  const int pages = pageCount();
   // 夹取页码：导航按钮可能 ++/-- 出界，按最新页数收回合法区间。
-  if (m_currentPage < 0) m_currentPage = 0;
-  if (m_currentPage >= pages) m_currentPage = pages > 0 ? pages - 1 : 0;
+  m_pager.clamp(total);
+  const int pages = m_pager.pageCount(total);
 
-  const int start = m_currentPage * m_pageSize;
-  const int end = std::min(total, start + m_pageSize);
+  const int start = m_pager.pageStart();
+  const int end = m_pager.pageEnd(total);
 
   const auto& tm = ThemeManager::instance();
   m_list->setUpdatesEnabled(false);
@@ -501,10 +500,10 @@ void OverlayFilesDialog::renderPage() {
   } else if (pages == 0) {
     m_pageInfo->setText(I18n::tr("No files"));
   } else {
-    m_pageInfo->setText(I18n::tr("Page %1 / %2 · %3 file(s) total").arg(m_currentPage + 1).arg(pages).arg(total));
+    m_pageInfo->setText(I18n::tr("Page %1 / %2 · %3 file(s) total").arg(m_pager.currentPage + 1).arg(pages).arg(total));
   }
-  const bool hasPrev = m_currentPage > 0;
-  const bool hasNext = m_currentPage < pages - 1;
+  const bool hasPrev = m_pager.hasPrev();
+  const bool hasNext = m_pager.hasNext(total);
   m_firstBtn->setEnabled(hasPrev);
   m_prevBtn->setEnabled(hasPrev);
   m_nextBtn->setEnabled(hasNext);
@@ -515,13 +514,8 @@ void OverlayFilesDialog::recomputePageSize() {
   if (!m_list) return;
   const int rowH = std::max(1, rowHeight());
   const int viewH = std::max(0, m_list->viewport()->height());
-  const int newSize = std::max(1, viewH / rowH);
-  if (newSize == m_pageSize) return;
-  // 尽量保住"当前页第一条"——按它在全量列表里的下标重新定位到对应页。
-  const int firstIdx = m_currentPage * m_pageSize;
-  m_pageSize = newSize;
-  m_currentPage = firstIdx / newSize;
-  renderPage();
+  // setPageSize 内部 max(1,·) 并尽量保住"当前页第一条"；pageSize 真的变了才重渲染。
+  if (m_pager.setPageSize(viewH / rowH)) renderPage();
 }
 
 int OverlayFilesDialog::rowHeight() {
@@ -537,11 +531,6 @@ int OverlayFilesDialog::rowHeight() {
   if (empty) delete m_list->takeItem(0);
   if (h > 0) m_rowHeight = h;
   return m_rowHeight > 0 ? m_rowHeight : kBaseRowHeight;
-}
-
-int OverlayFilesDialog::pageCount() const {
-  const int total = static_cast<int>(m_entries.size());
-  return (m_pageSize > 0 && total > 0) ? (total + m_pageSize - 1) / m_pageSize : 0;
 }
 
 }  // namespace uwf::ui

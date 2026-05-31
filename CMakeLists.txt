@@ -109,6 +109,7 @@ set(UWF_SOURCES
         src/ui/I18n.cpp
         src/ui/UiUtil.h
         src/ui/UiUtil.cpp
+        src/ui/Pager.h
         src/ui/MessageDialog.h
         src/ui/MessageDialog.cpp
 )

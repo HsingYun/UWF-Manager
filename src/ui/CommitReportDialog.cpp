@@ -18,6 +18,7 @@
 
 #include "../uwf/wmi/WmiError.h"
 #include "I18n.h"
+#include "Pager.h"
 #include "PathElideDelegate.h"
 #include "TableText.h"
 
@@ -147,11 +148,17 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
 
   const QString yes = I18n::tr("Yes");
   const QString no = I18n::tr("No");
-  const int pageCount = rows.isEmpty() ? 1 : (static_cast<int>(rows.size()) + kReportPageSize - 1) / kReportPageSize;
+  // 分页算术统一走 ui::Pager（与 LogViewer / OverlayFiles 同一套），固定每页
+  // kReportPageSize 行。displayPages 用 max(1,·) 让空列表也显示成 1 页（"第 1 / 1
+  // 页 · 共 0 条"），保持原有体感。
+  const int totalRows = static_cast<int>(rows.size());
+  Pager pager;
+  pager.pageSize = kReportPageSize;
+  const int displayPages = std::max(1, pager.pageCount(totalRows));
 
-  auto fillPage = [&](int page) {
-    const int start = page * kReportPageSize;
-    const int end = std::min<int>(start + kReportPageSize, static_cast<int>(rows.size()));
+  auto fillPage = [&]() {
+    const int start = pager.pageStart();
+    const int end = pager.pageEnd(totalRows);
     table->setRowCount(end - start);
     for (int i = start; i < end; ++i) {
       const auto& r = rows[i];
@@ -174,7 +181,6 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
 
   // 分页栏常驻显示——即使只有一页也保留，让"分页 + 总条数"这两条信息一直可见，
   // 同时和 LogViewerDialog 的体感一致。按钮按状态置灰，标签固定写"第 X / Y 页 · 共 N 条"。
-  int currentPage = 0;
   auto* pageBar = new QHBoxLayout();
   auto* prevBtn = new QPushButton(I18n::tr("Previous page"), &dlg);
   auto* nextBtn = new QPushButton(I18n::tr("Next page"), &dlg);
@@ -186,24 +192,20 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
   pageBar->addStretch();
   lay->addLayout(pageBar);
 
-  const int totalRows = static_cast<int>(rows.size());
   auto refreshPage = [&]() {
-    fillPage(currentPage);
-    pageLabel->setText(I18n::tr("Page %1 / %2 · %3 entries total").arg(currentPage + 1).arg(pageCount).arg(totalRows));
-    prevBtn->setEnabled(currentPage > 0);
-    nextBtn->setEnabled(currentPage + 1 < pageCount);
+    pager.clamp(totalRows);
+    fillPage();
+    pageLabel->setText(I18n::tr("Page %1 / %2 · %3 entries total").arg(pager.currentPage + 1).arg(displayPages).arg(totalRows));
+    prevBtn->setEnabled(pager.hasPrev());
+    nextBtn->setEnabled(pager.hasNext(totalRows));
   };
   QObject::connect(prevBtn, &QPushButton::clicked, &dlg, [&] {
-    if (currentPage > 0) {
-      --currentPage;
-      refreshPage();
-    }
+    pager.goPrev();
+    refreshPage();
   });
   QObject::connect(nextBtn, &QPushButton::clicked, &dlg, [&] {
-    if (currentPage + 1 < pageCount) {
-      ++currentPage;
-      refreshPage();
-    }
+    pager.goNext(totalRows);
+    refreshPage();
   });
   refreshPage();
 

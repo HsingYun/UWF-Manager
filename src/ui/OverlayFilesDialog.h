@@ -7,6 +7,8 @@
 #include <mutex>
 #include <thread>
 
+#include "Pager.h"
+
 class QLabel;
 class QListWidget;
 class QProgressBar;
@@ -65,14 +67,12 @@ class OverlayFilesDialog : public QDialog {
   // hresult 0 表示成功；非 0 时按命名常量分支处理（RPC_E_SERVERFAULT
   // / WBEM_E_OUT_OF_MEMORY / WBEM_E_NOT_SUPPORTED 等）。
   void onLoadFinished(QVector<OverlayFileEntry> entries, const QString& error, int32_t hresult);
-  // 把 m_currentPage 指向的那一页条目渲染进 m_list，并刷新页码标签 / 导航按钮。
+  // 把 m_pager.currentPage 指向的那一页条目渲染进 m_list，并刷新页码标签 / 导航按钮。
   void renderPage();
   // viewport 高度变化时按实测行高重算每页行数；行数变了才重渲染。
   void recomputePageSize();
   // 实测一行（含 QSS padding / border）的像素高度，量到一次后缓存复用。
   int rowHeight();
-  // 由当前条目数与每页行数算出的总页数；空列表为 0。
-  [[nodiscard]] int pageCount() const;
   // absolutePath 已是规范化绝对路径，不依赖任何实例状态，故为 static。
   static void openContainingFolder(const QString& absolutePath);
 
@@ -90,8 +90,7 @@ class OverlayFilesDialog : public QDialog {
   QPushButton* m_prevBtn = nullptr;
   QPushButton* m_nextBtn = nullptr;
   QPushButton* m_lastBtn = nullptr;
-  int m_currentPage = 0;
-  int m_pageSize = 1;     // 占位值；首个 resize 事件按 viewport 高度修正
+  Pager m_pager;          // pageSize/currentPage + 分页算术（pageSize 占位 1，首个 resize 按 viewport 修正）
   int m_rowHeight = 0;    // 实测行高缓存，0 = 尚未测量
   bool m_loaded = false;  // 加载成功后才在页码标签里显示统计
 

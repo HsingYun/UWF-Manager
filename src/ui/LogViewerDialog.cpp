@@ -30,6 +30,7 @@
 #include "../util/Log.h"
 #include "../util/PostGate.h"
 #include "I18n.h"
+#include "Pager.h"
 #include "PathElideDelegate.h"
 #include "TableText.h"
 
@@ -136,17 +137,16 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   };
 
   // 分页状态。entries 在 worker 解析完后通过主线程 invokeMethod 一次性写入；
-  // 之后 currentPage / pageSize 由 nav / resize 改、renderPage 读。所有写都在
-  // 主线程，无锁。generation 用 atomic 是因为 worker 也读它（判断结果还要不要回投）。
-  // pageSize 初值给 1 占位——首次 resize event（dialog show 时必发）会把它
-  // 改成跟 viewport 实际高度匹配的值。
-  struct Pager {
+  // 之后 nav（currentPage / pageSize）由 nav 按钮 / resize 改、renderPage 读。所有
+  // 写都在主线程，无锁。generation 用 atomic 是因为 worker 也读它（判断结果还要不要
+  // 回投）。pageSize 初值 1 占位——首个 resize event（dialog show 时必发）按 viewport
+  // 高度修正。分页算术统一走 ui::Pager（与 OverlayFiles / CommitReport 同一套）。
+  struct LogState {
     std::vector<LogRow> entries;
-    int currentPage = 0;
-    int pageSize = 1;
+    Pager nav;
     std::atomic<int> generation{0};
   };
-  auto pager = std::make_shared<Pager>();
+  auto pager = std::make_shared<LogState>();
 
   QPointer<QTableWidget> tablePtr(table);
   QPointer<QLabel> statusPtr(statusLabel);
@@ -157,17 +157,16 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   QPointer<QPushButton> nextPtr(nextBtn);
   QPointer<QPushButton> lastPtr(lastBtn);
 
-  auto totalPages = [pager](int n) { return n == 0 ? 0 : (n + pager->pageSize - 1) / pager->pageSize; };
+  auto totalPages = [pager](int n) { return pager->nav.pageCount(n); };
 
   auto renderPage = [pager, tablePtr, pageInfoPtr, firstPtr, prevPtr, nextPtr, lastPtr, totalPages]() {
     if (!tablePtr) return;
     const int total = static_cast<int>(pager->entries.size());
+    pager->nav.clamp(total);
     const int pages = totalPages(total);
-    if (pager->currentPage < 0) pager->currentPage = 0;
-    if (pager->currentPage >= pages) pager->currentPage = pages > 0 ? pages - 1 : 0;
 
-    const int start = pager->currentPage * pager->pageSize;
-    const int end = std::min(total, start + pager->pageSize);
+    const int start = pager->nav.pageStart();
+    const int end = pager->nav.pageEnd(total);
     const int rows = end - start;
 
     tablePtr->setSortingEnabled(false);
@@ -186,12 +185,12 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
 
     if (pageInfoPtr) {
       pageInfoPtr->setText(pages == 0 ? I18n::tr("No log entries")
-                                      : I18n::tr("Page %1 / %2 · %3 lines total").arg(pager->currentPage + 1).arg(pages).arg(total));
+                                      : I18n::tr("Page %1 / %2 · %3 lines total").arg(pager->nav.currentPage + 1).arg(pages).arg(total));
     }
-    if (firstPtr) firstPtr->setEnabled(pager->currentPage > 0);
-    if (prevPtr) prevPtr->setEnabled(pager->currentPage > 0);
-    if (nextPtr) nextPtr->setEnabled(pager->currentPage < pages - 1);
-    if (lastPtr) lastPtr->setEnabled(pager->currentPage < pages - 1);
+    if (firstPtr) firstPtr->setEnabled(pager->nav.currentPage > 0);
+    if (prevPtr) prevPtr->setEnabled(pager->nav.currentPage > 0);
+    if (nextPtr) nextPtr->setEnabled(pager->nav.currentPage < pages - 1);
+    if (lastPtr) lastPtr->setEnabled(pager->nav.currentPage < pages - 1);
   };
 
   // viewport 高度变了就按 "viewport_height / row_height" 算新 pageSize；尽量
@@ -199,12 +198,8 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   table->onViewportResized = [pager, table, renderPage]() {
     const int rowH = std::max(1, table->verticalHeader()->defaultSectionSize());
     const int viewH = std::max(0, table->viewport()->height());
-    const int newSize = std::max(1, viewH / rowH);
-    if (newSize == pager->pageSize) return;
-    const int firstIdx = pager->currentPage * pager->pageSize;
-    pager->pageSize = newSize;
-    pager->currentPage = firstIdx / newSize;
-    renderPage();
+    // setPageSize 内部 max(1,·) 并尽量保住"当前页第一条"；pageSize 真的变了才重渲染。
+    if (pager->nav.setPageSize(viewH / rowH)) renderPage();
   };
 
   auto reload = [pager, statusPtr, barPtr, parseLine, renderPage, totalPages]() {
@@ -229,7 +224,7 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
               const int total = static_cast<int>(pager->entries.size());
               const int pages = totalPages(total);
               // 默认跳到最后一页（最新日志）。
-              pager->currentPage = pages > 0 ? pages - 1 : 0;
+              pager->nav.currentPage = pages > 0 ? pages - 1 : 0;
               renderPage();
               if (statusPtr) {
                 statusPtr->setText(total == 0 ? I18n::tr("0 lines") : I18n::tr("%1 lines").arg(total));
@@ -243,21 +238,21 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
 
   // 分页按钮 → 改 currentPage 后重渲染当前页（不重新解析日志）。
   connect(firstBtn, &QPushButton::clicked, this, [pager, renderPage]() {
-    pager->currentPage = 0;
+    pager->nav.currentPage = 0;
     renderPage();
   });
   connect(prevBtn, &QPushButton::clicked, this, [pager, renderPage]() {
-    if (pager->currentPage > 0) --pager->currentPage;
+    if (pager->nav.currentPage > 0) --pager->nav.currentPage;
     renderPage();
   });
   connect(nextBtn, &QPushButton::clicked, this, [pager, renderPage, totalPages]() {
     const int pages = totalPages(static_cast<int>(pager->entries.size()));
-    if (pager->currentPage < pages - 1) ++pager->currentPage;
+    if (pager->nav.currentPage < pages - 1) ++pager->nav.currentPage;
     renderPage();
   });
   connect(lastBtn, &QPushButton::clicked, this, [pager, renderPage, totalPages]() {
     const int pages = totalPages(static_cast<int>(pager->entries.size()));
-    pager->currentPage = pages > 0 ? pages - 1 : 0;
+    pager->nav.currentPage = pages > 0 ? pages - 1 : 0;
     renderPage();
   });
 
