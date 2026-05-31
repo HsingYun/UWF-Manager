@@ -6,7 +6,7 @@
 #include "../../util/Log.h"
 #include "../wmi/WmiRowUtil.h"
 
-namespace uwf {
+namespace uwf::api {
 
 namespace {
 
@@ -111,4 +111,4 @@ WmiResult UwfOverlay::setCriticalThreshold(const api::OverlayRow& row, const uin
   return invokeSetThreshold(m_session, row, "SetCriticalThreshold", sizeMb);
 }
 
-}  // namespace uwf
+}  // namespace uwf::api

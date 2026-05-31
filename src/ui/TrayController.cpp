@@ -136,7 +136,7 @@ void TrayController::refreshUsage() {
   };
 
   // UWF 当前会话的启用状态——决定托盘图标颜色与状态项文字。
-  const auto filter = UwfFilter{m_session}.read();
+  const auto filter = api::UwfFilter{m_session}.read();
   const bool enabled = filter && filter->currentEnabled;
   m_tray->setIcon(enabled ? m_iconNormal : m_iconAlert);  // 禁用 / 读不到 → 红色图标
 
@@ -152,8 +152,8 @@ void TrayController::refreshUsage() {
     setUsageVisible(false);
     return;
   }
-  const auto overlay = UwfOverlay{m_session}.read();
-  const auto cfg = UwfOverlayConfig{m_session}.read(/*currentSession=*/true);
+  const auto overlay = api::UwfOverlay{m_session}.read();
+  const auto cfg = api::UwfOverlayConfig{m_session}.read(/*currentSession=*/true);
   if (!overlay || !cfg) {
     setUsageVisible(false);
     return;

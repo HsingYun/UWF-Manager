@@ -115,9 +115,9 @@ class MainWindow : public QMainWindow {
 
   // 所有"写"操作共享同一个 WmiSession。
   WmiSession m_writeSession;
-  UwfFilter m_filter{m_writeSession};
-  UwfOverlay m_overlay{m_writeSession};
-  UwfOverlayConfig m_overlayConfig{m_writeSession};
+  api::UwfFilter m_filter{m_writeSession};
+  api::UwfOverlay m_overlay{m_writeSession};
+  api::UwfOverlayConfig m_overlayConfig{m_writeSession};
 
   QVector<QPointer<DiskTab>> m_diskTabs;
   core::UwfSnapshot m_snapshot;

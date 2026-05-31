@@ -5,7 +5,7 @@
 #include "../../util/Log.h"
 #include "../wmi/WmiRowUtil.h"
 
-namespace uwf {
+namespace uwf::api {
 
 std::optional<api::FilterRow> UwfFilter::read(std::string* error) const {
   const auto rows = m_session.query("SELECT * FROM UWF_Filter", error);
@@ -42,4 +42,4 @@ WmiResult UwfFilter::resetSettings(const api::FilterRow& row) const { return inv
 WmiResult UwfFilter::shutdownSystem(const api::FilterRow& row) const { return invoke(m_session, row, "ShutdownSystem"); }
 WmiResult UwfFilter::restartSystem(const api::FilterRow& row) const { return invoke(m_session, row, "RestartSystem"); }
 
-}  // namespace uwf
+}  // namespace uwf::api

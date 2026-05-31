@@ -42,8 +42,8 @@ class CommitDispatcher {
   const core::UwfSnapshot& m_snapshot;
   QTimer* m_usageTimer;
   QWidget* m_parent;
-  UwfVolume m_volume;
-  UwfRegistryFilter m_registry;
+  api::UwfVolume m_volume;
+  api::UwfRegistryFilter m_registry;
 };
 
 }  // namespace uwf::ui

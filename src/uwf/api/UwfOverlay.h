@@ -17,7 +17,7 @@
 #include "../wmi/WmiResult.h"
 #include "Types.h"
 
-namespace uwf {
+namespace uwf::api {
 
 class UwfOverlay {
  public:
@@ -38,4 +38,4 @@ class UwfOverlay {
   WmiSession& m_session;
 };
 
-}  // namespace uwf
+}  // namespace uwf::api

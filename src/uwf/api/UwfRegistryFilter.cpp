@@ -6,7 +6,7 @@
 #include "../../util/Log.h"
 #include "../wmi/WmiRowUtil.h"
 
-namespace uwf {
+namespace uwf::api {
 
 namespace {
 
@@ -134,4 +134,4 @@ WmiResult UwfRegistryFilter::commitRegistryDeletion(const api::RegistryFilterRow
   return invokeCommit(m_session, row.path, "CommitRegistryDeletion", registryKey, valueName);
 }
 
-}  // namespace uwf
+}  // namespace uwf::api

@@ -16,7 +16,7 @@
 #include "../wmi/WmiResult.h"
 #include "Types.h"
 
-namespace uwf {
+namespace uwf::api {
 
 class UwfVolume {
  public:
@@ -61,4 +61,4 @@ class UwfVolume {
   WmiSession& m_session;
 };
 
-}  // namespace uwf
+}  // namespace uwf::api

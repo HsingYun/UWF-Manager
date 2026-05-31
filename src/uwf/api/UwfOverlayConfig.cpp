@@ -5,7 +5,7 @@
 #include "../../util/Log.h"
 #include "../wmi/WmiRowUtil.h"
 
-namespace uwf {
+namespace uwf::api {
 
 std::vector<api::OverlayConfigRow> UwfOverlayConfig::readAll(std::string* error) const {
   std::vector<api::OverlayConfigRow> out;
@@ -52,4 +52,4 @@ WmiResult UwfOverlayConfig::setMaximumSize(const api::OverlayConfigRow& row, uin
   return out;
 }
 
-}  // namespace uwf
+}  // namespace uwf::api

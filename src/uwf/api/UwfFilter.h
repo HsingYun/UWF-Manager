@@ -11,7 +11,7 @@
 #include "../wmi/WmiResult.h"
 #include "Types.h"
 
-namespace uwf {
+namespace uwf::api {
 
 class UwfFilter {
  public:
@@ -35,4 +35,4 @@ class UwfFilter {
   WmiSession& m_session;
 };
 
-}  // namespace uwf
+}  // namespace uwf::api

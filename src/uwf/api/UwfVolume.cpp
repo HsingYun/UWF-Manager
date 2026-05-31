@@ -7,7 +7,7 @@
 #include "../../util/Log.h"
 #include "../wmi/WmiRowUtil.h"
 
-namespace uwf {
+namespace uwf::api {
 
 namespace {
 
@@ -250,4 +250,4 @@ std::optional<api::VolumeRow> UwfVolume::ensureNextSessionEntry(const std::strin
   return row;
 }
 
-}  // namespace uwf
+}  // namespace uwf::api

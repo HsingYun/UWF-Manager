@@ -50,11 +50,11 @@ class ApplyPlanDialog : public QDialog {
 
   WmiSession& m_session;
   const core::UwfSnapshot& m_snapshot;
-  UwfFilter m_filter;
-  UwfOverlay m_overlay;
-  UwfOverlayConfig m_overlayConfig;
-  UwfVolume m_volume;
-  UwfRegistryFilter m_registry;
+  api::UwfFilter m_filter;
+  api::UwfOverlay m_overlay;
+  api::UwfOverlayConfig m_overlayConfig;
+  api::UwfVolume m_volume;
+  api::UwfRegistryFilter m_registry;
 
   core::PendingChanges m_changes;
   std::vector<Cmd> m_changeCmds;

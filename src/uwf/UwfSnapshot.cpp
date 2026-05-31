@@ -76,7 +76,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
   }
 
   // ── UWF_Filter ───────────────────────────────────────────────
-  if (auto f = UwfFilter{s}.read()) {
+  if (auto f = api::UwfFilter{s}.read()) {
     snap.current.filter.enabled = f->currentEnabled;
     snap.next.filter.enabled = f->nextEnabled;
   }
@@ -86,7 +86,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
   // snap.overlayFiles 保持为空，由调用方按需触发 UwfOverlay::getOverlayFiles()。
   uint32_t warningMb = 0;
   uint32_t criticalMb = 0;
-  if (auto o = UwfOverlay{s}.read()) {
+  if (auto o = api::UwfOverlay{s}.read()) {
     snap.runtime.currentConsumptionMb = o->overlayConsumption;
     snap.runtime.availableSpaceMb = o->availableSpace;
     warningMb = o->warningOverlayThreshold;
@@ -94,7 +94,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
   }
 
   // ── UWF_OverlayConfig：current/next 拆开 ─────────────────────
-  for (const auto& c : UwfOverlayConfig{s}.readAll()) {
+  for (const auto& c : api::UwfOverlayConfig{s}.readAll()) {
     (c.currentSession ? snap.current.overlay : snap.next.overlay) = toOverlayConfig(c, warningMb, criticalMb);
   }
 
@@ -106,7 +106,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
   // 对未保护卷在当前会话不暂存任何写入，运行时排除列表必然为空。但 *下次
   // 会话* 行总是要读：用户完全可以在卷尚未受保护时就为下次会话预先添加
   // 排除项，这时 isProtected=false 但 GetExclusions 会有内容。
-  const UwfVolume volumes{s};
+  const api::UwfVolume volumes{s};
   for (const auto& v : volumes.readAll()) {
     auto& session = v.currentSession ? snap.current : snap.next;
     session.volumes.push_back(toVolumeRecord(v));
@@ -122,7 +122,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
   }
 
   // ── UWF_RegistryFilter：current/next 各自的排除列表 + 两个持久化开关 ──
-  const UwfRegistryFilter rf{s};
+  const api::UwfRegistryFilter rf{s};
   for (const auto& r : rf.readAll()) {
     auto& session = r.currentSession ? snap.current : snap.next;
     session.persistDomainSecretKey = r.persistDomainSecretKey;

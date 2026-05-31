@@ -269,7 +269,7 @@ void OverlayFilesDialog::startLoading() {
         errorOut = QString::fromStdString(err);
         break;
       }
-      UwfOverlay overlay(session);
+      api::UwfOverlay overlay(session);
       auto row = overlay.read(&err);
       if (!row) {
         errorOut = QString::fromStdString(err);
