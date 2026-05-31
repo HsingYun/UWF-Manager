@@ -38,6 +38,7 @@
 #include "I18n.h"
 #include "MessageDialog.h"
 #include "ThemeManager.h"
+#include "UiUtil.h"
 
 namespace uwf::ui {
 
@@ -413,35 +414,9 @@ void OverlayFilesDialog::onContextMenu(const QPoint& pos) {
 
 void OverlayFilesDialog::openContainingFolder(const QString& absolutePath) {
   // absolutePath 已经是规范化后的路径（去掉了 ":$DATA" / ":$INDEX_ALLOCATION"
-  // 这类 NTFS 流后缀）。带流后缀的路径喂给 ILCreateFromPathW /
-  // SHOpenFolderAndSelectItems 会得到奇怪的行为（有的版本会按文件关联
-  // 直接打开文件本身），所以剥后缀是必须前置步骤。
-  if (QFileInfo::exists(absolutePath)) {
-    const std::wstring wide = absolutePath.toStdWString();
-    if (PIDLIST_ABSOLUTE pidl = ILCreateFromPathW(wide.c_str())) {
-      // cidl=0 + apidl=NULL 是 SHOpenFolderAndSelectItems 的"打开父目录
-      // 并选中 pidl"快捷形式：文件就选中文件，目录就选中目录，都落在
-      // 各自的父目录里。
-      (void)SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
-      ILFree(pidl);
-      return;
-    }
-  }
-  // 路径不存在或拿不到 PIDL：沿父目录回溯到第一个真实存在的文件夹直接
-  // 打开（不带 select）。
-  QString folder = QFileInfo(absolutePath).absolutePath();
-  if (folder.isEmpty()) folder = absolutePath;
-  while (!folder.isEmpty() && !QFileInfo::exists(folder)) {
-    const QString up = QFileInfo(folder).absolutePath();
-    if (up == folder) break;
-    folder = up;
-  }
-  if (!folder.isEmpty() && QFileInfo::exists(folder)) {
-    const std::wstring wf = QDir::toNativeSeparators(folder).toStdWString();
-    // 走 explorer.exe + 文件夹参数，避免 ShellExecute "open" 在某些机器
-    // 上落到默认文件管理器替身的问题。
-    ShellExecuteW(nullptr, L"open", L"explorer.exe", wf.c_str(), nullptr, SW_SHOWNORMAL);
-  }
+  // 这类 NTFS 流后缀——带流后缀喂给 ILCreateFromPathW 会有奇怪行为，剥后缀是
+  // 必须的前置步骤）。定位 + 选中 / 回退打开交给共享的 revealInExplorer。
+  revealInExplorer(absolutePath);
 }
 
 void OverlayFilesDialog::onExportClicked() {

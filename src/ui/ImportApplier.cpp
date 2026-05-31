@@ -12,6 +12,7 @@
 #include "ExclusionListWidget.h"
 #include "GlobalStatusPanel.h"
 #include "I18n.h"
+#include "UiUtil.h"
 
 namespace uwf::ui {
 
@@ -22,15 +23,6 @@ DiskTab* findTab(const QVector<QPointer<DiskTab>>& tabs, const QString& driveLet
     if (t && t->driveLetter().compare(driveLetter, Qt::CaseInsensitive) == 0) return t.data();
   }
   return nullptr;
-}
-
-// 路径需要 "<盘符>:" 前缀来路由到对应 DiskTab；卷 GUID 路径解析失败时把原因
-// 写进日志（用户只在乎"没拿到盘符"，但失败原因值得留痕）。
-QString extractDriveLetter(const QString& path) {
-  std::string err;
-  const std::string dl = drive::fromPath(path.toStdString(), &err);
-  if (dl.empty() && !err.empty()) UWF_LOG_W("ui") << "extractDriveLetter: " << err;
-  return QString::fromStdString(dl);
 }
 
 ImportReportRow outcomeToRow(const api::UwfmgrCommand& c, ExclusionListWidget::ImportOutcome o, const QString& kindLabel) {

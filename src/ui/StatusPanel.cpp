@@ -12,6 +12,7 @@
 #include "I18n.h"
 #include "SwitchButton.h"
 #include "ThemeManager.h"
+#include "UiUtil.h"
 
 namespace uwf::ui {
 
@@ -32,15 +33,6 @@ QFrame* makeBareCard(QLayout* inner) {
   v->setSpacing(10);
   v->addLayout(inner);
   return f;
-}
-
-void setComboValue(QComboBox* c, const QVariant& v) {
-  for (int i = 0; i < c->count(); ++i) {
-    if (c->itemData(i) == v) {
-      c->setCurrentIndex(i);
-      return;
-    }
-  }
 }
 
 }  // namespace
@@ -176,12 +168,6 @@ void StatusPanel::setControlsEnabled(const bool enabled) const {
   // 与 m_hasVolume 取与：无卷数据时保护开关 / 绑定方式本就该禁用，可写也不点亮。
   m_protectNext->setEnabled(enabled && m_hasVolume);
   m_bindNext->setEnabled(enabled && m_hasVolume);
-}
-
-static void markDirty(QWidget* w, bool dirty) {
-  w->setProperty("dirty", dirty);
-  w->style()->unpolish(w);
-  w->style()->polish(w);
 }
 
 void StatusPanel::updateDirtyStyle() {

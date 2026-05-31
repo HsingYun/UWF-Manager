@@ -39,6 +39,7 @@
 #include "MessageDialog.h"
 #include "RegistryPickerDialog.h"
 #include "ThemeManager.h"
+#include "UiUtil.h"
 
 namespace uwf::ui {
 
@@ -384,37 +385,10 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
 
 void ExclusionListWidget::openContainingFolder(const QString& entry) const {
   // entry 可能是 "\Users\xxx\foo.txt"（相对卷根，常见）或 "C:\Users\xxx\..."
-  // （带盘符）。统一拼成绝对路径再交给 Shell。
+  // （带盘符）。补上盘符拼成绝对路径，定位 + 选中交给共享的 revealInExplorer。
   QString abs = entry;
   if (abs.startsWith('\\')) abs = m_driveLetter + abs;
-  abs = QDir::toNativeSeparators(abs);
-
-  const QFileInfo fi(abs);
-  if (fi.exists()) {
-    // 用 Shell API 打开父目录并高亮目标，不走 explorer.exe /select 的命令行
-    // 形式——后者在路径含空格时 QProcess 加的引号位置会让 explorer 解析失败，
-    // 回退到默认（用户文档）目录。
-    const std::wstring wide = abs.toStdWString();
-    PIDLIST_ABSOLUTE pidl = ILCreateFromPathW(wide.c_str());
-    if (pidl) {
-      // 第二个参数为 0 表示选中 pidl 自己（默认行为），不需要额外子项。
-      SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
-      ILFree(pidl);
-      return;
-    }
-  }
-
-  // 路径不存在或 PIDL 创建失败：向上回溯到第一个还存在的父目录直接打开。
-  QString folder = abs;
-  while (!folder.isEmpty() && !QFileInfo::exists(folder)) {
-    const qsizetype slash = folder.lastIndexOf(QChar('\\'));
-    if (slash < 0) break;
-    folder = folder.left(slash);
-  }
-  if (!folder.isEmpty() && QFileInfo::exists(folder)) {
-    const std::wstring wf = folder.toStdWString();
-    ShellExecuteW(nullptr, L"open", L"explorer.exe", wf.c_str(), nullptr, SW_SHOWNORMAL);
-  }
+  revealInExplorer(abs);
 }
 
 void ExclusionListWidget::refreshThemedIcons() {

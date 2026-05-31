@@ -19,6 +19,7 @@
 #include "CommitBatch.h"
 #include "I18n.h"
 #include "MessageDialog.h"
+#include "UiUtil.h"
 
 namespace uwf::ui {
 
@@ -52,16 +53,6 @@ struct RegCommitTarget {
   std::string valueName;  // 值名；提交时空串 = (Default) 值，删除时空串 = 该键本身
   QString display;        // 报告对话框 "路径" 列的展示串
 };
-
-// 盘符逻辑统一在 uwf::drive（见 src/util/DriveLetter.h）。本函数只做 QString
-// ↔ std::string 的边界适配，不含任何盘符逻辑。把 fromPath 区分出的"卷 GUID
-// 路径解析失败"写进日志——调用方只关心拿没拿到盘符，但失败原因值得留痕。
-QString extractDriveLetter(const QString& path) {
-  std::string err;
-  const std::string dl = drive::fromPath(path.toStdString(), &err);
-  if (dl.empty() && !err.empty()) UWF_LOG_W("ui") << "extractDriveLetter: " << err;
-  return QString::fromStdString(dl);
-}
 
 }  // namespace
 

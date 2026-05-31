@@ -23,6 +23,7 @@
 #include "OverlayUsageBar.h"
 #include "SwitchButton.h"
 #include "ThemeManager.h"
+#include "UiUtil.h"
 
 namespace uwf::ui {
 
@@ -123,15 +124,6 @@ QFrame* makeSection(const QString& title, QLayout* inner) {
   v->addWidget(h);
   v->addLayout(inner);
   return f;
-}
-
-void setComboValue(QComboBox* c, const QVariant& v) {
-  for (int i = 0; i < c->count(); ++i) {
-    if (c->itemData(i) == v) {
-      c->setCurrentIndex(i);
-      return;
-    }
-  }
 }
 
 }  // namespace
@@ -476,12 +468,6 @@ void GlobalStatusPanel::updateUsage(const core::OverlayRuntime& rt) {
   const uint32_t totalMb = rt.availableSpaceMb + rt.currentConsumptionMb;
   m_usedLabel->setText(QString::fromStdString(std::format("{} / {} MB", rt.currentConsumptionMb, totalMb)));
   refreshTypeDependentUi();  // 用新的 m_currentConsumptionMb 重新喂占用条
-}
-
-static void markDirty(QWidget* w, bool dirty) {
-  w->setProperty("dirty", dirty);
-  w->style()->unpolish(w);
-  w->style()->polish(w);
 }
 
 void GlobalStatusPanel::updateDirtyStyle() {
