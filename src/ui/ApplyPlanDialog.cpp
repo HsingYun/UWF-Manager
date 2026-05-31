@@ -26,10 +26,10 @@
 
 #include "../core/Config.h"
 #include "../uwf/api/UwfmgrCli.h"
+#include "Dialogs.h"
 #include "DiskTab.h"
 #include "GlobalStatusPanel.h"
 #include "I18n.h"
-#include "Dialogs.h"
 #include "PendingCollect.h"
 #include "ThemeManager.h"
 
@@ -208,16 +208,18 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
                             ""});
   }
   if (m_changes.setPersistDomainSecretKey) {
-    m_changeCmds.push_back({I18n::tr("· %1 persistence %2")
-                                .arg(I18n::tr("Domain Secret Key (DomainSecretKey)"), *m_changes.setPersistDomainSecretKey ? I18n::tr("Enable") : I18n::tr("Disable"))
-                                .toStdString(),
-                            ""});
+    m_changeCmds.push_back(
+        {I18n::tr("· %1 persistence %2")
+             .arg(I18n::tr("Domain Secret Key (DomainSecretKey)"), *m_changes.setPersistDomainSecretKey ? I18n::tr("Enable") : I18n::tr("Disable"))
+             .toStdString(),
+         ""});
   }
   if (m_changes.setPersistTSCAL) {
-    m_changeCmds.push_back({I18n::tr("· %1 persistence %2")
-                                .arg(I18n::tr("Terminal Services Client Access License (TSCAL)"), *m_changes.setPersistTSCAL ? I18n::tr("Enable") : I18n::tr("Disable"))
-                                .toStdString(),
-                            ""});
+    m_changeCmds.push_back(
+        {I18n::tr("· %1 persistence %2")
+             .arg(I18n::tr("Terminal Services Client Access License (TSCAL)"), *m_changes.setPersistTSCAL ? I18n::tr("Enable") : I18n::tr("Disable"))
+             .toStdString(),
+         ""});
   }
 
   // ── 当前会话配置 ──────────────────────────────────

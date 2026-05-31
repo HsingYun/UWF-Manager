@@ -46,7 +46,7 @@ std::optional<api::OverlayRow> UwfOverlay::read(std::string* error) const {
 }
 
 std::vector<api::OverlayFileRow> UwfOverlay::getOverlayFiles(const api::OverlayRow& row, const std::string& volume, std::string* error,
-                                                              int32_t* hresult) const {
+                                                             int32_t* hresult) const {
   std::vector<api::OverlayFileRow> out;
   if (hresult) *hresult = 0;
   if (row.path.empty()) {

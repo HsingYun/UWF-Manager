@@ -289,7 +289,8 @@ void DiskTab::onCommitFolderDelete() {
   if (!supported()) return;
   // 文件夹删除同样作用于"当前存在"的目录——用文件夹选择器挑现存目录；递归删除
   // （子文件 / 子目录 / 目录本身）交给 MainWindow::commitFileDeletionPath。
-  const QString path = QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder whose deletion you want to commit"), dialogs::dialogBasePath(driveLetter()));
+  const QString path =
+      QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder whose deletion you want to commit"), dialogs::dialogBasePath(driveLetter()));
   if (path.isEmpty()) return;
   emit commitFileDeletionRequested(QDir::toNativeSeparators(path));
 }
