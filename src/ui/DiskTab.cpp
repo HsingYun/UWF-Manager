@@ -12,7 +12,6 @@
 #include <format>
 
 #include "../util/ByteFormat.h"
-#include "../util/DriveLetter.h"
 #include "Dialogs.h"
 #include "ExclusionListWidget.h"
 #include "I18n.h"
@@ -96,7 +95,7 @@ QString renderDiskHeading(const core::DiskInfo& d) {
 
 }  // namespace
 
-DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent), m_disk(disk) {
+DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, QWidget* parent) : QWidget(parent), m_disk(disk) {
   auto* layout = new QVBoxLayout(this);
   // 顶部留白走 QTabWidget#innerTabs::pane 的 padding 即可，这里再叠 16px
   // 会造成盘符和 TAB 之间出现一大块空白。底部 4px 是为了让文件列表的下边界
@@ -123,9 +122,9 @@ DiskTab::DiskTab(const core::DiskInfo& disk, QWidget* parent) : QWidget(parent),
   // 化的子类型（文件 / 文件夹 / 注册表），避免三个并排按钮占横向空间。
   // 这里特意不用"提交"二字——上面工具栏的"预览并提交变更"是另一回事
   // （把 UI 上暂存的配置写入 WMI），两者放在一起容易让人搞错。
-  // 注册表子项仅在系统盘 TAB 上出现（和注册表排除列表展示口径一致）。
-  const QString thisDl = QString::fromStdString(disk.driveLetter).toUpper();
-  m_showRegistry = (thisDl == QString::fromStdString(drive::systemLetter()));
+  // 注册表子项仅在承载注册表 tab 的那块盘上出现（host 由 MainWindow 选定：系统
+  // 盘优先，否则第一块受支持的盘），和注册表排除列表展示口径一致。
+  m_showRegistry = showRegistry;
 
   const auto& tm = ThemeManager::instance();
 

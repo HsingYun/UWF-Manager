@@ -771,8 +771,29 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
   m_tabs->clear();
   m_diskTabs.clear();
   const QString sysDl = systemDriveLetter();
+
+  // 注册表排除是全局的，只挂在一块盘的 TAB 上：系统盘优先；系统盘识别不到
+  // （GetWindowsDirectory 失败）或不在列表里时，退回第一块受支持的盘——保证
+  // 注册表排除列表 / 两个持久化开关始终有入口。两者都没有时 host 留空，且下面
+  // 的 `!empty()` 守卫避免空串误配到无盘符盘。
+  std::string registryHostDl;
+  if (!sysDl.isEmpty()) {
+    for (const auto& d : disks)
+      if (QString::fromStdString(d.driveLetter).toUpper() == sysDl) {
+        registryHostDl = d.driveLetter;
+        break;
+      }
+  }
+  if (registryHostDl.empty()) {
+    for (const auto& d : disks)
+      if (d.support == core::DiskSupport::Supported || d.support == core::DiskSupport::FileSystemLimited) {
+        registryHostDl = d.driveLetter;
+        break;
+      }
+  }
+
   for (const auto& d : disks) {
-    auto* tab = new DiskTab(d, this);
+    auto* tab = new DiskTab(d, /*showRegistry=*/!registryHostDl.empty() && d.driveLetter == registryHostDl, this);
     const QString label = QString::fromStdString(d.driveLetter);
     const bool ok = d.support == core::DiskSupport::Supported;
     const bool isSys = QString::fromStdString(d.driveLetter).toUpper() == sysDl;

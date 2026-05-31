@@ -26,7 +26,9 @@ std::string diskSupportText(core::DiskSupport s, const std::string& fileSystem);
 class DiskTab : public QWidget {
   Q_OBJECT
  public:
-  explicit DiskTab(const core::DiskInfo& disk, QWidget* parent = nullptr);
+  // showRegistry：是否在本 tab 上挂"注册表排除"子 tab。注册表是全局的，由
+  // MainWindow 选定唯一 host 盘——系统盘优先，否则第一块受支持的盘。
+  explicit DiskTab(const core::DiskInfo& disk, bool showRegistry, QWidget* parent = nullptr);
 
   // UWF 不可读或进程未提权时，保护开关 / 绑定方式 / 排除列表的增删 / 提交
   // 按钮一律置灰；列表内容仍可查看、可滚动、可切换 TAB。
