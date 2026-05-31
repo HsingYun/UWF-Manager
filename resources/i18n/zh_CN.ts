@@ -167,8 +167,8 @@
     </message>
     <message><source>Registry exclusions</source><translation>注册表排除</translation></message>
     <message>
-        <source>Global registry exclusion list (shared across volumes; shown only on the system drive). Double-click an entry to copy its path.</source>
-        <translation>UWF 全局的注册表排除列表（跨卷共享，仅在系统盘上展示）。双击条目可复制路径。</translation>
+        <source>Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is shared across all volumes and shown only on the system drive. Double-click an entry to copy its path.</source>
+        <translation>注册表排除是全局的：由全局 UWF 筛选器开关控制，与本卷（系统盘）的保护开关状态无关。该列表跨所有卷共享，仅在系统盘上展示。双击条目可复制路径。</translation>
     </message>
     <message>
         <source>The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit.</source>
