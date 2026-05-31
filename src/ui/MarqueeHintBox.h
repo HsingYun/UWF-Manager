@@ -39,8 +39,8 @@ class MarqueeHintBox : public QTextBrowser {
 
   QTimer* m_timer;
   Phase m_phase = Phase::HoldTop;
-  int m_holdTicks = 0;            // 停顿阶段剩余的 tick 数
-  bool m_reevalQueued = false;    // 去重：一轮事件循环内只排一次 reevaluate
+  int m_holdTicks = 0;          // 停顿阶段剩余的 tick 数
+  bool m_reevalQueued = false;  // 去重：一轮事件循环内只排一次 reevaluate
 };
 
 }  // namespace uwf::ui
