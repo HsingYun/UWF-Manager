@@ -98,6 +98,77 @@ const api::VolumeRow* findNextVolume(const std::vector<api::VolumeRow>& rows, co
 
 api::OverlayType coreTypeToApi(core::OverlayType t) { return t == core::OverlayType::Disk ? api::OverlayType::Disk : api::OverlayType::RAM; }
 
+// 把一条已渲染好的 uwfmgr 命令翻成"待变更"段的中文 comment。命令映射的决策
+// （哪个字段 → 哪条命令、参数怎么拼）全在 api::renderPendingChanges 里，这里
+// 只按 kind 出文案，不再重复那套映射。新增 UwfmgrKind 时这个 switch 少 case 会
+// 被 -Werror（-Wswitch）顶出来，强制同步——比之前"显示/导出两份映射静默漂移"
+// 安全。a0 = 命令首个参数（类型字符串 / MB / 盘符 / 路径 / 键）。
+QString pendingComment(const api::UwfmgrCommand& c) {
+  const QString a0 = c.args.empty() ? QString() : QString::fromStdString(c.args[0]);
+  switch (c.kind) {
+    case api::UwfmgrKind::FilterEnable:
+      return I18n::tr("· Filter (global) %1").arg(I18n::tr("Enable"));
+    case api::UwfmgrKind::FilterDisable:
+      return I18n::tr("· Filter (global) %1").arg(I18n::tr("Disable"));
+    case api::UwfmgrKind::OverlaySetType:
+      return I18n::tr("· Overlay type → %1").arg(a0);
+    case api::UwfmgrKind::OverlaySetSize:
+      return I18n::tr("· Overlay maximum size → %1 MB").arg(a0);
+    case api::UwfmgrKind::OverlaySetWarningThreshold:
+      return I18n::tr("· Overlay warning threshold → %1 MB").arg(a0);
+    case api::UwfmgrKind::OverlaySetCriticalThreshold:
+      return I18n::tr("· Overlay critical threshold → %1 MB").arg(a0);
+    case api::UwfmgrKind::VolumeProtect:
+      return I18n::tr("· Volume %1 protection %2").arg(a0, I18n::tr("Enable"));
+    case api::UwfmgrKind::VolumeUnprotect:
+      return I18n::tr("· Volume %1 protection %2").arg(a0, I18n::tr("Disable"));
+    case api::UwfmgrKind::FileAddExclusion:
+      return I18n::tr("+ File exclusion  %1").arg(a0);
+    case api::UwfmgrKind::FileRemoveExclusion:
+      return I18n::tr("− File exclusion  %1").arg(a0);
+    case api::UwfmgrKind::RegistryAddExclusion:
+      return I18n::tr("+ Registry exclusion  %1").arg(a0);
+    case api::UwfmgrKind::RegistryRemoveExclusion:
+      return I18n::tr("− Registry exclusion  %1").arg(a0);
+    case api::UwfmgrKind::Unknown:
+      return {};
+  }
+  return {};
+}
+
+// 当前会话配置段的 comment：同理只翻 kind，但文案是"陈述现状"（Enabled/
+// Disabled、无前缀点），且 renderSession 只会产出 add/enable 方向的命令。
+QString snapshotComment(const api::UwfmgrCommand& c) {
+  const QString a0 = c.args.empty() ? QString() : QString::fromStdString(c.args[0]);
+  switch (c.kind) {
+    case api::UwfmgrKind::FilterEnable:
+      return I18n::tr("Filter (global) %1").arg(I18n::tr("Enabled"));
+    case api::UwfmgrKind::FilterDisable:
+      return I18n::tr("Filter (global) %1").arg(I18n::tr("Disabled"));
+    case api::UwfmgrKind::OverlaySetType:
+      return I18n::tr("Overlay type → %1").arg(a0);
+    case api::UwfmgrKind::OverlaySetSize:
+      return I18n::tr("Overlay maximum size → %1 MB").arg(a0);
+    case api::UwfmgrKind::OverlaySetWarningThreshold:
+      return I18n::tr("Overlay warning threshold → %1 MB").arg(a0);
+    case api::UwfmgrKind::OverlaySetCriticalThreshold:
+      return I18n::tr("Overlay critical threshold → %1 MB").arg(a0);
+    case api::UwfmgrKind::VolumeProtect:
+      return I18n::tr("Volume %1 protection %2").arg(a0, I18n::tr("Enabled"));
+    case api::UwfmgrKind::VolumeUnprotect:
+      return I18n::tr("Volume %1 protection %2").arg(a0, I18n::tr("Disabled"));
+    case api::UwfmgrKind::FileAddExclusion:
+    case api::UwfmgrKind::FileRemoveExclusion:
+      return I18n::tr("File exclusion %1").arg(a0);
+    case api::UwfmgrKind::RegistryAddExclusion:
+    case api::UwfmgrKind::RegistryRemoveExclusion:
+      return I18n::tr("Registry exclusion %1").arg(a0);
+    case api::UwfmgrKind::Unknown:
+      return {};
+  }
+  return {};
+}
+
 }  // namespace
 
 ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPointer<DiskTab>>& diskTabs, const core::UwfSnapshot& snapshot,
@@ -110,159 +181,75 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       m_overlayConfig(m_session),
       m_volume(m_session),
       m_registry(m_session) {
-  // 一条变更或一条快照配置的命令文本一律走 src/uwf/api/UwfmgrCli 渲染——
-  // quoting / 各 verb 的拼接全在那里，UI 这边只负责拼"comment"和决定哪些
-  // PendingChanges 字段要不要进入显示列表。args 列表为空时按 0 个参数处理
-  // （filter enable/disable）。
-  auto cli = [](api::UwfmgrKind k, std::vector<std::string> args = {}) {
-    api::UwfmgrCommand c;
-    c.kind = k;
-    c.args = std::move(args);
-    return api::renderCommand(c);
-  };
-
-  // ── 收集 user 待应用的改动 ──────────────────────────
-  if (auto v = global->pendingFilterEnabled()) {
-    m_changes.setFilterEnabled = *v;
-    m_changeCmds.push_back({I18n::tr("· Filter (global) %1").arg(*v ? I18n::tr("Enable") : I18n::tr("Disable")).toStdString(),
-                            cli(*v ? api::UwfmgrKind::FilterEnable : api::UwfmgrKind::FilterDisable)});
-  }
-  {
-    const auto d = global->pendingOverlay();
-    m_changes.setOverlay = d;
-    if (d.type) {
-      const char* typeStr = *d.type == core::OverlayType::RAM ? "RAM" : "Disk";
-      m_changeCmds.push_back({I18n::tr("· Overlay type → %1").arg(typeStr).toStdString(), cli(api::UwfmgrKind::OverlaySetType, {typeStr})});
-    }
-    if (d.maximumSizeMb) {
-      m_changeCmds.push_back({I18n::tr("· Overlay maximum size → %1 MB").arg(*d.maximumSizeMb).toStdString(),
-                              cli(api::UwfmgrKind::OverlaySetSize, {std::to_string(*d.maximumSizeMb)})});
-    }
-    if (d.warningThresholdMb) {
-      m_changeCmds.push_back({I18n::tr("· Overlay warning threshold → %1 MB").arg(*d.warningThresholdMb).toStdString(),
-                              cli(api::UwfmgrKind::OverlaySetWarningThreshold, {std::to_string(*d.warningThresholdMb)})});
-    }
-    if (d.criticalThresholdMb) {
-      m_changeCmds.push_back({I18n::tr("· Overlay critical threshold → %1 MB").arg(*d.criticalThresholdMb).toStdString(),
-                              cli(api::UwfmgrKind::OverlaySetCriticalThreshold, {std::to_string(*d.criticalThresholdMb)})});
-    }
-    if (d.touchesOverlayConfig() && m_snapshot.current.filter.enabled) {
-      m_changeCmds.push_back(
-          {I18n::tr("⚠ Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.").toStdString(), ""});
-    }
-  }
+  // ── 收集 user 待应用的改动到 core::PendingChanges ───────────────
+  // 这里只采集"和基线不同"的数据；至于每个字段映射成哪条 uwfmgr 命令、参数
+  // 怎么拼，全部交给下面的 api::renderPendingChanges（命令映射的唯一真相源，
+  // 导出按钮走的也是它），UI 不再自己决定。
+  if (auto v = global->pendingFilterEnabled()) m_changes.setFilterEnabled = *v;
+  m_changes.setOverlay = global->pendingOverlay();
 
   for (auto& t : diskTabs) {
     if (!t || !t->supported()) continue;
     const std::string dlStd = t->driveLetter().toStdString();
 
-    if (auto v = t->pendingVolumeProtected()) {
-      m_changes.volumeProtect[dlStd] = *v;
-      m_changeCmds.push_back(
-          {I18n::tr("· Volume %1 protection %2").arg(QString::fromStdString(dlStd), *v ? I18n::tr("Enable") : I18n::tr("Disable")).toStdString(),
-           cli(*v ? api::UwfmgrKind::VolumeProtect : api::UwfmgrKind::VolumeUnprotect, {dlStd})});
-    }
-    if (auto v = t->pendingBindByVolumeName()) {
-      m_changes.volumeBindByVolumeName[dlStd] = *v;
-      // uwfmgr CLI 没有 SetBindByDriveLetter 对应命令，只能走本程序的 WMI 写入。
-      // cmd 留空 → 仅渲染 comment 行。
-      m_changeCmds.push_back({I18n::tr("· Volume %1 bind by → %2 (no CLI equivalent; this program only)")
-                                  .arg(QString::fromStdString(dlStd), *v ? I18n::tr("volume ID") : I18n::tr("drive letter"))
-                                  .toStdString(),
-                              ""});
-    }
+    if (auto v = t->pendingVolumeProtected()) m_changes.volumeProtect[dlStd] = *v;
+    if (auto v = t->pendingBindByVolumeName()) m_changes.volumeBindByVolumeName[dlStd] = *v;
     // 注意只在有 pending 时才 access map[dlStd]——map 的 operator[] 会无端
     // 插入空 entry，commit 分支后续 for-each 会因此误以为这个卷有变更并尝试
     // 注册它（"为何改 D: 时连 F: 也被注册"的根因）。
     if (const auto added = t->pendingFileAdded(); !added.isEmpty()) {
-      auto& addBucket = m_changes.addFileExclusions[dlStd];
-      for (const auto& p : added) {
-        const std::string ps = p.toStdString();
-        addBucket.push_back(ps);
-        m_changeCmds.push_back(
-            {I18n::tr("+ File exclusion  %1  %2").arg(QString::fromStdString(dlStd), p).toStdString(), cli(api::UwfmgrKind::FileAddExclusion, {ps})});
-      }
+      auto& bucket = m_changes.addFileExclusions[dlStd];
+      for (const auto& p : added) bucket.push_back(p.toStdString());
     }
     if (const auto removed = t->pendingFileRemoved(); !removed.isEmpty()) {
-      auto& rmBucket = m_changes.removeFileExclusions[dlStd];
-      for (const auto& p : removed) {
-        const std::string ps = p.toStdString();
-        rmBucket.push_back(ps);
-        m_changeCmds.push_back(
-            {I18n::tr("− File exclusion  %1  %2").arg(QString::fromStdString(dlStd), p).toStdString(), cli(api::UwfmgrKind::FileRemoveExclusion, {ps})});
-      }
+      auto& bucket = m_changes.removeFileExclusions[dlStd];
+      for (const auto& p : removed) bucket.push_back(p.toStdString());
     }
-    if (const auto regAdded = t->pendingRegAdded(); !regAdded.isEmpty()) {
-      for (const auto& p : regAdded) {
-        const std::string ps = p.toStdString();
-        m_changes.addRegistryExclusions.push_back(ps);
-        m_changeCmds.push_back({I18n::tr("+ Registry exclusion  %1").arg(p).toStdString(), cli(api::UwfmgrKind::RegistryAddExclusion, {ps})});
-      }
-    }
-    if (const auto regRemoved = t->pendingRegRemoved(); !regRemoved.isEmpty()) {
-      for (const auto& p : regRemoved) {
-        const std::string ps = p.toStdString();
-        m_changes.removeRegistryExclusions.push_back(ps);
-        m_changeCmds.push_back({I18n::tr("− Registry exclusion  %1").arg(p).toStdString(), cli(api::UwfmgrKind::RegistryRemoveExclusion, {ps})});
-      }
-    }
-    // UWF_RegistryFilter 的两个全局持久化开关——无对应 uwfmgr CLI，cmd 留空。
-    if (const auto v = t->pendingPersistDomainSecretKey()) {
-      m_changes.setPersistDomainSecretKey = *v;
-      m_changeCmds.push_back(
-          {I18n::tr("· %1 persistence %2").arg(I18n::tr("Domain Secret Key (DomainSecretKey)"), *v ? I18n::tr("Enable") : I18n::tr("Disable")).toStdString(),
-           ""});
-    }
-    if (const auto v = t->pendingPersistTSCAL()) {
-      m_changes.setPersistTSCAL = *v;
-      m_changeCmds.push_back({I18n::tr("· %1 persistence %2")
-                                  .arg(I18n::tr("Terminal Services Client Access License (TSCAL)"), *v ? I18n::tr("Enable") : I18n::tr("Disable"))
-                                  .toStdString(),
-                              ""});
-    }
+    if (const auto regAdded = t->pendingRegAdded(); !regAdded.isEmpty())
+      for (const auto& p : regAdded) m_changes.addRegistryExclusions.push_back(p.toStdString());
+    if (const auto regRemoved = t->pendingRegRemoved(); !regRemoved.isEmpty())
+      for (const auto& p : regRemoved) m_changes.removeRegistryExclusions.push_back(p.toStdString());
+    if (const auto v = t->pendingPersistDomainSecretKey()) m_changes.setPersistDomainSecretKey = *v;
+    if (const auto v = t->pendingPersistTSCAL()) m_changes.setPersistTSCAL = *v;
   }
 
-  // ── 收集当前快照配置（基于 current session：现在 UWF 真实在跑的状态）──
-  // 用 current 而非 next 是因为：next 是"上次应用过、等下次重启生效"的配置，
-  // 普通用户更想看到"现在 UWF 实际在做什么"，那就是 current。
-  const auto& cur = m_snapshot.current;
-  m_snapshotCmds.push_back({I18n::tr("Filter (global) %1").arg(cur.filter.enabled ? I18n::tr("Enabled") : I18n::tr("Disabled")).toStdString(),
-                            cli(cur.filter.enabled ? api::UwfmgrKind::FilterEnable : api::UwfmgrKind::FilterDisable)});
-  {
-    const auto& o = cur.overlay;
-    const char* typeStr = o.type == core::OverlayType::RAM ? "RAM" : "Disk";
-    m_snapshotCmds.push_back({I18n::tr("Overlay type → %1").arg(typeStr).toStdString(), cli(api::UwfmgrKind::OverlaySetType, {typeStr})});
-    m_snapshotCmds.push_back(
-        {I18n::tr("Overlay maximum size → %1 MB").arg(o.maximumSizeMb).toStdString(), cli(api::UwfmgrKind::OverlaySetSize, {std::to_string(o.maximumSizeMb)})});
-    m_snapshotCmds.push_back({I18n::tr("Overlay warning threshold → %1 MB").arg(o.warningThresholdMb).toStdString(),
-                              cli(api::UwfmgrKind::OverlaySetWarningThreshold, {std::to_string(o.warningThresholdMb)})});
-    m_snapshotCmds.push_back({I18n::tr("Overlay critical threshold → %1 MB").arg(o.criticalThresholdMb).toStdString(),
-                              cli(api::UwfmgrKind::OverlaySetCriticalThreshold, {std::to_string(o.criticalThresholdMb)})});
+  // ── 待变更命令行 ──────────────────────────────────
+  // CLI 可表达的改动全部经 api::renderPendingChanges 渲染，UI 只把 kind 翻成中文
+  // comment（pendingComment）。
+  for (const auto& c : api::renderPendingChanges(m_changes)) {
+    m_changeCmds.push_back({pendingComment(c).toStdString(), api::renderCommand(c)});
   }
-  for (const auto& v : cur.volumes) {
-    if (v.driveLetter.empty()) continue;
-    m_snapshotCmds.push_back({I18n::tr("Volume %1 protection %2")
-                                  .arg(QString::fromStdString(v.driveLetter), v.isProtected ? I18n::tr("Enabled") : I18n::tr("Disabled"))
-                                  .toStdString(),
-                              cli(v.isProtected ? api::UwfmgrKind::VolumeProtect : api::UwfmgrKind::VolumeUnprotect, {v.driveLetter})});
+  // 以下三类没有 uwfmgr 命令对应，renderPendingChanges 不会输出，补成纯 comment
+  // 行（cmd 留空）：覆盖层类型/大小在筛选器开启时改不了的告警、绑定方式切换、
+  // 两个注册表持久化开关。
+  if (m_changes.setOverlay.touchesOverlayConfig() && m_snapshot.current.filter.enabled) {
+    m_changeCmds.push_back(
+        {I18n::tr("⚠ Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.").toStdString(), ""});
   }
-  // fileExclusions 的 key 是 volumeName，渲染时回查 driveLetter 让 comment 更可读
-  // （CLI 命令本身不需要——路径自带盘符就够 UWF 定位了）。
-  for (const auto& [vname, paths] : cur.fileExclusions) {
-    std::string dl;
-    for (const auto& vol : cur.volumes) {
-      if (vol.volumeName == vname) {
-        dl = vol.driveLetter;
-        break;
-      }
-    }
-    for (const auto& p : paths) {
-      m_snapshotCmds.push_back({I18n::tr("File exclusion %1 %2").arg(QString::fromStdString(dl.empty() ? vname : dl), QString::fromStdString(p)).toStdString(),
-                                cli(api::UwfmgrKind::FileAddExclusion, {p})});
-    }
+  for (const auto& [dl, byVolumeName] : m_changes.volumeBindByVolumeName) {
+    m_changeCmds.push_back({I18n::tr("· Volume %1 bind by → %2 (no CLI equivalent; this program only)")
+                                .arg(QString::fromStdString(dl), byVolumeName ? I18n::tr("volume ID") : I18n::tr("drive letter"))
+                                .toStdString(),
+                            ""});
   }
-  for (const auto& k : cur.registryExclusions) {
-    m_snapshotCmds.push_back({I18n::tr("Registry exclusion %1").arg(QString::fromStdString(k)).toStdString(), cli(api::UwfmgrKind::RegistryAddExclusion, {k})});
+  if (m_changes.setPersistDomainSecretKey) {
+    m_changeCmds.push_back({I18n::tr("· %1 persistence %2")
+                                .arg(I18n::tr("Domain Secret Key (DomainSecretKey)"), *m_changes.setPersistDomainSecretKey ? I18n::tr("Enable") : I18n::tr("Disable"))
+                                .toStdString(),
+                            ""});
+  }
+  if (m_changes.setPersistTSCAL) {
+    m_changeCmds.push_back({I18n::tr("· %1 persistence %2")
+                                .arg(I18n::tr("Terminal Services Client Access License (TSCAL)"), *m_changes.setPersistTSCAL ? I18n::tr("Enable") : I18n::tr("Disable"))
+                                .toStdString(),
+                            ""});
+  }
+
+  // ── 当前会话配置 ──────────────────────────────────
+  // 基于 current session（现在 UWF 真实在跑的状态，比 next 更直观），同样全程
+  // 走 api::renderSession，UI 只翻 comment（snapshotComment）。
+  for (const auto& c : api::renderSession(m_snapshot.current)) {
+    m_snapshotCmds.push_back({snapshotComment(c).toStdString(), api::renderCommand(c)});
   }
 
   // ── 拼装 HTML 块 ─────────────────────────────────

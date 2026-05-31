@@ -542,8 +542,8 @@ Canceled by user; %1 entries not processed.</source>
         <source>· Volume %1 bind by → %2 (no CLI equivalent; this program only)</source>
         <translation>· 卷 %1 绑定方式 → %2（命令行不支持，仅本程序内可改）</translation>
     </message>
-    <message><source>+ File exclusion  %1  %2</source><translation>+ 文件排除  %1  %2</translation></message>
-    <message><source>− File exclusion  %1  %2</source><translation>− 文件排除  %1  %2</translation></message>
+    <message><source>+ File exclusion  %1</source><translation>+ 文件排除  %1</translation></message>
+    <message><source>− File exclusion  %1</source><translation>− 文件排除  %1</translation></message>
     <message><source>+ Registry exclusion  %1</source><translation>+ 注册表排除  %1</translation></message>
     <message><source>− Registry exclusion  %1</source><translation>− 注册表排除  %1</translation></message>
     <message><source>Filter (global) %1</source><translation>筛选器（全局） %1</translation></message>
@@ -552,7 +552,7 @@ Canceled by user; %1 entries not processed.</source>
     <message><source>Overlay warning threshold → %1 MB</source><translation>覆盖层 警告阈值 → %1 MB</translation></message>
     <message><source>Overlay critical threshold → %1 MB</source><translation>覆盖层 严重阈值 → %1 MB</translation></message>
     <message><source>Volume %1 protection %2</source><translation>卷 %1 保护 %2</translation></message>
-    <message><source>File exclusion %1 %2</source><translation>文件排除 %1 %2</translation></message>
+    <message><source>File exclusion %1</source><translation>文件排除 %1</translation></message>
     <message><source>Registry exclusion %1</source><translation>注册表排除 %1</translation></message>
     <message><source>Pending changes (%1)</source><translation>待应用的变更 (%1)</translation></message>
     <message><source>Current session configuration</source><translation>当前会话配置</translation></message>
