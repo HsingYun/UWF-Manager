@@ -8,7 +8,9 @@
 // Failed。
 
 #include <cstdint>
+#include <format>
 #include <string>
+#include <string_view>
 #include <utility>
 
 #include "WmiClient.h"
@@ -41,6 +43,14 @@ struct WmiResult {
     return out;
   }
 };
+
+// 读类方法（GetExclusions / FindExclusion / GetOverlayFiles 等）!ok() 时的统一
+// 错误文案：WMI 层失败（invoked=false）直接用 r.error；ExecMethod 成功但方法
+// 返回非 0 时给 "Class::Method returned N"。qualifiedMethod 形如
+// "UWF_Volume::GetExclusions"。各处失败分支共用，避免重复这段三元拼接。
+[[nodiscard]] inline std::string methodErrorDetail(const WmiMethodResult& r, std::string_view qualifiedMethod) {
+  return r.invoked ? std::format("{} returned {}", qualifiedMethod, r.returnValue) : r.error;
+}
 
 // commit 类操作（CommitFile / CommitRegistry / Commit{File,Registry}Deletion）
 // 的失败细分。WBEM_E_NOT_FOUND（0x80041002）是合法的"无内容可提交"（overlay

@@ -60,7 +60,7 @@ std::vector<api::OverlayFileInfo> UwfOverlay::getOverlayFiles(const api::Overlay
 
   const auto r = m_session.callMethod(row.path, "GetOverlayFiles", inputs);
   if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_Overlay::GetOverlayFiles returned {}", r.returnValue) : r.error;
+    if (error) *error = methodErrorDetail(r, "UWF_Overlay::GetOverlayFiles");
     if (hresult) *hresult = r.hresult;
     return out;
   }

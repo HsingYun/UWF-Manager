@@ -1,6 +1,7 @@
 #include "UwfRegistryFilter.h"
 
 #include <format>
+#include <optional>
 
 #include "../../util/Log.h"
 #include "../wmi/WmiRowUtil.h"
@@ -99,33 +100,28 @@ std::optional<bool> UwfRegistryFilter::findExclusion(const api::RegistryFilterRo
   in.emplace("RegistryKey", WmiValue::fromString(registryKey));
   const auto r = m_session.callMethod(row.path, "FindExclusion", in);
   if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_RegistryFilter::FindExclusion returned {}", r.returnValue) : r.error;
+    if (error) *error = methodErrorDetail(r, "UWF_RegistryFilter::FindExclusion");
     return std::nullopt;
   }
   return rowutil::getBool(r.outParams, "bFound");
 }
 
 std::vector<api::ExcludedRegistryKey> UwfRegistryFilter::getExclusions(const api::RegistryFilterRow& row, std::string* error) const {
-  std::vector<api::ExcludedRegistryKey> out;
   if (row.path.empty()) {
     if (error) *error = "UWF_RegistryFilter row has empty __PATH; call read() first";
-    return out;
+    return {};
   }
   const auto r = m_session.callMethod(row.path, "GetExclusions");
   if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_RegistryFilter::GetExclusions returned {}", r.returnValue) : r.error;
-    return out;
+    if (error) *error = methodErrorDetail(r, "UWF_RegistryFilter::GetExclusions");
+    return {};
   }
-  const auto it = r.outArrays.find("ExcludedKeys");
-  if (it == r.outArrays.end()) return out;
-
-  out.reserve(it->second.size());
-  for (const auto& item : it->second) {
+  auto out = rowutil::readOutArray<api::ExcludedRegistryKey>(r, "ExcludedKeys", [](const WmiRow& item) -> std::optional<api::ExcludedRegistryKey> {
     api::ExcludedRegistryKey e;
     e.registryKey = rowutil::readExcludedKey(item, "RegistryKey");
-    if (e.registryKey.empty()) continue;
-    out.push_back(std::move(e));
-  }
+    if (e.registryKey.empty()) return std::nullopt;
+    return e;
+  });
   UWF_LOG_D("UWF_RegistryFilter") << std::format("GetExclusions ok: session={} count={}", row.currentSession ? "current" : "next", out.size());
   return out;
 }

@@ -4,11 +4,30 @@
 // UwfFilter / UwfVolume / UwfOverlay* / UwfRegistryFilter 都会用到。
 // 不想在每个模块里各写一份，这里集中收口。
 
+#include <optional>
 #include <string>
+#include <vector>
 
 #include "WmiClient.h"
 
 namespace uwf::rowutil {
+
+// 把 ExecMethod 返回的某个 out 数组（GetExclusions 的 "ExcludedFiles" /
+// "ExcludedKeys" 等）逐元素解析成 T。parseItem(const WmiRow&) 返回
+// std::optional<T>，nullopt 表示跳过该元素（如空 FileName / RegistryKey）。
+// 找不到该数组名 → 返回空 vector。把"find 数组 + reserve + 跳空 loop"这套
+// 骨架收口一处，各 getExclusions 只需给出数组名与单元素解析逻辑。
+template <class T, class ParseItem>
+std::vector<T> readOutArray(const WmiMethodResult& r, const char* arrayKey, ParseItem parseItem) {
+  std::vector<T> out;
+  const auto it = r.outArrays.find(arrayKey);
+  if (it == r.outArrays.end()) return out;
+  out.reserve(it->second.size());
+  for (const auto& item : it->second) {
+    if (auto parsed = parseItem(item)) out.push_back(std::move(*parsed));
+  }
+  return out;
+}
 
 bool getBool(const WmiRow& r, const std::string& key, bool def = false);
 int32_t getInt(const WmiRow& r, const std::string& key, int32_t def = 0);

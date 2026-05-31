@@ -167,33 +167,28 @@ std::optional<bool> UwfVolume::findExclusion(const api::VolumeRow& row, const st
   in.emplace("FileName", WmiValue::fromString(*normalized));
   const auto r = m_session.callMethod(row.path, "FindExclusion", in);
   if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_Volume::FindExclusion returned {}", r.returnValue) : r.error;
+    if (error) *error = methodErrorDetail(r, "UWF_Volume::FindExclusion");
     return std::nullopt;
   }
   return rowutil::getBool(r.outParams, "bFound");
 }
 
 std::vector<api::ExcludedFile> UwfVolume::getExclusions(const api::VolumeRow& row, std::string* error) const {
-  std::vector<api::ExcludedFile> out;
   if (row.path.empty()) {
     if (error) *error = "UWF_Volume row has empty __PATH; call readAll() first";
-    return out;
+    return {};
   }
   const auto r = m_session.callMethod(row.path, "GetExclusions");
   if (!r.ok()) {
-    if (error) *error = r.invoked ? std::format("UWF_Volume::GetExclusions returned {}", r.returnValue) : r.error;
-    return out;
+    if (error) *error = methodErrorDetail(r, "UWF_Volume::GetExclusions");
+    return {};
   }
-  const auto it = r.outArrays.find("ExcludedFiles");
-  if (it == r.outArrays.end()) return out;
-
-  out.reserve(it->second.size());
-  for (const auto& item : it->second) {
+  auto out = rowutil::readOutArray<api::ExcludedFile>(r, "ExcludedFiles", [](const WmiRow& item) -> std::optional<api::ExcludedFile> {
     api::ExcludedFile e;
     e.fileName = rowutil::readExcludedKey(item, "FileName");
-    if (e.fileName.empty()) continue;
-    out.push_back(std::move(e));
-  }
+    if (e.fileName.empty()) return std::nullopt;
+    return e;
+  });
   UWF_LOG_D("UWF_Volume") << std::format("GetExclusions ok: dl={} session={} count={}", row.driveLetter, row.currentSession ? "current" : "next", out.size());
   return out;
 }
