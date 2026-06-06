@@ -155,13 +155,7 @@ qt_add_resources(UWF "app_resources"
 qt_add_translations(UWF
         TS_FILES
         resources/i18n/zh_CN.ts
-)
-
-qt_add_resources(UWF "qt_translations"
-        PREFIX "/"
-        BASE "${CMAKE_SOURCE_DIR}/resources"
-        FILES
-        resources/i18n/qt/zh_CN.qm
+        resources/i18n/qtbase_zh_CN.ts
 )
 
 target_link_libraries(UWF PRIVATE Qt6::Widgets Qt6::Svg Qt6::Network)

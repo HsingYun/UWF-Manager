@@ -40,7 +40,7 @@ void applyLang(const I18n::Lang l) {
     case I18n::Lang::En:
       return;
     case I18n::Lang::Zh_CN:
-      if (qt.load(":/i18n/qt/zh_CN.qm")) {
+      if (qt.load(":/i18n/qtbase_zh_CN.qm")) {
         QCoreApplication::installTranslator(&qt);
       }
       if (t.load(":/i18n/zh_CN.qm")) {
