@@ -292,6 +292,7 @@ void MainWindow::buildUi() {
   auto* tb = new QToolBar(I18n::tr("Main toolbar"), this);
   tb->setObjectName("mainToolbar");
   tb->setMovable(false);
+  tb->setContextMenuPolicy(Qt::PreventContextMenu);
   tb->setIconSize({16, 16});
   tb->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   addToolBar(tb);
