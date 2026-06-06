@@ -4,10 +4,8 @@
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
-#include <QIcon>
 #include <QLabel>
 #include <QPalette>
-#include <QPixmap>
 #include <QScrollArea>
 #include <QSizePolicy>
 #include <QSpinBox>
@@ -171,7 +169,9 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   body->setContentsMargins(0, 0, 6, 0);
   body->setSpacing(10);
 
-  // 筛选器 —— 单行："当前 → 下次会话" 样式。
+  // 筛选器 —— 一行："本次 / 下次"两张会话状态 mini 卡片，左对齐。不再单列
+  // "Filter state:" 标签：小节标题已叫「筛选器」，重复且其 min-width:120px 会把
+  // 整行撑宽，在右侧滚动面板里逼出横向滚动条。
   auto* filterRow = new QHBoxLayout();
   filterRow->setSpacing(6);
 
@@ -183,18 +183,11 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   m_filterNext->setToolTip(
       I18n::tr("Enable the UWF filter in the next session. Writes to protected volumes are redirected to the overlay and discarded on reboot."));
 
-  filterRow->addWidget(makeKey(I18n::tr("Filter state:")));
+  // 本次 / 下次筛选状态各装进一张 mini 卡片，靠卡片边界把"当前生效值"和
+  // "重启后才生效的目标值"分隔开，避免两者挨在一起被混淆。
+  filterRow->addWidget(makeSessionChip(I18n::tr("Current session"), m_filterCur), 0, Qt::AlignVCenter);
+  filterRow->addWidget(makeSessionChip(I18n::tr("Next session"), m_filterNext), 0, Qt::AlignVCenter);
   filterRow->addStretch(1);
-  filterRow->addWidget(m_filterCur, 0, Qt::AlignVCenter);
-  {
-    m_filterArrow = new QLabel();
-    m_filterArrow->setObjectName("statusArrow");
-    m_filterArrow->setPixmap(ThemeManager::instance().icon(":/icons/arrow_right.svg").pixmap(14, 14));
-    m_filterArrow->setFixedSize(18, 18);
-    m_filterArrow->setAlignment(Qt::AlignCenter);
-    filterRow->addWidget(m_filterArrow, 0, Qt::AlignVCenter);
-  }
-  filterRow->addWidget(m_filterNext, 0, Qt::AlignVCenter);
 
   body->addWidget(makeSection(I18n::tr("Filter"), filterRow));
 
@@ -322,9 +315,6 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
 
 void GlobalStatusPanel::applyTheme() const {
   const auto& tm = ThemeManager::instance();
-  if (m_filterArrow) {
-    m_filterArrow->setPixmap(tm.icon(":/icons/arrow_right.svg").pixmap(14, 14));
-  }
   if (m_overlayLegend) {
     const QString accent = tm.color(Sem::Accent).name();
     const QString warn = tm.color(Sem::Warn).name();

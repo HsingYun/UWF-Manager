@@ -45,6 +45,8 @@
         <translation>下次会话保护本卷。本卷的所有写入都会被重定向到覆盖层，重启后丢弃。</translation>
     </message>
     <message><source>Protection:</source><translation>保护状态：</translation></message>
+    <message><source>Current session</source><translation>本次会话</translation></message>
+    <message><source>Next session</source><translation>下次会话</translation></message>
     <message>
         <source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source>
         <translation>UWF 识别本卷的方式。盘符直观，但增减其他磁盘等情况下盘符可能被重新分配，绑定会失效；卷 ID 不随盘符变化，更稳定。</translation>
@@ -65,7 +67,6 @@
         <source>Enable the UWF filter in the next session. Writes to protected volumes are redirected to the overlay and discarded on reboot.</source>
         <translation>下次会话启用 UWF 筛选器。对受保护卷的所有写入都会被重定向到覆盖层，重启后丢弃。</translation>
     </message>
-    <message><source>Filter state:</source><translation>筛选状态：</translation></message>
     <message><source>Filter</source><translation>筛选器</translation></message>
     <message>
         <source>Overlay type and maximum size can only be changed while the filter is disabled:

@@ -56,7 +56,6 @@ class StatusPanel : public QWidget {
   QLabel* m_protectCur = nullptr;
   SwitchButton* m_protectNext = nullptr;
   QComboBox* m_bindNext = nullptr;
-  QLabel* m_arrow = nullptr;
 
   bool m_baselineProtect = false;
   bool m_baselineBindByVolumeName = false;  // !bindByDriveLetter

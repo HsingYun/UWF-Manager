@@ -2,16 +2,13 @@
 
 #include <QComboBox>
 #include <QFrame>
-#include <QIcon>
 #include <QLabel>
-#include <QPixmap>
 #include <QSizePolicy>
 #include <QStyle>
 #include <QVBoxLayout>
 
 #include "I18n.h"
 #include "SwitchButton.h"
-#include "ThemeManager.h"
 #include "UiUtil.h"
 
 namespace uwf::ui {
@@ -29,7 +26,7 @@ QFrame* makeBareCard(QLayout* inner) {
   f->setObjectName("statusCard");
   f->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   auto* v = new QVBoxLayout(f);
-  v->setContentsMargins(16, 12, 16, 14);
+  v->setContentsMargins(16, 13, 16, 13);  // 上下对称，整行内容在卡片内垂直居中
   v->setSpacing(10);
   v->addLayout(inner);
   return f;
@@ -61,17 +58,13 @@ StatusPanel::StatusPanel(QWidget* parent) : QWidget(parent) {
   m_protectCur->setToolTip(I18n::tr("Protection state of this volume in the current session (read-only)."));
   m_protectNext = new SwitchButton();
   m_protectNext->setToolTip(I18n::tr("Protect this volume in the next session. Writes to this volume are redirected to the overlay and discarded on reboot."));
-  row->addWidget(makeKey(I18n::tr("Protection:")));
-  row->addWidget(m_protectCur, 0, Qt::AlignVCenter);
-  {
-    m_arrow = new QLabel();
-    m_arrow->setObjectName("statusArrow");
-    m_arrow->setPixmap(ThemeManager::instance().icon(":/icons/arrow_right.svg").pixmap(14, 14));
-    m_arrow->setFixedSize(18, 18);
-    m_arrow->setAlignment(Qt::AlignCenter);
-    row->addWidget(m_arrow, 0, Qt::AlignVCenter);
-  }
-  row->addWidget(m_protectNext, 0, Qt::AlignVCenter);
+
+  // 本次 / 下次保护状态各装进一张 mini 卡片，靠卡片边界把"当前生效值"和
+  // "重启后才生效的目标值"分隔开，避免两者挨在一起被混淆。整行所有控件统一
+  // AlignVCenter——chip 比纯文字标签高，不统一对齐时标签会和 chip 错开基线。
+  row->addWidget(makeKey(I18n::tr("Protection:")), 0, Qt::AlignVCenter);
+  row->addWidget(makeSessionChip(I18n::tr("Current session"), m_protectCur), 0, Qt::AlignVCenter);
+  row->addWidget(makeSessionChip(I18n::tr("Next session"), m_protectNext), 0, Qt::AlignVCenter);
 
   row->addSpacing(28);
 
@@ -83,8 +76,8 @@ StatusPanel::StatusPanel(QWidget* parent) : QWidget(parent) {
   m_bindNext->setToolTip(
       I18n::tr("How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing "
                "other disks). Volume ID stays stable across drive letter changes."));
-  row->addWidget(makeKey(I18n::tr("Bind by:")));
-  row->addWidget(m_bindNext);
+  row->addWidget(makeKey(I18n::tr("Bind by:")), 0, Qt::AlignVCenter);
+  row->addWidget(m_bindNext, 0, Qt::AlignVCenter);
 
   row->addStretch(1);
 
@@ -92,11 +85,6 @@ StatusPanel::StatusPanel(QWidget* parent) : QWidget(parent) {
 
   connect(m_protectNext, &QAbstractButton::toggled, this, &StatusPanel::emitIfChanged);
   connect(m_bindNext, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &StatusPanel::emitIfChanged);
-  connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this](Theme) {
-    if (m_arrow) {
-      m_arrow->setPixmap(ThemeManager::instance().icon(":/icons/arrow_right.svg").pixmap(14, 14));
-    }
-  });
 }
 
 void StatusPanel::addTrailingAction(QWidget* w) const {

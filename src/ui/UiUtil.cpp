@@ -6,6 +6,9 @@
 #include <QComboBox>
 #include <QDir>
 #include <QFileInfo>
+#include <QFrame>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QStyle>
 #include <QVariant>
 #include <QWidget>
@@ -75,6 +78,26 @@ QString enabledStateLabel(bool enabled) {
   const QString color = ThemeManager::instance().color(enabled ? Sem::AddOk : Sem::Danger).name();
   const QString text = enabled ? I18n::tr("Enabled") : I18n::tr("Disabled");
   return QStringLiteral("<span style=\"color:%1\">%2</span>").arg(color, text.toHtmlEscaped());
+}
+
+QWidget* makeSessionChip(const QString& caption, QWidget* value) {
+  // 两张 chip 装的值控件高度不一（"本次"是文字 QLabel，"下次"是 24px 高的
+  // SwitchButton），不统一的话 chip 各自按内容收缩、外框高度对不齐。把值控件
+  // 的最小高度一律抬到开关高度（SwitchButton::sizeHint 的 kTrackH+4=24），让两张
+  // chip 的内容行等高、外框自然等高。
+  constexpr int kChipValueH = 24;
+  value->setMinimumHeight(kChipValueH);
+
+  auto* card = new QFrame();
+  card->setObjectName("statusChip");
+  auto* h = new QHBoxLayout(card);
+  h->setContentsMargins(11, 5, 12, 5);  // 上下对称，caption / value 在框内垂直居中
+  h->setSpacing(8);
+  auto* cap = new QLabel(caption);
+  cap->setObjectName("statusChipCaption");
+  h->addWidget(cap, 0, Qt::AlignVCenter);
+  h->addWidget(value, 0, Qt::AlignVCenter);
+  return card;
 }
 
 }  // namespace uwf::ui

@@ -32,4 +32,9 @@ void markDirty(QWidget* w, bool dirty);
 // 保护的当前状态标签共用，配色随主题（rebuildUi 会重新 setData）。
 [[nodiscard]] QString enabledStateLabel(bool enabled);
 
+// 把"会话小标题（'本次会话' / '下次会话'）+ 值控件"打包成一张内嵌 mini 卡片
+// （statusChip），用卡片边界把本次 / 下次两个状态在视觉上明确分隔。value 会被
+// reparent 到卡片里。全局筛选器与单卷保护两处共用。
+[[nodiscard]] QWidget* makeSessionChip(const QString& caption, QWidget* value);
+
 }  // namespace uwf::ui

@@ -181,8 +181,17 @@ QLabel#statusCurLabel {
     padding: 0 2px;
 }
 
-QLabel#statusArrow {
-    padding: 0;
+/* 会话状态 mini 卡片：底色比外层 statusCard(#22252A) 深一档，读作"嵌在卡片里
+   的小盒子"，用边框把本次 / 下次两个状态分隔开。caption 是更小更暗的会话标题。 */
+QFrame#statusChip {
+    background: #1B1D20;
+    border: 1px solid #2E323A;
+    border-radius: 8px;
+}
+
+QLabel#statusChipCaption {
+    color: #7C828A;
+    font-size: 8.5pt;
 }
 
 QLabel#statusValue {

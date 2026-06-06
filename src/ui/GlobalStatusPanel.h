@@ -96,8 +96,7 @@ class GlobalStatusPanel : public QWidget {
   // "?" 锁定提示：UWF 当前会话启用时显示，hover 提示要先禁用 UWF 才能改。
   QLabel* m_typeLockedHint = nullptr;
   QLabel* m_maxLockedHint = nullptr;
-  // 主题切换时需要重设 pixmap / RichText 的两个 QLabel。
-  QLabel* m_filterArrow = nullptr;
+  // 主题切换时需要重设 RichText 的图例 QLabel。
   QLabel* m_overlayLegend = nullptr;
   OverlayUsageBar* m_usageBar = nullptr;
 
