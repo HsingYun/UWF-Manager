@@ -165,8 +165,10 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   m_scrollHost = new QWidget(scroll);
   m_scrollHost->setBackgroundRole(QPalette::NoRole);
   m_scrollHost->setAutoFillBackground(false);
+  // 左右内边距对称：右侧 6px 原是给纵向滚动条留的槽，左侧补一个相同的 6px，
+  // 否则两张卡片左贴边、右留槽，整体偏左，和下面居中的 tips 对不齐。
   auto* body = new QVBoxLayout(m_scrollHost);
-  body->setContentsMargins(0, 0, 6, 0);
+  body->setContentsMargins(6, 0, 6, 0);
   body->setSpacing(10);
 
   // 筛选器 —— 一行："本次 / 下次"两张会话状态 mini 卡片，左对齐。不再单列
@@ -285,6 +287,10 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
 
   scroll->setWidget(m_scrollHost);
   outer->addWidget(scroll, 1);
+  // 把滚动区的最小高度钉成内容（filter + overlay 两张卡片）完整高度——这样它如实
+  // 上报"不滚动所需高度"，外层 MainWindow 据此把窗口下限抬到容得下整块内容，全局
+  // 设置在窗口压到最小高时也不会冒出纵向滚动条。
+  scroll->setMinimumHeight(m_scrollHost->sizeHint().height());
 
   connect(m_filterNext, &QAbstractButton::toggled, this, &GlobalStatusPanel::emitIfChanged);
   connect(m_overlayTypeNext, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {

@@ -447,7 +447,12 @@ void MainWindow::buildUi() {
   m_tabs->setObjectName("mainTabs");
   m_tabs->setDocumentMode(true);
   m_tabs->setTabPosition(QTabWidget::North);
-  m_tabs->setMinimumWidth(220);
+  // 不再钉死一个固定的 minimumWidth。Qt 的 qSmartMinSize 里 "minSize.width()>0 →
+  // 直接覆盖" 的规则会让任何显式 setMinimumWidth 盖掉内容真实需求——之前这里
+  // 写死 220，磁盘页那行（保护状态 + 两张会话卡片 + 绑定下拉框 + 右侧两个按钮，
+  // 都不可压缩）实际要 ~目标宽度，却被上报成 220，窗口于是能缩到把整行裁掉。
+  // 留空让磁盘页内容如实上报最小宽度，QMainWindow 自动把窗口下限钉到
+  // 「左区内容 + 右侧 globalWrap」之和，低于此不再允许缩小。
   m_tabs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   mainRow->addWidget(m_tabs, 1);
 
@@ -501,13 +506,20 @@ void MainWindow::buildUi() {
   // 基线按富文本渲染，纯文本 tooltip 按纯文本渲染，里面的 & / < 不会被解析走样。
   m_hoverCtl = new TransientLabel(m_hoverHint, m_hoverHint);
   m_hoverCtl->setBaseline(systemInfoHtml());
-  globalLayout->addWidget(m_hoverHint, 0);
+  // tips 与上面两张卡片左右对齐：卡片在滚动区里通过 body 的对称内边距多内缩了
+  // 6px（见 GlobalStatusPanel），tips 不走滚动区，这里给它补上同样的 6px 左右
+  // 外边距，三者左右边缘才齐。
+  auto* tipsRow = new QHBoxLayout();
+  tipsRow->setContentsMargins(6, 0, 6, 0);
+  tipsRow->addWidget(m_hoverHint);
+  globalLayout->addLayout(tipsRow, 0);
   globalWrap->setObjectName("globalWrap");
   globalWrap->setFixedWidth(420);
-  // 右侧面板整体最小高度：GlobalStatusPanel 自身需要约 360 来容纳筛选器
-  // 和覆盖层两张卡片；加上 tips 固定 110 + 内边距。这样即使把主窗口拖到
-  // 很矮，这两块也都能完整看见。
-  globalWrap->setMinimumHeight(360 + 110 + 24);
+  // 右侧面板整体最小高度：直接取 globalLayout 汇总出的最小值——GlobalStatusPanel
+  // 已把内部滚动区最小高设成内容（筛选器 + 覆盖层两张卡片）完整高度，故此处是
+  // 内容真实需求加上 tips、内边距，不再用写死的 360 估算。估小了会在窗口压到最
+  // 小高时露出纵向滚动条；改成内容自报后，窗口下限恰好容得下整块内容、不滚动。
+  globalWrap->setMinimumHeight(globalLayout->minimumSize().height());
   mainRow->addWidget(globalWrap, 0);
 
   // 让 MainWindow 也跟随到这个最小高度（加上工具栏和状态栏的大致高度）。
