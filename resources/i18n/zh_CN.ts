@@ -26,8 +26,8 @@
     <message><source>Folder…</source><translation>文件夹…</translation></message>
     <message><source>volume ID</source><translation>卷 ID</translation></message>
     <message><source>drive letter</source><translation>盘符</translation></message>
-    <message><source>By drive letter</source><translation>按盘符</translation></message>
-    <message><source>By volume ID</source><translation>按卷 ID</translation></message>
+    <message><source>Drive letter</source><translation>按盘符</translation></message>
+    <message><source>Volume ID</source><translation>按卷 ID</translation></message>
 
     <!-- main.cpp: 兼容模式提示 -->
     <message>

@@ -76,8 +76,8 @@ StatusPanel::StatusPanel(QWidget* parent) : QWidget(parent) {
   // 绑定方式不是 on/off，保留为选择框：按盘符 / 按卷 ID。
   // data=true → bBindByVolumeName=true → 按卷 ID
   m_bindNext = new QComboBox();
-  m_bindNext->addItem(I18n::tr("By drive letter"), false);
-  m_bindNext->addItem(I18n::tr("By volume ID"), true);
+  m_bindNext->addItem(I18n::tr("Drive letter"), false);
+  m_bindNext->addItem(I18n::tr("Volume ID"), true);
   m_bindNext->setToolTip(
       I18n::tr("How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing "
                "other disks). Volume ID stays stable across drive letter changes."));
