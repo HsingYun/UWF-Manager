@@ -63,8 +63,13 @@ StatusPanel::StatusPanel(QWidget* parent) : QWidget(parent) {
   // "重启后才生效的目标值"分隔开，避免两者挨在一起被混淆。整行所有控件统一
   // AlignVCenter——chip 比纯文字标签高，不统一对齐时标签会和 chip 错开基线。
   row->addWidget(makeKey(I18n::tr("Protection:")), 0, Qt::AlignVCenter);
-  row->addWidget(makeSessionChip(I18n::tr("Current session"), m_protectCur), 0, Qt::AlignVCenter);
-  row->addWidget(makeSessionChip(I18n::tr("Next session"), m_protectNext), 0, Qt::AlignVCenter);
+  row->addWidget(makeSessionChip(I18n::tr("Current session"),
+                                 I18n::tr("The currently active session (read-only). Changes you make never take effect in this session."), m_protectCur),
+                 0, Qt::AlignVCenter);
+  row->addWidget(
+      makeSessionChip(I18n::tr("Next session"),
+                      I18n::tr("The session that takes effect after a reboot. Changes you make take effect after the system restarts."), m_protectNext),
+      0, Qt::AlignVCenter);
 
   row->addSpacing(28);
 

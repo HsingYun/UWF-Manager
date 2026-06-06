@@ -187,8 +187,13 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
 
   // 本次 / 下次筛选状态各装进一张 mini 卡片，靠卡片边界把"当前生效值"和
   // "重启后才生效的目标值"分隔开，避免两者挨在一起被混淆。
-  filterRow->addWidget(makeSessionChip(I18n::tr("Current session"), m_filterCur), 0, Qt::AlignVCenter);
-  filterRow->addWidget(makeSessionChip(I18n::tr("Next session"), m_filterNext), 0, Qt::AlignVCenter);
+  filterRow->addWidget(makeSessionChip(I18n::tr("Current session"),
+                                       I18n::tr("The currently active session (read-only). Changes you make never take effect in this session."), m_filterCur),
+                       0, Qt::AlignVCenter);
+  filterRow->addWidget(
+      makeSessionChip(I18n::tr("Next session"),
+                      I18n::tr("The session that takes effect after a reboot. Changes you make take effect after the system restarts."), m_filterNext),
+      0, Qt::AlignVCenter);
   filterRow->addStretch(1);
 
   body->addWidget(makeSection(I18n::tr("Filter"), filterRow));

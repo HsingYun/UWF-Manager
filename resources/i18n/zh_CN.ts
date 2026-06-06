@@ -48,6 +48,14 @@
     <message><source>Current session</source><translation>本次会话</translation></message>
     <message><source>Next session</source><translation>下次会话</translation></message>
     <message>
+        <source>The currently active session (read-only). Changes you make never take effect in this session.</source>
+        <translation>当前生效会话（只读），用户所作的修改均不会在本次会话生效。</translation>
+    </message>
+    <message>
+        <source>The session that takes effect after a reboot. Changes you make take effect after the system restarts.</source>
+        <translation>重启后生效的会话，用户所作的修改将会在系统重启后生效。</translation>
+    </message>
+    <message>
         <source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source>
         <translation>UWF 识别本卷的方式。盘符直观，但增减其他磁盘等情况下盘符可能被重新分配，绑定会失效；卷 ID 不随盘符变化，更稳定。</translation>
     </message>

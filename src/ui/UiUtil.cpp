@@ -80,7 +80,7 @@ QString enabledStateLabel(bool enabled) {
   return QStringLiteral("<span style=\"color:%1\">%2</span>").arg(color, text.toHtmlEscaped());
 }
 
-QWidget* makeSessionChip(const QString& caption, QWidget* value) {
+QWidget* makeSessionChip(const QString& caption, const QString& captionTooltip, QWidget* value) {
   // 两张 chip 装的值控件高度不一（"本次"是文字 QLabel，"下次"是 24px 高的
   // SwitchButton），不统一的话 chip 各自按内容收缩、外框高度对不齐。把值控件
   // 的最小高度一律抬到开关高度（SwitchButton::sizeHint 的 kTrackH+4=24），让两张
@@ -95,6 +95,12 @@ QWidget* makeSessionChip(const QString& caption, QWidget* value) {
   h->setSpacing(8);
   auto* cap = new QLabel(caption);
   cap->setObjectName("statusChipCaption");
+  if (!captionTooltip.isEmpty()) {
+    cap->setToolTip(captionTooltip);
+    // 也挂到卡片上：hover 标题左右的留白区也能看到说明（值控件区域仍显示值自己
+    // 的 tooltip）。
+    card->setToolTip(captionTooltip);
+  }
   h->addWidget(cap, 0, Qt::AlignVCenter);
   h->addWidget(value, 0, Qt::AlignVCenter);
   return card;

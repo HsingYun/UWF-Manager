@@ -33,8 +33,9 @@ void markDirty(QWidget* w, bool dirty);
 [[nodiscard]] QString enabledStateLabel(bool enabled);
 
 // 把"会话小标题（'本次会话' / '下次会话'）+ 值控件"打包成一张内嵌 mini 卡片
-// （statusChip），用卡片边界把本次 / 下次两个状态在视觉上明确分隔。value 会被
-// reparent 到卡片里。全局筛选器与单卷保护两处共用。
-[[nodiscard]] QWidget* makeSessionChip(const QString& caption, QWidget* value);
+// （statusChip），用卡片边界把本次 / 下次两个状态在视觉上明确分隔。captionTooltip
+// 挂在小标题（及卡片留白区）上解释"本次 / 下次会话"含义；值控件自己的 tooltip 仍
+// 各管各的。value 会被 reparent 到卡片里。全局筛选器与单卷保护两处共用。
+[[nodiscard]] QWidget* makeSessionChip(const QString& caption, const QString& captionTooltip, QWidget* value);
 
 }  // namespace uwf::ui
