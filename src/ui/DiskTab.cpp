@@ -195,8 +195,9 @@ DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, QWidget* parent)
     m_regs = new ExclusionListWidget(ExclusionListWidget::Kind::Registry, this);
     const int regIdx = m_infoTabs->addTab(m_regs, tm.icon(":/icons/registry.svg"), I18n::tr("Registry exclusions"));
     m_infoTabs->setTabToolTip(
-        regIdx, I18n::tr("Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is "
-                         "shared across all volumes and shown only on the system drive. Double-click an entry to copy its path."));
+        regIdx,
+        I18n::tr("Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is "
+                 "shared across all volumes and shown only on the system drive. Double-click an entry to copy its path."));
   }
 
   layout->addWidget(m_infoTabs, 1);
