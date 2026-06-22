@@ -127,19 +127,22 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
   //   - Category / 存在性两列内容形态稳定（「成功/跳过/失败」、「是/否」），
   //     Interactive 起步固定宽度即可，用户也可拖拽微调。
   // Reason 内容超宽时靠 ElideMiddle + cell tooltip 兜底。
+  // 全列用 Interactive，不用 ResizeToContents——后者会在每次 setItem 时重算整列宽度
+  // （要测量当页全部行）。一页几百行 × 上千次 setItem 退化成 O(n²)，翻页因此卡到 UI
+  // 假死。Path / Error code 改为每页填完后各测一次内容宽（见 fillPage 末尾），效果相同
+  // 但只测一次。
   hh->setSectionResizeMode(QHeaderView::Interactive);
   // 表头左对齐——cell 内容是左对齐，表头默认居中会跟 cell 错位，看着别扭。
   hh->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
-  hh->setSectionResizeMode(1, QHeaderView::ResizeToContents);  // Path
   hh->setStretchLastSection(true);
-  int initialCol = 0;
-  hh->resizeSection(initialCol++, 70);  // Category：「成功」/「跳过」/「失败」
-  ++initialCol;                         // Path 列宽由 ResizeToContents 决定，跳过 resizeSection
+  // 固定宽度的两类列：Category（col 0）与存在性两列（col 2/3，仅删除操作出现）。
+  // Path（col 1）和 Error code（col N-2）的宽度在 fillPage 末尾按当页内容测算；
+  // Reason（末列）由 stretchLastSection 撑满。
+  hh->resizeSection(0, 70);  // Category：「成功」/「跳过」/「失败」
   if (showExistence) {
-    hh->resizeSection(initialCol++, 100);  // Existed before：「是」/「否」+ 表头宽度
-    hh->resizeSection(initialCol++, 100);  // Exists after
+    hh->resizeSection(2, 100);  // Existed before：「是」/「否」+ 表头宽度
+    hh->resizeSection(3, 100);  // Exists after
   }
-  hh->setSectionResizeMode(initialCol++, QHeaderView::ResizeToContents);  // Error code
   // Path / Reason 套 PathElideDelegate——绕开 Qt 默认 paint 路径在非 100% DPI 下
   // 把 elide 宽度算小、cell 明明够宽却显示成 "C:..." 的 bug（详见 PathElideDelegate.h）。
   table->setItemDelegateForColumn(1, new PathElideDelegate(table));             // Path
@@ -159,6 +162,8 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
   auto fillPage = [&]() {
     const int start = pager.pageStart();
     const int end = pager.pageEnd(totalRows);
+    // 填充期间停掉重绘——避免每次 setItem 都触发一次中间重绘，几百行下肉眼可感的卡顿。
+    table->setUpdatesEnabled(false);
     table->setRowCount(end - start);
     for (int i = start; i < end; ++i) {
       const auto& r = rows[i];
@@ -177,6 +182,10 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
       reasonItem->setToolTip(r.reason);
       table->setItem(vr, c++, reasonItem);
     }
+    // 内容填完后，对按内容定宽的两列各测一次宽度（取代 ResizeToContents 的逐项重算）。
+    table->resizeColumnToContents(1);             // Path
+    table->resizeColumnToContents(colCount - 2);  // Error code（Reason 永远是最后一列）
+    table->setUpdatesEnabled(true);
   };
 
   // 分页栏常驻显示——即使只有一页也保留，让"分页 + 总条数"这两条信息一直可见，

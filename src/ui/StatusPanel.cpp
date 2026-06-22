@@ -8,6 +8,7 @@
 #include <QVBoxLayout>
 
 #include "I18n.h"
+#include "StatusBanner.h"
 #include "SwitchButton.h"
 #include "UiUtil.h"
 
@@ -39,7 +40,7 @@ StatusPanel::StatusPanel(QWidget* parent) : QWidget(parent) {
   outer->setContentsMargins(0, 0, 0, 0);
   outer->setSpacing(8);
 
-  m_banner = new QLabel(this);
+  m_banner = new StatusBanner(this);
   m_banner->setObjectName("statusBanner");
   m_banner->setWordWrap(true);
   m_banner->hide();

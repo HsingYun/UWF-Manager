@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #include "I18n.h"
+#include "StatusBanner.h"
 #include "ThemeManager.h"
 
 namespace uwf::ui::dialogs {
@@ -124,7 +125,8 @@ bool confirmCommit(QWidget* parent, const QString& title, const QString& heading
 
   // 警示横幅——复用全局状态横幅的 warn 样式（橙色）。可继续时提示"不可撤销"；
   // "继续"被置灰时改为展示原因（detail），让用户一眼看到为何不能继续。
-  auto* warnBanner = new QLabel(allowContinue ? I18n::tr("This action cannot be undone.") : detail, dlg);
+  auto* warnBanner = new StatusBanner(dlg);
+  warnBanner->setText(allowContinue ? I18n::tr("This action cannot be undone.") : detail);
   warnBanner->setObjectName("statusBanner");
   warnBanner->setProperty("level", "warn");
   warnBanner->setWordWrap(true);

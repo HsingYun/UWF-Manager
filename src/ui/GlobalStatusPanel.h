@@ -8,11 +8,13 @@
 class QLabel;
 class QComboBox;
 class QSpinBox;
+class QScrollArea;
 
 namespace uwf::ui {
 
 class SwitchButton;
 class OverlayUsageBar;
+class RoundedCornerOverlay;
 
 class GlobalStatusPanel : public QWidget {
   Q_OBJECT
@@ -40,6 +42,11 @@ class GlobalStatusPanel : public QWidget {
   // 控件、不触发 pendingChanged。面板处于不可用状态时为空操作。
   void updateUsage(const core::OverlayRuntime& runtime);
 
+  // 滚动内容（筛选器 + 覆盖层两张卡片）不滚动所需的完整高度。滚动区最小高恒为 0、
+  // 不向布局上报内容高度，故 MainWindow 用「外壳最小高 + 本值」算窗口下限，使其恰好
+  // 容得下整块内容、无横幅时不滚动；有横幅占高放不下时滚动区照常滚动（不被裁切）。
+  [[nodiscard]] int preferredContentHeight() const;
+
   [[nodiscard]] std::optional<bool> pendingFilterEnabled() const;
   [[nodiscard]] core::OverlayConfigDelta pendingOverlay() const;
 
@@ -64,6 +71,10 @@ class GlobalStatusPanel : public QWidget {
  signals:
   void pendingChanged();
 
+ protected:
+  // 监听滚动区 viewport 的 Resize，让圆角遮罩层（m_cornerOverlay）跟着改大小。
+  bool eventFilter(QObject* obj, QEvent* ev) override;
+
  private:
   void emitIfChanged();
   void updateDirtyStyle();
@@ -80,9 +91,12 @@ class GlobalStatusPanel : public QWidget {
   QLabel* m_banner = nullptr;
   // 兼容模式警告横幅——独立于 m_banner，一经显示便常驻。
   QLabel* m_compatBanner = nullptr;
-  // 滚动区内容宿主：UWF 不可用时只禁用它（而非整个面板），让 QScrollArea
-  // 本身保持可用，内部控件变灰但仍能滚动查看。
+  // 滚动区本体 + 内容宿主。UWF 不可用时只禁用宿主（而非整个面板），让
+  // QScrollArea 本身保持可用，内部控件变灰但仍能滚动查看。
+  QScrollArea* m_scroll = nullptr;
   QWidget* m_scrollHost = nullptr;
+  // 盖在 viewport 上、抗锯齿补圆角的遮罩层（卡片滚到边缘时仍保持圆角）。
+  RoundedCornerOverlay* m_cornerOverlay = nullptr;
 
   QLabel* m_filterCur = nullptr;
   SwitchButton* m_filterNext = nullptr;

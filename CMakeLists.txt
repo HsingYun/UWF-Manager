@@ -86,6 +86,10 @@ set(UWF_SOURCES
         src/ui/DiskTab.cpp
         src/ui/StatusPanel.h
         src/ui/StatusPanel.cpp
+        src/ui/StatusBanner.h
+        src/ui/StatusBanner.cpp
+        src/ui/RoundedCornerOverlay.h
+        src/ui/RoundedCornerOverlay.cpp
         src/ui/GlobalStatusPanel.h
         src/ui/GlobalStatusPanel.cpp
         src/ui/ExclusionListWidget.h

@@ -15,6 +15,8 @@ class QAction;
 
 namespace uwf::ui {
 
+class RoundedCornerOverlay;
+
 class ExclusionListWidget : public QWidget {
   Q_OBJECT
  public:
@@ -78,7 +80,6 @@ class ExclusionListWidget : public QWidget {
  private:
   void rebuild();
   void addPendingEntry(const QString& raw);
-  void applyViewportMask();
   // 主题切换时刷新顶部按钮 / 菜单项的 icon，并触发 list rebuild 让条目
   // 重新染色（行前景、徽章色都依赖当前主题）。
   void refreshThemedIcons();
@@ -114,6 +115,8 @@ class ExclusionListWidget : public QWidget {
   QSet<QString> m_removed;
 
   QListWidget* m_list = nullptr;
+  // 盖在列表容器上、抗锯齿补圆角 + 重描边框的遮罩层（首尾项 / 滚动时角部不再穿帮）。
+  RoundedCornerOverlay* m_cornerOverlay = nullptr;
   QLineEdit* m_filter = nullptr;
   QLabel* m_summary = nullptr;
   // 主题切换时这些按钮 / 菜单项的 svg 图标要重染色，需要持有引用。

@@ -293,7 +293,12 @@ void MainWindow::buildUi() {
   tb->setObjectName("mainToolbar");
   tb->setMovable(false);
   tb->setContextMenuPolicy(Qt::PreventContextMenu);
-  tb->setIconSize({16, 16});
+  // iconSize 宽度 = 字形 16 + 右侧 6px 透明边，高度仍 16。加宽"图标—文字"间距：Qt 把
+  // 该间距硬编码成"图标宽 + 4px"，没法在样式层改；而 QToolBar 又强制所有按钮用工具栏
+  // 统一的 iconSize（单独给按钮 setIconSize 会被它覆盖）。所以从工具栏 iconSize 下手——
+  // 配合 ThemedSvgIconEngine：带文字按钮的图标字形靠左渲染、右侧留透明边（字形左缘不
+  // 动，只把文字往右推 6px），纯图标的语言 / 主题按钮改用居中渲染（见 refreshThemedUi）。
+  tb->setIconSize({16 + 6, 16});
   tb->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
   addToolBar(tb);
 
@@ -515,11 +520,12 @@ void MainWindow::buildUi() {
   globalLayout->addLayout(tipsRow, 0);
   globalWrap->setObjectName("globalWrap");
   globalWrap->setFixedWidth(420);
-  // 右侧面板整体最小高度：直接取 globalLayout 汇总出的最小值——GlobalStatusPanel
-  // 已把内部滚动区最小高设成内容（筛选器 + 覆盖层两张卡片）完整高度，故此处是
-  // 内容真实需求加上 tips、内边距，不再用写死的 360 估算。估小了会在窗口压到最
-  // 小高时露出纵向滚动条；改成内容自报后，窗口下限恰好容得下整块内容、不滚动。
-  globalWrap->setMinimumHeight(globalLayout->minimumSize().height());
+  // 右侧面板整体最小高度 = 外壳最小高 + 滚动内容完整高。GlobalStatusPanel 的滚动区
+  // 最小高恒为 0（永远可收缩、保证有横幅时滚动表现一致），所以 globalLayout->minimumSize()
+  // 只含外壳（标题 / 横幅 / tips / 内边距）、不含两张卡片的高度；这里把内容完整高
+  // （preferredContentHeight）显式加回，窗口下限才恰好容得下整块内容、无横幅时不滚动，
+  // 也不会因为漏算内容而能把窗口缩得过小。二者解耦：抬窗口下限不影响滚动一致性。
+  globalWrap->setMinimumHeight(globalLayout->minimumSize().height() + m_global->preferredContentHeight());
   mainRow->addWidget(globalWrap, 0);
 
   // 让 MainWindow 也跟随到这个最小高度（加上工具栏和状态栏的大致高度）。
@@ -627,6 +633,8 @@ void MainWindow::showEvent(QShowEvent* ev) {
 
 void MainWindow::refreshThemedUi() {
   auto& tm = ThemeManager::instance();
+  // 带文字的按钮：图标用默认靠左渲染——工具栏 iconSize 宽于高，靠左即在图标右侧留出
+  // 透明边，把文字往右推、加宽"图标—文字"间距（见 buildUi 里 setIconSize 的说明）。
   if (m_actImport) m_actImport->setIcon(tm.icon(":/icons/add.svg"));
   if (m_actRefresh) m_actRefresh->setIcon(tm.icon(":/icons/refresh.svg"));
   if (m_actPlan) m_actPlan->setIcon(tm.icon(":/icons/apply.svg"));
@@ -634,11 +642,14 @@ void MainWindow::refreshThemedUi() {
   if (m_actRestart) m_actRestart->setIcon(tm.icon(":/icons/restart.svg"));
   if (m_actLog) m_actLog->setIcon(tm.icon(":/icons/log.svg"));
   if (m_actAbout) m_actAbout->setIcon(tm.icon(":/icons/info.svg"));
-  if (m_actLang) m_actLang->setIcon(tm.icon(":/icons/language.svg"));
+  // 纯图标按钮（语言 / 主题）：没有文字，图标要在按钮里居中，故用 AlignHCenter 渲染，
+  // 不受工具栏那 6px 右侧透明边影响。
+  constexpr Qt::Alignment kCenter = Qt::AlignHCenter | Qt::AlignVCenter;
+  if (m_actLang) m_actLang->setIcon(tm.icon(":/icons/language.svg", kCenter));
   if (m_actTheme) {
     // 当前 dark → 显示太阳图标（点了切到 light）；当前 light → 显示月亮。
     const bool isDark = tm.current() == Theme::Dark;
-    m_actTheme->setIcon(tm.icon(isDark ? ":/icons/theme_sun.svg" : ":/icons/theme_moon.svg"));
+    m_actTheme->setIcon(tm.icon(isDark ? ":/icons/theme_sun.svg" : ":/icons/theme_moon.svg", kCenter));
   }
   // 顺手刷一遍磁盘 TAB 上的 icon —— DiskTab 自己会处理内部的 commit / TAB icon。
   if (m_tabs) {

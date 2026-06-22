@@ -24,11 +24,22 @@ namespace {
 // 直接吃这个尺寸出锐利图。
 class ThemedSvgIconEngine : public QIconEngine {
  public:
-  explicit ThemedSvgIconEngine(QByteArray svgBytes) : m_bytes(std::move(svgBytes)) {}
+  explicit ThemedSvgIconEngine(QByteArray svgBytes, Qt::Alignment align) : m_bytes(std::move(svgBytes)), m_align(align) {}
 
   void paint(QPainter* painter, const QRect& rect, QIcon::Mode, QIcon::State) override {
     QSvgRenderer r(m_bytes);
-    r.render(painter, rect);
+    // 字形按"较短边"渲染成正方形（不拉伸变形），在 rect 内按 m_align 摆放，多出的宽度
+    // 留作透明边。iconSize 为正方形时填满整块、与原行为完全一致。把 iconSize 调宽（高
+    // 不变）时：AlignLeft 字形靠左、右侧留透明边——专给工具栏带文字按钮加宽"图标—文字"
+    // 间距（字形左缘不动，只把文字往右推）；AlignHCenter 字形居中——给纯图标按钮用。
+    const int side = qMin(rect.width(), rect.height());
+    int x = rect.x();
+    if (m_align & Qt::AlignHCenter)
+      x = rect.x() + (rect.width() - side) / 2;
+    else if (m_align & Qt::AlignRight)
+      x = rect.right() - side + 1;
+    const int y = rect.y() + (rect.height() - side) / 2;
+    r.render(painter, QRectF(x, y, side, side));
   }
 
   QPixmap pixmap(const QSize& size, QIcon::Mode mode, QIcon::State state) override {
@@ -41,12 +52,13 @@ class ThemedSvgIconEngine : public QIconEngine {
     return pm;
   }
 
-  [[nodiscard]] QIconEngine* clone() const override { return new ThemedSvgIconEngine(m_bytes); }
+  [[nodiscard]] QIconEngine* clone() const override { return new ThemedSvgIconEngine(m_bytes, m_align); }
 
   [[nodiscard]] QString key() const override { return QStringLiteral("themed-svg"); }
 
  private:
   QByteArray m_bytes;
+  Qt::Alignment m_align;
 };
 
 }  // namespace
@@ -177,14 +189,14 @@ QColor ThemeManager::color(Sem s) const {
   return {0xFF00FF};  // 不可达，露出来更好定位漏改的分支。
 }
 
-QIcon ThemeManager::icon(const QString& resourcePath) const {
+QIcon ThemeManager::icon(const QString& resourcePath, Qt::Alignment align) const {
   // 现有 svg 都把前景色硬编码成 #E8EAED（dark 默认前景）；按当前主题
   // 替换为对应的前景色。
   const QColor fg = (m_theme == Theme::Light) ? QColor(0x1F1F1F) : QColor(0xE8EAED);
-  return iconWithColor(resourcePath, fg);
+  return iconWithColor(resourcePath, fg, align);
 }
 
-QIcon ThemeManager::iconWithColor(const QString& resourcePath, const QColor& fg) {
+QIcon ThemeManager::iconWithColor(const QString& resourcePath, const QColor& fg, Qt::Alignment align) {
   QFile f(resourcePath);
   if (!f.open(QIODevice::ReadOnly)) return {};
   QString text = QString::fromUtf8(f.readAll());
@@ -192,7 +204,7 @@ QIcon ThemeManager::iconWithColor(const QString& resourcePath, const QColor& fg)
 
   // 把染色后的 svg 字节流交给自定义 IconEngine，每次绘制时按真实目标尺寸
   // 矢量渲染，HiDPI 下零位图缩放损失。
-  return QIcon(new ThemedSvgIconEngine(text.toUtf8()));
+  return QIcon(new ThemedSvgIconEngine(text.toUtf8(), align));
 }
 
 }  // namespace uwf::ui

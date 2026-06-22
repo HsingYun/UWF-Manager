@@ -18,12 +18,10 @@
 #include <QListWidgetItem>
 #include <QMenu>
 #include <QPainter>
-#include <QPainterPath>
 #include <QPixmap>
-#include <QPolygon>
 #include <QPushButton>
-#include <QRegion>
 #include <QScreen>
+#include <QScrollBar>
 #include <QSizePolicy>
 #include <QVBoxLayout>
 #include <cmath>
@@ -37,6 +35,7 @@
 #include "Dialogs.h"
 #include "I18n.h"
 #include "RegistryPickerDialog.h"
+#include "RoundedCornerOverlay.h"
 #include "ThemeManager.h"
 #include "UiUtil.h"
 
@@ -324,12 +323,20 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(p
   m_list->setMinimumWidth(0);
   layout->addWidget(m_list, 1);
 
-  // 容器 border-radius=6，但 Qt QSS 不会把 item 的矩形背景按圆角裁剪，
-  // 首尾 item 选中/hover 时矩形会越过圆角边缘。给 viewport 打一个圆角
-  // QRegion mask，painter 被硬裁到这个形状里，首尾不再穿帮。
-  // 走 eventFilter 监听 viewport 的 Resize，随大小变化重算 mask。
-  m_list->viewport()->installEventFilter(this);
-  applyViewportMask();
+  // 容器 border-radius=6 + border 1px，但 Qt QSS 不会把 item 的矩形背景按圆角裁剪，
+  // 首尾 item 选中/hover 时矩形会越过圆角、滚动时上下角也被切成直角。盖一个抗锯齿圆角
+  // 遮罩层在「容器本身」上（不是 viewport——viewport 在边框内圈、够不到那条边框）：
+  //  - inset=0、radius=6：四角圆角矩形之外用容器四周的底色（即 Sem::Bg，列表底色与外层
+  //    pane 同色）补平，盖住溢到圆角外的内容；
+  //  - 再用 Sem::Border 把那条 1px 圆角边框重描一遍，盖住溢进边框环里的内容，圆角边框
+  //    因此始终平滑完整。
+  // 禁用态底色（#exclusionList:disabled）在圆角内、由容器照常绘出，透过遮罩层透明区显示，
+  // 无需特殊处理。eventFilter 监听容器 Resize 同步大小，滚动条 valueChanged 时重绘。
+  m_list->installEventFilter(this);
+  m_cornerOverlay = new RoundedCornerOverlay(
+      m_list, 0, 6, [] { return ThemeManager::instance().color(Sem::Bg); }, [] { return ThemeManager::instance().color(Sem::Border); }, 1);
+  m_cornerOverlay->syncToParent();
+  connect(m_list->verticalScrollBar(), &QAbstractSlider::valueChanged, m_cornerOverlay, QOverload<>::of(&QWidget::update));
 
   connect(m_rmBtn, &QPushButton::clicked, this, &ExclusionListWidget::onRemove);
   connect(m_filter, &QLineEdit::textChanged, this, &ExclusionListWidget::onFilterChanged);
@@ -412,23 +419,10 @@ void ExclusionListWidget::refreshThemedIcons() {
 }
 
 bool ExclusionListWidget::eventFilter(QObject* obj, QEvent* ev) {
-  if (m_list && obj == m_list->viewport() && ev->type() == QEvent::Resize) {
-    applyViewportMask();
+  if (m_cornerOverlay && obj == m_list && ev->type() == QEvent::Resize) {
+    m_cornerOverlay->syncToParent();
   }
   return QWidget::eventFilter(obj, ev);
-}
-
-void ExclusionListWidget::applyViewportMask() {
-  auto* vp = m_list ? m_list->viewport() : nullptr;
-  if (!vp) return;
-  const QRect r = vp->rect();
-  if (r.isEmpty()) return;
-  // 容器 border-radius=6、border=1px，border 内圈半径 = 6 − 1 = 5。
-  // viewport 贴在 border 内侧，mask 得用内圈半径才能贴合容器曲率，
-  // 否则四角会露出一条细窄的背景。
-  QPainterPath path;
-  path.addRoundedRect(r, 5, 5);
-  vp->setMask(QRegion(path.toFillPolygon().toPolygon()));
 }
 
 QString ExclusionListWidget::entryFullPath(const QListWidgetItem* item) const {

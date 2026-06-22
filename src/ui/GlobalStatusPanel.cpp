@@ -1,12 +1,14 @@
 #include "GlobalStatusPanel.h"
 
 #include <QComboBox>
+#include <QEvent>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPalette>
 #include <QScrollArea>
+#include <QScrollBar>
 #include <QSizePolicy>
 #include <QSpinBox>
 #include <QStyle>
@@ -19,6 +21,8 @@
 #include "../util/ByteFormat.h"
 #include "I18n.h"
 #include "OverlayUsageBar.h"
+#include "RoundedCornerOverlay.h"
+#include "StatusBanner.h"
 #include "SwitchButton.h"
 #include "ThemeManager.h"
 #include "UiUtil.h"
@@ -28,6 +32,11 @@ namespace uwf::ui {
 using core::OverlayType;
 
 namespace {
+
+// 圆角遮罩层参数：左右内缩量对齐 body 的 contentsMargins，半径对齐 QSS statusCard
+// 的 border-radius——这样补出的圆角和卡片轮廓一致。
+constexpr qreal kCardInset = 6;
+constexpr qreal kCardRadius = 10;
 
 // QSpinBox 默认在输入值超过 maximum() 时 validate() 返回 Invalid，字符会被
 // 拒录入，CorrectToNearestValue 也不会触发（它只在 Intermediate 状态 clamp）。
@@ -136,22 +145,33 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   title->setObjectName("panelTitle");
   outer->addWidget(title);
 
+  // 两条横幅各包一层左右 6px 内边距的行——和下面卡片 body 的 (6,0,6,0)、tips 行
+  // 的内边距对齐，否则横幅彩条直贴面板边、比卡片每侧宽 6px。包成子布局而非直接
+  // addWidget：横幅 hide() 时子布局 isEmpty() 为真，outer 不会为它留行高 / 行距。
+  auto addBannerRow = [outer](QLabel* banner) {
+    auto* row = new QHBoxLayout();
+    row->setContentsMargins(6, 0, 6, 0);
+    row->addWidget(banner);
+    outer->addLayout(row);
+  };
+
   // 兼容模式警告——放在状态横幅之上，一经 setCompatibilityNotice 显示便常驻，
   // 不随 setData / setUnavailable 的刷新清除。
-  m_compatBanner = new QLabel(this);
+  m_compatBanner = new StatusBanner(this);
   m_compatBanner->setObjectName("statusBanner");
   m_compatBanner->setProperty("level", "warn");
   m_compatBanner->setWordWrap(true);
   m_compatBanner->hide();
-  outer->addWidget(m_compatBanner);
+  addBannerRow(m_compatBanner);
 
-  m_banner = new QLabel(this);
+  m_banner = new StatusBanner(this);
   m_banner->setObjectName("statusBanner");
   m_banner->setWordWrap(true);
   m_banner->hide();
-  outer->addWidget(m_banner);
+  addBannerRow(m_banner);
 
   auto* scroll = new QScrollArea(this);
+  m_scroll = scroll;
   scroll->setWidgetResizable(true);
   scroll->setFrameShape(QFrame::NoFrame);
   // QScrollArea 的 viewport 默认用 QPalette::Base 填底（#22252A 一类），
@@ -292,10 +312,30 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
 
   scroll->setWidget(m_scrollHost);
   outer->addWidget(scroll, 1);
-  // 把滚动区的最小高度钉成内容（filter + overlay 两张卡片）完整高度——这样它如实
-  // 上报"不滚动所需高度"，外层 MainWindow 据此把窗口下限抬到容得下整块内容，全局
-  // 设置在窗口压到最小高时也不会冒出纵向滚动条。
-  scroll->setMinimumHeight(m_scrollHost->sizeHint().height());
+  // 滚动区最小高恒为 0、永远可收缩——这样无论窗口下限是多少、有几条横幅占高，滚动
+  // 区都能让出空间、给出覆盖全部内容的完整滚动范围，滚动表现一致。绝不把它钉成内容
+  // 完整高：一旦钉死，内容放不下时布局只能走"超约束"回退，能滚多少取决于挤掉的高度，
+  // 于是出现"两条横幅能滚、一条横幅只能滚一点点"的不一致。
+  scroll->setMinimumHeight(0);
+
+  // 圆角遮罩层：盖在 viewport 上抗锯齿补圆角，卡片浮在主背景上、四角补 Sem::Bg。
+  // 另给上/下两条边补一条 Sem::Border 描边线：内容滚动被裁时那条边没了边框，补上才
+  // 像个完整的框；只在该边确有内容被裁时画（见 edgesFn），内容放得下时不画、避免凭空
+  // 多线。viewport Resize 时跟着改大小（见 eventFilter）；滚动 / 范围变化时重绘。
+  auto* vbar = scroll->verticalScrollBar();
+  m_cornerOverlay = new RoundedCornerOverlay(
+      scroll->viewport(), kCardInset, kCardRadius, [] { return ThemeManager::instance().color(Sem::Bg); },
+      [] { return ThemeManager::instance().color(Sem::Border); }, 1,
+      [vbar]() -> Qt::Edges {
+        Qt::Edges e;
+        if (vbar->value() > vbar->minimum()) e |= Qt::TopEdge;     // 上方有隐藏内容
+        if (vbar->value() < vbar->maximum()) e |= Qt::BottomEdge;  // 下方有隐藏内容
+        return e;
+      });
+  scroll->viewport()->installEventFilter(this);
+  m_cornerOverlay->syncToParent();
+  connect(vbar, &QAbstractSlider::valueChanged, m_cornerOverlay, QOverload<>::of(&QWidget::update));
+  connect(vbar, &QAbstractSlider::rangeChanged, m_cornerOverlay, QOverload<>::of(&QWidget::update));
 
   connect(m_filterNext, &QAbstractButton::toggled, this, &GlobalStatusPanel::emitIfChanged);
   connect(m_overlayTypeNext, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
@@ -400,6 +440,15 @@ void GlobalStatusPanel::showElevationRequired() const {
   m_banner->setText("⚠ " + I18n::tr("Administrator privileges are required to change UWF settings. "
                                     "Restart the program via right-click → \"Run as administrator\"."));
   m_banner->show();
+}
+
+int GlobalStatusPanel::preferredContentHeight() const { return m_scrollHost ? m_scrollHost->sizeHint().height() : 0; }
+
+bool GlobalStatusPanel::eventFilter(QObject* obj, QEvent* ev) {
+  if (m_scroll && m_cornerOverlay && obj == m_scroll->viewport() && ev->type() == QEvent::Resize) {
+    m_cornerOverlay->syncToParent();
+  }
+  return QWidget::eventFilter(obj, ev);
 }
 
 void GlobalStatusPanel::setControlsEnabled(const bool enabled) const {

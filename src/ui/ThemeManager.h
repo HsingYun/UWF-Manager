@@ -48,11 +48,14 @@ class ThemeManager : public QObject {
   // 把 svg 资源里的 dark 前景 #E8EAED 替换成当前主题的前景色，包装成 QIcon。
   // 真实渲染尺寸由 caller 决定（toolbar iconSize / pixmap(...)），ThemedSvgIconEngine
   // 每次按目标尺寸矢量绘制——HiDPI 下零位图缩放损失。
-  [[nodiscard]] QIcon icon(const QString& resourcePath) const;
+  // align：当 iconSize 非正方形（宽 > 高）时，字形在图标区内的水平摆放——默认靠左
+  // （右侧留透明边，用于加宽工具栏带文字按钮的图标—文字间距）；纯图标按钮传 AlignHCenter
+  // 让字形居中。iconSize 为正方形时此参数无影响。
+  [[nodiscard]] QIcon icon(const QString& resourcePath, Qt::Alignment align = Qt::AlignLeft | Qt::AlignVCenter) const;
 
   // 用指定的颜色染色 svg，不跟随主题。适合用在带强烈背景色的 fill 按钮
   // （primary / danger）上：背景永远是品牌色，icon 颜色也得固定才好看。
-  static QIcon iconWithColor(const QString& resourcePath, const QColor& fg);
+  static QIcon iconWithColor(const QString& resourcePath, const QColor& fg, Qt::Alignment align = Qt::AlignLeft | Qt::AlignVCenter);
 
   // 取语义色。HTML/RichText 中用 .name()（"#RRGGBB"）即可。
   [[nodiscard]] QColor color(Sem s) const;

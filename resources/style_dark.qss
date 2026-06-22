@@ -30,7 +30,9 @@ QToolBar QToolButton {
     padding: 7px 16px 9px 16px;
     min-height: 22px;
     border-radius: 6px;
-    qproperty-iconSize: 16px 16px;
+    /* 不在 QSS 里钉 qproperty-iconSize——否则会盖掉代码里给带文字按钮调宽的 iconSize
+       （加宽是为了在图标右侧留透明边、拉开图标与文字间距，见 MainWindow::buildUi）。
+       默认尺寸由 QToolBar::setIconSize 统一给。 */
 }
 
 QToolBar QToolButton:hover {
@@ -209,17 +211,15 @@ QLabel#diskHeading {
     color: #E8EAED;
 }
 
+/* 圆角底 + 边框由 StatusBanner 用 QPainter 抗锯齿绘制（QSS 圆角不抗锯齿、半透明色
+   在锯齿角上还会叠出杂色）；这里只留文字色和内边距（padding 仍经 QSS——QStyleSheetStyle
+   会据此设 contentsMargins 内缩文字，可靠）。配色见 StatusBanner.cpp。 */
 QLabel#statusBanner {
-    background: rgba(220, 53, 69, 0.15);
-    border: 1px solid #DC3545;
-    border-radius: 6px;
     padding: 10px 14px;
     color: #FFB0B8;
 }
 
 QLabel#statusBanner[level="warn"] {
-    background: rgba(255, 180, 90, 0.07);
-    border: 1px solid rgba(255, 180, 90, 0.35);
     color: #D6B788;
 }
 
@@ -292,8 +292,8 @@ QLineEdit:disabled, QPlainTextEdit:disabled, QListWidget:disabled {
 
 QListWidget#exclusionList {
     /* padding=0：选中/hover 背景从左右边直接顶到容器边框，避免前景周围
-       露出一圈深色底。保留继承自通用规则的 border-radius: 6；
-       首尾 item 的矩形背景越过圆角的问题由代码里给 viewport 打圆角 mask 解决。
+       露出一圈深色底。保留继承自通用规则的 border-radius: 6；首尾 item 的矩形
+       背景越过圆角、滚动时角部被切直角的问题由 RoundedCornerOverlay 抗锯齿补圆角。
        background: 显式跟外层 QTabWidget::pane 一致——不设的话 viewport 会
        走 QPalette::Base（系统调色板），跟我们的 QSS 主题不同步，亮 / 暗下
        会出现"白底配深框"或反过来的反差。 */

@@ -41,7 +41,7 @@ QToolBar QToolButton {
     padding: 7px 16px 9px 16px;
     min-height: 22px;
     border-radius: 6px;
-    qproperty-iconSize: 16px 16px;
+    /* 见 dark 同名规则：不钉 qproperty-iconSize，留给代码按钮级调宽 iconSize。 */
 }
 
 QToolBar QToolButton:hover {
@@ -220,17 +220,15 @@ QLabel#diskHeading {
     color: #1F1F1F;
 }
 
+/* 圆角底 + 边框由 StatusBanner 用 QPainter 抗锯齿绘制（QSS 圆角不抗锯齿、半透明色
+   在锯齿角上还会叠出杂色）；这里只留文字色和内边距（padding 仍经 QSS，可靠）。
+   配色见 StatusBanner.cpp。 */
 QLabel#statusBanner {
-    background: rgba(217, 48, 37, 0.10);
-    border: 1px solid #D93025;
-    border-radius: 6px;
     padding: 10px 14px;
     color: #B71C1C;
 }
 
 QLabel#statusBanner[level="warn"] {
-    background: rgba(242, 153, 0, 0.07);
-    border: 1px solid rgba(242, 153, 0, 0.40);
     color: #6B4500;
 }
 
