@@ -1,3 +1,21 @@
+/*
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#include <windows.h>
+
 #include <QApplication>
 #include <QLocalServer>
 #include <QLocalSocket>
@@ -10,13 +28,9 @@
 #include "src/util/PostGate.h"
 #include "src/uwf/SystemCheck.h"
 
-#include <windows.h>
-
 // 单实例机制使用的本地服务名。带当前用户名后缀——单实例限定为"当前用户"
 // 范围，多用户会话 / 快速用户切换下不会把别的登录用户的实例拉过来。
-static QString instanceServerName() {
-  return QStringLiteral("UWFManager.SingleInstance.") + qEnvironmentVariable("USERNAME");
-}
+static QString instanceServerName() { return QStringLiteral("UWFManager.SingleInstance.") + qEnvironmentVariable("USERNAME"); }
 
 // 尝试连接已在运行的实例并请它把窗口带到前台。确有实例在跑（连接成功）返回
 // true，否则返回 false。底层是 Windows 命名管道——纯内核 IPC，不写磁盘、
