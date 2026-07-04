@@ -20,8 +20,12 @@
 #include <QDialogButtonBox>
 #include <QFont>
 #include <QFontMetrics>
+#include <QFrame>
+#include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QTextDocument>
+#include <QTextDocumentFragment>
 #include <QVBoxLayout>
 #include <algorithm>
 
@@ -90,14 +94,69 @@ void information(QWidget* parent, const QString& title, const QString& text) {
 }
 
 bool confirm(QWidget* parent, const QString& title, const QString& text) {
-  auto [dlg, body, btns] = build(parent, title, text);
-  auto* okBtn = btns->addButton(I18n::tr("OK"), QDialogButtonBox::AcceptRole);
+  auto* dlg = new QDialog(parent);
+  dlg->setWindowTitle(title);
+
+  auto* layout = new QVBoxLayout(dlg);
+  layout->setContentsMargins(22, 18, 22, 14);
+  layout->setSpacing(14);
+
+  auto* header = new QHBoxLayout();
+  header->setContentsMargins(0, 0, 0, 0);
+  header->setSpacing(12);
+
+  auto* badge = new QLabel("!", dlg);
+  badge->setAlignment(Qt::AlignCenter);
+  badge->setFixedSize(28, 28);
+  badge->setStyleSheet(QString("QLabel { background: %1; color: #FFFFFF; border-radius: 14px; font-weight: bold; }")
+                           .arg(ThemeManager::instance().color(Sem::Danger).name()));
+  header->addWidget(badge, 0, Qt::AlignTop);
+
+  auto* heading = new QLabel(title, dlg);
+  heading->setWordWrap(true);
+  QFont headingFont = heading->font();
+  headingFont.setBold(true);
+  headingFont.setPointSize(headingFont.pointSize() + 1);
+  heading->setFont(headingFont);
+  header->addWidget(heading, 1, Qt::AlignVCenter);
+  layout->addLayout(header);
+
+  auto* bodyFrame = new QFrame(dlg);
+  bodyFrame->setObjectName("confirmBody");
+  bodyFrame->setStyleSheet(QString("QFrame#confirmBody { border: 1px solid %1; border-radius: 8px; background: %2; }")
+                               .arg(ThemeManager::instance().color(Sem::Border).name(), ThemeManager::instance().color(Sem::Surface).name()));
+  auto* bodyLayout = new QVBoxLayout(bodyFrame);
+  bodyLayout->setContentsMargins(12, 10, 12, 10);
+  bodyLayout->setSpacing(0);
+
+  auto* body = new QLabel(text, bodyFrame);
+  body->setWordWrap(true);
+  body->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+  body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  bodyLayout->addWidget(body);
+  layout->addWidget(bodyFrame, 1);
+
+  auto* btns = new QDialogButtonBox(dlg);
+  auto* okBtn = btns->addButton(I18n::tr("Continue"), QDialogButtonBox::AcceptRole);
+  okBtn->setObjectName("dangerBtn");
   auto* cancelBtn = btns->addButton(I18n::tr("Cancel"), QDialogButtonBox::RejectRole);
   QObject::connect(okBtn, &QPushButton::clicked, dlg, &QDialog::accept);
   QObject::connect(cancelBtn, &QPushButton::clicked, dlg, &QDialog::reject);
   // 默认焦点在 Cancel 上：误按 Enter 不会触发危险动作。
   cancelBtn->setDefault(true);
   cancelBtn->setFocus();
+  layout->addWidget(btns);
+
+  const QFontMetrics headingFm(headingFont);
+  const QFontMetrics bodyFm(body->fontMetrics());
+  const QString measuredText = Qt::mightBeRichText(text) ? QTextDocumentFragment::fromHtml(text).toPlainText() : text;
+  int widest = headingFm.horizontalAdvance(title);
+  const QStringList lines = measuredText.split('\n');
+  for (const auto& line : lines) widest = std::max(widest, bodyFm.horizontalAdvance(line));
+  const int bodyWidth = std::clamp(widest, 320, 440);
+  body->setFixedWidth(bodyWidth);
+  dlg->setMinimumWidth(bodyWidth + 96);
+
   const bool accepted = dlg->exec() == QDialog::Accepted;
   delete dlg;
   return accepted;
