@@ -778,12 +778,13 @@ Exclusion: %1</source>
         <translation>&lt;p&gt;在下方粘贴或键入 &lt;b&gt;uwfmgr&lt;/b&gt; 命令，每行一条。支持的类别：&lt;code&gt;filter&lt;/code&gt; · &lt;code&gt;overlay&lt;/code&gt; · &lt;code&gt;volume&lt;/code&gt; · &lt;code&gt;file&lt;/code&gt; · &lt;code&gt;registry&lt;/code&gt;。&lt;/p&gt;&lt;p&gt;点击 &lt;b&gt;从文件加载…&lt;/b&gt; 选择任意文本类文件（日志、脚本、.txt / .bat / .ps1），其中包含 &lt;code&gt;uwfmgr&lt;/code&gt; 的行会被追加到下面的输入框。&lt;/p&gt;&lt;p&gt;点击 &lt;b&gt;导入&lt;/b&gt; 会把每条命令转成 UI 上的待应用变更——&lt;b&gt;此时还不会写入系统&lt;/b&gt;。需要真正生效请用工具栏上的 &lt;b&gt;预览并应用&lt;/b&gt;。&lt;/p&gt;</translation>
     </message>
     <message><source>Load from file…</source><translation>从文件加载…</translation></message>
-    <message><source>Load default rules</source><translation>加载默认规则</translation></message>
-    <message><source>Choose default rules</source><translation>选择默认规则</translation></message>
-    <message><source>Select the default rule groups to append. You can review or delete individual commands before importing.</source><translation>选择要追加的默认规则分组。导入前仍可检查或删除单条命令。</translation></message>
+    <message><source>Load recommended configuration</source><translation>加载推荐配置</translation></message>
+    <message><source>Choose recommended configuration</source><translation>选择推荐配置</translation></message>
+    <message><source>Select the recommended configuration groups to append. You can review or delete individual commands before importing.</source><translation>选择要追加的推荐配置分组。导入前仍可检查或删除单条命令。</translation></message>
+    <message><source>From Microsoft official documentation.</source><translation>来自 Microsoft 官方文档。</translation></message>
     <message><source>Microsoft recommended UWF exclusions</source><translation>Microsoft 推荐的 UWF 排除规则</translation></message>
-    <message><source>Review these defaults before importing; folders should exist before UWF accepts file exclusions.</source><translation>导入前请先检查这些默认项；文件夹需要已存在，UWF 才会接受文件排除。</translation></message>
-    <message><source>Source: Common write filter exclusions and antimalware support for UWF-protected devices.</source><translation>来源：常见写入筛选器排除项，以及受 UWF 保护设备的反恶意软件支持文档。</translation></message>
+    <message><source>Review these recommendations before importing; folders should exist before UWF accepts file exclusions.</source><translation>导入前请先检查这些推荐项；文件夹需要已存在，UWF 才会接受文件排除。</translation></message>
+    <message><source>Source: Microsoft official UWF documentation, including common write filter exclusions and antimalware support.</source><translation>来源：Microsoft 官方 UWF 文档，包括常见写入筛选器排除项以及反恶意软件支持。</translation></message>
     <message><source>Customer Experience Improvement Program (CEIP)</source><translation>客户体验改善计划 (CEIP)</translation></message>
     <message><source>CEIP: persist policy opt-in state</source><translation>CEIP：持久化策略参与状态</translation></message>
     <message><source>CEIP: persist local opt-in state</source><translation>CEIP：持久化本机参与状态</translation></message>

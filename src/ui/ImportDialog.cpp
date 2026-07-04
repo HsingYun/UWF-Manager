@@ -147,15 +147,21 @@ void appendSectionHeader(QString& block, const QString& title) {
 
 int chooseDefaultRuleSections(QWidget* parent) {
   QDialog dlg(parent);
-  dlg.setWindowTitle(I18n::tr("Choose default rules"));
+  dlg.setWindowTitle(I18n::tr("Choose recommended configuration"));
+  dlg.setMinimumWidth(400);
 
   auto* layout = new QVBoxLayout(&dlg);
   layout->setContentsMargins(20, 16, 20, 12);
   layout->setSpacing(10);
 
-  auto* hint = new QLabel(I18n::tr("Select the default rule groups to append. You can review or delete individual commands before importing."), &dlg);
+  auto* hint = new QLabel(I18n::tr("Select the recommended configuration groups to append. You can review or delete individual commands before importing."), &dlg);
   hint->setWordWrap(true);
   layout->addWidget(hint);
+
+  auto* sourceHint = new QLabel(I18n::tr("From Microsoft official documentation."), &dlg);
+  sourceHint->setWordWrap(true);
+  sourceHint->setStyleSheet(QString("color: %1;").arg(ThemeManager::instance().color(Sem::FgMuted).name()));
+  layout->addWidget(sourceHint);
 
   auto addCheck = [&](const QString& text) {
     auto* cb = new QCheckBox(text, &dlg);
@@ -209,10 +215,10 @@ QString defaultRulesText(const int sections) {
   block += I18n::tr("Microsoft recommended UWF exclusions");
   block += QStringLiteral(" ====\n");
   block += QStringLiteral(":: ");
-  block += I18n::tr("Review these defaults before importing; folders should exist before UWF accepts file exclusions.");
+  block += I18n::tr("Review these recommendations before importing; folders should exist before UWF accepts file exclusions.");
   block += QStringLiteral("\n");
   block += QStringLiteral(":: ");
-  block += I18n::tr("Source: Common write filter exclusions and antimalware support for UWF-protected devices.");
+  block += I18n::tr("Source: Microsoft official UWF documentation, including common write filter exclusions and antimalware support.");
   block += QStringLiteral("\n\n");
 
   auto addFile = [&](const QString& comment, const QString& path) { appendCommandWithComment(block, comment, quotedFileCommand(path)); };
@@ -363,7 +369,7 @@ ImportDialog::ImportDialog(QWidget* parent) : QDialog(parent) {
 
   auto* buttonRow = new QHBoxLayout();
   m_importBtn = new QPushButton(I18n::tr("Import"), this);
-  auto* defaultRulesBtn = new QPushButton(I18n::tr("Load default rules"), this);
+  auto* defaultRulesBtn = new QPushButton(I18n::tr("Load recommended configuration"), this);
   auto* loadBtn = new QPushButton(I18n::tr("Load from file…"), this);
   m_importBtn->setObjectName("primaryBtn");
   // 文本框为空（或纯空白）时禁用 Import——不可点即不会进 onImportClicked，
