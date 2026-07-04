@@ -123,6 +123,11 @@ QLabel* makeLockedHint(const QString& tooltip) {
   return l;
 }
 
+QString formatUsageText(const uint32_t usedMb, const uint32_t totalMb) {
+  const double pct = totalMb == 0 ? 0.0 : (static_cast<double>(usedMb) * 100.0 / static_cast<double>(totalMb));
+  return QString::fromStdString(std::format("{:.1f}% · {} / {} MB", pct, usedMb, totalMb));
+}
+
 // 把控件 + ? 锁定提示打包成 grid 第 1 列里的右对齐布局。
 QWidget* wrapWithLockedHint(QWidget* control, QLabel* hint) {
   auto* w = new QWidget();
@@ -522,7 +527,7 @@ void GlobalStatusPanel::setData(const core::SessionSnapshot& cur, const core::Se
   setNum(m_critNext, nxt.overlay.criticalThresholdMb);
 
   const uint32_t totalMb = rt.availableSpaceMb + rt.currentConsumptionMb;
-  m_usedLabel->setText(QString::fromStdString(std::format("{} / {} MB", rt.currentConsumptionMb, totalMb)));
+  m_usedLabel->setText(formatUsageText(rt.currentConsumptionMb, totalMb));
 
   refreshTypeDependentUi();
   reconfigureRanges();
@@ -533,7 +538,7 @@ void GlobalStatusPanel::updateUsage(const core::OverlayRuntime& rt) {
   if (!m_available) return;  // 面板不可用（无 UWF）时没有占用可显示
   m_currentConsumptionMb = rt.currentConsumptionMb;
   const uint32_t totalMb = rt.availableSpaceMb + rt.currentConsumptionMb;
-  m_usedLabel->setText(QString::fromStdString(std::format("{} / {} MB", rt.currentConsumptionMb, totalMb)));
+  m_usedLabel->setText(formatUsageText(rt.currentConsumptionMb, totalMb));
   refreshTypeDependentUi();  // 用新的 m_currentConsumptionMb 重新喂占用条
 }
 
