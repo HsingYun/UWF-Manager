@@ -977,17 +977,17 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
 void MainWindow::refresh() {
   UWF_LOG_I("ui") << "refresh start";
   const auto t0 = std::chrono::steady_clock::now();
-  std::string err;
-  auto disks = uwf::enumerateDisks(&err);
-  if (!err.empty()) {
-    UWF_LOG_W("ui") << "enumerateDisks error: " << err;
-    warning(this, I18n::tr("Failed to read volume information"), QString::fromStdString(err));
+  std::string volumeErr;
+  auto disks = uwf::enumerateDisks(&volumeErr);
+  if (!volumeErr.empty()) {
+    UWF_LOG_W("ui") << "enumerateDisks error: " << volumeErr;
   }
-  m_snapshot = uwf::readSnapshot(&err);
+  std::string snapshotErr;
+  m_snapshot = uwf::readSnapshot(&snapshotErr);
   if (!m_snapshot.uwfAvailable) {
     // 不弹模态框——GlobalStatusPanel::setUnavailable 的横幅已常驻展示这条
     // 错误，模态框只是重复打扰（且每点一次刷新就再弹一次）。
-    UWF_LOG_E("ui") << "readSnapshot failed: uwfAvailable=false err=" << err;
+    UWF_LOG_E("ui") << "readSnapshot failed: uwfAvailable=false err=" << snapshotErr;
   }
 
   // uwfAvailable（命名空间可读）与 elevated（进程已提权）外观相近但用途不同，
@@ -1017,8 +1017,9 @@ void MainWindow::refresh() {
     // UWF 可读但未提权：补一条红色"需要管理员权限"横幅。UWF 不可用时不补——
     // 那条不可用横幅优先级更高，已由下面的 setUnavailable 占据同一横幅。
     if (!elevated) m_global->showElevationRequired();
+    if (!volumeErr.empty()) m_global->showVolumeInfoWarning(QString::fromStdString(volumeErr));
   } else {
-    m_global->setUnavailable(err.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(err));
+    m_global->setUnavailable(snapshotErr.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(snapshotErr));
   }
   // setData 会把滚动区控件全部恢复 enabled——未提权时随即再统一置灰一次。
   m_global->setControlsEnabled(uwfAvailable && elevated);

@@ -431,6 +431,7 @@ void GlobalStatusPanel::setCompatibilityNotice(const QString& text) {
 
 void GlobalStatusPanel::setUnavailable(const QString& reason) {
   m_available = false;
+  m_banner->setProperty("level", "");
   m_banner->setText("⚠ " + I18n::tr("UWF status unavailable: ") + reason);
   // 不设 level=warn —— UWF 不可用是硬错误，用默认的 statusBanner 红色错误样式。
   m_banner->show();
@@ -442,9 +443,16 @@ void GlobalStatusPanel::setUnavailable(const QString& reason) {
   if (m_maxLockedHint) m_maxLockedHint->hide();
 }
 
+void GlobalStatusPanel::showVolumeInfoWarning(const QString& reason) const {
+  m_banner->setProperty("level", "warn");
+  m_banner->setText("⚠ " + I18n::tr("Failed to read volume information: %1").arg(reason));
+  m_banner->show();
+}
+
 void GlobalStatusPanel::showElevationRequired() const {
   // 复用同一条红色状态横幅（statusBanner 默认即红色错误样式）。数据已由
   // setData 正常填好，这里只补一条横幅说明为何控件全灰、不可改。
+  m_banner->setProperty("level", "");
   m_banner->setText("⚠ " + I18n::tr("Administrator privileges are required to change UWF settings. "
                                     "Restart the program via right-click → \"Run as administrator\"."));
   m_banner->show();
