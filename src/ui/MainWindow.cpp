@@ -53,6 +53,7 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QWindow>
 #include <algorithm>
 #include <chrono>
 #include <format>
@@ -134,6 +135,16 @@ class ToolbarExtIcon : public QObject {
 // 盘符逻辑统一在 uwf::drive（见 src/util/DriveLetter.h）。本函数只做 QString
 // ↔ std::string 的边界适配，不含任何盘符逻辑。
 QString systemDriveLetter() { return QString::fromStdString(drive::systemLetter()); }
+
+bool isToolbarDragTarget(QObject* obj) {
+  auto* w = qobject_cast<QWidget*>(obj);
+  if (!w || qobject_cast<QToolButton*>(w)) return false;
+  for (QObject* p = w; p; p = p->parent()) {
+    if (qobject_cast<QToolButton*>(p) || qobject_cast<QMenu*>(p)) return false;
+    if (auto* tb = qobject_cast<QToolBar*>(p); tb && tb->objectName() == "mainToolbar") return true;
+  }
+  return false;
+}
 
 // RtlGetVersion 是唯一一个在 Windows 8.1+ 上仍返回真实版本号（而不是被
 // 应用兼容性"撒谎"成 Windows 8）的接口。动态加载避免对 ntdll 的直接 link。
@@ -760,6 +771,16 @@ void MainWindow::refreshThemedUi() {
 }
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
+  if (ev->type() == QEvent::MouseButtonPress && isToolbarDragTarget(obj)) {
+    auto* me = static_cast<QMouseEvent*>(ev);
+    if (me->button() == Qt::LeftButton) {
+      if (QWindow* wh = windowHandle(); wh && wh->startSystemMove()) return true;
+      ReleaseCapture();
+      SendMessageW(reinterpret_cast<HWND>(winId()), WM_NCLBUTTONDOWN, HTCAPTION, 0);
+      return true;
+    }
+  }
+
   // hover 到任意带 hoverHint 属性（或 toolTip）的控件，就把说明塞到右侧面板的
   // 提示框里；离开时延迟回基线。走 qApp 级事件过滤器才能捕获所有子控件。
   // restoreAfter 用 120ms：光标在相邻控件之间移动时下一次 enter 会立刻 show，
