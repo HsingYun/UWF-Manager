@@ -58,6 +58,10 @@ int toOverlaySpinValue(const uint32_t valueMb) {
   return static_cast<int>(std::min<uint32_t>(valueMb, static_cast<uint32_t>(kOverlaySpinMaxMb)));
 }
 
+int strictThresholdUpper(const int parentValue) {
+  return parentValue <= 1 ? 0 : parentValue - 1;
+}
+
 // QSpinBox 默认在输入值超过 maximum() 时 validate() 返回 Invalid，字符会被
 // 拒录入，CorrectToNearestValue 也不会触发（它只在 Intermediate 状态 clamp）。
 // 这里把"全数字但超 max"的 Invalid 降级成 Intermediate，让用户能继续打字，
@@ -408,8 +412,8 @@ void GlobalStatusPanel::reconfigureRanges() const {
   const int maxFloor = isRam ? 0 : static_cast<int>(config::kDiskOverlayMinSizeMb);
 
   m_maxNext->setRange(maxFloor, maxCeiling);
-  m_critNext->setRange(0, m_maxNext->value());
-  m_warnNext->setRange(0, m_critNext->value());
+  m_critNext->setRange(0, strictThresholdUpper(m_maxNext->value()));
+  m_warnNext->setRange(0, strictThresholdUpper(m_critNext->value()));
 }
 
 void GlobalStatusPanel::refreshTypeDependentUi() {

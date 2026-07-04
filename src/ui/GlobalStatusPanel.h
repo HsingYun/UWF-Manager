@@ -97,7 +97,7 @@ class GlobalStatusPanel : public QWidget {
   void updateDirtyStyle();
 
   // 按"约束向下传递"重算三个阈值 spinbox 的 range：max 的上限来自
-  // RAM/磁盘语义，crit 上限 = max 当前值，warn 上限 = crit 当前值。
+  // RAM/磁盘语义，crit 上限 < max 当前值，warn 上限 < crit 当前值。
   // setRange 会把超出新区间的现值自动钳回边界，实现联动下压。
   void reconfigureRanges() const;
   // 根据当前类型更新 "最大大小" 标签后缀与进度条 scale。
