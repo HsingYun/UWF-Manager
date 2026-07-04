@@ -30,6 +30,7 @@
 #include <QMenu>
 #include <QPushButton>
 #include <QSaveFile>
+#include <QSplitter>
 #include <QStringConverter>
 #include <QTextDocumentFragment>
 #include <QTextEdit>
@@ -288,18 +289,14 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     return out;
   };
 
-  QString defaultHtml;
+  auto wrapHtml = [](const QString& body) {
+    return QString("<div style=\"font-family:'Segoe UI','Microsoft YaHei UI','Microsoft YaHei',sans-serif\">%1</div>").arg(body);
+  };
   // 外层 wrapper 显式声明 font-family，让所有内部 div 继承——不写的话
   // QTextEdit 的 RichText 引擎对中文字符会按字体表自由 fallback，多段中
   // 后面的段标题偶尔会落到宋体，跟其它段视觉上不一致。
-  defaultHtml += "<div style=\"font-family:'Segoe UI','Microsoft YaHei UI','Microsoft YaHei',sans-serif\">";
-  if (!m_changeCmds.empty()) {
-    // 待变更段标题用强调色（蓝）+ 数量（与状态栏同口径 PendingChanges::count），
-    // 其余跟当前配置段一致。
-    defaultHtml += formatBlockHtml(I18n::tr("Pending changes (%1)").arg(m_changes.count()), m_changeCmds, accent);
-  }
-  defaultHtml += formatBlockHtml(I18n::tr("Current session configuration"), m_snapshotCmds, mutedFaint);
-  defaultHtml += "</div>";
+  const QString pendingHtml = wrapHtml(formatBlockHtml(I18n::tr("Pending changes (%1)").arg(m_changes.count()), m_changeCmds, accent));
+  const QString sessionHtml = wrapHtml(formatBlockHtml(I18n::tr("Current session configuration"), m_snapshotCmds, mutedFaint));
 
   auto joinLines = [](const std::vector<std::string>& lines) {
     std::string out;
@@ -326,12 +323,28 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   info->setTextFormat(Qt::RichText);
   layout->addWidget(info);
 
-  auto* text = new CommandTextEdit(this);
-  text->setReadOnly(true);
-  text->setObjectName("planText");
-  text->setLineWrapMode(QTextEdit::NoWrap);
-  text->setHtml(defaultHtml);
-  layout->addWidget(text, 1);
+  auto configureText = [](CommandTextEdit* edit) {
+    edit->setReadOnly(true);
+    edit->setObjectName("planText");
+    edit->setLineWrapMode(QTextEdit::NoWrap);
+  };
+
+  auto* pendingText = new CommandTextEdit(this);
+  configureText(pendingText);
+  pendingText->setHtml(pendingHtml);
+
+  auto* sessionText = new CommandTextEdit(this);
+  configureText(sessionText);
+  sessionText->setHtml(sessionHtml);
+
+  auto* splitter = new QSplitter(Qt::Vertical, this);
+  splitter->setChildrenCollapsible(false);
+  splitter->addWidget(pendingText);
+  splitter->addWidget(sessionText);
+  splitter->setStretchFactor(0, m_changeCmds.empty() ? 0 : 1);
+  splitter->setStretchFactor(1, 1);
+  splitter->setSizes(m_changeCmds.empty() ? QList<int>{120, 360} : QList<int>{220, 260});
+  layout->addWidget(splitter, 1);
 
   auto* box = new QDialogButtonBox(this);
   // 导出按钮：把对话框里展示的所有命令写到一个文件，注释（":: ..." 行）剔掉，
@@ -392,7 +405,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   });
 
   connect(box, &QDialogButtonBox::rejected, this, &QDialog::reject);
-  connect(commitBtn, &QPushButton::clicked, this, [this, text, commitBtn, formatBlockPlain, joinLines]() {
+  connect(commitBtn, &QPushButton::clicked, this, [this, pendingText, commitBtn, formatBlockPlain, joinLines]() {
     // 真实写入前再弹一次二次确认，避免误点。
     const QString warn2 = ThemeManager::instance().color(Sem::Warn).name();
     if (!confirm(this, I18n::tr("Confirm apply"),
@@ -415,7 +428,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
         note(I18n::tr("✘ Failed to connect to the system: %1").arg(QString::fromStdString(err)).toStdString());
         const std::string body = formatBlockPlain(I18n::tr("Applied changes").toStdString(), m_changeCmds) + "\n:: ==== " + I18n::tr("Result").toStdString() +
                                  " ====\n" + joinLines(outcome);
-        text->setPlainText(QString::fromStdString(body));
+        pendingText->setPlainText(QString::fromStdString(body));
         return;
       }
     }
@@ -616,7 +629,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
 
     const std::string body = formatBlockPlain(I18n::tr("Applied changes").toStdString(), m_changeCmds) + "\n:: ==== " + I18n::tr("Result").toStdString() +
                              " ====\n" + joinLines(outcome);
-    text->setPlainText(QString::fromStdString(body));
+    pendingText->setPlainText(QString::fromStdString(body));
 
     // 写完要立刻重新读一次快照并刷新 UI：
     // - next-session 的排除列表、保护状态、overlay 配置可能都变了；
