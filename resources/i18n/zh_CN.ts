@@ -770,6 +770,48 @@ Exclusion: %1</source>
         <translation>&lt;p&gt;在下方粘贴或键入 &lt;b&gt;uwfmgr&lt;/b&gt; 命令，每行一条。支持的类别：&lt;code&gt;filter&lt;/code&gt; · &lt;code&gt;overlay&lt;/code&gt; · &lt;code&gt;volume&lt;/code&gt; · &lt;code&gt;file&lt;/code&gt; · &lt;code&gt;registry&lt;/code&gt;。&lt;/p&gt;&lt;p&gt;点击 &lt;b&gt;从文件加载…&lt;/b&gt; 选择任意文本类文件（日志、脚本、.txt / .bat / .ps1），其中包含 &lt;code&gt;uwfmgr&lt;/code&gt; 的行会被追加到下面的输入框。&lt;/p&gt;&lt;p&gt;点击 &lt;b&gt;导入&lt;/b&gt; 会把每条命令转成 UI 上的待应用变更——&lt;b&gt;此时还不会写入系统&lt;/b&gt;。需要真正生效请用工具栏上的 &lt;b&gt;预览并应用&lt;/b&gt;。&lt;/p&gt;</translation>
     </message>
     <message><source>Load from file…</source><translation>从文件加载…</translation></message>
+    <message><source>Load default rules</source><translation>加载默认规则</translation></message>
+    <message><source>Microsoft recommended UWF exclusions</source><translation>Microsoft 推荐的 UWF 排除规则</translation></message>
+    <message><source>Review these defaults before importing; folders should exist before UWF accepts file exclusions.</source><translation>导入前请先检查这些默认项；文件夹需要已存在，UWF 才会接受文件排除。</translation></message>
+    <message><source>Source: Common write filter exclusions and antimalware support for UWF-protected devices.</source><translation>来源：常见写入筛选器排除项，以及受 UWF 保护设备的反恶意软件支持文档。</translation></message>
+    <message><source>Customer Experience Improvement Program (CEIP)</source><translation>客户体验改善计划 (CEIP)</translation></message>
+    <message><source>CEIP: persist policy opt-in state</source><translation>CEIP：持久化策略参与状态</translation></message>
+    <message><source>CEIP: persist local opt-in state</source><translation>CEIP：持久化本机参与状态</translation></message>
+    <message><source>CEIP: persist upload-disable flag</source><translation>CEIP：持久化上传禁用标志</translation></message>
+    <message><source>Background Intelligent Transfer Service (BITS)</source><translation>后台智能传输服务 (BITS)</translation></message>
+    <message><source>BITS: persist downloader queue files</source><translation>BITS：持久化下载队列文件</translation></message>
+    <message><source>BITS: persist transfer state index</source><translation>BITS：持久化传输状态索引</translation></message>
+    <message><source>Network profiles and policies</source><translation>网络配置文件和策略</translation></message>
+    <message><source>Wireless network GPO policy</source><translation>无线网络 GPO 策略</translation></message>
+    <message><source>Wired network GPO policy</source><translation>有线网络 GPO 策略</translation></message>
+    <message><source>Wireless network GPO policy files</source><translation>无线网络 GPO 策略文件</translation></message>
+    <message><source>Wired network GPO policy files</source><translation>有线网络 GPO 策略文件</translation></message>
+    <message><source>Wireless network interface profiles</source><translation>无线网络接口配置</translation></message>
+    <message><source>Wired network interface profiles</source><translation>有线网络接口配置</translation></message>
+    <message><source>Wireless service configuration</source><translation>无线服务配置</translation></message>
+    <message><source>Mobile broadband service configuration</source><translation>移动宽带服务配置</translation></message>
+    <message><source>Wired AutoConfig service configuration</source><translation>有线自动配置服务配置</translation></message>
+    <message><source>Network profile XML files are per-device; add the concrete Interfaces\{GUID}\{GUID}.xml paths manually if needed.</source><translation>网络配置 XML 文件因设备而异；如有需要，请手动添加具体的 Interfaces\{GUID}\{GUID}.xml 路径。</translation></message>
+    <message><source>Daylight saving time (DST)</source><translation>夏令时 (DST)</translation></message>
+    <message><source>DST: persist time zone definitions</source><translation>DST：持久化时区定义</translation></message>
+    <message><source>DST: persist selected time zone information</source><translation>DST：持久化当前时区信息</translation></message>
+    <message><source>Microsoft Defender</source><translation>Microsoft Defender</translation></message>
+    <message><source>Defender: persist product files and updates</source><translation>Defender：持久化程序文件和更新</translation></message>
+    <message><source>Defender: persist ProgramData signatures and state</source><translation>Defender：持久化 ProgramData 中的签名和状态</translation></message>
+    <message><source>Defender: persist Windows Update log</source><translation>Defender：持久化 Windows Update 日志</translation></message>
+    <message><source>Defender: persist MpCmdRun log</source><translation>Defender：持久化 MpCmdRun 日志</translation></message>
+    <message><source>Defender: persist product registry state</source><translation>Defender：持久化产品注册表状态</translation></message>
+    <message><source>Defender: persist WdBoot service state</source><translation>Defender：持久化 WdBoot 服务状态</translation></message>
+    <message><source>Defender: persist WdFilter service state</source><translation>Defender：持久化 WdFilter 服务状态</translation></message>
+    <message><source>Defender: persist WdNisSvc service state</source><translation>Defender：持久化 WdNisSvc 服务状态</translation></message>
+    <message><source>Defender: persist WdNisDrv service state</source><translation>Defender：持久化 WdNisDrv 服务状态</translation></message>
+    <message><source>Defender: persist WinDefend service state</source><translation>Defender：持久化 WinDefend 服务状态</translation></message>
+    <message><source>System Center Endpoint Protection</source><translation>System Center Endpoint Protection</translation></message>
+    <message><source>SCEP: persist client program files</source><translation>SCEP：持久化客户端程序文件</translation></message>
+    <message><source>SCEP: persist Windows Update log</source><translation>SCEP：持久化 Windows Update 日志</translation></message>
+    <message><source>SCEP: persist MpCmdRun log</source><translation>SCEP：持久化 MpCmdRun 日志</translation></message>
+    <message><source>SCEP: persist antimalware signatures and state</source><translation>SCEP：持久化反恶意软件签名和状态</translation></message>
+    <message><source>SCEP: persist antimalware registry state</source><translation>SCEP：持久化反恶意软件注册表状态</translation></message>
     <message><source>Choose files containing uwfmgr commands</source><translation>选择包含 uwfmgr 命令的文件</translation></message>
     <message><source>All files (*);;Text files (*.txt *.bat *.ps1 *.log *.cmd)</source><translation>所有文件 (*);;文本文件 (*.txt *.bat *.ps1 *.log *.cmd)</translation></message>
     <message><source>uwfmgr filter enable
