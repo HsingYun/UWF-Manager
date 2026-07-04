@@ -91,6 +91,7 @@ class MainWindow : public QMainWindow {
   void rebuildTabs(const std::vector<core::DiskInfo>& disks);
   void updatePendingSummary();
   bool confirmDiscardPendingChanges();
+  void applyNativeTitleBarTheme();
   void showTransientHint(const QString& text, int msec) const;
   // buildUi 内部的初始 icon / RichText 设置助手——给 toolbar action 按当前主题
   // 染色 svg、给 hoverHint 默认文案塞主题相关色。仅供 buildUi 末尾调用一次。

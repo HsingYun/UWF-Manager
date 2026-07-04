@@ -17,12 +17,14 @@
 #include "MainWindow.h"
 
 #include <windows.h>
+#include <dwmapi.h>
 
 #include <QAbstractItemView>
 #include <QAction>
 #include <QActionGroup>
 #include <QApplication>
 #include <QCloseEvent>
+#include <QColor>
 #include <QCursor>
 #include <QDateTime>
 #include <QDialog>
@@ -89,6 +91,20 @@ namespace {
 // 走 app font，避免 QMessageBox 的中文渲染糊问题）。
 using uwf::ui::dialogs::confirm;
 using uwf::ui::dialogs::warning;
+
+constexpr DWORD kDwmAttrUseImmersiveDarkMode = 20;
+constexpr DWORD kDwmAttrWindowCornerPreference = 33;
+constexpr DWORD kDwmAttrBorderColor = 34;
+constexpr DWORD kDwmAttrCaptionColor = 35;
+constexpr DWORD kDwmAttrTextColor = 36;
+constexpr int kDwmCornerRound = 2;  // DWMWCP_ROUND
+
+COLORREF colorRef(const QColor& c) { return RGB(c.red(), c.green(), c.blue()); }
+
+template <typename T>
+void setDwmAttr(HWND hwnd, DWORD attr, const T& value) {
+  (void)DwmSetWindowAttribute(hwnd, attr, &value, static_cast<DWORD>(sizeof(value)));
+}
 
 // QToolBar 溢出时最右侧的扩展按钮（qt_toolbar_ext_button）：被 QSS 的
 // `QToolBar QToolButton` 规则命中后转由 QStyleSheetStyle 渲染，后者既不画
@@ -298,6 +314,7 @@ void MainWindow::buildUi() {
   // 标题随语言切换重译，故每次 buildUi（含 rebuildUi 路径）都重设一次；
   // 图标与初始尺寸是一次性窗口外壳设置，已在构造函数里完成，这里不再重复。
   setWindowTitle(I18n::tr("Unified Write Filter (UWF) Manager"));
+  applyNativeTitleBarTheme();
 
   // QSS 的 `padding` 在 QToolBar 上不可靠（rebuildUi 后 polish 时机问题），
   // 用 spacer widget 给水平方向兜底。垂直方向不再人为加 margin——
@@ -651,6 +668,28 @@ void MainWindow::showTransientHint(const QString& text, const int msec) const {
   if (m_statusCtl) m_statusCtl->flash(text, msec);
 }
 
+void MainWindow::applyNativeTitleBarTheme() {
+  const auto hwnd = reinterpret_cast<HWND>(winId());
+  if (!hwnd) return;
+
+  auto& tm = ThemeManager::instance();
+  const BOOL dark = tm.current() == Theme::Dark ? TRUE : FALSE;
+  setDwmAttr(hwnd, kDwmAttrUseImmersiveDarkMode, dark);
+
+  const int corner = kDwmCornerRound;
+  setDwmAttr(hwnd, kDwmAttrWindowCornerPreference, corner);
+
+  const QColor caption = tm.color(Sem::Surface);
+  const QColor text = tm.color(Sem::Fg);
+  const QColor border = tm.color(Sem::Border);
+  const COLORREF captionColor = colorRef(caption);
+  const COLORREF textColor = colorRef(text);
+  const COLORREF borderColor = colorRef(border);
+  setDwmAttr(hwnd, kDwmAttrBorderColor, borderColor);
+  setDwmAttr(hwnd, kDwmAttrCaptionColor, captionColor);
+  setDwmAttr(hwnd, kDwmAttrTextColor, textColor);
+}
+
 bool MainWindow::confirmDiscardPendingChanges() {
   if (!m_global) return true;
   if (QWidget* fw = QApplication::focusWidget()) fw->clearFocus();
@@ -678,6 +717,7 @@ void MainWindow::closeEvent(QCloseEvent* ev) {
 
 void MainWindow::showEvent(QShowEvent* ev) {
   QMainWindow::showEvent(ev);
+  applyNativeTitleBarTheme();
   if (!m_firstShowDone) {
     m_firstShowDone = true;
     // 首次 show（此时窗口是全透明的）后立刻调度一次 rebuildUi——和"切主题 /

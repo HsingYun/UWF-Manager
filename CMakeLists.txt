@@ -190,7 +190,7 @@ endif ()
 
 target_compile_definitions(UWF PRIVATE UNICODE _UNICODE _WIN32_DCOM NOMINMAX)
 
-target_link_libraries(UWF PRIVATE wbemuuid ole32 oleaut32 shell32)
+target_link_libraries(UWF PRIVATE wbemuuid ole32 oleaut32 shell32 dwmapi)
 
 if (MSVC)
     set_target_properties(UWF PROPERTIES
