@@ -835,16 +835,16 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
   for (const auto& d : disks) {
     auto* tab = new DiskTab(d, /*showRegistry=*/!registryHostDl.empty() && d.driveLetter == registryHostDl, this);
     const QString label = QString::fromStdString(d.driveLetter);
-    const bool ok = d.support == core::DiskSupport::Supported;
+    const bool limited = d.support == core::DiskSupport::FileSystemLimited;
+    const bool ok = d.support == core::DiskSupport::Supported || limited;
     const bool isSys = QString::fromStdString(d.driveLetter).toUpper() == sysDl;
     auto& tm = ThemeManager::instance();
     const QIcon icon = !ok ? tm.icon(":/icons/disk_off.svg") : isSys ? tm.icon(":/icons/disk_system.svg") : tm.icon(":/icons/disk.svg");
     const int idx = m_tabs->addTab(tab, icon, label);
-    if (!ok) {
-      const std::string reason = diskSupportText(d.support, d.fileSystem);
-      m_tabs->setTabToolTip(idx, QString::fromStdString(reason));
+    const QString sysExtra = isSys ? I18n::tr(" (System drive: also manages the global registry exclusion list here.)") : QString();
+    if (!ok || limited) {
+      m_tabs->setTabToolTip(idx, QString::fromStdString(diskSupportText(d.support, d.fileSystem)) + sysExtra);
     } else {
-      const QString sysExtra = isSys ? I18n::tr(" (System drive: also manages the global registry exclusion list here.)") : QString();
       m_tabs->setTabToolTip(idx, I18n::tr("Switch to protection settings and file exclusions for volume %1.%2").arg(label, sysExtra));
     }
     // 还原本卷内层 TAB 的选中索引。原本不在（磁盘新插入）→ 保持默认 0。
