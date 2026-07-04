@@ -35,6 +35,7 @@ class QLabel;
 class QTextBrowser;
 class QTimer;
 class QAction;
+class QCloseEvent;
 
 namespace uwf::ui {
 
@@ -77,17 +78,19 @@ class MainWindow : public QMainWindow {
 
  protected:
   bool eventFilter(QObject* obj, QEvent* ev) override;
+  void closeEvent(QCloseEvent* ev) override;
   void showEvent(QShowEvent* ev) override;
 
  private:
   void buildUi();
   // **切换主题 / 切换语言的唯一刷新入口**——整体重建 toolbar + central widget，
   // 让 tr() 拿到新译文、let QSS 在新 widget 上从干净状态应用。两个低频操作
-  // 共用同一套机制，避免分两套各自的几何抖动。会丢 widget 状态里的 pending
-  // changes，调用方应保证此前已 apply 过待应用变更。
+  // 共用同一套机制，避免分两套各自的几何抖动。调用方在进入这里前会确认是否
+  // 丢弃 widget 状态里的 pending changes。
   void rebuildUi();
   void rebuildTabs(const std::vector<core::DiskInfo>& disks);
   void updatePendingSummary();
+  bool confirmDiscardPendingChanges();
   void showTransientHint(const QString& text, int msec) const;
   // buildUi 内部的初始 icon / RichText 设置助手——给 toolbar action 按当前主题
   // 染色 svg、给 hoverHint 默认文案塞主题相关色。仅供 buildUi 末尾调用一次。

@@ -16,6 +16,9 @@
  */
 #include "ImportDialog.h"
 
+#include <QCheckBox>
+#include <QDialog>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
 #include <QFileDialog>
@@ -121,6 +124,13 @@ QString quotedFileCommand(const QString& path) { return QStringLiteral("uwfmgr f
 
 QString registryCommand(const QString& key) { return QStringLiteral("uwfmgr registry add-exclusion \"%1\"").arg(key); }
 
+constexpr int kDefaultCeip = 1 << 0;
+constexpr int kDefaultBits = 1 << 1;
+constexpr int kDefaultNetwork = 1 << 2;
+constexpr int kDefaultDst = 1 << 3;
+constexpr int kDefaultDefender = 1 << 4;
+constexpr int kDefaultScep = 1 << 5;
+
 void appendCommandWithComment(QString& block, const QString& comment, const QString& command) {
   block += QStringLiteral(":: ");
   block += comment;
@@ -129,7 +139,64 @@ void appendCommandWithComment(QString& block, const QString& comment, const QStr
   block += QChar('\n');
 }
 
-QString defaultRulesText() {
+void appendSectionHeader(QString& block, const QString& title) {
+  block += QStringLiteral(":: -- ");
+  block += title;
+  block += QStringLiteral(" --\n");
+}
+
+int chooseDefaultRuleSections(QWidget* parent) {
+  QDialog dlg(parent);
+  dlg.setWindowTitle(I18n::tr("Choose default rules"));
+
+  auto* layout = new QVBoxLayout(&dlg);
+  layout->setContentsMargins(20, 16, 20, 12);
+  layout->setSpacing(10);
+
+  auto* hint = new QLabel(I18n::tr("Select the default rule groups to append. You can review or delete individual commands before importing."), &dlg);
+  hint->setWordWrap(true);
+  layout->addWidget(hint);
+
+  auto addCheck = [&](const QString& text) {
+    auto* cb = new QCheckBox(text, &dlg);
+    cb->setChecked(true);
+    layout->addWidget(cb);
+    return cb;
+  };
+
+  auto* ceip = addCheck(I18n::tr("Customer Experience Improvement Program (CEIP)"));
+  auto* bits = addCheck(I18n::tr("Background Intelligent Transfer Service (BITS)"));
+  auto* network = addCheck(I18n::tr("Network profiles and policies"));
+  auto* dst = addCheck(I18n::tr("Daylight saving time (DST)"));
+  auto* defender = addCheck(I18n::tr("Microsoft Defender"));
+  auto* scep = addCheck(I18n::tr("System Center Endpoint Protection"));
+
+  auto* btns = new QDialogButtonBox(&dlg);
+  auto* okBtn = btns->addButton(I18n::tr("OK"), QDialogButtonBox::AcceptRole);
+  auto* cancelBtn = btns->addButton(I18n::tr("Cancel"), QDialogButtonBox::RejectRole);
+  layout->addWidget(btns);
+
+  auto updateOk = [=]() {
+    okBtn->setEnabled(ceip->isChecked() || bits->isChecked() || network->isChecked() || dst->isChecked() || defender->isChecked() || scep->isChecked());
+  };
+  for (auto* cb : {ceip, bits, network, dst, defender, scep}) QObject::connect(cb, &QCheckBox::toggled, &dlg, [updateOk](bool) { updateOk(); });
+  QObject::connect(okBtn, &QPushButton::clicked, &dlg, &QDialog::accept);
+  QObject::connect(cancelBtn, &QPushButton::clicked, &dlg, &QDialog::reject);
+  updateOk();
+
+  if (dlg.exec() != QDialog::Accepted) return 0;
+
+  int sections = 0;
+  if (ceip->isChecked()) sections |= kDefaultCeip;
+  if (bits->isChecked()) sections |= kDefaultBits;
+  if (network->isChecked()) sections |= kDefaultNetwork;
+  if (dst->isChecked()) sections |= kDefaultDst;
+  if (defender->isChecked()) sections |= kDefaultDefender;
+  if (scep->isChecked()) sections |= kDefaultScep;
+  return sections;
+}
+
+QString defaultRulesText(const int sections) {
   QString sys = QString::fromStdString(drive::systemLetter());
   if (sys.isEmpty()) sys = QStringLiteral("C:");
 
@@ -151,76 +218,79 @@ QString defaultRulesText() {
   auto addFile = [&](const QString& comment, const QString& path) { appendCommandWithComment(block, comment, quotedFileCommand(path)); };
   auto addReg = [&](const QString& comment, const QString& key) { appendCommandWithComment(block, comment, registryCommand(key)); };
 
-  block += QStringLiteral(":: -- ");
-  block += I18n::tr("Customer Experience Improvement Program (CEIP)");
-  block += QStringLiteral(" --\n");
-  addReg(I18n::tr("CEIP: persist policy opt-in state"), QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\Policies\\Microsoft\\SQMClient\\Windows\\CEIPEnable"));
-  addReg(I18n::tr("CEIP: persist local opt-in state"), QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\SQMClient\\Windows\\CEIPEnable"));
-  addReg(I18n::tr("CEIP: persist upload-disable flag"), QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\SQMClient\\UploadDisableFlag"));
-  block += QChar('\n');
+  if (sections & kDefaultCeip) {
+    appendSectionHeader(block, I18n::tr("Customer Experience Improvement Program (CEIP)"));
+    addReg(I18n::tr("CEIP: persist policy opt-in state"), QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\Policies\\Microsoft\\SQMClient\\Windows\\CEIPEnable"));
+    addReg(I18n::tr("CEIP: persist local opt-in state"), QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\SQMClient\\Windows\\CEIPEnable"));
+    addReg(I18n::tr("CEIP: persist upload-disable flag"), QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\SQMClient\\UploadDisableFlag"));
+    block += QChar('\n');
+  }
 
-  block += QStringLiteral(":: -- ");
-  block += I18n::tr("Background Intelligent Transfer Service (BITS)");
-  block += QStringLiteral(" --\n");
-  addFile(I18n::tr("BITS: persist downloader queue files"), programData(QStringLiteral("\\Microsoft\\Network\\Downloader")));
-  addReg(I18n::tr("BITS: persist transfer state index"), QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\BITS\\StateIndex"));
-  block += QChar('\n');
+  if (sections & kDefaultBits) {
+    appendSectionHeader(block, I18n::tr("Background Intelligent Transfer Service (BITS)"));
+    addFile(I18n::tr("BITS: persist downloader queue files"), programData(QStringLiteral("\\Microsoft\\Network\\Downloader")));
+    addReg(I18n::tr("BITS: persist transfer state index"), QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\BITS\\StateIndex"));
+    block += QChar('\n');
+  }
 
-  block += QStringLiteral(":: -- ");
-  block += I18n::tr("Network profiles and policies");
-  block += QStringLiteral(" --\n");
-  addReg(I18n::tr("Wireless network GPO policy"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Wireless\\GPTWirelessPolicy"));
-  addReg(I18n::tr("Wired network GPO policy"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\WiredL2\\GP_Policy"));
-  addFile(I18n::tr("Wireless network GPO policy files"), win(QStringLiteral("\\wlansvc\\Policies")));
-  addFile(I18n::tr("Wired network GPO policy files"), win(QStringLiteral("\\dot2svc\\Policies")));
-  addReg(I18n::tr("Wireless network interface profiles"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\wlansvc"));
-  addReg(I18n::tr("Wired network interface profiles"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\dot3svc"));
-  addReg(I18n::tr("Wireless service configuration"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\services\\Wlansvc"));
-  addReg(I18n::tr("Mobile broadband service configuration"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\services\\WwanSvc"));
-  addReg(I18n::tr("Wired AutoConfig service configuration"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\services\\dot3svc"));
-  block += QStringLiteral(":: ");
-  block += I18n::tr("Network profile XML files are per-device; add the concrete Interfaces\\{GUID}\\{GUID}.xml paths manually if needed.");
-  block += QStringLiteral("\n\n");
+  if (sections & kDefaultNetwork) {
+    appendSectionHeader(block, I18n::tr("Network profiles and policies"));
+    addReg(I18n::tr("Wireless network GPO policy"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\Wireless\\GPTWirelessPolicy"));
+    addReg(I18n::tr("Wired network GPO policy"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Policies\\Microsoft\\Windows\\WiredL2\\GP_Policy"));
+    addFile(I18n::tr("Wireless network GPO policy files"), win(QStringLiteral("\\wlansvc\\Policies")));
+    addFile(I18n::tr("Wired network GPO policy files"), win(QStringLiteral("\\dot2svc\\Policies")));
+    addReg(I18n::tr("Wireless network interface profiles"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\wlansvc"));
+    addReg(I18n::tr("Wired network interface profiles"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\dot3svc"));
+    addReg(I18n::tr("Wireless service configuration"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\services\\Wlansvc"));
+    addReg(I18n::tr("Mobile broadband service configuration"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\services\\WwanSvc"));
+    addReg(I18n::tr("Wired AutoConfig service configuration"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\services\\dot3svc"));
+    block += QStringLiteral(":: ");
+    block += I18n::tr("Network profile XML files are per-device; add the concrete Interfaces\\{GUID}\\{GUID}.xml paths manually if needed.");
+    block += QStringLiteral("\n\n");
+  }
 
-  block += QStringLiteral(":: -- ");
-  block += I18n::tr("Daylight saving time (DST)");
-  block += QStringLiteral(" --\n");
-  addReg(I18n::tr("DST: persist time zone definitions"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones"));
-  addReg(I18n::tr("DST: persist selected time zone information"),
-         QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation"));
-  block += QChar('\n');
+  if (sections & kDefaultDst) {
+    appendSectionHeader(block, I18n::tr("Daylight saving time (DST)"));
+    addReg(I18n::tr("DST: persist time zone definitions"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones"));
+    addReg(I18n::tr("DST: persist selected time zone information"),
+           QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation"));
+    block += QChar('\n');
+  }
 
-  block += QStringLiteral(":: -- ");
-  block += I18n::tr("Microsoft Defender");
-  block += QStringLiteral(" --\n");
-  addFile(I18n::tr("Defender: persist product files and updates"), programFiles(QStringLiteral("\\Windows Defender")));
-  addFile(I18n::tr("Defender: persist ProgramData signatures and state"), programData(QStringLiteral("\\Microsoft\\Windows Defender")));
-  addFile(I18n::tr("Defender: persist Windows Update log"), win(QStringLiteral("\\WindowsUpdate.log")));
-  addFile(I18n::tr("Defender: persist MpCmdRun log"), win(QStringLiteral("\\Temp\\MpCmdRun.log")));
-  addReg(I18n::tr("Defender: persist product registry state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Defender"));
-  addReg(I18n::tr("Defender: persist WdBoot service state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WdBoot"));
-  addReg(I18n::tr("Defender: persist WdFilter service state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WdFilter"));
-  addReg(I18n::tr("Defender: persist WdNisSvc service state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WdNisSvc"));
-  addReg(I18n::tr("Defender: persist WdNisDrv service state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WdNisDrv"));
-  addReg(I18n::tr("Defender: persist WinDefend service state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WinDefend"));
-  block += QChar('\n');
+  if (sections & kDefaultDefender) {
+    appendSectionHeader(block, I18n::tr("Microsoft Defender"));
+    addFile(I18n::tr("Defender: persist product files and updates"), programFiles(QStringLiteral("\\Windows Defender")));
+    addFile(I18n::tr("Defender: persist ProgramData signatures and state"), programData(QStringLiteral("\\Microsoft\\Windows Defender")));
+    addFile(I18n::tr("Defender: persist Windows Update log"), win(QStringLiteral("\\WindowsUpdate.log")));
+    addFile(I18n::tr("Defender: persist MpCmdRun log"), win(QStringLiteral("\\Temp\\MpCmdRun.log")));
+    addReg(I18n::tr("Defender: persist product registry state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows Defender"));
+    addReg(I18n::tr("Defender: persist WdBoot service state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WdBoot"));
+    addReg(I18n::tr("Defender: persist WdFilter service state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WdFilter"));
+    addReg(I18n::tr("Defender: persist WdNisSvc service state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WdNisSvc"));
+    addReg(I18n::tr("Defender: persist WdNisDrv service state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WdNisDrv"));
+    addReg(I18n::tr("Defender: persist WinDefend service state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services\\WinDefend"));
+    block += QChar('\n');
+  }
 
-  block += QStringLiteral(":: -- ");
-  block += I18n::tr("System Center Endpoint Protection");
-  block += QStringLiteral(" --\n");
-  addFile(I18n::tr("SCEP: persist client program files"), programFiles(QStringLiteral("\\Microsoft Security Client")));
-  addFile(I18n::tr("SCEP: persist Windows Update log"), win(QStringLiteral("\\Windowsupdate.log")));
-  addFile(I18n::tr("SCEP: persist MpCmdRun log"), win(QStringLiteral("\\Temp\\Mpcmdrun.log")));
-  addFile(I18n::tr("SCEP: persist antimalware signatures and state"), programData(QStringLiteral("\\Microsoft\\Microsoft Antimalware")));
-  addReg(I18n::tr("SCEP: persist antimalware registry state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Microsoft Antimalware"));
+  if (sections & kDefaultScep) {
+    appendSectionHeader(block, I18n::tr("System Center Endpoint Protection"));
+    addFile(I18n::tr("SCEP: persist client program files"), programFiles(QStringLiteral("\\Microsoft Security Client")));
+    addFile(I18n::tr("SCEP: persist Windows Update log"), win(QStringLiteral("\\Windowsupdate.log")));
+    addFile(I18n::tr("SCEP: persist MpCmdRun log"), win(QStringLiteral("\\Temp\\Mpcmdrun.log")));
+    addFile(I18n::tr("SCEP: persist antimalware signatures and state"), programData(QStringLiteral("\\Microsoft\\Microsoft Antimalware")));
+    addReg(I18n::tr("SCEP: persist antimalware registry state"), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Microsoft Antimalware"));
+  }
 
   return block;
 }
 
-void appendDefaultRules(QPlainTextEdit* target) {
+void appendDefaultRules(QWidget* parent, QPlainTextEdit* target) {
+  const int sections = chooseDefaultRuleSections(parent);
+  if (sections == 0) return;
+
   target->moveCursor(QTextCursor::End);
   if (!target->toPlainText().isEmpty() && !target->toPlainText().endsWith(QChar('\n'))) target->insertPlainText(QStringLiteral("\n"));
-  target->insertPlainText(defaultRulesText());
+  target->insertPlainText(defaultRulesText(sections));
   target->moveCursor(QTextCursor::End);
 }
 
@@ -307,7 +377,7 @@ ImportDialog::ImportDialog(QWidget* parent) : QDialog(parent) {
   buttonRow->addWidget(loadBtn);
   buttonRow->addWidget(closeBtn);
   connect(m_importBtn, &QPushButton::clicked, this, &ImportDialog::onImportClicked);
-  connect(defaultRulesBtn, &QPushButton::clicked, this, [this]() { appendDefaultRules(m_text); });
+  connect(defaultRulesBtn, &QPushButton::clicked, this, [this]() { appendDefaultRules(this, m_text); });
   connect(loadBtn, &QPushButton::clicked, this, [this]() {
     // 不限文件后缀（.txt / .bat / .ps1 / .log / 配置 dump 都可能含 uwfmgr 命令）。
     // 多选支持：用户可以一次拉一批日志进来。

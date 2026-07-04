@@ -21,7 +21,8 @@
 // 工作流：
 //   - 用户在多行文本框里键入 / 粘贴 uwfmgr 命令，或者点 "Load from file…"
 //     按钮选一个文本类文件，dialog 会用 grep 把文件里含 "uwfmgr" 的行追加
-//     到文本框；
+//     到文本框；也可以点 "Load default rules" 选择一组 Microsoft 推荐的默认
+//     排除规则模板追加到文本框；
 //   - 点击 Import → dialog 调 uwf::api::parseUwfmgrText 把每一行解析成
 //     api::UwfmgrCommand；
 //   - 调用通过 setApplier 注入的回调把这些命令"应用"为 UI 上的 pending 变更

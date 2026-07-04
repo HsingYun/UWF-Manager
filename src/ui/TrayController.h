@@ -23,7 +23,7 @@
 //     时换成红色版本；
 //   - 托盘图标被单 / 双击、点击状态项或占用条 → 发 activateWindowRequested()，
 //     MainWindow 接它把主窗口带到前台；
-//   - 退出项直接 QApplication::quit()；
+//   - 退出项关闭 ownerWindow，让 MainWindow::closeEvent 有机会拦截未应用变更；
 //   - 菜单 aboutToShow 时自动重读 UWF 状态刷新；MainWindow 的 5s 定时器
 //     另调 refreshUsage() 让图标与菜单保持实时。
 //

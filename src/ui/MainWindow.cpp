@@ -22,6 +22,7 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QApplication>
+#include <QCloseEvent>
 #include <QCursor>
 #include <QDateTime>
 #include <QDialog>
@@ -335,7 +336,10 @@ void MainWindow::buildUi() {
   m_actRefresh = tb->addAction(I18n::tr("Refresh"));
   m_actRefresh->setShortcut(QKeySequence::Refresh);
   m_actRefresh->setToolTip(I18n::tr("Re-read the current session state and next-session configuration of UWF."));
-  connect(m_actRefresh, &QAction::triggered, this, &MainWindow::refresh);
+  connect(m_actRefresh, &QAction::triggered, this, [this]() {
+    if (!confirmDiscardPendingChanges()) return;
+    refresh();
+  });
 
   m_actPlan = tb->addAction(I18n::tr("Review and apply"));
   m_actPlan->setToolTip(I18n::tr("Review all pending changes and apply them in one batch. Most changes take effect after the next reboot."));
@@ -391,25 +395,36 @@ void MainWindow::buildUi() {
     // 当前 toolbar 及其上的 QAction，正在执行的回调随即变成悬空指针。
     // 单次延迟到事件循环下一轮再做，让回调先安全返回。
     auto switchTo = [this](const I18n::Lang target) {
-      if (I18n::instance().lang() == target) return;
+      if (I18n::instance().lang() == target) return true;
+      if (!confirmDiscardPendingChanges()) return false;
       // 抑制 paint 直到 rebuildUi 结束，避免用户看到 tear-down 中间空白
       // 一帧。配对的 setUpdatesEnabled(true) 在 rebuildUi 末尾。
       setUpdatesEnabled(false);
       I18n::instance().setLang(target);
       QTimer::singleShot(0, this, &MainWindow::rebuildUi);
+      return true;
     };
 
     auto* enAct = menu->addAction("English");
     enAct->setCheckable(true);
     enAct->setActionGroup(langGroup);
     enAct->setChecked(I18n::instance().lang() == I18n::Lang::En);
-    connect(enAct, &QAction::triggered, this, [switchTo]() { switchTo(I18n::Lang::En); });
 
     auto* zhAct = menu->addAction("简体中文");
     zhAct->setCheckable(true);
     zhAct->setActionGroup(langGroup);
     zhAct->setChecked(I18n::instance().lang() == I18n::Lang::Zh_CN);
-    connect(zhAct, &QAction::triggered, this, [switchTo]() { switchTo(I18n::Lang::Zh_CN); });
+
+    auto restoreLangChecks = [enAct, zhAct]() {
+      enAct->setChecked(I18n::instance().lang() == I18n::Lang::En);
+      zhAct->setChecked(I18n::instance().lang() == I18n::Lang::Zh_CN);
+    };
+    connect(enAct, &QAction::triggered, this, [switchTo, restoreLangChecks]() {
+      if (!switchTo(I18n::Lang::En)) restoreLangChecks();
+    });
+    connect(zhAct, &QAction::triggered, this, [switchTo, restoreLangChecks]() {
+      if (!switchTo(I18n::Lang::Zh_CN)) restoreLangChecks();
+    });
 
     btn->setMenu(menu);
   }
@@ -421,6 +436,7 @@ void MainWindow::buildUi() {
   // 后续 themeChanged → singleShot → rebuildUi → setUpdatesEnabled(true)
   // 一次性把最终态画出来。
   connect(m_actTheme, &QAction::triggered, this, [this]() {
+    if (!confirmDiscardPendingChanges()) return;
     setUpdatesEnabled(false);
     ThemeManager::instance().toggle();
   });
@@ -447,8 +463,7 @@ void MainWindow::buildUi() {
 
   // 主题切换走和语言切换完全相同的入口：rebuildUi 整体重建 toolbar + 中央
   // widget。两套刷新走同一条路径，避免之前"主题切换只刷 icon、语言切换全
-  // 重建"两套机制各自的几何跳变。代价跟语言切换一致——会丢 widget 状态里
-  // 的 pending changes，所以切主题前应已 apply 过待应用变更。
+  // 重建"两套机制各自的几何跳变。切换前会先确认是否丢弃 pending changes。
   // QTimer::singleShot(0, ...) 把 rebuild 推到下一轮事件循环，让发出
   // themeChanged 信号的 ThemeManager::apply 先安全返回。
   // setUpdatesEnabled(false) 已在主题按钮 click handler 里调过（在 toggle()
@@ -634,6 +649,31 @@ void MainWindow::rebuildUi() {
 
 void MainWindow::showTransientHint(const QString& text, const int msec) const {
   if (m_statusCtl) m_statusCtl->flash(text, msec);
+}
+
+bool MainWindow::confirmDiscardPendingChanges() {
+  if (!m_global) return true;
+  if (QWidget* fw = QApplication::focusWidget()) fw->clearFocus();
+
+  const std::size_t pending = collectPending(m_global, m_diskTabs).count();
+  if (pending == 0) return true;
+
+  if (isMinimized()) {
+    showNormal();
+    raise();
+    activateWindow();
+  }
+
+  return dialogs::confirm(this, I18n::tr("Discard pending changes?"),
+                          I18n::tr("There are %1 pending change(s) that have not been applied.\n\nContinue and discard them?").arg(pending));
+}
+
+void MainWindow::closeEvent(QCloseEvent* ev) {
+  if (!confirmDiscardPendingChanges()) {
+    ev->ignore();
+    return;
+  }
+  QMainWindow::closeEvent(ev);
 }
 
 void MainWindow::showEvent(QShowEvent* ev) {

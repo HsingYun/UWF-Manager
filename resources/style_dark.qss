@@ -592,6 +592,33 @@ QMenu::indicator:non-exclusive:unchecked {
     image: none;
 }
 
+QCheckBox {
+    spacing: 8px;
+}
+
+QCheckBox::indicator {
+    width: 15px;
+    height: 15px;
+    border: 1px solid #5C6168;
+    border-radius: 3px;
+    background: #1B1D20;
+}
+
+QCheckBox::indicator:hover {
+    border-color: #4C8BF5;
+}
+
+QCheckBox::indicator:checked {
+    border-color: #4C8BF5;
+    background: #4C8BF5;
+    image: url(:/icons/check_dark.svg);
+}
+
+QCheckBox::indicator:disabled {
+    border-color: #2A2D33;
+    background: #1A1C1F;
+}
+
 QComboBox[dirty="true"], QSpinBox[dirty="true"] {
     border: 1px solid #FFB45A;
     background: rgba(255, 180, 90, 0.10);

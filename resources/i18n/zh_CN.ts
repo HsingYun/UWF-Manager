@@ -771,6 +771,8 @@ Exclusion: %1</source>
     </message>
     <message><source>Load from file…</source><translation>从文件加载…</translation></message>
     <message><source>Load default rules</source><translation>加载默认规则</translation></message>
+    <message><source>Choose default rules</source><translation>选择默认规则</translation></message>
+    <message><source>Select the default rule groups to append. You can review or delete individual commands before importing.</source><translation>选择要追加的默认规则分组。导入前仍可检查或删除单条命令。</translation></message>
     <message><source>Microsoft recommended UWF exclusions</source><translation>Microsoft 推荐的 UWF 排除规则</translation></message>
     <message><source>Review these defaults before importing; folders should exist before UWF accepts file exclusions.</source><translation>导入前请先检查这些默认项；文件夹需要已存在，UWF 才会接受文件排除。</translation></message>
     <message><source>Source: Common write filter exclusions and antimalware support for UWF-protected devices.</source><translation>来源：常见写入筛选器排除项，以及受 UWF 保护设备的反恶意软件支持文档。</translation></message>
@@ -843,6 +845,14 @@ uwfmgr registry add-exclusion HKLM\Software\MyApp</translation></message>
     <message><source>File %1 is larger than 5 MB and was not parsed. Please filter it manually first.</source><translation>文件 %1 超过 5 MB，未被解析；请先手动筛选后再加载。</translation></message>
     <message><source>Cannot read file</source><translation>无法读取文件</translation></message>
     <message><source>Could not open file %1: %2</source><translation>无法打开文件 %1：%2</translation></message>
+
+    <!-- pending change guard -->
+    <message><source>Discard pending changes?</source><translation>放弃待应用变更？</translation></message>
+    <message><source>There are %1 pending change(s) that have not been applied.
+
+Continue and discard them?</source><translation>还有 %1 个待应用变更尚未应用。
+
+继续并放弃这些变更？</translation></message>
 
     <!-- ImportDialog: parse errors -->
     <message><source>Incomplete uwfmgr command</source><translation>uwfmgr 命令不完整</translation></message>
