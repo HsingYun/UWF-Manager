@@ -49,9 +49,8 @@ using core::OverlayType;
 
 namespace {
 
-// 圆角遮罩层参数：左右内缩量对齐 body 的 contentsMargins，半径对齐 QSS statusCard
-// 的 border-radius——这样补出的圆角和卡片轮廓一致。
-constexpr qreal kCardInset = 6;
+// Rounded-corner overlay matches the scroll viewport; horizontal alignment is handled by layouts.
+constexpr qreal kCardInset = 0;
 constexpr qreal kCardRadius = 10;
 
 // QSpinBox 默认在输入值超过 maximum() 时 validate() 返回 Invalid，字符会被
@@ -166,16 +165,6 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   title->setObjectName("panelTitle");
   outer->addWidget(title);
 
-  // 两条横幅各包一层左右 6px 内边距的行——和下面卡片 body 的 (6,0,6,0)、tips 行
-  // 的内边距对齐，否则横幅彩条直贴面板边、比卡片每侧宽 6px。包成子布局而非直接
-  // addWidget：横幅 hide() 时子布局 isEmpty() 为真，outer 不会为它留行高 / 行距。
-  auto addBannerRow = [outer](QLabel* banner) {
-    auto* row = new QHBoxLayout();
-    row->setContentsMargins(6, 0, 6, 0);
-    row->addWidget(banner);
-    outer->addLayout(row);
-  };
-
   // 兼容模式警告——放在状态横幅之上，一经 setCompatibilityNotice 显示便常驻，
   // 不随 setData / setUnavailable 的刷新清除。
   m_compatBanner = new StatusBanner(this);
@@ -183,13 +172,13 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   m_compatBanner->setProperty("level", "warn");
   m_compatBanner->setWordWrap(true);
   m_compatBanner->hide();
-  addBannerRow(m_compatBanner);
+  outer->addWidget(m_compatBanner);
 
   m_banner = new StatusBanner(this);
   m_banner->setObjectName("statusBanner");
   m_banner->setWordWrap(true);
   m_banner->hide();
-  addBannerRow(m_banner);
+  outer->addWidget(m_banner);
 
   auto* scroll = new QScrollArea(this);
   m_scroll = scroll;
@@ -206,10 +195,8 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   m_scrollHost = new QWidget(scroll);
   m_scrollHost->setBackgroundRole(QPalette::NoRole);
   m_scrollHost->setAutoFillBackground(false);
-  // 左右内边距对称：右侧 6px 原是给纵向滚动条留的槽，左侧补一个相同的 6px，
-  // 否则两张卡片左贴边、右留槽，整体偏左，和下面居中的 tips 对不齐。
   auto* body = new QVBoxLayout(m_scrollHost);
-  body->setContentsMargins(6, 0, 6, 0);
+  body->setContentsMargins(0, 0, 0, 0);
   body->setSpacing(10);
 
   // 筛选器 —— 一行："本次 / 下次"两张会话状态 mini 卡片，左对齐。不再单列

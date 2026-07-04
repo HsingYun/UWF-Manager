@@ -515,7 +515,7 @@ void MainWindow::buildUi() {
   // 规则里的背景色根本不生效，看上去就和主窗口底色有差。
   globalWrap->setAttribute(Qt::WA_StyledBackground, true);
   auto* globalLayout = new QVBoxLayout(globalWrap);
-  globalLayout->setContentsMargins(14, 12, 14, 12);
+  globalLayout->setContentsMargins(18, 12, 18, 12);
   globalLayout->setSpacing(10);
   m_global = new GlobalStatusPanel(this);
   // 系统版本未通过校验时，把兼容模式提示常驻在面板信息框里。提示文案在此
@@ -559,13 +559,7 @@ void MainWindow::buildUi() {
   // 基线按富文本渲染，纯文本 tooltip 按纯文本渲染，里面的 & / < 不会被解析走样。
   m_hoverCtl = new TransientLabel(m_hoverHint, m_hoverHint);
   m_hoverCtl->setBaseline(systemInfoHtml());
-  // tips 与上面两张卡片左右对齐：卡片在滚动区里通过 body 的对称内边距多内缩了
-  // 6px（见 GlobalStatusPanel），tips 不走滚动区，这里给它补上同样的 6px 左右
-  // 外边距，三者左右边缘才齐。
-  auto* tipsRow = new QHBoxLayout();
-  tipsRow->setContentsMargins(6, 0, 6, 0);
-  tipsRow->addWidget(m_hoverHint);
-  globalLayout->addLayout(tipsRow, 0);
+  globalLayout->addWidget(m_hoverHint, 0);
   globalWrap->setObjectName("globalWrap");
   globalWrap->setFixedWidth(420);
   // 右侧面板整体最小高度 = 外壳最小高 + 滚动内容完整高。GlobalStatusPanel 的滚动区
