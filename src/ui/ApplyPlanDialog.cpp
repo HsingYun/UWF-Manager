@@ -20,10 +20,10 @@
 #include <QColor>
 #include <QContextMenuEvent>
 #include <QDateTime>
-#include <QDialogButtonBox>
 #include <QDir>
 #include <QFileDialog>
 #include <QGuiApplication>
+#include <QHBoxLayout>
 #include <QKeyEvent>
 #include <QKeySequence>
 #include <QLabel>
@@ -346,16 +346,18 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   splitter->setSizes(m_changeCmds.empty() ? QList<int>{120, 360} : QList<int>{220, 260});
   layout->addWidget(splitter, 1);
 
-  auto* box = new QDialogButtonBox(this);
+  auto* buttonRow = new QHBoxLayout();
   // 导出按钮：把对话框里展示的所有命令写到一个文件，注释（":: ..." 行）剔掉，
-  // 只保留可执行的 uwfmgr 命令。ActionRole 在 WindowsLayout 下落在左侧，
-  // 与 Apply / Close 自然分组。
-  auto* exportBtn = box->addButton(I18n::tr("Export commands…"), QDialogButtonBox::ActionRole);
-  auto* commitBtn = box->addButton(I18n::tr("Apply"), QDialogButtonBox::AcceptRole);
+  // 只保留可执行的 uwfmgr 命令。Apply 固定在左侧，与 Import 对话框的主按钮位置一致；
+  // 导出 / 关闭留在右侧。
+  auto* commitBtn = new QPushButton(I18n::tr("Apply"), this);
   commitBtn->setObjectName("primaryBtn");
-  // 不用 QDialogButtonBox::Close 标准按钮——它走 Qt 内置翻译，没加载中文
-  // 翻译包时会显示 "Close"。直接用自定义按钮加 RejectRole 保留关闭语义。
-  box->addButton(I18n::tr("Close"), QDialogButtonBox::RejectRole);
+  auto* exportBtn = new QPushButton(I18n::tr("Export commands…"), this);
+  auto* closeBtn = new QPushButton(I18n::tr("Close"), this);
+  buttonRow->addWidget(commitBtn);
+  buttonRow->addStretch(1);
+  buttonRow->addWidget(exportBtn);
+  buttonRow->addWidget(closeBtn);
 
   // 无变更时禁用"应用"，只能关闭。
   const bool hasChanges = !m_changeCmds.empty();
@@ -404,7 +406,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     information(this, I18n::tr("Export finished"), I18n::tr("Exported %1 commands to:\n%2").arg(written).arg(QDir::toNativeSeparators(path)));
   });
 
-  connect(box, &QDialogButtonBox::rejected, this, &QDialog::reject);
+  connect(closeBtn, &QPushButton::clicked, this, &QDialog::reject);
   connect(commitBtn, &QPushButton::clicked, this, [this, pendingText, commitBtn, formatBlockPlain, joinLines]() {
     // 真实写入前再弹一次二次确认，避免误点。
     const QString warn2 = ThemeManager::instance().color(Sem::Warn).name();
@@ -638,7 +640,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     // 再做，避免在回调里递归进 refresh 的弹窗 / WMI 读。
     emit applied();
   });
-  layout->addWidget(box);
+  layout->addLayout(buttonRow);
 }
 
 }  // namespace uwf::ui
