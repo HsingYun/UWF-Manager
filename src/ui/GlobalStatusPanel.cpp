@@ -29,8 +29,8 @@
 #include <QSpinBox>
 #include <QStyle>
 #include <algorithm>
-#include <climits>
 #include <format>
+#include <limits>
 #include <utility>
 
 #include "../core/Config.h"
@@ -52,6 +52,11 @@ namespace {
 // Rounded-corner overlay matches the scroll viewport; horizontal alignment is handled by layouts.
 constexpr qreal kCardInset = 0;
 constexpr qreal kCardRadius = 10;
+constexpr int kOverlaySpinMaxMb = std::numeric_limits<int>::max();
+
+int toOverlaySpinValue(const uint32_t valueMb) {
+  return static_cast<int>(std::min<uint32_t>(valueMb, static_cast<uint32_t>(kOverlaySpinMaxMb)));
+}
 
 // QSpinBox 默认在输入值超过 maximum() 时 validate() 返回 Invalid，字符会被
 // 拒录入，CorrectToNearestValue 也不会触发（它只在 Intermediate 状态 clamp）。
@@ -234,7 +239,7 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
 
   auto makeNumSpin = [](const QString& suffix) {
     auto* s = new ClampingSpinBox();
-    s->setRange(0, 1024 * 1024);
+    s->setRange(0, kOverlaySpinMaxMb);
     s->setSuffix(" " + suffix);
     // 用户输入超过 max 时，钳到 max（而不是 Qt 默认的"恢复到上个值"），
     // 因为我们的范围是动态计算的，用户的意图是"尽量接近上限"。
@@ -389,7 +394,7 @@ void GlobalStatusPanel::reconfigureRanges() const {
   //   - max  ∈ [maxFloor, maxCeiling]
   //     * RAM 模式  : maxFloor = 0；maxCeiling = 系统总内存 MB
   //     * Disk 模式 : maxFloor = config::kDiskOverlayMinSizeMb（基于磁盘的覆盖层
-  //       UWF 要求至少 1024 MB）；maxCeiling = INT_MAX（物理上限来自目标卷
+  //       UWF 要求至少 1024 MB）；maxCeiling = spinbox 最大值（物理上限来自目标卷
   //       容量，不在这里卡）
   //   - crit ∈ [0, max 当前值]
   //   - warn ∈ [0, crit 当前值]
@@ -399,7 +404,7 @@ void GlobalStatusPanel::reconfigureRanges() const {
   // max 会被抬到 1024；max 下调时 crit 联动下压、crit 下调时 warn 跟着下压。
   // 超过上限的字符由 ClampingSpinBox::fixup() 在失焦/回车时吸到 maximum()。
   const bool isRam = static_cast<OverlayType>(m_overlayTypeNext->currentData().toInt()) == OverlayType::RAM;
-  const int maxCeiling = (isRam && m_totalRamMb > 0) ? static_cast<int>(std::min<uint32_t>(m_totalRamMb, INT_MAX)) : INT_MAX;
+  const int maxCeiling = (isRam && m_totalRamMb > 0) ? toOverlaySpinValue(m_totalRamMb) : kOverlaySpinMaxMb;
   const int maxFloor = isRam ? 0 : static_cast<int>(config::kDiskOverlayMinSizeMb);
 
   m_maxNext->setRange(maxFloor, maxCeiling);
@@ -504,7 +509,7 @@ void GlobalStatusPanel::setData(const core::SessionSnapshot& cur, const core::Se
   // 随后由 reconfigureRanges 收紧到满足约束链的区间。
   for (auto* s : {m_maxNext, m_warnNext, m_critNext}) {
     s->blockSignals(true);
-    s->setRange(0, 1024 * 1024);
+    s->setRange(0, kOverlaySpinMaxMb);
     s->blockSignals(false);
   }
 
@@ -514,7 +519,7 @@ void GlobalStatusPanel::setData(const core::SessionSnapshot& cur, const core::Se
 
   auto setNum = [](QSpinBox* ns, uint32_t nxtV) {
     ns->blockSignals(true);
-    ns->setValue(static_cast<int>(nxtV));
+    ns->setValue(toOverlaySpinValue(nxtV));
     ns->blockSignals(false);
   };
   setNum(m_maxNext, nxt.overlay.maximumSizeMb);
@@ -577,24 +582,24 @@ bool GlobalStatusPanel::importOverlayMaxMb(uint32_t mb) {
   // 收紧——import* 用 setValue 只触发 valueChanged、不触发 editingFinished；
   // 由 caller 在整批导入结束后调 finishImport() 统一收紧。
   if (static_cast<uint32_t>(m_maxNext->value()) == mb) return false;
-  m_maxNext->setRange(0, 1024 * 1024);
-  m_maxNext->setValue(static_cast<int>(std::min<uint32_t>(mb, INT_MAX)));
+  m_maxNext->setRange(0, kOverlaySpinMaxMb);
+  m_maxNext->setValue(toOverlaySpinValue(mb));
   return true;
 }
 
 bool GlobalStatusPanel::importOverlayWarnMb(uint32_t mb) {
   if (!m_available) return false;
   if (static_cast<uint32_t>(m_warnNext->value()) == mb) return false;
-  m_warnNext->setRange(0, 1024 * 1024);
-  m_warnNext->setValue(static_cast<int>(std::min<uint32_t>(mb, INT_MAX)));
+  m_warnNext->setRange(0, kOverlaySpinMaxMb);
+  m_warnNext->setValue(toOverlaySpinValue(mb));
   return true;
 }
 
 bool GlobalStatusPanel::importOverlayCritMb(uint32_t mb) {
   if (!m_available) return false;
   if (static_cast<uint32_t>(m_critNext->value()) == mb) return false;
-  m_critNext->setRange(0, 1024 * 1024);
-  m_critNext->setValue(static_cast<int>(std::min<uint32_t>(mb, INT_MAX)));
+  m_critNext->setRange(0, kOverlaySpinMaxMb);
+  m_critNext->setValue(toOverlaySpinValue(mb));
   return true;
 }
 
