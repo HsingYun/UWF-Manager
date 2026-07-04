@@ -73,6 +73,13 @@ QStringList toQList(const std::vector<std::string>& v) {
   return out;
 }
 
+void applyRegistrySnapshot(ExclusionListWidget* regs, const core::UwfSnapshot& snap, const bool editable) {
+  if (!regs) return;
+  regs->setBaseline(toQList(snap.current.registryExclusions), toQList(snap.next.registryExclusions));
+  regs->setPersistBaseline(snap.current.persistDomainSecretKey, snap.next.persistDomainSecretKey, snap.current.persistTSCAL, snap.next.persistTSCAL);
+  regs->setReadOnly(!editable);
+}
+
 // Win32_Volume.DeviceID 形如 "\\?\Volume{GUID}\"，heading 上只想看 GUID，
 // 不想看那串前缀；解析失败（格式不匹配）就原样返回，保持可读性。
 std::string shortVolumeId(const std::string& vn) {
@@ -205,15 +212,15 @@ DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, QWidget* parent)
   const int fileIdx = m_infoTabs->addTab(m_files, tm.icon(":/icons/file.svg"), I18n::tr("File exclusions"));
   m_infoTabs->setTabToolTip(fileIdx, I18n::tr("Files and folders on this volume excluded from UWF protection. Double-click an entry to copy its path."));
 
-  // 注册表排除在 UWF 里是全局的，和卷无关；只在系统盘这个 TAB 上展示，
-  // 避免其它盘看到一份完全相同的"注册表排除"列表而误解。
+  // 注册表排除在 UWF 里是全局的，和卷无关；只在一个 TAB 上展示，避免其它盘
+  // 看到一份完全相同的"注册表排除"列表而误解。
   if (m_showRegistry) {
     m_regs = new ExclusionListWidget(ExclusionListWidget::Kind::Registry, this);
     const int regIdx = m_infoTabs->addTab(m_regs, tm.icon(":/icons/registry.svg"), I18n::tr("Registry exclusions"));
     m_infoTabs->setTabToolTip(
         regIdx,
         I18n::tr("Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is "
-                 "shared across all volumes and shown only on the system drive. Double-click an entry to copy its path."));
+                 "shared across all volumes and shown only once in the disk tabs. Double-click an entry to copy its path."));
   }
 
   layout->addWidget(m_infoTabs, 1);
@@ -389,9 +396,14 @@ void DiskTab::updateCommitEnablement(const bool globalFilterOn, const bool thisV
   if (m_commitBtn) {
     const bool any = fileOK || (regOK && m_commitRegAct != nullptr);
     m_commitBtn->setEnabled(any);
+    if (QMenu* menu = m_commitBtn->menu()) menu->setEnabled(any);
     // tooltip 动态化：让用户把鼠标悬上去就知道为什么不能点。
     if (!globalFilterOn) {
       m_commitBtn->setToolTip(I18n::tr("The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit."));
+    } else if (!supported() && m_commitRegAct == nullptr) {
+      m_commitBtn->setToolTip(I18n::tr("This volume is not supported by UWF."));
+    } else if (!supported()) {
+      m_commitBtn->setToolTip(I18n::tr("This volume does not support file commit. Only registry commit is available (registry exclusions are global)."));
     } else if (!canManageExclusions() && m_commitRegAct == nullptr) {
       m_commitBtn->setToolTip(I18n::tr("Per-file commit is not supported on the %1 file system.").arg(QString::fromStdString(m_disk.fileSystem)));
     } else if (!canManageExclusions()) {
@@ -413,8 +425,10 @@ void DiskTab::applySnapshot(const core::UwfSnapshot& snap) {
   // 在没有快照的构造期被调到），并决定排除列表 / 状态卡是否可交互。
   m_editable = snap.uwfAvailable && snap.elevated;
   const bool filterOn = snap.current.filter.enabled;
+  const bool registryEditable = m_editable && filterOn;
   if (!supported()) {
     markUnsupported();
+    applyRegistrySnapshot(m_regs, snap, registryEditable);
     updateCommitEnablement(filterOn, /*thisVolumeProtected=*/false);
     return;
   }
@@ -436,15 +450,11 @@ void DiskTab::applySnapshot(const core::UwfSnapshot& snap) {
   }
   m_files->setBaseline(curFiles, nxtFiles);
 
-  if (m_regs) {
-    m_regs->setBaseline(toQList(snap.current.registryExclusions), toQList(snap.next.registryExclusions));
-    m_regs->setPersistBaseline(snap.current.persistDomainSecretKey, snap.next.persistDomainSecretKey, snap.current.persistTSCAL, snap.next.persistTSCAL);
-  }
+  applyRegistrySnapshot(m_regs, snap, registryEditable);
 
   // 不可写（UWF 不可用 / 未提权）时排除列表没有可落地的目标——整列设只读，
   // 禁掉添加 / 删除按钮；恢复可写后再放开（FS 受限卷的文件列表始终保持只读）。
   m_files->setReadOnly(!m_editable || !canManageExclusions());
-  if (m_regs) m_regs->setReadOnly(!m_editable);
 
   // 快照里可能补充 volumeName 信息，刷一下标题。
   if (nv && !nv->volumeName.empty() && m_disk.volumeName.empty()) {

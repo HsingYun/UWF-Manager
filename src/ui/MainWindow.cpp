@@ -57,6 +57,7 @@
 #include <algorithm>
 #include <chrono>
 #include <format>
+#include <optional>
 #include <string_view>
 #include <utility>
 
@@ -907,28 +908,35 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
   m_diskTabs.clear();
   const QString sysDl = systemDriveLetter();
 
-  // 注册表排除是全局的，只挂在一块盘的 TAB 上：系统盘优先；系统盘识别不到
-  // （GetWindowsDirectory 失败）或不在列表里时，退回第一块受支持的盘——保证
-  // 注册表排除列表 / 两个持久化开关始终有入口。两者都没有时 host 留空，且下面
-  // 的 `!empty()` 守卫避免空串误配到无盘符盘。
-  std::string registryHostDl;
+  // 注册表排除是全局的，只挂在一块盘的 TAB 上：系统盘优先，其次第一块可用盘，
+  // 最后退回第一块磁盘。这样即使所有卷都不支持文件排除 / 单文件提交，注册表
+  // 排除列表和注册表提交入口仍然可见。没有任何磁盘时不挂载注册表 TAB。
+  std::optional<std::size_t> registryHostIndex;
   if (!sysDl.isEmpty()) {
-    for (const auto& d : disks)
+    for (std::size_t i = 0; i < disks.size(); ++i) {
+      const auto& d = disks[i];
       if (QString::fromStdString(d.driveLetter).toUpper() == sysDl) {
-        registryHostDl = d.driveLetter;
+        registryHostIndex = i;
         break;
       }
+    }
   }
-  if (registryHostDl.empty()) {
-    for (const auto& d : disks)
+  if (!registryHostIndex) {
+    for (std::size_t i = 0; i < disks.size(); ++i) {
+      const auto& d = disks[i];
       if (d.support == core::DiskSupport::Supported || d.support == core::DiskSupport::FileSystemLimited) {
-        registryHostDl = d.driveLetter;
+        registryHostIndex = i;
         break;
       }
+    }
+  }
+  if (!registryHostIndex && !disks.empty()) {
+    registryHostIndex = 0;
   }
 
-  for (const auto& d : disks) {
-    auto* tab = new DiskTab(d, /*showRegistry=*/!registryHostDl.empty() && d.driveLetter == registryHostDl, this);
+  for (std::size_t i = 0; i < disks.size(); ++i) {
+    const auto& d = disks[i];
+    auto* tab = new DiskTab(d, /*showRegistry=*/registryHostIndex && i == *registryHostIndex, this);
     const QString label = QString::fromStdString(d.driveLetter);
     const bool limited = d.support == core::DiskSupport::FileSystemLimited;
     const bool ok = d.support == core::DiskSupport::Supported || limited;

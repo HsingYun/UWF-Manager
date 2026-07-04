@@ -206,7 +206,7 @@ QList<ImportReportRow> applyImportCommands(const QList<api::UwfmgrCommand>& cmds
         }
         if (!dispatched) {
           r.status = ImportReportRow::Status::Failed;
-          r.detail = I18n::tr("Registry exclusions are only available on the system drive tab, which is not present");
+          r.detail = I18n::tr("Registry exclusions are only available on the registry tab, which is not present");
         }
         break;
       }
