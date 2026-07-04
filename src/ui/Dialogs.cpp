@@ -101,25 +101,16 @@ bool confirm(QWidget* parent, const QString& title, const QString& text) {
   layout->setContentsMargins(22, 18, 22, 14);
   layout->setSpacing(14);
 
-  auto* header = new QHBoxLayout();
-  header->setContentsMargins(0, 0, 0, 0);
-  header->setSpacing(12);
+  auto* bodyRow = new QHBoxLayout();
+  bodyRow->setContentsMargins(0, 0, 0, 0);
+  bodyRow->setSpacing(12);
 
   auto* badge = new QLabel("!", dlg);
   badge->setAlignment(Qt::AlignCenter);
   badge->setFixedSize(28, 28);
   badge->setStyleSheet(QString("QLabel { background: %1; color: #FFFFFF; border-radius: 14px; font-weight: bold; }")
                            .arg(ThemeManager::instance().color(Sem::Danger).name()));
-  header->addWidget(badge, 0, Qt::AlignTop);
-
-  auto* heading = new QLabel(title, dlg);
-  heading->setWordWrap(true);
-  QFont headingFont = heading->font();
-  headingFont.setBold(true);
-  headingFont.setPointSize(headingFont.pointSize() + 1);
-  heading->setFont(headingFont);
-  header->addWidget(heading, 1, Qt::AlignVCenter);
-  layout->addLayout(header);
+  bodyRow->addWidget(badge, 0, Qt::AlignVCenter);
 
   auto* bodyFrame = new QFrame(dlg);
   bodyFrame->setObjectName("confirmBody");
@@ -134,7 +125,8 @@ bool confirm(QWidget* parent, const QString& title, const QString& text) {
   body->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
   body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   bodyLayout->addWidget(body);
-  layout->addWidget(bodyFrame, 1);
+  bodyRow->addWidget(bodyFrame, 1);
+  layout->addLayout(bodyRow, 1);
 
   auto* btns = new QDialogButtonBox(dlg);
   auto* okBtn = btns->addButton(I18n::tr("Continue"), QDialogButtonBox::AcceptRole);
@@ -147,10 +139,10 @@ bool confirm(QWidget* parent, const QString& title, const QString& text) {
   cancelBtn->setFocus();
   layout->addWidget(btns);
 
-  const QFontMetrics headingFm(headingFont);
+  const QFontMetrics titleFm(dlg->fontMetrics());
   const QFontMetrics bodyFm(body->fontMetrics());
   const QString measuredText = Qt::mightBeRichText(text) ? QTextDocumentFragment::fromHtml(text).toPlainText() : text;
-  int widest = headingFm.horizontalAdvance(title);
+  int widest = titleFm.horizontalAdvance(title);
   const QStringList lines = measuredText.split('\n');
   for (const auto& line : lines) widest = std::max(widest, bodyFm.horizontalAdvance(line));
   const int bodyWidth = std::clamp(widest, 320, 440);
