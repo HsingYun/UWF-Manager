@@ -561,17 +561,8 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
     }
   }
 
-  // 调试：枚举即将发给 ExecMethod 的 inParams 里的字段名 + 类型 + 当前值（含
-  // BSTR 的 UTF-16 原始字节十六进制 dump），用于定位 "为什么 WBEM_E_*" —— 一眼
-  // 看清 WMI schema 期望的字段集与我们传的是否一致、字符串里有没有隐藏字符。
-  auto wstrHex = [](const wchar_t* w, size_t len) {
-    std::string out;
-    for (size_t i = 0; i < len; ++i) {
-      if (i > 0) out += ' ';
-      out += std::format("{:04X}", static_cast<unsigned>(w[i]));
-    }
-    return out;
-  };
+  // 调试：枚举即将发给 ExecMethod 的 inParams 里的字段名、类型和当前值，
+  // 看清 WMI schema 期望的字段集与我们传的是否一致。
   if (inParams) {
     std::string dump;
     inParams->BeginEnumeration(WBEM_FLAG_NONSYSTEM_ONLY);
@@ -589,8 +580,7 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
       if (!dump.empty()) dump += ", ";
       if (v.vt == VT_BSTR && v.bstrVal) {
         const UINT blen = SysStringLen(v.bstrVal);
-        dump += std::format("{}(vt=BSTR, cim={}, len={}, val={}, hex=[{}])", wideToUtf8(name), static_cast<int>(ctype), blen, wideToUtf8(v.bstrVal),
-                            wstrHex(v.bstrVal, blen));
+        dump += std::format("{}(vt=BSTR, cim={}, len={}, val={})", wideToUtf8(name), static_cast<int>(ctype), blen, wideToUtf8(v.bstrVal));
       } else {
         dump += std::format("{}(vt={}, cim={}, val={})", wideToUtf8(name), static_cast<int>(v.vt), static_cast<int>(ctype), variantToValue(v).toString());
       }
@@ -603,10 +593,6 @@ WmiMethodResult WmiSession::callMethod(const std::string& objectPath, const std:
 
   const auto pathW = utf8ToWide(objectPath);
   BSTR pathBstr = SysAllocString(pathW.c_str());
-  // 把 ExecMethod 真正下发的 path BSTR 也按 UTF-16 字节 dump 出来——和 PS 这边
-  // 的 __PATH 字面值比对，定位是不是 Qt → utf8 → wide 来回转换在中间塞了不可见
-  // 字符（BOM / NUL / 半形宽形差异等）。
-  UWF_LOG_D("wmi") << std::format("ExecMethod {} path bytes: len={}, hex=[{}]", methodName, pathW.size(), wstrHex(pathW.c_str(), pathW.size()));
   IWbemClassObject* outParams = nullptr;
   hr = d->services->ExecMethod(pathBstr, methodBstr, 0, nullptr, inParams, &outParams, nullptr);
   SysFreeString(pathBstr);

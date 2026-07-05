@@ -49,12 +49,15 @@ constexpr int kMinWindowW = 96;
 constexpr int kHandleWindowSide = 32;
 constexpr int kHandleSide = 24;
 constexpr int kHandleRightInset = 4;
+constexpr int kDefaultRightInset = 4;
+constexpr int kDefaultBottomInset = 32;
 constexpr int kContentLeftMargin = 14;
 constexpr int kContentVPadding = 10;
 constexpr int kTextHandleGap = 8;
 constexpr int kRadius = 8;
 constexpr float kSurfaceAlpha = 0.46f;
-constexpr float kHandleFillAlpha = 0.12f;
+constexpr float kOuterBorderAlpha = 0.50f;
+constexpr float kHandleFillAlpha = 0.52f;
 
 QString formatUsageText(const uint32_t usedMb, const uint32_t totalMb) {
   const double pct = totalMb == 0 ? 0.0 : static_cast<double>(usedMb) * 100.0 / static_cast<double>(totalMb);
@@ -150,13 +153,11 @@ class OverlayMoveHandle final : public QWidget {
     const QRectF h((width() - kHandleSide) / 2.0, (height() - kHandleSide) / 2.0, kHandleSide, kHandleSide);
     QPainterPath handlePath;
     handlePath.addRoundedRect(h.adjusted(2.5, 2.5, -2.5, -2.5), 5, 5);
-    QColor handleFill = tm.color(Sem::FgMuted);
+    QColor handleFill = tm.isLight() ? QColor(0xF2, 0xF2, 0xF2) : QColor(0x20, 0x20, 0x20);
     handleFill.setAlphaF(kHandleFillAlpha);
     p.fillPath(handlePath, handleFill);
-    p.setPen(QPen(tm.color(Sem::Border), 1.0));
-    p.drawPath(handlePath);
 
-    const QColor muted = tm.color(Sem::FgMuted);
+    const QColor muted = tm.isLight() ? QColor(0x20, 0x20, 0x20) : QColor(0xF2, 0xF2, 0xF2);
     const QPointF c = h.center();
     p.setPen(QPen(muted, 1.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     p.drawLine(QPointF(c.x() - 6, c.y()), QPointF(c.x() + 6, c.y()));
@@ -279,7 +280,9 @@ void OverlayFloatingWidget::paintEvent(QPaintEvent*) {
   QColor bg = tm.color(Sem::Surface);
   bg.setAlphaF(kSurfaceAlpha);
   p.fillPath(path, bg);
-  p.setPen(QPen(tm.color(Sem::Border), 1.0));
+  QColor border(0x80, 0x80, 0x80);
+  border.setAlphaF(kOuterBorderAlpha);
+  p.setPen(QPen(border, 1.0));
   p.drawPath(path);
 }
 
@@ -335,7 +338,7 @@ void OverlayFloatingWidget::resizeToContent() {
 
 void OverlayFloatingWidget::moveToDefaultPosition() {
   const QRect g = primaryDesktopGeometry();
-  move(QPoint(g.right() - width() + 1, g.bottom() - height() + 1));
+  move(QPoint(g.right() - width() + 1 - kDefaultRightInset, g.bottom() - height() + 1 - kDefaultBottomInset));
 }
 
 void OverlayFloatingWidget::syncHandleGeometry() {
