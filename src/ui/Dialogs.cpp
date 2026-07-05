@@ -34,6 +34,7 @@
 #include <QTextDocumentFragment>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <memory>
 
 #include "I18n.h"
 #include "Pager.h"
@@ -251,42 +252,50 @@ bool confirmCommit(QWidget* parent, const QString& title, const QString& heading
     pageRow->addStretch(1);
     layout->addLayout(pageRow);
 
-    Pager pager;
-    pager.pageSize = kPreviewPageSize;
-    const int total = static_cast<int>(previewItems.size());
-    const int displayPages = std::max(1, pager.pageCount(total));
+    struct PreviewState {
+      QStringList items;
+      Pager pager;
+      int total = 0;
+      int displayPages = 1;
+    };
+    auto state = std::make_shared<PreviewState>();
+    state->items = previewItems;
+    state->pager.pageSize = kPreviewPageSize;
+    state->total = static_cast<int>(state->items.size());
+    state->displayPages = std::max(1, state->pager.pageCount(state->total));
 
-    auto renderPreview = [list, pageLabel, firstBtn, prevBtn, nextBtn, lastBtn, &pager, &previewItems, total, displayPages]() {
-      pager.clamp(total);
+    auto renderPreview = [list, pageLabel, firstBtn, prevBtn, nextBtn, lastBtn, state]() {
+      state->pager.clamp(state->total);
       list->clear();
-      for (int i = pager.pageStart(); i < pager.pageEnd(total); ++i) {
-        auto* item = new QListWidgetItem(previewItems.at(i));
-        item->setToolTip(previewItems.at(i));
+      for (int i = state->pager.pageStart(); i < state->pager.pageEnd(state->total); ++i) {
+        auto* item = new QListWidgetItem(state->items.at(i));
+        item->setToolTip(state->items.at(i));
         list->addItem(item);
       }
       const int rowHeight = list->count() > 0 ? list->sizeHintForRow(0) : std::max(26, list->fontMetrics().height() + 8);
-      const int visibleRows = std::min(pager.pageSize, total);
+      const int visibleRows = std::min(state->pager.pageSize, state->total);
       list->setFixedHeight(rowHeight * visibleRows + list->frameWidth() * 2 + 2);
-      pageLabel->setText(I18n::tr("Page %1 / %2 · %3 entries total").arg(pager.currentPage + 1).arg(displayPages).arg(total));
-      firstBtn->setEnabled(pager.hasPrev());
-      prevBtn->setEnabled(pager.hasPrev());
-      nextBtn->setEnabled(pager.hasNext(total));
-      lastBtn->setEnabled(pager.hasNext(total));
+      pageLabel->setText(
+          I18n::tr("Page %1 / %2 · %3 entries total").arg(state->pager.currentPage + 1).arg(state->displayPages).arg(state->total));
+      firstBtn->setEnabled(state->pager.hasPrev());
+      prevBtn->setEnabled(state->pager.hasPrev());
+      nextBtn->setEnabled(state->pager.hasNext(state->total));
+      lastBtn->setEnabled(state->pager.hasNext(state->total));
     };
-    QObject::connect(firstBtn, &QPushButton::clicked, dlg, [&pager, renderPreview]() {
-      pager.goFirst();
+    QObject::connect(firstBtn, &QPushButton::clicked, dlg, [state, renderPreview]() {
+      state->pager.goFirst();
       renderPreview();
     });
-    QObject::connect(prevBtn, &QPushButton::clicked, dlg, [&pager, renderPreview]() {
-      pager.goPrev();
+    QObject::connect(prevBtn, &QPushButton::clicked, dlg, [state, renderPreview]() {
+      state->pager.goPrev();
       renderPreview();
     });
-    QObject::connect(nextBtn, &QPushButton::clicked, dlg, [&pager, total, renderPreview]() {
-      pager.goNext(total);
+    QObject::connect(nextBtn, &QPushButton::clicked, dlg, [state, renderPreview]() {
+      state->pager.goNext(state->total);
       renderPreview();
     });
-    QObject::connect(lastBtn, &QPushButton::clicked, dlg, [&pager, total, renderPreview]() {
-      pager.goLast(total);
+    QObject::connect(lastBtn, &QPushButton::clicked, dlg, [state, renderPreview]() {
+      state->pager.goLast(state->total);
       renderPreview();
     });
     renderPreview();
