@@ -103,6 +103,8 @@ class MainWindow : public QMainWindow {
   // 5s 定时器回调：只刷新 Usage 数据——主窗口可见时刷新主面板占用条，
   // 托盘那半段交给 TrayController。
   void refreshUsage();
+  [[nodiscard]] bool overlayFloatingAllowed() const;
+  void syncOverlayFloatingAvailability();
   void setOverlayFloatingVisible(bool visible);
   void requestExit();
 
@@ -135,6 +137,8 @@ class MainWindow : public QMainWindow {
   // QStyle 一些计算只有在 widget 真正进入 shown 状态后才稳定。
   bool m_firstShowDone = false;
   bool m_exitRequested = false;
+  bool m_overlayFloatingAllowed = false;
+  bool m_overlayFloatingRequested = true;
 
   // 系统托盘（图标 + 右键菜单）——独立组件，由本窗口编排。
   TrayController* m_tray = nullptr;
