@@ -26,6 +26,7 @@
 
 #include <QDir>
 #include <QString>
+#include <QStringList>
 
 class QWidget;
 
@@ -48,5 +49,7 @@ bool confirm(QWidget* parent, const QString& title, const QString& text);
 // 这类破坏性操作。用户点"继续"返回 true。allowContinue 为 false 时"继续"按钮置灰，
 // 用户只能取消——用于「没有可提交内容」这类场景，复用同一套版式。
 bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail, bool allowContinue = true);
+bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail,
+                   const QStringList& previewItems, bool allowContinue = true);
 
 }  // namespace uwf::ui::dialogs

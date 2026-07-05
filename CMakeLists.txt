@@ -180,6 +180,13 @@ qt_add_translations(UWF
 
 target_link_libraries(UWF PRIVATE Qt6::Widgets Qt6::Svg Qt6::Network)
 
+qt_import_plugins(UWF NO_DEFAULT
+        INCLUDE_BY_TYPE platforms Qt6::QWindowsIntegrationPlugin
+        INCLUDE_BY_TYPE styles Qt6::QModernWindowsStylePlugin
+        INCLUDE_BY_TYPE iconengines Qt6::QSvgIconPlugin
+        INCLUDE_BY_TYPE imageformats Qt6::QSvgPlugin
+)
+
 target_sources(UWF PRIVATE resources/app.rc)
 
 if (MSVC)
@@ -200,8 +207,15 @@ if (MSVC)
     target_compile_options(UWF PRIVATE
             /W4 /WX /permissive-
             $<$<CONFIG:Release>:/Os>
+            $<$<CONFIG:Release>:/Gy>
+            $<$<CONFIG:Release>:/Gw>
     )
-    target_link_options(UWF PRIVATE "/MANIFEST:NO" "/MANIFESTUAC:NO")
+    target_link_options(UWF PRIVATE
+            "/MANIFEST:NO"
+            "/MANIFESTUAC:NO"
+            $<$<CONFIG:Release>:/OPT:REF>
+            $<$<CONFIG:Release>:/OPT:ICF>
+    )
 else ()
     target_compile_options(UWF PRIVATE
             -Wall -Wextra -Wpedantic

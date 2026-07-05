@@ -714,9 +714,18 @@ Exclusion: %1</source>
         <source>Delete this registry key and its whole subtree, and commit the deletions to disk</source>
         <translation>删除这个注册表键及其整棵子树，并把删除提交到磁盘</translation>
     </message>
+    <message><source>Scanning registry keys…</source><translation>正在扫描注册表键…</translation></message>
     <message>
-        <source>%1 keys, including all their values and subkeys, will be deleted.</source>
-        <translation>将删除 %1 个键（连同它们的全部值和子键）。</translation>
+        <source>Scanning registry keys…
+%1 key(s) found</source>
+        <translation>正在扫描注册表键…
+已找到 %1 个键</translation>
+    </message>
+    <message><source>Registry keys that will be deleted:</source><translation>将删除的注册表键：</translation></message>
+    <message><source>Copy current entry</source><translation>复制当前条目</translation></message>
+    <message>
+        <source>%1 keys and all values they contain will be recursively deleted.</source>
+        <translation>将递归删除 %1 个子键以及其包含的全部值。</translation>
     </message>
 
     <!-- commitFileDeletionPath -->

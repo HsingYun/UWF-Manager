@@ -26,6 +26,7 @@
 //
 // 头文件不依赖 Qt、不引入平台头（实现在 .cpp 里用 Windows 注册表 API）。
 
+#include <atomic>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -94,5 +95,9 @@ struct RegValueInfo {
 // 正好是「递归删除」要的顺序（逐个删时每个键被处理时都已是叶子）。返回归一化后的
 // 长写完整键路径。
 [[nodiscard]] std::vector<std::string> collectKeyTree(const std::string& key);
+
+// 可取消版本：给 UI worker 线程使用。每收集到一个键就递增 scanned；canceled
+// 置位后尽快停止并返回 false，out 保留已收集的部分结果但调用方应丢弃。
+bool collectKeyTree(const std::string& key, const std::atomic_bool& canceled, std::atomic<std::uint64_t>& scanned, std::vector<std::string>& out);
 
 }  // namespace uwf::regkey

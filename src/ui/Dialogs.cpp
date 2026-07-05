@@ -16,13 +16,19 @@
  */
 #include "Dialogs.h"
 
+#include <QAbstractItemView>
+#include <QAction>
+#include <QClipboard>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QFont>
 #include <QFontMetrics>
 #include <QFrame>
+#include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QListWidget>
+#include <QMenu>
 #include <QPushButton>
 #include <QTextDocument>
 #include <QTextDocumentFragment>
@@ -30,6 +36,7 @@
 #include <algorithm>
 
 #include "I18n.h"
+#include "Pager.h"
 #include "StatusBanner.h"
 #include "ThemeManager.h"
 
@@ -155,6 +162,13 @@ bool confirm(QWidget* parent, const QString& title, const QString& text) {
 }
 
 bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail, bool allowContinue) {
+  return confirmCommit(parent, title, heading, target, detail, {}, allowContinue);
+}
+
+bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail,
+                   const QStringList& previewItems, bool allowContinue) {
+  constexpr int kPreviewPageSize = 10;
+
   auto* dlg = new QDialog(parent);
   dlg->setWindowTitle(title);
 
@@ -190,6 +204,94 @@ bool confirmCommit(QWidget* parent, const QString& title, const QString& heading
     layout->addWidget(detailLabel);
   }
 
+  if (allowContinue && !previewItems.isEmpty()) {
+    auto* previewTitle = new QLabel(I18n::tr("Registry keys that will be deleted:"), dlg);
+    previewTitle->setStyleSheet(QString("color: %1;").arg(mutedHex));
+    layout->addWidget(previewTitle);
+
+    auto* list = new QListWidget(dlg);
+    list->setObjectName("commitPreviewList");
+    list->setSelectionMode(QAbstractItemView::SingleSelection);
+    list->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    list->setContextMenuPolicy(Qt::CustomContextMenu);
+    list->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    list->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    QFont previewFont("Consolas");
+    previewFont.setStyleHint(QFont::Monospace);
+    list->setFont(previewFont);
+    list->setStyleSheet(QString("QListWidget#commitPreviewList { border: 1px solid %1; border-radius: 4px; }"
+                                "QListWidget#commitPreviewList::item { min-height: 20px; padding: 2px 8px; }")
+                            .arg(mutedHex));
+    layout->addWidget(list);
+    QObject::connect(list, &QListWidget::customContextMenuRequested, dlg, [list](const QPoint& pos) {
+      QListWidgetItem* item = list->itemAt(pos);
+      if (!item) return;
+      list->setCurrentItem(item);
+      QMenu menu(list);
+      QAction* copyAct = menu.addAction(I18n::tr("Copy current entry"));
+      QObject::connect(copyAct, &QAction::triggered, list, [item] { QGuiApplication::clipboard()->setText(item->text()); });
+      menu.exec(list->viewport()->mapToGlobal(pos));
+    });
+
+    auto* pageRow = new QHBoxLayout();
+    auto* firstBtn = new QPushButton(QStringLiteral("«"), dlg);
+    auto* prevBtn = new QPushButton(QStringLiteral("‹"), dlg);
+    auto* pageLabel = new QLabel(dlg);
+    pageLabel->setAlignment(Qt::AlignCenter);
+    pageLabel->setMinimumWidth(220);
+    auto* nextBtn = new QPushButton(QStringLiteral("›"), dlg);
+    auto* lastBtn = new QPushButton(QStringLiteral("»"), dlg);
+    for (auto* b : {firstBtn, prevBtn, nextBtn, lastBtn}) b->setMaximumWidth(36);
+    pageRow->addStretch(1);
+    pageRow->addWidget(firstBtn);
+    pageRow->addWidget(prevBtn);
+    pageRow->addWidget(pageLabel);
+    pageRow->addWidget(nextBtn);
+    pageRow->addWidget(lastBtn);
+    pageRow->addStretch(1);
+    layout->addLayout(pageRow);
+
+    Pager pager;
+    pager.pageSize = kPreviewPageSize;
+    const int total = static_cast<int>(previewItems.size());
+    const int displayPages = std::max(1, pager.pageCount(total));
+
+    auto renderPreview = [list, pageLabel, firstBtn, prevBtn, nextBtn, lastBtn, &pager, &previewItems, total, displayPages]() {
+      pager.clamp(total);
+      list->clear();
+      for (int i = pager.pageStart(); i < pager.pageEnd(total); ++i) {
+        auto* item = new QListWidgetItem(previewItems.at(i));
+        item->setToolTip(previewItems.at(i));
+        list->addItem(item);
+      }
+      const int rowHeight = list->count() > 0 ? list->sizeHintForRow(0) : std::max(26, list->fontMetrics().height() + 8);
+      const int visibleRows = std::min(pager.pageSize, total);
+      list->setFixedHeight(rowHeight * visibleRows + list->frameWidth() * 2 + 2);
+      pageLabel->setText(I18n::tr("Page %1 / %2 · %3 entries total").arg(pager.currentPage + 1).arg(displayPages).arg(total));
+      firstBtn->setEnabled(pager.hasPrev());
+      prevBtn->setEnabled(pager.hasPrev());
+      nextBtn->setEnabled(pager.hasNext(total));
+      lastBtn->setEnabled(pager.hasNext(total));
+    };
+    QObject::connect(firstBtn, &QPushButton::clicked, dlg, [&pager, renderPreview]() {
+      pager.goFirst();
+      renderPreview();
+    });
+    QObject::connect(prevBtn, &QPushButton::clicked, dlg, [&pager, renderPreview]() {
+      pager.goPrev();
+      renderPreview();
+    });
+    QObject::connect(nextBtn, &QPushButton::clicked, dlg, [&pager, total, renderPreview]() {
+      pager.goNext(total);
+      renderPreview();
+    });
+    QObject::connect(lastBtn, &QPushButton::clicked, dlg, [&pager, total, renderPreview]() {
+      pager.goLast(total);
+      renderPreview();
+    });
+    renderPreview();
+  }
+
   // 警示横幅——复用全局状态横幅的 warn 样式（橙色）。可继续时提示"不可撤销"；
   // "继续"被置灰时改为展示原因（detail），让用户一眼看到为何不能继续。
   auto* warnBanner = new StatusBanner(dlg);
@@ -216,6 +318,7 @@ bool confirmCommit(QWidget* parent, const QString& title, const QString& heading
   const QFontMetrics monoFm(monoFont);
   int widest = std::max(headFm.horizontalAdvance(heading), monoFm.horizontalAdvance(target));
   if (!detail.isEmpty()) widest = std::max(widest, headFm.horizontalAdvance(detail));
+  if (!previewItems.isEmpty()) widest = std::max(widest, 620);
   dlg->setMinimumWidth(std::clamp(widest + 64, 420, 760));
 
   const bool accepted = dlg->exec() == QDialog::Accepted;

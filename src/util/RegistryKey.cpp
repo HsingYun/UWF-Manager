@@ -18,6 +18,7 @@
 
 #include <windows.h>
 
+#include <atomic>
 #include <format>
 #include <utility>
 
@@ -251,6 +252,37 @@ std::vector<std::string> collectKeyTree(const std::string& key) {
   }
   out.push_back(norm);
   return out;
+}
+
+bool collectKeyTree(const std::string& key, const std::atomic_bool& canceled, std::atomic<std::uint64_t>& scanned, std::vector<std::string>& out) {
+  if (canceled.load()) return false;
+
+  const std::string norm = normalize(key);
+  HKEY opened = nullptr;
+  std::vector<std::string> children;
+  if (openForRead(norm, opened)) {
+    wchar_t name[config::kRegistryKeyNameBufChars];
+    for (DWORD i = 0;; ++i) {
+      if (canceled.load()) {
+        RegCloseKey(opened);
+        return false;
+      }
+      DWORD len = config::kRegistryKeyNameBufChars;
+      const LONG rc = RegEnumKeyExW(opened, i, name, &len, nullptr, nullptr, nullptr, nullptr);
+      if (rc != ERROR_SUCCESS) break;
+      children.push_back(wideToUtf8(std::wstring(name, len)));
+    }
+    RegCloseKey(opened);
+  }
+
+  for (const auto& child : children) {
+    if (!collectKeyTree(norm + '\\' + child, canceled, scanned, out)) return false;
+  }
+
+  if (canceled.load()) return false;
+  out.push_back(norm);
+  ++scanned;
+  return true;
 }
 
 }  // namespace uwf::regkey

@@ -16,15 +16,23 @@
  */
 #include "CommitDispatcher.h"
 
+#include <QDialog>
 #include <QDir>
 #include <QDirIterator>
 #include <QFileInfo>
 #include <QList>
+#include <QProgressDialog>
 #include <QStringList>
 #include <QTimer>
 #include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <cstdint>
 #include <format>
+#include <optional>
 #include <string>
+#include <thread>
+#include <vector>
 
 #include "../util/DriveLetter.h"
 #include "../util/Log.h"
@@ -69,6 +77,53 @@ struct RegCommitTarget {
   std::string valueName;  // 值名；提交时空串 = (Default) 值，删除时空串 = 该键本身
   QString display;        // 报告对话框 "路径" 列的展示串
 };
+
+std::optional<std::vector<std::string>> scanRegistryKeyTreeWithProgress(QWidget* parent, const QString& title, const std::string& key) {
+  constexpr int kMinVisibleMs = 1000;
+  std::atomic_bool canceled{false};
+  std::atomic_bool done{false};
+  std::atomic<std::uint64_t> scanned{0};
+  std::vector<std::string> result;
+  const auto shownAt = std::chrono::steady_clock::now();
+  bool closeQueued = false;
+
+  QProgressDialog progress(I18n::tr("Scanning registry keys…"), I18n::tr("Cancel"), 0, 0, parent);
+  progress.setWindowTitle(title);
+  progress.setWindowModality(Qt::WindowModal);
+  progress.setMinimumDuration(0);
+  progress.setAutoClose(false);
+  progress.setAutoReset(false);
+  QObject::connect(&progress, &QProgressDialog::canceled, &progress, [&canceled] { canceled.store(true); });
+
+  std::thread worker([&] {
+    std::vector<std::string> local;
+    if (regkey::collectKeyTree(key, canceled, scanned, local)) result = std::move(local);
+    done.store(true);
+  });
+
+  QTimer poll(&progress);
+  poll.setInterval(100);
+  QObject::connect(&poll, &QTimer::timeout, &progress, [&] {
+    if (done.load()) {
+      if (!closeQueued) {
+        closeQueued = true;
+        const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - shownAt).count();
+        const int delayMs = static_cast<int>(std::max<std::int64_t>(0, static_cast<std::int64_t>(kMinVisibleMs) - elapsedMs));
+        QTimer::singleShot(delayMs, &progress, &QProgressDialog::accept);
+      }
+      return;
+    }
+    progress.setLabelText(I18n::tr("Scanning registry keys…\n%1 key(s) found").arg(QString::number(static_cast<qulonglong>(scanned.load()))));
+  });
+  poll.start();
+
+  const int rc = progress.exec();
+  if (rc != QDialog::Accepted) canceled.store(true);
+  if (worker.joinable()) worker.join();
+
+  if (canceled.load()) return std::nullopt;
+  return result;
+}
 
 }  // namespace
 
@@ -356,6 +411,7 @@ void CommitDispatcher::commitRegistryDeletionKey(const QString& key, const QStri
   // 由方法自身执行删除，目标必须仍存在；它不递归——CommitRegistryDeletion(key,"")
   // 只能删叶子键，故按 collectKeyTree 的后序（最深子键在前）逐个删。
   QList<RegCommitTarget> targets;
+  QStringList previewKeys;
   if (!wholeKey) {
     if (!regkey::valueExists(normKey, valueName.toStdString())) {
       confirmCommit(m_parent, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to delete."), /*allowContinue=*/false);
@@ -367,14 +423,22 @@ void CommitDispatcher::commitRegistryDeletionKey(const QString& key, const QStri
       confirmCommit(m_parent, title, heading, target, I18n::tr("This registry key does not exist, so there is nothing to delete."), /*allowContinue=*/false);
       return;
     }
-    for (const auto& k : regkey::collectKeyTree(normKey)) {
-      targets.append({k, std::string{}, QString::fromStdString(k)});
+    auto keys = scanRegistryKeyTreeWithProgress(m_parent, title, normKey);
+    if (!keys) return;
+    for (const auto& k : *keys) {
+      const QString display = QString::fromStdString(k);
+      targets.append({k, std::string{}, display});
+      previewKeys << display;
     }
   }
   const int total = static_cast<int>(targets.size());
 
-  const QString detail = wholeKey ? I18n::tr("%1 keys, including all their values and subkeys, will be deleted.").arg(total) : QString();
-  if (!confirmCommit(m_parent, title, heading, target, detail)) return;
+  const QString detail = wholeKey ? I18n::tr("%1 keys and all values they contain will be recursively deleted.").arg(total) : QString();
+  if (wholeKey) {
+    if (!confirmCommit(m_parent, title, heading, target, detail, previewKeys)) return;
+  } else if (!confirmCommit(m_parent, title, heading, target, detail)) {
+    return;
+  }
 
   std::string err;
   auto filters = m_registry.readAll(&err);
