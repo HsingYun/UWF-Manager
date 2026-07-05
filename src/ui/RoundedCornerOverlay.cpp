@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,7 +20,6 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QPen>
-
 #include <utility>
 
 namespace uwf::ui {

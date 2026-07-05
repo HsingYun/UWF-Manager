@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@ namespace uwf::ui {
 
 class DiskTab;
 class GlobalStatusPanel;
+class OverlayFloatingWidget;
 class TrayController;
 class TransientLabel;
 enum class Theme;
@@ -97,10 +98,13 @@ class MainWindow : public QMainWindow {
   // 染色 svg、给 hoverHint 默认文案塞主题相关色。仅供 buildUi 末尾调用一次。
   // 不再作为对外的"主题切换刷新"路径——切主题统一走 rebuildUi。
   void refreshThemedUi();
+  void refreshOverlayFloatingActionIcon();
 
   // 5s 定时器回调：只刷新 Usage 数据——主窗口可见时刷新主面板占用条，
   // 托盘那半段交给 TrayController。
   void refreshUsage();
+  void setOverlayFloatingVisible(bool visible);
+  void requestExit();
 
   QTabWidget* m_tabs = nullptr;
   GlobalStatusPanel* m_global = nullptr;
@@ -123,15 +127,18 @@ class MainWindow : public QMainWindow {
   QAction* m_actRestart = nullptr;
   QAction* m_actAbout = nullptr;
   QAction* m_actLog = nullptr;
+  QAction* m_actFloat = nullptr;
   QAction* m_actLang = nullptr;
   QAction* m_actTheme = nullptr;
   // 首次 showEvent 标记：true 表示已经走过一次"shown 状态下的 rebuildUi"，
   // 后续 show 不再重复。让首屏的几何和样式与切换路径完全一致——polish /
   // QStyle 一些计算只有在 widget 真正进入 shown 状态后才稳定。
   bool m_firstShowDone = false;
+  bool m_exitRequested = false;
 
   // 系统托盘（图标 + 右键菜单）——独立组件，由本窗口编排。
   TrayController* m_tray = nullptr;
+  OverlayFloatingWidget* m_overlayFloat = nullptr;
 
   // 所有"写"操作共享同一个 WmiSession。
   WmiSession m_writeSession;

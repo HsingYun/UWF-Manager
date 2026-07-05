@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,8 +36,8 @@
 #include <utility>
 
 #include "../util/DriveLetter.h"
-#include "I18n.h"
 #include "Dialogs.h"
+#include "I18n.h"
 #include "PathElideDelegate.h"
 #include "ThemeManager.h"
 
@@ -154,7 +154,8 @@ int chooseDefaultRuleSections(QWidget* parent) {
   layout->setContentsMargins(20, 16, 20, 12);
   layout->setSpacing(10);
 
-  auto* hint = new QLabel(I18n::tr("Select the recommended configuration groups to append. You can review or delete individual commands before importing."), &dlg);
+  auto* hint =
+      new QLabel(I18n::tr("Select the recommended configuration groups to append. You can review or delete individual commands before importing."), &dlg);
   hint->setWordWrap(true);
   layout->addWidget(hint);
 
@@ -235,7 +236,8 @@ QString defaultRulesText(const int sections) {
   if (sections & kDefaultBits) {
     appendSectionHeader(block, I18n::tr("Background Intelligent Transfer Service (BITS)"));
     addFile(I18n::tr("BITS: persist downloader queue files"), programData(QStringLiteral("\\Microsoft\\Network\\Downloader")));
-    addReg(I18n::tr("BITS: persist transfer state index"), QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\BITS\\StateIndex"));
+    addReg(I18n::tr("BITS: persist transfer state index"),
+           QStringLiteral("HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\BITS\\StateIndex"));
     block += QChar('\n');
   }
 

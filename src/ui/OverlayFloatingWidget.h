@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+#pragma once
+
+#include <QPoint>
+#include <QWidget>
+#include <cstdint>
+
+#include "../core/UwfModel.h"
+
+class QLabel;
+class QContextMenuEvent;
+class QHideEvent;
+class QMouseEvent;
+class QMoveEvent;
+class QPaintEvent;
+class QShowEvent;
+
+namespace uwf::ui {
+
+class OverlayMoveHandle;
+
+// 桌面浮窗：按需显示当前 overlay 用量。窗口本身不读取 WMI，
+// 只接收 MainWindow 刷新周期喂进来的状态，避免多一条独立读取链。
+class OverlayFloatingWidget : public QWidget {
+  Q_OBJECT
+ public:
+  explicit OverlayFloatingWidget(QWidget* parent = nullptr);
+
+  void setOverlayConfig(const core::OverlayConfig& cfg);
+  void updateUsage(const core::OverlayRuntime& runtime);
+  void setUnavailable(const QString& reason);
+  void setFilterEnabled(bool enabled);
+
+ signals:
+  void showMainWindowRequested();
+  void closeFloatingWindowRequested();
+  void exitApplicationRequested();
+
+ protected:
+  void showEvent(QShowEvent* ev) override;
+  void hideEvent(QHideEvent* ev) override;
+  void moveEvent(QMoveEvent* ev) override;
+  void paintEvent(QPaintEvent* ev) override;
+
+ private:
+  friend class OverlayMoveHandle;
+
+  void applyTheme();
+  void refreshText();
+  void resizeToContent();
+  void moveToDefaultPosition();
+  void syncHandleGeometry();
+  void moveByHandleDrag(const QPoint& globalPos, const QPoint& dragOffset);
+  void popupContextMenuAt(const QPoint& globalPos);
+
+  QLabel* m_usage = nullptr;
+  OverlayMoveHandle* m_handle = nullptr;
+
+  core::OverlayRuntime m_runtime;
+  bool m_hasRuntime = false;
+  bool m_filterEnabled = false;
+  bool m_unavailable = false;
+  bool m_positionInitialized = false;
+};
+
+}  // namespace uwf::ui

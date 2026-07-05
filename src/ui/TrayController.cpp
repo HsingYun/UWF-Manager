@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -112,10 +112,9 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow)
 
   m_menu->addSeparator();
 
-  // 菜单项 3：退出。走 ownerWindow->close()，让 MainWindow::closeEvent 有机会
-  // 拦截未应用变更；不要直接 qApp->quit()。
+  // 菜单项 3：退出。交给 MainWindow 统一处理，让 closeEvent 仍有机会拦截未应用变更。
   m_exitAction = m_menu->addAction(I18n::tr("Exit"));
-  connect(m_exitAction, &QAction::triggered, ownerWindow, [ownerWindow]() { ownerWindow->close(); });
+  connect(m_exitAction, &QAction::triggered, this, &TrayController::exitApplicationRequested);
 
   // 菜单弹出前即时刷新状态与占用。
   connect(m_menu, &QMenu::aboutToShow, this, &TrayController::refreshUsage);

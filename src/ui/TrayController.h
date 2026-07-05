@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@
 //     时换成红色版本；
 //   - 托盘图标被单 / 双击、点击状态项或占用条 → 发 activateWindowRequested()，
 //     MainWindow 接它把主窗口带到前台；
-//   - 退出项关闭 ownerWindow，让 MainWindow::closeEvent 有机会拦截未应用变更；
+//   - 退出项发出 exitApplicationRequested，由 MainWindow 统一处理退出；
 //   - 菜单 aboutToShow 时自动重读 UWF 状态刷新；MainWindow 的 5s 定时器
 //     另调 refreshUsage() 让图标与菜单保持实时。
 //
@@ -58,10 +58,11 @@ class TrayController : public QObject {
   // 同时重译静态文案（退出项、图标 tooltip），使其随语言切换跟进。
   // 由菜单 aboutToShow 与 MainWindow 的 5s 定时器驱动；构造时也调一次。
   void refreshUsage();
-
  signals:
   // 用户希望把主窗口带到前台（点击托盘图标 / 状态项 / 占用条时发出）。
   void activateWindowRequested();
+  // 用户从托盘菜单请求真正退出应用，MainWindow 统一处理未应用变更与浮窗状态。
+  void exitApplicationRequested();
 
  protected:
   bool eventFilter(QObject* obj, QEvent* ev) override;

@@ -39,6 +39,7 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QSignalBlocker>
 #include <QStatusBar>
 #include <QStyle>
 #include <QStyleOption>
@@ -79,6 +80,7 @@
 #include "ImportDialog.h"
 #include "LogViewerDialog.h"
 #include "MarqueeHintBox.h"
+#include "OverlayFloatingWidget.h"
 #include "PendingCollect.h"
 #include "ThemeManager.h"
 #include "TransientLabel.h"
@@ -279,6 +281,14 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
   // 系统托盘（图标 + 右键菜单）——独立组件，由本窗口编排：接它的"激活窗口"信号。
   m_tray = new TrayController(m_writeSession, this);
   connect(m_tray, &TrayController::activateWindowRequested, this, &MainWindow::raiseToFront);
+  connect(m_tray, &TrayController::exitApplicationRequested, this, &MainWindow::requestExit);
+
+  m_overlayFloat = new OverlayFloatingWidget();
+  m_overlayFloat->setAttribute(Qt::WA_QuitOnClose, false);
+  connect(m_overlayFloat, &OverlayFloatingWidget::showMainWindowRequested, this, &MainWindow::raiseToFront);
+  connect(m_overlayFloat, &OverlayFloatingWidget::closeFloatingWindowRequested, this, [this]() { setOverlayFloatingVisible(false); });
+  connect(m_overlayFloat, &OverlayFloatingWidget::exitApplicationRequested, this, &MainWindow::requestExit);
+  setOverlayFloatingVisible(true);
 
   // 每 5s 周期刷新 Usage 数据（占用条）——只读 UWF_Overlay，不做整体 refresh。
   m_usageTimer = new QTimer(this);
@@ -300,23 +310,59 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
 void MainWindow::raiseToFront() {
   // 最小化时先恢复；否则确保可见。再 raise + activate 抢前台——配合启动方
   // 进程调用的 AllowSetForegroundWindow，能真正前置而非只闪任务栏。
+  const bool revealFromHidden = !isVisible() && m_firstShowDone;
+  if (revealFromHidden) setWindowOpacity(0.0);
   if (isMinimized())
     showNormal();
   else
     show();
   raise();
   activateWindow();
+  if (revealFromHidden) {
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+    repaint();
+    QTimer::singleShot(0, this, [this]() {
+      setWindowOpacity(1.0);
+      raise();
+      activateWindow();
+    });
+  }
 }
 
 void MainWindow::refreshUsage() {
   // 周期更新只动 Usage 数据：主窗口可见时刷新主面板占用条；托盘那半段交给
   // TrayController（它内部判断右键菜单是否正在显示）。
-  if (isVisible() && m_global) {
-    if (const auto overlay = m_overlay.read()) {
+  const auto filter = m_filter.read();
+  if (m_overlayFloat) {
+    if (!filter) {
+      m_overlayFloat->setUnavailable(I18n::tr("UWF namespace is not available"));
+    } else {
+      m_overlayFloat->setFilterEnabled(filter->currentEnabled);
+    }
+  }
+
+  if (filter && filter->currentEnabled) {
+    std::string overlayErr;
+    const auto overlay = m_overlay.read(&overlayErr);
+    const auto cfg = m_overlayConfig.read(/*currentSession=*/true);
+    if (overlay) {
       core::OverlayRuntime rt;
       rt.currentConsumptionMb = overlay->overlayConsumption;
       rt.availableSpaceMb = overlay->availableSpace;
-      m_global->updateUsage(rt);
+      if (isVisible() && m_global) m_global->updateUsage(rt);
+      if (m_overlayFloat) {
+        if (cfg) {
+          core::OverlayConfig c;
+          c.type = cfg->type == api::OverlayType::Disk ? core::OverlayType::Disk : core::OverlayType::RAM;
+          c.maximumSizeMb = static_cast<uint32_t>(std::max(0, cfg->maximumSize));
+          c.warningThresholdMb = overlay->warningOverlayThreshold;
+          c.criticalThresholdMb = overlay->criticalOverlayThreshold;
+          m_overlayFloat->setOverlayConfig(c);
+        }
+        m_overlayFloat->updateUsage(rt);
+      }
+    } else if (m_overlayFloat) {
+      m_overlayFloat->setUnavailable(overlayErr.empty() ? I18n::tr("Failed to read overlay usage") : QString::fromStdString(overlayErr));
     }
   }
   if (m_tray) m_tray->refreshUsage();
@@ -400,6 +446,15 @@ void MainWindow::buildUi() {
     auto* spacer = new QWidget(tb);
     spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     tb->addWidget(spacer);
+  }
+
+  m_actFloat = tb->addAction("");
+  m_actFloat->setCheckable(true);
+  m_actFloat->setChecked(m_overlayFloat && m_overlayFloat->isVisible());
+  m_actFloat->setToolTip(I18n::tr("Show or hide the overlay floating window."));
+  connect(m_actFloat, &QAction::toggled, this, &MainWindow::setOverlayFloatingVisible);
+  if (auto* btn = qobject_cast<QToolButton*>(tb->widgetForAction(m_actFloat))) {
+    btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
   }
 
   // 语言切换按钮（IconOnly，下拉菜单展示支持的语言）。
@@ -642,7 +697,7 @@ void MainWindow::rebuildUi() {
 
   // 重置所有指针成员；buildUi 会重新填充。
   m_actRefresh = m_actImport = m_actPlan = m_actShutdown = m_actRestart = nullptr;
-  m_actLog = m_actAbout = m_actLang = m_actTheme = nullptr;
+  m_actLog = m_actAbout = m_actFloat = m_actLang = m_actTheme = nullptr;
   m_tabs = nullptr;
   m_global = nullptr;
   m_hoverHint = nullptr;
@@ -672,6 +727,39 @@ void MainWindow::rebuildUi() {
 
 void MainWindow::showTransientHint(const QString& text, const int msec) const {
   if (m_statusCtl) m_statusCtl->flash(text, msec);
+}
+
+void MainWindow::setOverlayFloatingVisible(const bool visible) {
+  if (m_overlayFloat) m_overlayFloat->setVisible(visible);
+  if (m_actFloat && m_actFloat->isChecked() != visible) {
+    QSignalBlocker blocker(m_actFloat);
+    m_actFloat->setChecked(visible);
+  }
+  refreshOverlayFloatingActionIcon();
+}
+
+void MainWindow::requestExit() {
+  m_exitRequested = true;
+  const bool restoreFloat = m_overlayFloat && m_overlayFloat->isVisible();
+
+  const auto finishExit = [this, restoreFloat]() {
+    if (!close()) {
+      m_exitRequested = false;
+      if (restoreFloat) setOverlayFloatingVisible(true);
+      return;
+    }
+    QCoreApplication::quit();
+  };
+
+  if (m_global && collectPending(m_global, m_diskTabs).count() > 0 && !isVisible()) {
+    if (m_overlayFloat) m_overlayFloat->hide();
+    raiseToFront();
+    QTimer::singleShot(0, this, [this, finishExit]() { QTimer::singleShot(0, this, finishExit); });
+    return;
+  }
+
+  if (m_overlayFloat) m_overlayFloat->hide();
+  finishExit();
 }
 
 void MainWindow::applyNativeTitleBarTheme() {
@@ -714,7 +802,13 @@ bool MainWindow::confirmDiscardPendingChanges() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* ev) {
+  if (!m_exitRequested && m_overlayFloat && m_overlayFloat->isVisible()) {
+    hide();
+    ev->ignore();
+    return;
+  }
   if (!confirmDiscardPendingChanges()) {
+    m_exitRequested = false;
     ev->ignore();
     return;
   }
@@ -747,6 +841,7 @@ void MainWindow::refreshThemedUi() {
   // 纯图标按钮（语言 / 主题）：没有文字，图标要在按钮里居中，故用 AlignHCenter 渲染，
   // 不受工具栏那 6px 右侧透明边影响。
   constexpr Qt::Alignment kCenter = Qt::AlignHCenter | Qt::AlignVCenter;
+  refreshOverlayFloatingActionIcon();
   if (m_actLang) m_actLang->setIcon(tm.icon(":/icons/language.svg", kCenter));
   if (m_actTheme) {
     // 当前 dark → 显示太阳图标（点了切到 light）；当前 light → 显示月亮。
@@ -769,6 +864,13 @@ void MainWindow::refreshThemedUi() {
   // hoverHint 默认 HTML 含 inline color，主题切换后重新生成；处于 hover
   // transient 时 TransientLabel 内部会自动延后到回基线时再刷。
   if (m_hoverCtl) m_hoverCtl->setBaseline(systemInfoHtml());
+}
+
+void MainWindow::refreshOverlayFloatingActionIcon() {
+  if (!m_actFloat) return;
+  constexpr Qt::Alignment kCenter = Qt::AlignHCenter | Qt::AlignVCenter;
+  const bool visible = m_overlayFloat && m_overlayFloat->isVisible();
+  m_actFloat->setIcon(ThemeManager::instance().icon(visible ? ":/icons/overlay_float_on.svg" : ":/icons/overlay_float_off.svg", kCenter));
 }
 
 bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
@@ -1014,12 +1116,20 @@ void MainWindow::refresh() {
   rebuildTabs(disks);
   if (uwfAvailable) {
     m_global->setData(m_snapshot.current, m_snapshot.next, m_snapshot.runtime);
+    if (m_overlayFloat) {
+      m_overlayFloat->setFilterEnabled(m_snapshot.current.filter.enabled);
+      m_overlayFloat->setOverlayConfig(m_snapshot.current.overlay);
+      m_overlayFloat->updateUsage(m_snapshot.runtime);
+    }
     // UWF 可读但未提权：补一条红色"需要管理员权限"横幅。UWF 不可用时不补——
     // 那条不可用横幅优先级更高，已由下面的 setUnavailable 占据同一横幅。
     if (!elevated) m_global->showElevationRequired();
     if (!volumeErr.empty()) m_global->showVolumeInfoWarning(QString::fromStdString(volumeErr));
   } else {
     m_global->setUnavailable(snapshotErr.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(snapshotErr));
+    if (m_overlayFloat) {
+      m_overlayFloat->setUnavailable(snapshotErr.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(snapshotErr));
+    }
   }
   // setData 会把滚动区控件全部恢复 enabled——未提权时随即再统一置灰一次。
   m_global->setControlsEnabled(uwfAvailable && elevated);

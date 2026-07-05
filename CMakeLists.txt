@@ -118,6 +118,8 @@ set(UWF_SOURCES
         src/ui/ImportApplier.cpp
         src/ui/SwitchButton.h
         src/ui/SwitchButton.cpp
+        src/ui/OverlayFloatingWidget.h
+        src/ui/OverlayFloatingWidget.cpp
         src/ui/OverlayUsageBar.h
         src/ui/OverlayUsageBar.cpp
         src/ui/CenteredTextStyle.h
@@ -170,6 +172,8 @@ qt_add_resources(UWF "app_resources"
         resources/icons/theme_moon.svg
         resources/icons/log.svg
         resources/icons/language.svg
+        resources/icons/overlay_float_on.svg
+        resources/icons/overlay_float_off.svg
 )
 
 qt_add_translations(UWF

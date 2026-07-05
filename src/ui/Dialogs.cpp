@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -116,8 +116,8 @@ bool confirm(QWidget* parent, const QString& title, const QString& text) {
   auto* badge = new QLabel("!", dlg);
   badge->setAlignment(Qt::AlignCenter);
   badge->setFixedSize(28, 28);
-  badge->setStyleSheet(QString("QLabel { background: %1; color: #FFFFFF; border-radius: 14px; font-weight: bold; }")
-                           .arg(ThemeManager::instance().color(Sem::Danger).name()));
+  badge->setStyleSheet(
+      QString("QLabel { background: %1; color: #FFFFFF; border-radius: 14px; font-weight: bold; }").arg(ThemeManager::instance().color(Sem::Danger).name()));
   bodyRow->addWidget(badge, 0, Qt::AlignVCenter);
 
   auto* bodyFrame = new QFrame(dlg);
@@ -166,8 +166,8 @@ bool confirmCommit(QWidget* parent, const QString& title, const QString& heading
   return confirmCommit(parent, title, heading, target, detail, {}, allowContinue);
 }
 
-bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail,
-                   const QStringList& previewItems, bool allowContinue) {
+bool confirmCommit(QWidget* parent, const QString& title, const QString& heading, const QString& target, const QString& detail, const QStringList& previewItems,
+                   bool allowContinue) {
   constexpr int kPreviewPageSize = 10;
 
   auto* dlg = new QDialog(parent);
@@ -275,8 +275,7 @@ bool confirmCommit(QWidget* parent, const QString& title, const QString& heading
       const int rowHeight = list->count() > 0 ? list->sizeHintForRow(0) : std::max(26, list->fontMetrics().height() + 8);
       const int visibleRows = std::min(state->pager.pageSize, state->total);
       list->setFixedHeight(rowHeight * visibleRows + list->frameWidth() * 2 + 2);
-      pageLabel->setText(
-          I18n::tr("Page %1 / %2 · %3 entries total").arg(state->pager.currentPage + 1).arg(state->displayPages).arg(state->total));
+      pageLabel->setText(I18n::tr("Page %1 / %2 · %3 entries total").arg(state->pager.currentPage + 1).arg(state->displayPages).arg(state->total));
       firstBtn->setEnabled(state->pager.hasPrev());
       prevBtn->setEnabled(state->pager.hasPrev());
       nextBtn->setEnabled(state->pager.hasNext(state->total));

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,8 +41,8 @@
 #include "../uwf/api/Types.h"
 #include "../uwf/wmi/WmiResult.h"
 #include "CommitBatch.h"
-#include "I18n.h"
 #include "Dialogs.h"
+#include "I18n.h"
 #include "UiUtil.h"
 
 namespace uwf::ui {

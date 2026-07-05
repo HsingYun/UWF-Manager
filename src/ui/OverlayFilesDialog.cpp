@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,8 +51,8 @@
 #include "../uwf/api/UwfOverlay.h"
 #include "../uwf/wmi/WmiClient.h"
 #include "../uwf/wmi/WmiError.h"
-#include "I18n.h"
 #include "Dialogs.h"
+#include "I18n.h"
 #include "ThemeManager.h"
 #include "UiUtil.h"
 

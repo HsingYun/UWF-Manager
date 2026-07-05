@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2026 HsingYun (iakext@gmail.com)
+ * Copyright (c) 2026 HsingYun (iakext@gmail.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,13 +54,9 @@ constexpr qreal kCardInset = 0;
 constexpr qreal kCardRadius = 10;
 constexpr int kOverlaySpinMaxMb = std::numeric_limits<int>::max();
 
-int toOverlaySpinValue(const uint32_t valueMb) {
-  return static_cast<int>(std::min<uint32_t>(valueMb, static_cast<uint32_t>(kOverlaySpinMaxMb)));
-}
+int toOverlaySpinValue(const uint32_t valueMb) { return static_cast<int>(std::min<uint32_t>(valueMb, static_cast<uint32_t>(kOverlaySpinMaxMb))); }
 
-int strictThresholdUpper(const int parentValue) {
-  return parentValue <= 1 ? 0 : parentValue - 1;
-}
+int strictThresholdUpper(const int parentValue) { return parentValue <= 1 ? 0 : parentValue - 1; }
 
 // QSpinBox 默认在输入值超过 maximum() 时 validate() 返回 Invalid，字符会被
 // 拒录入，CorrectToNearestValue 也不会触发（它只在 Intermediate 状态 clamp）。
