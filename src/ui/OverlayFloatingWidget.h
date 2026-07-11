@@ -60,7 +60,7 @@ class OverlayFloatingWidget : public QWidget {
  private:
   friend class OverlayMoveHandle;
 
-  void applyTheme();
+  void applyHudStyle();
   void refreshText();
   void resizeToContent();
   void moveToDefaultPosition();

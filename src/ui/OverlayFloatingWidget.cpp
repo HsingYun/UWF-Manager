@@ -38,7 +38,6 @@
 #include <format>
 
 #include "I18n.h"
-#include "ThemeManager.h"
 
 namespace uwf::ui {
 
@@ -55,9 +54,16 @@ constexpr int kContentLeftMargin = 14;
 constexpr int kContentVPadding = 10;
 constexpr int kTextHandleGap = 8;
 constexpr int kRadius = 8;
-constexpr float kSurfaceAlpha = 0.46f;
-constexpr float kOuterBorderAlpha = 0.50f;
-constexpr float kHandleFillAlpha = 0.52f;
+
+// 浮窗覆盖的是桌面、网页、视频等任意内容，不能假定它背后的明暗与应用主题
+// 一致。固定使用一套低存在感的中性深色 HUD 配色：底色保留约 64% 不透明
+// 度，在压住复杂背景的同时仍能透出背后内容；深色背景上由浅色细边框维持
+// 轮廓，无需为日 / 夜主题维护两套值。
+const QColor kSurfaceColor(0x17, 0x1A, 0x20, 163);       // 64%
+const QColor kTextColor(0xF5, 0xF7, 0xFA, 240);          // 94%
+const QColor kOuterBorderColor(0xFF, 0xFF, 0xFF, 46);    // 18%
+const QColor kHandleFillColor(0xFF, 0xFF, 0xFF, 26);     // 10%
+const QColor kHandleIconColor(0xFF, 0xFF, 0xFF, 173);    // 68%
 
 QString formatUsageText(const uint32_t usedMb, const uint32_t totalMb) {
   const double pct = totalMb == 0 ? 0.0 : static_cast<double>(usedMb) * 100.0 / static_cast<double>(totalMb);
@@ -168,17 +174,13 @@ class OverlayMoveHandle final : public QWidget {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing, true);
 
-    const auto& tm = ThemeManager::instance();
     const QRectF h((width() - kHandleSide) / 2.0, (height() - kHandleSide) / 2.0, kHandleSide, kHandleSide);
     QPainterPath handlePath;
     handlePath.addRoundedRect(h.adjusted(2.5, 2.5, -2.5, -2.5), 5, 5);
-    QColor handleFill = tm.isLight() ? QColor(0xF2, 0xF2, 0xF2) : QColor(0x20, 0x20, 0x20);
-    handleFill.setAlphaF(kHandleFillAlpha);
-    p.fillPath(handlePath, handleFill);
+    p.fillPath(handlePath, kHandleFillColor);
 
-    const QColor muted = tm.isLight() ? QColor(0x20, 0x20, 0x20) : QColor(0xF2, 0xF2, 0xF2);
     const QPointF c = h.center();
-    p.setPen(QPen(muted, 1.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p.setPen(QPen(kHandleIconColor, 1.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     p.drawLine(QPointF(c.x() - 6, c.y()), QPointF(c.x() + 6, c.y()));
     p.drawLine(QPointF(c.x(), c.y() - 6), QPointF(c.x(), c.y() + 6));
     p.drawLine(QPointF(c.x() - 6, c.y()), QPointF(c.x() - 3.5, c.y() - 2.5));
@@ -222,8 +224,7 @@ OverlayFloatingWidget::OverlayFloatingWidget(QWidget* parent)
   head->addWidget(m_usage, 0);
   outer->addLayout(head);
 
-  connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this](Theme) { applyTheme(); });
-  applyTheme();
+  applyHudStyle();
   refreshText();
 }
 
@@ -292,25 +293,21 @@ void OverlayFloatingWidget::paintEvent(QPaintEvent*) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing, true);
 
-  const auto& tm = ThemeManager::instance();
   const QRectF r = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
   QPainterPath path;
   path.addRoundedRect(r, kRadius, kRadius);
-  QColor bg = tm.color(Sem::Surface);
-  bg.setAlphaF(kSurfaceAlpha);
-  p.fillPath(path, bg);
-  QColor border(0x80, 0x80, 0x80);
-  border.setAlphaF(kOuterBorderAlpha);
-  p.setPen(QPen(border, 1.0));
+  p.fillPath(path, kSurfaceColor);
+  p.setPen(QPen(kOuterBorderColor, 1.0));
   p.drawPath(path);
 }
 
-void OverlayFloatingWidget::applyTheme() {
-  const auto& tm = ThemeManager::instance();
-  const QString fg = tm.color(Sem::Fg).name();
+void OverlayFloatingWidget::applyHudStyle() {
   setStyleSheet(QStringLiteral("#overlayFloatingWidget { background: transparent; }"
-                               "#overlayFloatUsage { color: %1; font-weight: 600; }")
-                    .arg(fg));
+                               "#overlayFloatUsage { color: rgba(%1, %2, %3, %4); font-weight: 600; }")
+                    .arg(kTextColor.red())
+                    .arg(kTextColor.green())
+                    .arg(kTextColor.blue())
+                    .arg(kTextColor.alpha()));
   if (m_handle) m_handle->update();
   update();
   refreshText();
