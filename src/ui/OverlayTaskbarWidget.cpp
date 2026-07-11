@@ -53,6 +53,20 @@ constexpr qreal kWavePhaseStep = 0.12;
 
 enum class TaskbarEdge { Unknown, Left, Top, Right, Bottom };
 
+QPalette systemToolTipPalette(const Theme theme) {
+  QPalette palette;
+  if (theme == Theme::Light) {
+    palette.setColor(QPalette::ToolTipBase, QColor(0xF7, 0xF7, 0xF7, 242));
+    palette.setColor(QPalette::ToolTipText, QColor(0x1A, 0x1A, 0x1A));
+    palette.setColor(QPalette::Mid, QColor(0xCF, 0xCF, 0xCF, 230));
+  } else {
+    palette.setColor(QPalette::ToolTipBase, QColor(0x2B, 0x2B, 0x2B, 238));
+    palette.setColor(QPalette::ToolTipText, QColor(0xF5, 0xF5, 0xF5));
+    palette.setColor(QPalette::Mid, QColor(0x50, 0x50, 0x50, 224));
+  }
+  return palette;
+}
+
 class ToolTipLabel final : public QLabel {
  public:
   explicit ToolTipLabel(const Qt::WindowFlags flags) : QLabel(nullptr, flags) { setContentsMargins(8, 5, 8, 5); }
@@ -60,12 +74,10 @@ class ToolTipLabel final : public QLabel {
  protected:
   void paintEvent(QPaintEvent*) override {
     const QColor foreground = palette().color(QPalette::ToolTipText);
-    QColor border = foreground;
-    border.setAlpha(80);
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
-    painter.setPen(QPen(border, 1.0));
+    painter.setPen(QPen(palette().color(QPalette::Mid), 1.0));
     painter.setBrush(palette().color(QPalette::ToolTipBase));
     painter.drawRoundedRect(QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5), 5.0, 5.0);
     painter.setPen(foreground);
@@ -100,7 +112,12 @@ OverlayTaskbarWidget::OverlayTaskbarWidget(QWidget* parent)
   connect(m_toolTipTimer, &QTimer::timeout, this, [this]() {
     if (m_pointerInside && presentationRequested() && isVisible()) showToolTip();
   });
-  connect(&ThemeManager::instance(), &ThemeManager::systemThemeChanged, this, [this](Theme) { update(); });
+  connect(&ThemeManager::instance(), &ThemeManager::systemThemeChanged, this, [this](const Theme theme) {
+    update();
+    if (!m_toolTipLabel) return;
+    m_toolTipLabel->setPalette(systemToolTipPalette(theme));
+    m_toolTipLabel->update();
+  });
 }
 
 OverlayTaskbarWidget::~OverlayTaskbarWidget() = default;
@@ -246,7 +263,7 @@ void OverlayTaskbarWidget::showToolTip() {
 
   QLabel& label = *m_toolTipLabel;
   label.setFont(QToolTip::font());
-  label.setPalette(QToolTip::palette());
+  label.setPalette(systemToolTipPalette(ThemeManager::instance().systemTheme()));
   label.setText(I18n::applicationTitle());
   label.adjustSize();
 
