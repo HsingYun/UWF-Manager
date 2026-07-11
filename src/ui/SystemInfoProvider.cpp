@@ -35,7 +35,7 @@ namespace {
 // 应用兼容性"撒谎"成 Windows 8）的接口。动态加载避免对 ntdll 的直接 link。
 QString windowsVersionText() {
   using Fn = LONG(WINAPI*)(OSVERSIONINFOW*);
-  auto fn = reinterpret_cast<Fn>(reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlGetVersion")));
+  auto fn = reinterpret_cast<Fn>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlGetVersion"));
   OSVERSIONINFOW v{};
   v.dwOSVersionInfoSize = sizeof(v);
   if (!fn || fn(&v) != 0) return QStringLiteral("Windows");

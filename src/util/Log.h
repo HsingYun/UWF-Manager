@@ -49,7 +49,14 @@ struct LogStream {
   std::ostringstream oss;
 
   LogStream(char lv, std::string cat) : level(lv), category(std::move(cat)) {}
-  ~LogStream() { logLine(level, category, oss.str()); }
+  ~LogStream() noexcept {
+    try {
+      logLine(level, category, oss.str());
+    } catch (...) {
+      // 日志不能因为内存不足或格式化失败而终止业务流程，尤其不能在栈展开
+      // 期间从析构函数再次抛异常。
+    }
+  }
 
   template <typename T>
   LogStream& operator<<(const T& v) {

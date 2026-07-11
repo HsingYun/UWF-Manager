@@ -263,12 +263,12 @@ void OverlayFilesDialog::startLoading() {
   // 线程——worker 由析构函数 join、不会比对话框活得久，self QPointer 仅用于
   // 守护延迟派发的那个回调。
   QPointer<OverlayFilesDialog> self(this);
-  const std::string dl = m_driveLetter.toStdString();
+  std::string dl = m_driveLetter.toStdString();
 
-  m_worker = std::thread([this, self, dl]() {
+  m_worker = std::thread([this, self, dl = std::move(dl)]() {
     const HRESULT comHr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
     const bool ownsCom = SUCCEEDED(comHr);
-    CoEnableCallCancellation(nullptr);  // 本线程的同步 COM 调用可被 CoCancelCall 取消
+    const bool cancellationEnabled = ownsCom && SUCCEEDED(CoEnableCallCancellation(nullptr));
     {
       std::lock_guard<std::mutex> lk(m_cancelMutex);
       m_workerThreadId = GetCurrentThreadId();
@@ -278,40 +278,46 @@ void OverlayFilesDialog::startLoading() {
     int32_t errorHr = 0;
     QVector<OverlayFileEntry> entries;
 
-    do {
-      WmiSession session;
-      std::string err;
-      if (!session.connect(config::kWmiNamespaceEmbedded, &err)) {
-        errorOut = QString::fromStdString(err);
-        break;
-      }
-      api::UwfOverlay overlay(session);
-      auto row = overlay.read(&err);
-      if (!row) {
-        errorOut = QString::fromStdString(err);
-        break;
-      }
-      int32_t hr = 0;
-      auto files = overlay.getOverlayFiles(*row, dl, &err, &hr);
-      if (!err.empty()) {
-        errorOut = QString::fromStdString(err);
-        errorHr = hr;
-        break;
-      }
-      entries.reserve(static_cast<int>(files.size()));
-      for (const auto& f : files) {
-        OverlayFileEntry e;
-        e.rawName = QString::fromStdString(f.fileName);
-        e.fileSize = static_cast<qulonglong>(f.fileSize);
-        entries.append(std::move(e));
-      }
-    } while (false);
+    try {
+      do {
+        WmiSession session;
+        std::string err;
+        if (!session.connect(config::kWmiNamespaceEmbedded, &err)) {
+          errorOut = QString::fromStdString(err);
+          break;
+        }
+        api::UwfOverlay overlay(session);
+        auto row = overlay.read(&err);
+        if (!row) {
+          errorOut = QString::fromStdString(err);
+          break;
+        }
+        int32_t hr = 0;
+        auto files = overlay.getOverlayFiles(*row, dl, &err, &hr);
+        if (!err.empty()) {
+          errorOut = QString::fromStdString(err);
+          errorHr = hr;
+          break;
+        }
+        entries.reserve(static_cast<int>(files.size()));
+        for (const auto& f : files) {
+          OverlayFileEntry e;
+          e.rawName = QString::fromStdString(f.fileName);
+          e.fileSize = static_cast<qulonglong>(f.fileSize);
+          entries.append(std::move(e));
+        }
+      } while (false);
+    } catch (...) {
+      // std::thread 的入口不能让异常逃逸，否则进程会直接 std::terminate。
+      errorOut = QStringLiteral("Unexpected error while enumerating overlay files.");
+    }
 
     // 清掉线程 ID：此后析构函数即便取得锁，也不会再去 CoCancelCall 一个已结束的调用。
     {
       std::lock_guard<std::mutex> lk(m_cancelMutex);
       m_workerThreadId = 0;
     }
+    if (cancellationEnabled) CoDisableCallCancellation(nullptr);
     if (ownsCom) CoUninitialize();
 
     // self 是 QPointer——dialog 已被销毁则 lambda 内 self 为 null，直接 no-op。
