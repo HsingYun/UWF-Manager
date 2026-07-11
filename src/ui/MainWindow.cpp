@@ -1182,6 +1182,7 @@ void MainWindow::showPlan() {
   // 再 refresh，避免在回调里递归进 refresh 的弹窗 / WMI 读。
   ApplyPlanDialog dlg(m_global, m_diskTabs, m_snapshot, m_writeSession, this);
   connect(&dlg, &ApplyPlanDialog::applied, this, &MainWindow::refresh, Qt::QueuedConnection);
+  connect(&dlg, &ApplyPlanDialog::safeRestartRequested, this, &MainWindow::safeRestart);
   dlg.exec();
 }
 

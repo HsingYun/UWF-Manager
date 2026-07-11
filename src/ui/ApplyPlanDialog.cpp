@@ -352,9 +352,13 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   // 导出 / 关闭留在右侧。
   auto* commitBtn = new QPushButton(I18n::tr("Apply"), this);
   commitBtn->setObjectName("primaryBtn");
+  auto* restartBtn = new QPushButton(I18n::tr("Safe restart"), this);
+  restartBtn->setObjectName("restartBtn");
+  restartBtn->setVisible(false);
   auto* exportBtn = new QPushButton(I18n::tr("Export commands…"), this);
   auto* closeBtn = new QPushButton(I18n::tr("Close"), this);
   buttonRow->addWidget(commitBtn);
+  buttonRow->addWidget(restartBtn);
   buttonRow->addStretch(1);
   buttonRow->addWidget(exportBtn);
   buttonRow->addWidget(closeBtn);
@@ -407,7 +411,8 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   });
 
   connect(closeBtn, &QPushButton::clicked, this, &QDialog::reject);
-  connect(commitBtn, &QPushButton::clicked, this, [this, pendingText, commitBtn, formatBlockPlain, joinLines]() {
+  connect(restartBtn, &QPushButton::clicked, this, &ApplyPlanDialog::safeRestartRequested);
+  connect(commitBtn, &QPushButton::clicked, this, [this, pendingText, commitBtn, restartBtn, formatBlockPlain, joinLines]() {
     // 真实写入前再弹一次二次确认，避免误点。
     const QString warn2 = ThemeManager::instance().color(Sem::Warn).name();
     if (!confirm(this, I18n::tr("Confirm apply"),
@@ -418,6 +423,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     // 重新读快照并改写 m_snapshot（本对话框按引用持有它）；若不禁用，用户再点
     // 一次会把同一批 m_changes 对着已刷新的快照重放。
     commitBtn->setEnabled(false);
+    restartBtn->setVisible(true);
     std::vector<std::string> outcome;
 
     // 每一步单独收集错误，不因单点失败终止其它写入。同步辅助、跟 outcome

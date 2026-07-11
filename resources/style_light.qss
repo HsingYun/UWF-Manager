@@ -374,6 +374,23 @@ QPushButton#dangerBtn:pressed {
     border-color: #B91C1C;
 }
 
+/* 与普通按钮保持同一尺寸，只用轻量红色底与 1px 外轮廓提示重启风险。 */
+QPushButton#restartBtn {
+    background: rgba(217, 48, 37, 0.06);
+    color: #B3261E;
+    border: 1px solid #D93025;
+}
+
+QPushButton#restartBtn:hover {
+    background: rgba(217, 48, 37, 0.11);
+    border-color: #C5221F;
+}
+
+QPushButton#restartBtn:pressed {
+    background: rgba(217, 48, 37, 0.17);
+    border-color: #A50E0E;
+}
+
 QPushButton:disabled {
     background: #F1F3F4;
     color: #BDC1C6;

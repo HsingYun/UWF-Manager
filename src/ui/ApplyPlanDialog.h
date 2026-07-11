@@ -55,6 +55,9 @@ class ApplyPlanDialog : public QDialog {
  signals:
   // 用户点击"应用"并完成写入后发出。宿主窗口应据此重新读取快照。
   void applied();
+  // 应用开始后出现的"安全重启"按钮只负责发出请求；宿主连接到与工具栏
+  // 相同的重启入口，确保复用同一份确认与错误处理逻辑。
+  void safeRestartRequested();
 
  private:
   // 一条变更或快照配置：comment 是中文说明（渲染成 ":: 注释"行），cmd 是

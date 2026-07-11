@@ -372,6 +372,24 @@ QPushButton#dangerBtn:pressed {
     border-color: #B91C1C;
 }
 
+/* 应用完成后的安全重启：保持普通按钮相同的尺寸与圆角，只用浅红底、红色
+   细边框表达风险。相比 dangerBtn 的实心红色，视觉面积更轻且轮廓更清楚。 */
+QPushButton#restartBtn {
+    background: rgba(201, 77, 88, 0.12);
+    color: #F28B96;
+    border: 1px solid #A9434D;
+}
+
+QPushButton#restartBtn:hover {
+    background: rgba(201, 77, 88, 0.22);
+    border-color: #C94D58;
+}
+
+QPushButton#restartBtn:pressed {
+    background: rgba(201, 77, 88, 0.30);
+    border-color: #E06A75;
+}
+
 /* 禁用态：背景压暗、文字淡出、去掉 hover 变亮。必须显式写，否则 Fusion 底座
    + 深色 QSS 下 disabled 和正常态几乎看不出区别。!important 等价效果靠覆盖
    规则顺序——这些规则放在所有 QPushButton / #primaryBtn 规则之后即可生效。*/
