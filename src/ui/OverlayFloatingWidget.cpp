@@ -257,12 +257,15 @@ OverlayFloatingWidget::OverlayFloatingWidget(QWidget* parent)
 void OverlayFloatingWidget::popupContextMenuAt(const QPoint& globalPos) {
   QMenu menu(this);
   QAction* showMainAct = menu.addAction(I18n::tr("Show main window"));
+  QAction* restorePositionAct = menu.addAction(I18n::tr("Restore default position"));
   QAction* closeAct = menu.addAction(I18n::tr("Close floating window"));
   menu.addSeparator();
   QAction* exitAct = menu.addAction(I18n::tr("Exit application"));
   QAction* picked = menu.exec(globalPos);
   if (picked == showMainAct) {
     emit showMainWindowRequested();
+  } else if (picked == restorePositionAct) {
+    moveToDefaultPosition();
   } else if (picked == closeAct) {
     emit closeFloatingWindowRequested();
   } else if (picked == exitAct) {
