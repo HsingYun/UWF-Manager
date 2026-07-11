@@ -16,7 +16,6 @@
  */
 #include "OverlayTaskbarWidget.h"
 
-#include <dwmapi.h>
 #include <windows.h>
 
 #include <QContextMenuEvent>
@@ -32,6 +31,7 @@
 #include "I18n.h"
 #include "OverlayHudPalette.h"
 #include "OverlayHudRenderer.h"
+#include "TaskbarLayoutCoordinator.h"
 
 namespace uwf::ui {
 
@@ -41,16 +41,15 @@ constexpr int kMinimumLogicalWidth = 96;
 constexpr int kLogicalHeight = 32;
 constexpr int kHorizontalPadding = 8;
 constexpr int kAnimationIntervalMs = 100;
-constexpr int kTaskbarInset = 3;
 constexpr int kRadius = 6;
 constexpr qreal kWavePhaseStep = 0.12;
-
-int scaled(const int logicalPixels, const UINT dpi) { return MulDiv(logicalPixels, static_cast<int>(dpi), USER_DEFAULT_SCREEN_DPI); }
 
 }  // namespace
 
 OverlayTaskbarWidget::OverlayTaskbarWidget(QWidget* parent)
-    : OverlayHubView(parent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowDoesNotAcceptFocus), m_animationTimer(new QTimer(this)) {
+    : OverlayHubView(parent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowDoesNotAcceptFocus),
+      m_animationTimer(new QTimer(this)),
+      m_layoutCoordinator(createDefaultTaskbarLayoutCoordinator([this]() { requestPresentationRefresh(); })) {
   setObjectName("overlayTaskbarWidget");
   setAttribute(Qt::WA_TranslucentBackground, true);
   setAttribute(Qt::WA_ShowWithoutActivating, true);
@@ -66,6 +65,8 @@ OverlayTaskbarWidget::OverlayTaskbarWidget(QWidget* parent)
   });
   connect(&ThemeManager::instance(), &ThemeManager::systemThemeChanged, this, [this](Theme) { update(); });
 }
+
+OverlayTaskbarWidget::~OverlayTaskbarWidget() = default;
 
 void OverlayTaskbarWidget::updateUsage(const core::OverlayRuntime& runtime) {
   m_runtime = runtime;
@@ -132,7 +133,8 @@ void OverlayTaskbarWidget::paintEvent(QPaintEvent*) {
 
 bool OverlayTaskbarWidget::attachPresentation() {
   releaseInvalidNativeWindow();
-  if (!attachAndPosition()) return false;
+  if (!ensureNativeWindow()) return false;
+  if (!m_layoutCoordinator->attach(internalWinId(), QSize(desiredLogicalWidth(), kLogicalHeight))) return false;
   if (!isVisible()) show();
   updateAnimationTimer();
   return true;
@@ -141,61 +143,9 @@ bool OverlayTaskbarWidget::attachPresentation() {
 void OverlayTaskbarWidget::detachPresentation() {
   m_animationTimer->stop();
   m_hasPainted = false;
+  m_layoutCoordinator->detach(internalWinId());
   hide();
   releaseNativeWindow();
-}
-
-bool OverlayTaskbarWidget::attachAndPosition() {
-  const HWND taskbar = FindWindowW(L"Shell_TrayWnd", nullptr);
-  const HWND notify = taskbar ? FindWindowExW(taskbar, nullptr, L"TrayNotifyWnd", nullptr) : nullptr;
-  if (!taskbar || !notify) return false;
-
-  if (!ensureNativeWindow()) return false;
-  const HWND widget = reinterpret_cast<HWND>(internalWinId());
-
-  if (GetParent(widget) != taskbar) {
-    LONG_PTR style = GetWindowLongPtrW(widget, GWL_STYLE);
-    style &= ~static_cast<LONG_PTR>(WS_POPUP);
-    style |= static_cast<LONG_PTR>(WS_CHILD);
-    SetWindowLongPtrW(widget, GWL_STYLE, style);
-
-    LONG_PTR exStyle = GetWindowLongPtrW(widget, GWL_EXSTYLE);
-    exStyle &= ~static_cast<LONG_PTR>(WS_EX_APPWINDOW);
-    exStyle |= static_cast<LONG_PTR>(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
-    SetWindowLongPtrW(widget, GWL_EXSTYLE, exStyle);
-    SetLastError(ERROR_SUCCESS);
-    const HWND previousParent = SetParent(widget, taskbar);
-    if (!previousParent && GetLastError() != ERROR_SUCCESS) return false;
-  }
-
-  RECT taskbarRect{};
-  RECT notifyRect{};
-  if (!GetWindowRect(taskbar, &taskbarRect) || !GetWindowRect(notify, &notifyRect)) return false;
-
-  POINT notifyTopLeft{notifyRect.left, notifyRect.top};
-  if (!ScreenToClient(taskbar, &notifyTopLeft)) return false;
-
-  const UINT dpi = std::max(GetDpiForWindow(taskbar), static_cast<UINT>(USER_DEFAULT_SCREEN_DPI));
-  const int taskbarWidth = static_cast<int>(taskbarRect.right - taskbarRect.left);
-  const int taskbarHeight = static_cast<int>(taskbarRect.bottom - taskbarRect.top);
-  const int notifyX = static_cast<int>(notifyTopLeft.x);
-  const int notifyY = static_cast<int>(notifyTopLeft.y);
-  const int nativeWidth = scaled(desiredLogicalWidth(), dpi);
-  const int nativeHeight = std::min(scaled(kLogicalHeight, dpi), std::max(taskbarHeight - scaled(2 * kTaskbarInset, dpi), 1));
-  const bool horizontal = taskbarWidth >= taskbarHeight;
-
-  int x = 0;
-  int y = 0;
-  if (horizontal) {
-    x = notifyX - nativeWidth - scaled(kTaskbarInset, dpi);
-    y = (taskbarHeight - nativeHeight) / 2;
-  } else {
-    x = (taskbarWidth - nativeWidth) / 2;
-    y = notifyY - nativeHeight - scaled(kTaskbarInset, dpi);
-  }
-
-  return SetWindowPos(widget, HWND_TOP, std::max(x, 0), std::max(y, 0), nativeWidth, nativeHeight, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW) !=
-         FALSE;
 }
 
 bool OverlayTaskbarWidget::ensureNativeWindow() {
@@ -255,31 +205,7 @@ int OverlayTaskbarWidget::desiredLogicalWidth() const {
 }
 
 bool OverlayTaskbarWidget::verifyPresentation() const {
-  if (!presentationRequested() || !m_hasPainted || !isVisible()) return false;
-
-  const HWND taskbar = FindWindowW(L"Shell_TrayWnd", nullptr);
-  const HWND notify = taskbar ? FindWindowExW(taskbar, nullptr, L"TrayNotifyWnd", nullptr) : nullptr;
-  const HWND widget = reinterpret_cast<HWND>(internalWinId());
-  if (!taskbar || !notify || !widget || !IsWindow(widget) || !IsWindowVisible(widget) || GetParent(widget) != taskbar) return false;
-
-  const LONG_PTR style = GetWindowLongPtrW(widget, GWL_STYLE);
-  if ((style & static_cast<LONG_PTR>(WS_CHILD)) == 0 || (style & static_cast<LONG_PTR>(WS_POPUP)) != 0) return false;
-
-  RECT widgetRect{};
-  RECT taskbarRect{};
-  RECT notifyRect{};
-  RECT intersection{};
-  if (!GetWindowRect(widget, &widgetRect) || !GetWindowRect(taskbar, &taskbarRect) || !GetWindowRect(notify, &notifyRect) ||
-      widgetRect.right <= widgetRect.left || widgetRect.bottom <= widgetRect.top || !IntersectRect(&intersection, &widgetRect, &taskbarRect)) {
-    return false;
-  }
-
-  const bool horizontal = (taskbarRect.right - taskbarRect.left) >= (taskbarRect.bottom - taskbarRect.top);
-  if ((horizontal && widgetRect.right > notifyRect.left) || (!horizontal && widgetRect.bottom > notifyRect.top)) return false;
-
-  DWORD cloaked = 0;
-  if (SUCCEEDED(DwmGetWindowAttribute(widget, DWMWA_CLOAKED, &cloaked, static_cast<DWORD>(sizeof(cloaked)))) && cloaked != 0) return false;
-  return true;
+  return presentationRequested() && m_hasPainted && isVisible() && m_layoutCoordinator->verify(internalWinId());
 }
 
 }  // namespace uwf::ui

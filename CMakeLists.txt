@@ -138,6 +138,11 @@ set(UWF_SOURCES
         src/ui/OverlayHubFactory.cpp
         src/ui/OverlayTaskbarWidget.h
         src/ui/OverlayTaskbarWidget.cpp
+        src/ui/TaskbarLayoutStrategy.h
+        src/ui/TaskbarLayoutCoordinator.h
+        src/ui/TaskbarLayoutCoordinator.cpp
+        src/ui/Win11TaskbarLayoutStrategy.h
+        src/ui/Win11TaskbarLayoutStrategy.cpp
         src/ui/OverlayHudPalette.h
         src/ui/OverlayHudRenderer.h
         src/ui/OverlayHudRenderer.cpp

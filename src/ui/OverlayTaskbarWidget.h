@@ -17,6 +17,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 
 #include "OverlayHubView.h"
 
@@ -27,12 +28,16 @@ class QTimer;
 
 namespace uwf::ui {
 
+class TaskbarLayoutCoordinator;
+
 // 嵌入 Windows 主任务栏通知区域左侧的 overlay 用量窗口。窗口只消费控制器
-// 已读取的运行时数据，不自行访问 WMI；宿主 Explorer 重启后会自动重新嵌入。
+// 已读取的运行时数据，不自行访问 WMI，也不感知具体任务栏实现；布局选择、
+// 原生附着和 Explorer 恢复全部委托给 TaskbarLayoutCoordinator。
 class OverlayTaskbarWidget final : public OverlayHubView {
   Q_OBJECT
  public:
   explicit OverlayTaskbarWidget(QWidget* parent = nullptr);
+  ~OverlayTaskbarWidget() override;
 
   [[nodiscard]] int priority() const override { return 200; }
   void updateUsage(const core::OverlayRuntime& runtime) override;
@@ -50,7 +55,6 @@ class OverlayTaskbarWidget final : public OverlayHubView {
   void detachPresentation() override;
   [[nodiscard]] int healthCheckIntervalMs() const override { return 1000; }
 
-  bool attachAndPosition();
   bool ensureNativeWindow();
   void releaseInvalidNativeWindow();
   void releaseNativeWindow();
@@ -58,6 +62,7 @@ class OverlayTaskbarWidget final : public OverlayHubView {
   [[nodiscard]] int desiredLogicalWidth() const;
 
   QTimer* m_animationTimer = nullptr;
+  std::unique_ptr<TaskbarLayoutCoordinator> m_layoutCoordinator;
   core::OverlayRuntime m_runtime;
   bool m_hasRuntime = false;
   bool m_filterEnabled = false;
