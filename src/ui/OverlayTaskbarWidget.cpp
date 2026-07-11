@@ -133,9 +133,17 @@ void OverlayTaskbarWidget::paintEvent(QPaintEvent*) {
 }
 
 bool OverlayTaskbarWidget::attachPresentation() {
+  // Win11 策略通过 SetWindowPos 设置原生 HWND 的物理像素尺寸，但 QWidget
+  // 在第一次 show() 时还会应用自身保存的逻辑几何。先完成 polish 并同步最终
+  // 逻辑尺寸，避免 show() 把策略刚设置的宽度覆盖回构造期的 96px，随后又被
+  // 健康检查放大，形成启动时先窄后宽的闪动。
+  ensurePolished();
+  const QSize desiredSize(desiredLogicalWidth(), kLogicalHeight);
+  if (size() != desiredSize) resize(desiredSize);
+
   releaseInvalidNativeWindow();
   if (!ensureNativeWindow()) return false;
-  if (!m_layoutCoordinator->attach(internalWinId(), QSize(desiredLogicalWidth(), kLogicalHeight))) return false;
+  if (!m_layoutCoordinator->attach(internalWinId(), desiredSize)) return false;
   if (!isVisible()) show();
   updateAnimationTimer();
   return true;
