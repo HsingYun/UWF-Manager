@@ -5,74 +5,38 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "Win11TaskbarLayoutStrategy.h"
 
 #include <dwmapi.h>
 #include <windows.h>
 
-#include <algorithm>
-#include <optional>
+#include <QPointer>
+#include <QWindow>
+#include <atomic>
+#include <memory>
+#include <string>
+
+#include "../util/Log.h"
+#include "../util/WindowsVersion.h"
+#include "Win11TaskbarEnvironment.h"
+#include "Win11TaskbarLayoutStrategyImpl.h"
 
 namespace uwf::ui {
 
 namespace {
 
-constexpr wchar_t kTaskbarClass[] = L"Shell_TrayWnd";
-constexpr wchar_t kNotifyClass[] = L"TrayNotifyWnd";
-constexpr wchar_t kCompositionBridgeClass[] = L"Windows.UI.Composition.DesktopWindowContentBridge";
-constexpr int kTaskbarInset = 3;
+constexpr wchar_t kAttachmentCookieProperty[] = L"UWF.TaskbarHub.AttachmentCookie";
 
-struct Environment {
-  HWND taskbar = nullptr;
-  HWND notify = nullptr;
-  HWND compositionBridge = nullptr;
-  DWORD taskbarProcessId = 0;
-  RECT taskbarRect{};
-  RECT taskbarClientRect{};
-  RECT notifyRect{};
-  UINT dpi = USER_DEFAULT_SCREEN_DPI;
-};
-
-struct DescendantSearch {
-  const wchar_t* className = nullptr;
-  HWND result = nullptr;
-};
-
-struct Placement {
-  int x = 0;
-  int y = 0;
-  int width = 0;
-  int height = 0;
-};
-
-BOOL CALLBACK findDescendantCallback(const HWND window, const LPARAM parameter) {
-  auto* const search = reinterpret_cast<DescendantSearch*>(parameter);
-  wchar_t className[128]{};
-  if (GetClassNameW(window, className, static_cast<int>(std::size(className))) > 0 && wcscmp(className, search->className) == 0) {
-    search->result = window;
-    return FALSE;
-  }
-  return TRUE;
-}
-
-HWND findDescendantByClass(const HWND parent, const wchar_t* className) {
-  DescendantSearch search{className, nullptr};
-  EnumChildWindows(parent, findDescendantCallback, reinterpret_cast<LPARAM>(&search));
-  return search.result;
-}
-
-bool hasArea(const RECT& rect) { return rect.right > rect.left && rect.bottom > rect.top; }
-
-int scaled(const int logicalPixels, const UINT dpi) { return MulDiv(logicalPixels, static_cast<int>(dpi), USER_DEFAULT_SCREEN_DPI); }
+using win11_taskbar::calculatePlacement;
+using win11_taskbar::Environment;
+using win11_taskbar::EnvironmentProbe;
+using win11_taskbar::matchesPlacement;
+using win11_taskbar::Placement;
+using win11_taskbar::probeEnvironment;
+using win11_taskbar::refreshEnvironment;
+using win11_taskbar::RuntimeAvailability;
+using win11_taskbar::sameEnvironment;
 
 bool setWindowLongChecked(const HWND window, const int index, const LONG_PTR value) {
   SetLastError(ERROR_SUCCESS);
@@ -80,182 +44,341 @@ bool setWindowLongChecked(const HWND window, const int index, const LONG_PTR val
   return previous != 0 || GetLastError() == ERROR_SUCCESS;
 }
 
-std::optional<Environment> probeEnvironment() {
-  Environment environment;
-  environment.taskbar = FindWindowW(kTaskbarClass, nullptr);
-  if (!environment.taskbar || !IsWindow(environment.taskbar) || !IsWindowVisible(environment.taskbar)) return std::nullopt;
-
-  environment.compositionBridge = findDescendantByClass(environment.taskbar, kCompositionBridgeClass);
-  environment.notify = FindWindowExW(environment.taskbar, nullptr, kNotifyClass, nullptr);
-  if (!environment.compositionBridge || !environment.notify || !IsWindow(environment.compositionBridge) || !IsWindow(environment.notify) ||
-      !IsWindowVisible(environment.notify) || !IsChild(environment.taskbar, environment.notify)) {
-    return std::nullopt;
-  }
-
-  GetWindowThreadProcessId(environment.taskbar, &environment.taskbarProcessId);
-  DWORD notifyProcessId = 0;
-  DWORD bridgeProcessId = 0;
-  GetWindowThreadProcessId(environment.notify, &notifyProcessId);
-  GetWindowThreadProcessId(environment.compositionBridge, &bridgeProcessId);
-  if (environment.taskbarProcessId == 0 || !GetWindowRect(environment.taskbar, &environment.taskbarRect) ||
-      !GetClientRect(environment.taskbar, &environment.taskbarClientRect) || !GetWindowRect(environment.notify, &environment.notifyRect) ||
-      !hasArea(environment.taskbarRect) || !hasArea(environment.taskbarClientRect) || !hasArea(environment.notifyRect) ||
-      notifyProcessId != environment.taskbarProcessId || bridgeProcessId != environment.taskbarProcessId) {
-    return std::nullopt;
-  }
-
-  // Win11 原生任务栏只接受横向布局。遇到第三方垂直任务栏时不套用未知
-  // 几何规则，直接让 Hub 选择后备 View。
-  if ((environment.taskbarRect.right - environment.taskbarRect.left) < (environment.taskbarRect.bottom - environment.taskbarRect.top)) return std::nullopt;
-
-  const UINT dpi = GetDpiForWindow(environment.taskbar);
-  environment.dpi = dpi == 0 ? USER_DEFAULT_SCREEN_DPI : dpi;
-  return environment;
+bool restoreWindowStyles(const HWND window, const LONG_PTR style, const LONG_PTR exStyle) {
+  if (GetWindowLongPtrW(window, GWL_STYLE) != style && !setWindowLongChecked(window, GWL_STYLE, style)) return false;
+  if (GetWindowLongPtrW(window, GWL_EXSTYLE) != exStyle && !setWindowLongChecked(window, GWL_EXSTYLE, exStyle)) return false;
+  return SetWindowPos(window, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER) != FALSE;
 }
 
-bool sameEnvironment(const Environment& lhs, const Environment& rhs) {
-  return lhs.taskbar == rhs.taskbar && lhs.notify == rhs.notify && lhs.compositionBridge == rhs.compositionBridge &&
-         lhs.taskbarProcessId == rhs.taskbarProcessId;
+bool restoreQtParents(QWindow* const window, QWindow* const visualParent, QObject* const objectParent) {
+  if (!window) return false;
+  window->setParent(visualParent);
+  if (window->QObject::parent() != objectParent) window->QObject::setParent(objectParent);
+  return window->parent() == visualParent && window->QObject::parent() == objectParent;
 }
 
-std::optional<Placement> calculatePlacement(const Environment& environment, const QSize& logicalSize) {
-  if (logicalSize.width() <= 0 || logicalSize.height() <= 0) return std::nullopt;
-
-  POINT notifyTopLeft{environment.notifyRect.left, environment.notifyRect.top};
-  if (!ScreenToClient(environment.taskbar, &notifyTopLeft)) return std::nullopt;
-
-  const int clientWidth = static_cast<int>(environment.taskbarClientRect.right - environment.taskbarClientRect.left);
-  const int clientHeight = static_cast<int>(environment.taskbarClientRect.bottom - environment.taskbarClientRect.top);
-  const int inset = scaled(kTaskbarInset, environment.dpi);
-  const int width = scaled(logicalSize.width(), environment.dpi);
-  const int height = std::min(scaled(logicalSize.height(), environment.dpi), clientHeight - 2 * inset);
-  const int x = static_cast<int>(notifyTopLeft.x) - width - inset;
-  const int y = (clientHeight - height) / 2;
-
-  // 不截断、不覆盖通知区，也不靠魔数猜测位置；空间不足即明确失败。
-  if (width <= 0 || height <= 0 || x < inset || y < 0 || x + width > static_cast<int>(notifyTopLeft.x) || x + width > clientWidth) {
-    return std::nullopt;
-  }
-  return Placement{x, y, width, height};
+HANDLE nextAttachmentCookie() {
+  static std::atomic<ULONG_PTR> nextCookie{1};
+  ULONG_PTR cookie = nextCookie.fetch_add(1, std::memory_order_relaxed);
+  if (cookie == 0) cookie = nextCookie.fetch_add(1, std::memory_order_relaxed);
+  return reinterpret_cast<HANDLE>(cookie);
 }
 
-bool matchesPlacement(const HWND window, const Environment& environment, const Placement& placement) {
-  RECT windowRect{};
-  POINT taskbarOrigin{};
-  if (!GetWindowRect(window, &windowRect) || !ClientToScreen(environment.taskbar, &taskbarOrigin)) return false;
-  return windowRect.left == taskbarOrigin.x + placement.x && windowRect.top == taskbarOrigin.y + placement.y &&
-         windowRect.right - windowRect.left == placement.width && windowRect.bottom - windowRect.top == placement.height;
+bool ownsNativeWindow(const HWND window, const HANDLE cookie = nullptr) {
+  DWORD processId = 0;
+  if (!IsWindow(window)) return false;
+  GetWindowThreadProcessId(window, &processId);
+  return processId == GetCurrentProcessId() && (!cookie || GetPropW(window, kAttachmentCookieProperty) == cookie);
 }
+
+HWND ownedWindow(const WId id, const HANDLE cookie = nullptr) {
+  if (!id) return nullptr;
+  const HWND window = reinterpret_cast<HWND>(id);
+  return ownsNativeWindow(window, cookie) ? window : nullptr;
+}
+
+struct InjectedStateObservation {
+  bool parentMatches = false;
+  bool child = false;
+  bool popup = false;
+  bool toolWindow = false;
+  bool noActivate = false;
+  bool appWindow = false;
+
+  [[nodiscard]] bool valid() const { return parentMatches && child && !popup && noActivate && !appWindow; }
+};
+
+InjectedStateObservation observeInjectedState(const HWND window, const HWND taskbar) {
+  const LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
+  const LONG_PTR exStyle = GetWindowLongPtrW(window, GWL_EXSTYLE);
+  return {GetParent(window) == taskbar,
+          (style & static_cast<LONG_PTR>(WS_CHILD)) != 0,
+          (style & static_cast<LONG_PTR>(WS_POPUP)) != 0,
+          (exStyle & static_cast<LONG_PTR>(WS_EX_TOOLWINDOW)) != 0,
+          (exStyle & static_cast<LONG_PTR>(WS_EX_NOACTIVATE)) != 0,
+          (exStyle & static_cast<LONG_PTR>(WS_EX_APPWINDOW)) != 0};
+}
+
+bool hasInjectedState(const HWND window, const HWND taskbar) { return observeInjectedState(window, taskbar).valid(); }
 
 }  // namespace
 
-struct Win11TaskbarLayoutStrategy::Impl {
-  std::optional<Environment> attachment;
-  QSize logicalSize;
+class Win11TaskbarLayoutStrategy::AttachTransactionImpl final : public TaskbarLayoutStrategy::AttachTransaction {
+ public:
+  AttachTransactionImpl(Win11TaskbarLayoutStrategy* owner, QWindow* window, AttachReadiness readiness, Environment environment = {}, Placement placement = {},
+                        QSize logicalSize = {})
+      : AttachTransaction(readiness),
+        m_owner(owner),
+        m_window(window),
+        m_windowId(window ? window->winId() : 0),
+        m_environment(environment),
+        m_placement(placement),
+        m_logicalSize(logicalSize) {}
+
+  AttachResult commit() override;
+  AttachResult finalize() override;
+  DetachResult rollback() override;
+
+ private:
+  enum class State { Prepared, Committed, NativeWindowDestroyed, Finished };
+  AttachResult hardReset(const char* reason, DWORD error = ERROR_SUCCESS);
+  Win11TaskbarLayoutStrategy* m_owner = nullptr;
+  QPointer<QWindow> m_window;
+  WId m_windowId = 0;
+  Environment m_environment;
+  Placement m_placement;
+  QSize m_logicalSize;
+  State m_state = State::Prepared;
 };
 
 Win11TaskbarLayoutStrategy::Win11TaskbarLayoutStrategy() : m_impl(std::make_unique<Impl>()) {}
-
-Win11TaskbarLayoutStrategy::~Win11TaskbarLayoutStrategy() = default;
-
-bool Win11TaskbarLayoutStrategy::available() const { return probeEnvironment().has_value(); }
-
-bool Win11TaskbarLayoutStrategy::attach(const WId windowId, const QSize& logicalSize) {
-  const auto environment = probeEnvironment();
-  const HWND window = reinterpret_cast<HWND>(windowId);
-  if (!environment || !window || !IsWindow(window)) return false;
-  const auto placement = calculatePlacement(*environment, logicalSize);
-  if (!placement) return false;
-
-  if (m_impl->attachment && !sameEnvironment(*m_impl->attachment, *environment)) detach(windowId);
-
-  DWORD windowProcessId = 0;
-  GetWindowThreadProcessId(window, &windowProcessId);
-  if (windowProcessId != GetCurrentProcessId()) return false;
-
-  const LONG_PTR currentStyle = GetWindowLongPtrW(window, GWL_STYLE);
-  LONG_PTR desiredStyle = currentStyle;
-  desiredStyle &= ~static_cast<LONG_PTR>(WS_POPUP);
-  desiredStyle |= static_cast<LONG_PTR>(WS_CHILD);
-  const bool styleChanged = desiredStyle != currentStyle;
-  if (styleChanged && !setWindowLongChecked(window, GWL_STYLE, desiredStyle)) return false;
-
-  const LONG_PTR currentExStyle = GetWindowLongPtrW(window, GWL_EXSTYLE);
-  LONG_PTR desiredExStyle = currentExStyle;
-  desiredExStyle &= ~static_cast<LONG_PTR>(WS_EX_APPWINDOW);
-  desiredExStyle |= static_cast<LONG_PTR>(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
-  const bool exStyleChanged = desiredExStyle != currentExStyle;
-  if (exStyleChanged && !setWindowLongChecked(window, GWL_EXSTYLE, desiredExStyle)) return false;
-
-  const bool parentChanged = GetParent(window) != environment->taskbar;
-  if (parentChanged) {
-    SetLastError(ERROR_SUCCESS);
-    const HWND previousParent = SetParent(window, environment->taskbar);
-    if (!previousParent && GetLastError() != ERROR_SUCCESS) return false;
-  }
-
-  const bool frameChanged = styleChanged || exStyleChanged;
-  const bool geometryChanged = parentChanged || !matchesPlacement(window, *environment, *placement);
-  const bool visibilityChanged = !IsWindowVisible(window);
-  if (frameChanged || geometryChanged || visibilityChanged) {
-    UINT flags = SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW;
-    if (frameChanged) flags |= SWP_FRAMECHANGED;
-    if (!geometryChanged) flags |= SWP_NOMOVE | SWP_NOSIZE;
-    if (!SetWindowPos(window, HWND_TOP, placement->x, placement->y, placement->width, placement->height, flags)) return false;
-  }
-
-  m_impl->attachment = environment;
-  m_impl->logicalSize = logicalSize;
-  return true;
+Win11TaskbarLayoutStrategy::~Win11TaskbarLayoutStrategy() {
+  if (m_impl->attachment) (void)detach();
 }
 
-bool Win11TaskbarLayoutStrategy::verify(const WId windowId) const {
-  if (!m_impl->attachment) return false;
-  const auto environment = probeEnvironment();
-  const HWND window = reinterpret_cast<HWND>(windowId);
-  if (!environment || !sameEnvironment(*m_impl->attachment, *environment) || !window || !IsWindow(window) || !IsWindowVisible(window) ||
-      GetParent(window) != environment->taskbar) {
-    return false;
+bool Win11TaskbarLayoutStrategy::isCompatible() const { return windowsVersionInfo().family == WindowsFamily::Windows11; }
+
+void Win11TaskbarLayoutStrategy::recordVerificationDiagnostic(const VerificationResult result, const char* const reason) const {
+  if (result == VerificationResult::Confirmed) {
+    m_impl->lastDiagnosticResult = result;
+    m_impl->lastDiagnosticReason.clear();
+    return;
+  }
+  const std::string currentReason = reason ? reason : "unknown";
+  if (m_impl->lastDiagnosticResult == result && m_impl->lastDiagnosticReason == currentReason) return;
+  m_impl->lastDiagnosticResult = result;
+  m_impl->lastDiagnosticReason = currentReason;
+  UWF_LOG_D("taskbar") << "verify result="
+                       << (result == VerificationResult::Retained          ? "retained"
+                           : result == VerificationResult::RefreshRequired ? "refresh-required"
+                                                                           : "invalid")
+                       << " reason=" << currentReason;
+}
+
+std::unique_ptr<TaskbarLayoutStrategy::AttachTransaction> Win11TaskbarLayoutStrategy::prepareAttach(QWindow* window, const QSize& logicalSize) {
+  const bool active = m_impl->attachment && m_impl->attachment->window == window;
+  const EnvironmentProbe probe = active ? refreshEnvironment(m_impl->attachment->environment) : probeEnvironment();
+  if (probe.availability == RuntimeAvailability::TemporarilyUnavailable)
+    return std::make_unique<AttachTransactionImpl>(this, window, AttachReadiness::TemporarilyUnavailable);
+  if (probe.availability == RuntimeAvailability::IncompatibleLayout || !probe.environment)
+    return std::make_unique<AttachTransactionImpl>(this, window, AttachReadiness::Unavailable);
+  const auto placement = calculatePlacement(*probe.environment, logicalSize);
+  if (!placement) return std::make_unique<AttachTransactionImpl>(this, window, active ? AttachReadiness::TemporarilyUnavailable : AttachReadiness::Unavailable);
+  return std::make_unique<AttachTransactionImpl>(this, window, AttachReadiness::Ready, *probe.environment, *placement, logicalSize);
+}
+
+TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::AttachTransactionImpl::hardReset(const char* reason, const DWORD error) {
+  QWindow* const qtWindow = m_window.data();
+  if (m_owner && m_owner->m_impl->attachment) {
+    auto& attached = *m_owner->m_impl->attachment;
+    const HWND oldWindow = reinterpret_cast<HWND>(attached.windowId);
+    if (ownsNativeWindow(oldWindow, attached.cookie)) (void)RemovePropW(oldWindow, kAttachmentCookieProperty);
+    const QPointer<QWindow> originalParent = attached.originalParent;
+    const QPointer<QObject> originalObjectParent = attached.originalObjectParent;
+    (void)restoreQtParents(qtWindow, originalParent.data(), originalObjectParent.data());
+    m_owner->m_impl->attachment.reset();
+  }
+  if (qtWindow) qtWindow->destroy();
+  m_state = State::NativeWindowDestroyed;
+  if (error == ERROR_SUCCESS)
+    UWF_LOG_W("taskbar") << "hard reset: reason=" << reason << " action=destroy-all-and-reinject";
+  else
+    UWF_LOG_W("taskbar") << "hard reset: reason=" << reason << " error=" << error << " action=destroy-all-and-reinject";
+  return AttachResult::Invalid;
+}
+
+TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::AttachTransactionImpl::commit() {
+  QWindow* const qtWindow = m_window.data();
+  if (m_state != State::Prepared || !m_owner || readiness() != AttachReadiness::Ready || !qtWindow || qtWindow->winId() != m_windowId)
+    return AttachResult::Invalid;
+  HWND window = ownedWindow(m_windowId);
+  if (!window || !IsWindow(m_environment.taskbar) || !IsWindow(m_environment.notify)) return AttachResult::TemporarilyUnavailable;
+
+  if (m_owner->m_impl->attachment) {
+    auto& attached = *m_owner->m_impl->attachment;
+    window = ownedWindow(m_windowId, attached.cookie);
+    if (!window || attached.window != qtWindow || attached.windowId != m_windowId || !sameEnvironment(attached.environment, m_environment) ||
+        !hasInjectedState(window, m_environment.taskbar))
+      return hardReset("active-attachment-invariant");
+    if (!matchesPlacement(window, m_environment, m_placement) &&
+        !SetWindowPos(window, HWND_TOP, m_placement.x, m_placement.y, m_placement.width, m_placement.height, SWP_NOACTIVATE | SWP_NOOWNERZORDER))
+      return AttachResult::TemporarilyUnavailable;
+    attached.environment = m_environment;
+    attached.logicalSize = m_logicalSize;
+    m_state = State::Committed;
+    return AttachResult::Attached;
   }
 
-  DWORD windowProcessId = 0;
-  GetWindowThreadProcessId(window, &windowProcessId);
-  if (windowProcessId != GetCurrentProcessId()) return false;
+  std::unique_ptr<QWindow> taskbarWindow(QWindow::fromWinId(reinterpret_cast<WId>(m_environment.taskbar)));
+  if (!taskbarWindow) return AttachResult::TemporarilyUnavailable;
+  if (GetPropW(window, kAttachmentCookieProperty)) {
+    qtWindow->destroy();
+    m_state = State::NativeWindowDestroyed;
+    return AttachResult::Invalid;
+  }
+  const HANDLE cookie = nextAttachmentCookie();
+  if (!SetPropW(window, kAttachmentCookieProperty, cookie)) return AttachResult::Invalid;
+  m_owner->m_impl->attachment.emplace(Impl::Attachment{m_environment, qtWindow, std::move(taskbarWindow), m_windowId, qtWindow->parent(),
+                                                       qtWindow->QObject::parent(), GetParent(window), GetWindowLongPtrW(window, GWL_STYLE),
+                                                       GetWindowLongPtrW(window, GWL_EXSTYLE), cookie, m_logicalSize});
+  auto& attached = *m_owner->m_impl->attachment;
+  LONG_PTR style = attached.originalStyle;
+  style &= ~static_cast<LONG_PTR>(WS_POPUP);
+  style |= static_cast<LONG_PTR>(WS_CHILD);
+  LONG_PTR exStyle = attached.originalExStyle;
+  exStyle &= ~static_cast<LONG_PTR>(WS_EX_APPWINDOW);
+  exStyle |= static_cast<LONG_PTR>(WS_EX_NOACTIVATE);
+  if (!setWindowLongChecked(window, GWL_STYLE, style) || !setWindowLongChecked(window, GWL_EXSTYLE, exStyle))
+    return hardReset("native-style-transaction", GetLastError());
 
-  const LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
-  if ((style & static_cast<LONG_PTR>(WS_CHILD)) == 0 || (style & static_cast<LONG_PTR>(WS_POPUP)) != 0) return false;
-  const LONG_PTR exStyle = GetWindowLongPtrW(window, GWL_EXSTYLE);
-  if ((exStyle & static_cast<LONG_PTR>(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE)) != static_cast<LONG_PTR>(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE) ||
-      (exStyle & static_cast<LONG_PTR>(WS_EX_APPWINDOW)) != 0) {
-    return false;
+  // SetParent 不会调整 WS_CHILD/WS_POPUP。先建立子窗口语义，再由 Qt 完成
+  // 唯一一次 parent 事务——禁止再补 Win32 SetParent，否则 Qt 树与 HWND 树
+  // 会出现双提交来源，Confirmed 时 Explorer 下可能出现重复或零 attachment。
+  qtWindow->setParent(attached.taskbarWindow.get());
+  if (qtWindow->winId() != m_windowId) return hardReset("qt-parent-transaction", GetLastError());
+  if (qtWindow->parent() != attached.taskbarWindow.get() || GetParent(window) != m_environment.taskbar) {
+    const AttachResult result = m_owner->abortIncompleteParentCommit();
+    m_state = result == AttachResult::TemporarilyUnavailable ? State::Finished : State::NativeWindowDestroyed;
+    return result;
   }
 
-  const auto placement = calculatePlacement(*environment, m_impl->logicalSize);
-  if (!placement || !matchesPlacement(window, *environment, *placement)) return false;
+  if (!SetWindowPos(window, HWND_TOP, m_placement.x, m_placement.y, m_placement.width, m_placement.height,
+                    SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOOWNERZORDER))
+    return hardReset("native-placement-transaction", GetLastError());
+  m_owner->m_impl->hardResetRequired = false;
+  m_state = State::Committed;
+  return AttachResult::Attached;
+}
 
+TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::AttachTransactionImpl::finalize() {
+  QWindow* const qtWindow = m_window.data();
+  if (m_state != State::Committed || !m_owner || !qtWindow || qtWindow->winId() != m_windowId || !m_owner->m_impl->attachment)
+    return hardReset("finalize-identity");
+  const auto& attached = *m_owner->m_impl->attachment;
+  const HWND window = ownedWindow(m_windowId, attached.cookie);
+  if (!window) return hardReset("finalize-identity");
+  const InjectedStateObservation observation = observeInjectedState(window, m_environment.taskbar);
+  if (!observation.valid()) {
+    UWF_LOG_W("taskbar") << "finalize invariant: parent=" << observation.parentMatches << " child=" << observation.child << " popup=" << observation.popup
+                         << " toolWindow=" << observation.toolWindow << " noActivate=" << observation.noActivate << " appWindow=" << observation.appWindow;
+    return hardReset("finalize-invariant");
+  }
+  if (!matchesPlacement(window, m_environment, m_placement) &&
+      !SetWindowPos(window, HWND_TOP, m_placement.x, m_placement.y, m_placement.width, m_placement.height, SWP_NOACTIVATE | SWP_NOOWNERZORDER))
+    return hardReset("finalize-placement", GetLastError());
+  m_state = State::Finished;
+  return AttachResult::Attached;
+}
+
+TaskbarLayoutStrategy::DetachResult Win11TaskbarLayoutStrategy::AttachTransactionImpl::rollback() {
+  if (m_state == State::Finished) return DetachResult::Detached;
+  if (m_state == State::NativeWindowDestroyed) {
+    m_state = State::Finished;
+    return DetachResult::NativeWindowDestroyed;
+  }
+  const DetachResult result = m_owner ? m_owner->detach() : DetachResult::Failed;
+  m_state = State::Finished;
+  return result;
+}
+
+TaskbarLayoutStrategy::VerificationResult Win11TaskbarLayoutStrategy::verify(const QWindow* qtWindow, const WId currentWindowId) const {
+  if (!m_impl->attachment) {
+    recordVerificationDiagnostic(VerificationResult::Invalid, "attachment-missing");
+    return VerificationResult::Invalid;
+  }
+  const auto& attached = *m_impl->attachment;
+  const HWND window = ownedWindow(currentWindowId, attached.cookie);
+  if (!qtWindow || attached.window != qtWindow || currentWindowId != attached.windowId || !window || !qtWindow->isVisible() ||
+      !hasInjectedState(window, attached.environment.taskbar)) {
+    m_impl->hardResetRequired = true;
+    recordVerificationDiagnostic(VerificationResult::Invalid, "local-attachment-invariant");
+    return VerificationResult::Invalid;
+  }
+  auto probe = refreshEnvironment(attached.environment);
+  if (probe.availability == RuntimeAvailability::TemporarilyUnavailable) {
+    probe = win11_taskbar::detail::resolveRetainedProbe(probe, probeEnvironment());
+    if (probe.availability == RuntimeAvailability::TemporarilyUnavailable) {
+      recordVerificationDiagnostic(VerificationResult::Retained, "shell-environment-temporarily-unavailable");
+      return VerificationResult::Retained;
+    }
+  }
+  if (probe.availability == RuntimeAvailability::IncompatibleLayout || !probe.environment || !sameEnvironment(attached.environment, *probe.environment)) {
+    recordVerificationDiagnostic(VerificationResult::Invalid, "shell-environment-invalid");
+    return VerificationResult::Invalid;
+  }
+  const auto placement = calculatePlacement(*probe.environment, attached.logicalSize);
+  const auto observation =
+      win11_taskbar::detail::classifyPlacementObservation(placement.has_value(), placement && matchesPlacement(window, *probe.environment, *placement));
+  if (observation == win11_taskbar::detail::PlacementObservation::Retained) {
+    recordVerificationDiagnostic(VerificationResult::Retained, "placement-not-calculable");
+    return VerificationResult::Retained;
+  }
+  if (observation == win11_taskbar::detail::PlacementObservation::RefreshRequired) {
+    recordVerificationDiagnostic(VerificationResult::RefreshRequired, "placement-mismatch");
+    return VerificationResult::RefreshRequired;
+  }
   DWORD cloaked = 0;
-  if (SUCCEEDED(DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked, static_cast<DWORD>(sizeof(cloaked)))) && cloaked != 0) return false;
-  return true;
-}
-
-void Win11TaskbarLayoutStrategy::detach(const WId windowId) {
-  const HWND window = reinterpret_cast<HWND>(windowId);
-  if (window && IsWindow(window)) {
-    ShowWindow(window, SW_HIDE);
-    if (m_impl->attachment && GetParent(window) == m_impl->attachment->taskbar) SetParent(window, nullptr);
-
-    LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
-    style &= ~static_cast<LONG_PTR>(WS_CHILD);
-    style |= static_cast<LONG_PTR>(WS_POPUP);
-    setWindowLongChecked(window, GWL_STYLE, style);
+  if (SUCCEEDED(DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked, sizeof(cloaked))) && cloaked) {
+    recordVerificationDiagnostic(VerificationResult::Retained, "dwm-cloaked");
+    return VerificationResult::Retained;
   }
-  m_impl->attachment.reset();
-  m_impl->logicalSize = {};
+  // QWidget::isVisible() 只代表 Qt 请求的可见状态。Explorer 或其他原生操作
+  // 可以隐藏 HWND 而不更新 Qt 状态；此时必须走一次原地 refresh，不能继续
+  // 向 Hub 宣称 presentation 已确认。
+  if (!IsWindowVisible(window)) {
+    recordVerificationDiagnostic(VerificationResult::RefreshRequired, "native-window-hidden");
+    return VerificationResult::RefreshRequired;
+  }
+  recordVerificationDiagnostic(VerificationResult::Confirmed, "confirmed");
+  return VerificationResult::Confirmed;
 }
 
-void Win11TaskbarLayoutStrategy::invalidate() {
+TaskbarLayoutStrategy::DetachResult Win11TaskbarLayoutStrategy::detach() {
+  if (!m_impl->attachment) return DetachResult::Detached;
+  auto& attached = *m_impl->attachment;
+  QWindow* const qtWindow = attached.window.data();
+  const HWND window = reinterpret_cast<HWND>(attached.windowId);
+  const auto forceHardReset = [&](const char* reason) {
+    if (ownsNativeWindow(window, attached.cookie)) (void)RemovePropW(window, kAttachmentCookieProperty);
+    const QPointer<QWindow> originalParent = attached.originalParent;
+    const QPointer<QObject> originalObjectParent = attached.originalObjectParent;
+    (void)restoreQtParents(qtWindow, originalParent.data(), originalObjectParent.data());
+    m_impl->attachment.reset();
+    m_impl->hardResetRequired = false;
+    if (qtWindow) qtWindow->destroy();
+    UWF_LOG_W("taskbar") << "hard reset: reason=" << reason << " action=destroy-all-and-reinject";
+    return DetachResult::NativeWindowDestroyed;
+  };
+  if (m_impl->hardResetRequired) return forceHardReset("verification-failure");
+  if (!qtWindow || !ownsNativeWindow(window, attached.cookie)) {
+    m_impl->attachment.reset();
+    return DetachResult::NativeWindowDestroyed;
+  }
+  if (!restoreQtParents(qtWindow, attached.originalParent.data(), attached.originalObjectParent.data())) return forceHardReset("detach-qt-parent");
+  if (!ownsNativeWindow(window, attached.cookie)) return forceHardReset("detach-native-identity");
+  if (GetParent(window) != attached.originalNativeParent) return forceHardReset("detach-native-parent");
+  if (!restoreWindowStyles(window, attached.originalStyle, attached.originalExStyle)) return forceHardReset("detach-native-style");
+  if (RemovePropW(window, kAttachmentCookieProperty) != attached.cookie) return forceHardReset("detach-cookie");
   m_impl->attachment.reset();
-  m_impl->logicalSize = {};
+  return DetachResult::Detached;
+}
+
+TaskbarLayoutStrategy::DetachResult Win11TaskbarLayoutStrategy::invalidate() {
+  m_impl->hardResetRequired = true;
+  return detach();
+}
+
+TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::abortIncompleteParentCommit() {
+  // Parent 提交不完整：必须走与正常 detach() 相同的逐项校验（Qt parent、
+  // HWND parent、style、cookie）。只有全部还原才允许 TemporarilyUnavailable
+  // 重试；任一项失败由 detach() hard-reset 销毁窗口，绝不能留下半注入状态。
+  const DetachResult detached = detach();
+  if (detached == DetachResult::Detached) {
+    UWF_LOG_W("taskbar") << "parent transaction deferred: reason=qt-parent-mismatch action=atomic-rollback-retry";
+    return AttachResult::TemporarilyUnavailable;
+  }
+  UWF_LOG_W("taskbar") << "parent transaction aborted: reason=qt-parent-mismatch action=destroy-all-and-reinject";
+  return AttachResult::Invalid;
 }
 
 }  // namespace uwf::ui

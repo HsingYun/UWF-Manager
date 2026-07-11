@@ -16,6 +16,7 @@
  */
 #include <QApplication>
 
+#include "src/app/CrashHandler.h"
 #include "src/app/SecureSingleInstance.h"
 #include "src/ui/CenteredTextStyle.h"
 #include "src/ui/I18n.h"
@@ -90,8 +91,7 @@ uwf::SystemCheckResult checkRuntimeEnvironment() {
   return check;
 }
 
-int runMainWindow(QApplication& app, uwf::app::SecureSingleInstance& singleInstance,
-                  const uwf::SystemCheckResult& check) {
+int runMainWindow(QApplication& app, uwf::app::SecureSingleInstance& singleInstance, const uwf::SystemCheckResult& check) {
   uwf::ui::MainWindow w(check.status == uwf::CheckStatus::UnsupportedSystem, QString::fromStdString(check.productName),
                         QString::fromStdString(check.editionId));
 
@@ -109,6 +109,7 @@ int runMainWindow(QApplication& app, uwf::app::SecureSingleInstance& singleInsta
 }  // namespace
 
 int main(int argc, char* argv[]) {
+  uwf::app::CrashHandler::install();
   QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
   QApplication app(argc, argv);
   app.setApplicationName("UWF Manager");

@@ -16,8 +16,6 @@
  */
 #include "OverlayTaskbarWidget.h"
 
-#include <windows.h>
-
 #include <QContextMenuEvent>
 #include <QEnterEvent>
 #include <QEvent>
@@ -30,6 +28,7 @@
 #include <QScreen>
 #include <QTimer>
 #include <QToolTip>
+#include <QWindow>
 #include <algorithm>
 #include <cmath>
 #include <numbers>
@@ -38,6 +37,7 @@
 #include "OverlayHudPalette.h"
 #include "OverlayHudRenderer.h"
 #include "TaskbarLayoutCoordinator.h"
+#include "Win11TaskbarEnvironment.h"
 
 namespace uwf::ui {
 
@@ -51,7 +51,44 @@ constexpr int kToolTipDelayMs = 800;
 constexpr int kRadius = 6;
 constexpr qreal kWavePhaseStep = 0.12;
 
-enum class TaskbarEdge { Unknown, Left, Top, Right, Bottom };
+enum class TaskbarEdge { Left, Top, Right, Bottom };
+
+TaskbarEdge taskbarEdge(const QRect& hubRect, const QRect& screenRect) {
+  const int leftDistance = std::abs(hubRect.left() - screenRect.left());
+  const int topDistance = std::abs(hubRect.top() - screenRect.top());
+  const int rightDistance = std::abs(screenRect.right() - hubRect.right());
+  const int bottomDistance = std::abs(screenRect.bottom() - hubRect.bottom());
+  const int minimumDistance = std::min({leftDistance, topDistance, rightDistance, bottomDistance});
+  if (leftDistance == minimumDistance) return TaskbarEdge::Left;
+  if (topDistance == minimumDistance) return TaskbarEdge::Top;
+  if (rightDistance == minimumDistance) return TaskbarEdge::Right;
+  return TaskbarEdge::Bottom;
+}
+
+QPoint taskbarPopupPosition(const QPoint& anchor, const QSize& popupSize, const QRect& hubRect, const QScreen& screen, const int gap) {
+  const QRect screenRect = screen.geometry();
+  const QRect availableRect = screen.availableGeometry();
+  const TaskbarEdge edge = taskbarEdge(hubRect, screenRect);
+  const bool reservesLeft = availableRect.left() > screenRect.left();
+  const bool reservesTop = availableRect.top() > screenRect.top();
+  const bool reservesRight = availableRect.right() < screenRect.right();
+  const bool reservesBottom = availableRect.bottom() < screenRect.bottom();
+  int x = anchor.x();
+  int y = anchor.y();
+  if (edge == TaskbarEdge::Left) {
+    x = reservesLeft ? availableRect.left() + gap : hubRect.right() + gap;
+  } else if (edge == TaskbarEdge::Top) {
+    y = reservesTop ? availableRect.top() + gap : hubRect.bottom() + gap;
+  } else if (edge == TaskbarEdge::Right) {
+    x = reservesRight ? availableRect.right() - popupSize.width() - gap + 1 : hubRect.left() - popupSize.width() - gap;
+  } else {
+    y = reservesBottom ? availableRect.bottom() - popupSize.height() - gap + 1 : hubRect.top() - popupSize.height() - gap;
+  }
+
+  x = std::clamp(x, screenRect.left(), std::max(screenRect.left(), screenRect.right() - popupSize.width() + 1));
+  y = std::clamp(y, screenRect.top(), std::max(screenRect.top(), screenRect.bottom() - popupSize.height() + 1));
+  return {x, y};
+}
 
 QPalette systemToolTipPalette(const Theme theme) {
   QPalette palette;
@@ -92,7 +129,24 @@ OverlayTaskbarWidget::OverlayTaskbarWidget(QWidget* parent)
     : OverlayHubView(parent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowDoesNotAcceptFocus),
       m_animationTimer(new QTimer(this)),
       m_toolTipTimer(new QTimer(this)),
-      m_layoutCoordinator(createDefaultTaskbarLayoutCoordinator([this]() { requestPresentationRefresh(); })) {
+      m_layoutCoordinator(createDefaultTaskbarLayoutCoordinator([this](const TaskbarLayoutCoordinator::DetachEvent event) {
+        if (event.phase == TaskbarLayoutCoordinator::DetachPhase::Started) {
+          notifyHostPresentationReleaseStarted();
+          return;
+        }
+        if (event.phase == TaskbarLayoutCoordinator::DetachPhase::Blocked) {
+          notifyPresentationReleaseBlocked();
+          return;
+        }
+        if (event.nativeWindowResetRequired) resetNativeWindow();
+        // Explorer 重建直接触发重新发现；普通释放则把完成事件交回 HubView，
+        // 由 Recovering 状态决定兑现显式重开，或进入稳定 fallback/低频探测。
+        if (event.reason == TaskbarLayoutCoordinator::DetachReason::HostInvalidated) {
+          notifyHostPresentationReleaseCompleted();
+        } else {
+          notifyPresentationReleaseCompleted();
+        }
+      })) {
   setObjectName("overlayTaskbarWidget");
   setAttribute(Qt::WA_TranslucentBackground, true);
   setAttribute(Qt::WA_ShowWithoutActivating, true);
@@ -120,23 +174,31 @@ OverlayTaskbarWidget::OverlayTaskbarWidget(QWidget* parent)
   });
 }
 
-OverlayTaskbarWidget::~OverlayTaskbarWidget() = default;
+OverlayTaskbarWidget::~OverlayTaskbarWidget() {
+  closeContextMenu();
+  m_contextMenu.clear();
+}
+
+bool OverlayTaskbarWidget::isCompatible() const { return m_layoutCoordinator->isCompatible(); }
 
 void OverlayTaskbarWidget::updateUsage(const core::OverlayRuntime& runtime) {
   m_runtime = runtime;
   m_hasRuntime = true;
+  synchronizeContentGeometry();
   update();
   updateAnimationTimer();
 }
 
 void OverlayTaskbarWidget::setUsageUnavailable() {
   m_hasRuntime = false;
+  synchronizeContentGeometry();
   update();
   updateAnimationTimer();
 }
 
 void OverlayTaskbarWidget::setFilterEnabled(const bool enabled) {
   m_filterEnabled = enabled;
+  synchronizeContentGeometry();
   update();
   updateAnimationTimer();
 }
@@ -144,20 +206,39 @@ void OverlayTaskbarWidget::setFilterEnabled(const bool enabled) {
 void OverlayTaskbarWidget::contextMenuEvent(QContextMenuEvent* ev) {
   m_toolTipTimer->stop();
   hideToolTip();
-  QMenu menu(this);
-  addApplicationTitleToMenu(menu);
-  QAction* showMainAct = menu.addAction(I18n::tr("Show main window"));
-  QAction* hideHubAct = menu.addAction(I18n::tr("Hide overlay hub"));
-  menu.addSeparator();
-  QAction* exitAct = menu.addAction(I18n::tr("Exit application"));
-  QAction* picked = menu.exec(ev->globalPos());
-  if (picked == showMainAct) {
-    emit showMainWindowRequested();
-  } else if (picked == hideHubAct) {
-    emit hideHubRequested();
-  } else if (picked == exitAct) {
-    emit exitApplicationRequested();
+  if (m_contextMenu) {
+    closeContextMenu();
+    return;
   }
+
+  // Native attachment makes this QWidget an Explorer child even though Qt
+  // still models it as a window. A popup parented to it gets an invalid
+  // transient parent and can be visible without receiving QAction input.
+  auto* const menu = new QMenu();
+  m_contextMenu = menu;
+  addApplicationTitleToMenu(*menu);
+  QAction* const showMainAct = menu->addAction(I18n::tr("Show main window"));
+  QAction* const hideHubAct = menu->addAction(I18n::tr("Hide overlay hub"));
+  menu->addSeparator();
+  QAction* const exitAct = menu->addAction(I18n::tr("Exit application"));
+  connect(showMainAct, &QAction::triggered, this, &OverlayTaskbarWidget::showMainWindowRequested);
+  connect(hideHubAct, &QAction::triggered, this, &OverlayTaskbarWidget::hideHubRequested);
+  connect(exitAct, &QAction::triggered, this, &OverlayTaskbarWidget::exitApplicationRequested);
+  connect(menu, &QMenu::aboutToHide, this, [this, menu]() {
+    if (m_contextMenu == menu) m_contextMenu.clear();
+    menu->deleteLater();
+  });
+  menu->ensurePolished();
+  const QRect hubRect(mapToGlobal(QPoint(0, 0)), size());
+  QScreen* screen = QGuiApplication::screenAt(hubRect.center());
+  if (!screen) screen = QGuiApplication::primaryScreen();
+  if (!screen) {
+    menu->deleteLater();
+    m_contextMenu.clear();
+    return;
+  }
+  const QPoint position = taskbarPopupPosition(ev->globalPos(), menu->sizeHint(), hubRect, *screen, 6);
+  menu->popup(position);
 }
 
 void OverlayTaskbarWidget::enterEvent(QEnterEvent* ev) {
@@ -201,7 +282,7 @@ void OverlayTaskbarWidget::paintEvent(QPaintEvent*) {
   }
 }
 
-bool OverlayTaskbarWidget::attachPresentation() {
+OverlayHubView::AttachResult OverlayTaskbarWidget::acquirePresentation() {
   // Win11 策略通过 SetWindowPos 设置原生 HWND 的物理像素尺寸，但 QWidget
   // 在第一次 show() 时还会应用自身保存的逻辑几何。先完成 polish 并同步最终
   // 逻辑尺寸，避免 show() 把策略刚设置的宽度覆盖回构造期的 96px，随后又被
@@ -210,44 +291,62 @@ bool OverlayTaskbarWidget::attachPresentation() {
   const QSize desiredSize(desiredLogicalWidth(), kLogicalHeight);
   if (size() != desiredSize) resize(desiredSize);
 
-  releaseInvalidNativeWindow();
-  if (!ensureNativeWindow()) return false;
-  if (!m_layoutCoordinator->attach(internalWinId(), desiredSize)) return false;
-  if (!isVisible()) show();
-  updateAnimationTimer();
-  return true;
+  const auto environmentProbe = win11_taskbar::probeEnvironment();
+  const HWND taskbar = environmentProbe.environment ? environmentProbe.environment->taskbar : nullptr;
+  const win11_taskbar::ScopedThreadDpiAwareness dpiScope(taskbar);
+  (void)winId();
+  QWindow* const window = windowHandle();
+  if (!window) return AttachResult::Failed;
+  const auto result = m_layoutCoordinator->prepareAttach(
+      window, desiredSize,
+      [this]() {
+        if (!isVisible()) show();
+        const HWND nativeWindow = reinterpret_cast<HWND>(internalWinId());
+        if (nativeWindow && !IsWindowVisible(nativeWindow)) (void)ShowWindow(nativeWindow, SW_SHOWNOACTIVATE);
+      },
+      [this]() {
+        if (isVisible()) hide();
+      });
+  if (result == TaskbarLayoutCoordinator::AttachResult::TemporarilyUnavailable) return AttachResult::TemporarilyUnavailable;
+  if (result == TaskbarLayoutCoordinator::AttachResult::ReleasePending) return AttachResult::ReleasePending;
+  if (result == TaskbarLayoutCoordinator::AttachResult::ReleaseBlocked) return AttachResult::ReleaseBlocked;
+  if (result == TaskbarLayoutCoordinator::AttachResult::NativeWindowDestroyed) {
+    resetNativeWindow();
+    return AttachResult::Failed;
+  }
+  if (result != TaskbarLayoutCoordinator::AttachResult::Prepared) return AttachResult::Failed;
+  return AttachResult::Prepared;
 }
 
-void OverlayTaskbarWidget::detachPresentation() {
+OverlayHubView::AttachResult OverlayTaskbarWidget::activatePresentation() {
+  const auto result = m_layoutCoordinator->activatePrepared();
+  if (result == TaskbarLayoutCoordinator::AttachResult::TemporarilyUnavailable) return AttachResult::TemporarilyUnavailable;
+  if (result == TaskbarLayoutCoordinator::AttachResult::ReleasePending) return AttachResult::ReleasePending;
+  if (result == TaskbarLayoutCoordinator::AttachResult::ReleaseBlocked) return AttachResult::ReleaseBlocked;
+  if (result == TaskbarLayoutCoordinator::AttachResult::NativeWindowDestroyed) {
+    resetNativeWindow();
+    return AttachResult::Failed;
+  }
+  if (result != TaskbarLayoutCoordinator::AttachResult::Attached) return AttachResult::Failed;
+  updateAnimationTimer();
+  return AttachResult::Attached;
+}
+
+void OverlayTaskbarWidget::suspendPresentation() {
   m_animationTimer->stop();
   m_toolTipTimer->stop();
   m_pointerInside = false;
   m_hasPainted = false;
   hideToolTip();
-  m_layoutCoordinator->detach(internalWinId());
+  closeContextMenu();
+  // suspend 只改变 QWidget 可见性并保留任务栏 attachment，供瞬时条件恢复后
+  // 原地确认；完整 detach 才恢复父关系和原生样式。
   hide();
-  releaseNativeWindow();
 }
 
-bool OverlayTaskbarWidget::ensureNativeWindow() {
-  releaseInvalidNativeWindow();
-
-  HWND widget = reinterpret_cast<HWND>(internalWinId());
-  DWORD processId = 0;
-  if (widget && IsWindow(widget)) GetWindowThreadProcessId(widget, &processId);
-  if (widget && IsWindow(widget) && processId == GetCurrentProcessId()) return true;
-
-  // Explorer owns the taskbar parent and destroys all of its native child
-  // windows when it restarts.  The QWidget and its QObject children remain
-  // alive, so first release Qt's stale platform-window state, then create a
-  // fresh HWND that can be embedded into the new taskbar.
-  m_hasPainted = false;
-  QWidget::create(0, true, false);
-
-  widget = reinterpret_cast<HWND>(internalWinId());
-  processId = 0;
-  if (widget && IsWindow(widget)) GetWindowThreadProcessId(widget, &processId);
-  return widget && IsWindow(widget) && processId == GetCurrentProcessId();
+OverlayHubView::ReleaseResult OverlayTaskbarWidget::detachPresentation(const ReleaseReason) {
+  suspendPresentation();
+  return m_layoutCoordinator->detach() == TaskbarLayoutCoordinator::DetachStatus::Pending ? ReleaseResult::Pending : ReleaseResult::Complete;
 }
 
 void OverlayTaskbarWidget::showToolTip() {
@@ -272,79 +371,42 @@ void OverlayTaskbarWidget::showToolTip() {
   if (!screen) screen = QGuiApplication::primaryScreen();
   if (!screen) return;
 
-  const QRect screenRect = screen->geometry();
-  const QRect availableRect = screen->availableGeometry();
-  const int leftInset = availableRect.left() - screenRect.left();
-  const int bottomInset = screenRect.bottom() - availableRect.bottom();
-  const int topInset = availableRect.top() - screenRect.top();
-  const int rightInset = screenRect.right() - availableRect.right();
-  const int maximumInset = std::max({leftInset, topInset, rightInset, bottomInset});
-  constexpr int kGap = 4;
-
-  int x = hubRect.center().x() - label.width() / 2;
-  int y = hubRect.center().y() - label.height() / 2;
-  TaskbarEdge edge = TaskbarEdge::Unknown;
-  if (maximumInset > 0) {
-    if (leftInset == maximumInset)
-      edge = TaskbarEdge::Left;
-    else if (topInset == maximumInset)
-      edge = TaskbarEdge::Top;
-    else if (rightInset == maximumInset)
-      edge = TaskbarEdge::Right;
-    else
-      edge = TaskbarEdge::Bottom;
-  } else {
-    const int leftDistance = std::abs(hubRect.center().x() - screenRect.left());
-    const int topDistance = std::abs(hubRect.center().y() - screenRect.top());
-    const int rightDistance = std::abs(screenRect.right() - hubRect.center().x());
-    const int bottomDistance = std::abs(screenRect.bottom() - hubRect.center().y());
-    const int minimumDistance = std::min({leftDistance, topDistance, rightDistance, bottomDistance});
-    if (leftDistance == minimumDistance)
-      edge = TaskbarEdge::Left;
-    else if (topDistance == minimumDistance)
-      edge = TaskbarEdge::Top;
-    else if (rightDistance == minimumDistance)
-      edge = TaskbarEdge::Right;
-    else
-      edge = TaskbarEdge::Bottom;
-  }
-
-  if (edge == TaskbarEdge::Left) {
-    x = availableRect.left() + kGap;
-  } else if (edge == TaskbarEdge::Top) {
-    y = availableRect.top() + kGap;
-  } else if (edge == TaskbarEdge::Right) {
-    x = availableRect.right() - label.width() - kGap + 1;
-  } else {
-    y = availableRect.bottom() - label.height() - kGap + 1;
-  }
-
-  x = std::clamp(x, availableRect.left(), std::max(availableRect.left(), availableRect.right() - label.width() + 1));
-  y = std::clamp(y, availableRect.top(), std::max(availableRect.top(), availableRect.bottom() - label.height() + 1));
-  label.move(x, y);
+  const QPoint anchor(hubRect.center().x() - label.width() / 2, hubRect.center().y() - label.height() / 2);
+  label.move(taskbarPopupPosition(anchor, label.size(), hubRect, *screen, 4));
   label.show();
-  label.raise();
 }
 
 void OverlayTaskbarWidget::hideToolTip() {
   if (m_toolTipLabel) m_toolTipLabel->hide();
 }
 
-void OverlayTaskbarWidget::releaseInvalidNativeWindow() {
-  const HWND widget = reinterpret_cast<HWND>(internalWinId());
-  if (!widget) return;
-
-  DWORD processId = 0;
-  if (IsWindow(widget)) GetWindowThreadProcessId(widget, &processId);
-  if (IsWindow(widget) && processId == GetCurrentProcessId()) return;
-  releaseNativeWindow();
+void OverlayTaskbarWidget::closeContextMenu() {
+  if (m_contextMenu) m_contextMenu->close();
+  m_contextMenu.clear();
 }
 
-void OverlayTaskbarWidget::releaseNativeWindow() {
+void OverlayTaskbarWidget::resetNativeWindow() {
+  m_animationTimer->stop();
+  m_toolTipTimer->stop();
+  m_pointerInside = false;
   hideToolTip();
-  if (!internalWinId()) return;
+  m_toolTipLabel.reset();
+  closeContextMenu();
   m_hasPainted = false;
-  QWidget::destroy(true, false);
+  releaseMouse();
+  if (internalWinId()) QWidget::destroy(true, false);
+}
+
+void OverlayTaskbarWidget::synchronizeContentGeometry() {
+  const QSize desiredSize(desiredLogicalWidth(), kLogicalHeight);
+  if (size() == desiredSize) return;
+  resize(desiredSize);
+  if (!presentationConfirmed()) return;
+  // Hub may be in the middle of propagating one runtime snapshot to every
+  // view. Defer the layout transaction until that propagation is complete.
+  QTimer::singleShot(0, this, [this]() {
+    if (presentationConfirmed()) requestPresentationRefresh();
+  });
 }
 
 void OverlayTaskbarWidget::updateAnimationTimer() {
@@ -366,8 +428,29 @@ int OverlayTaskbarWidget::desiredLogicalWidth() const {
   return std::max(kMinimumLogicalWidth, QFontMetrics(textFont).horizontalAdvance(text) + 2 * kHorizontalPadding);
 }
 
-bool OverlayTaskbarWidget::verifyPresentation() const {
-  return presentationRequested() && m_hasPainted && isVisible() && m_layoutCoordinator->verify(internalWinId());
+int OverlayTaskbarWidget::retryIntervalMs(const int consecutiveFailures) const {
+  if (consecutiveFailures <= 1) return 1000;
+  if (consecutiveFailures == 2) return 2000;
+  if (consecutiveFailures == 3) return 5000;
+  return 10000;
+}
+
+OverlayHubView::VerificationResult OverlayTaskbarWidget::verifyPresentation() const {
+  if (!presentationRequested() || !isVisible()) return VerificationResult::Invalid;
+  const WId currentWindowId = internalWinId();
+  if (!currentWindowId || !windowHandle()) return VerificationResult::Invalid;
+  const auto layoutResult = m_layoutCoordinator->verify(windowHandle(), currentWindowId);
+  switch (layoutResult) {
+    case TaskbarLayoutStrategy::VerificationResult::Confirmed:
+      return m_hasPainted ? VerificationResult::Confirmed : VerificationResult::Pending;
+    case TaskbarLayoutStrategy::VerificationResult::Retained:
+      return m_hasPainted ? VerificationResult::Retained : VerificationResult::Pending;
+    case TaskbarLayoutStrategy::VerificationResult::RefreshRequired:
+      return m_hasPainted ? VerificationResult::RefreshRequired : VerificationResult::Pending;
+    case TaskbarLayoutStrategy::VerificationResult::Invalid:
+      return VerificationResult::Invalid;
+  }
+  Q_UNREACHABLE_RETURN(VerificationResult::Invalid);
 }
 
 }  // namespace uwf::ui

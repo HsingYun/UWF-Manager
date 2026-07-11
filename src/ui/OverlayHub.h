@@ -58,6 +58,7 @@ class OverlayHub final : public QObject {
   void schedulePendingViewFlush();
   void flushPendingViews();
   void reconcilePresentation();
+  void reconcilePresentationOnce();
 
   std::vector<std::unique_ptr<OverlayHubView>> m_views;
   std::vector<std::unique_ptr<OverlayHubView>> m_pendingViews;
@@ -67,6 +68,7 @@ class OverlayHub final : public QObject {
   bool m_requestedVisible = true;
   bool m_temporarilyHidden = false;
   bool m_reconciling = false;
+  bool m_reconcilePending = false;
   bool m_pendingViewFlushScheduled = false;
   bool m_shuttingDown = false;
 };

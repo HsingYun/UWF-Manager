@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include <QPointer>
 #include <cstdint>
 #include <memory>
 
@@ -25,6 +26,7 @@ class QContextMenuEvent;
 class QEnterEvent;
 class QEvent;
 class QLabel;
+class QMenu;
 class QMouseEvent;
 class QPaintEvent;
 class QTimer;
@@ -42,6 +44,7 @@ class OverlayTaskbarWidget final : public OverlayHubView {
   explicit OverlayTaskbarWidget(QWidget* parent = nullptr);
   ~OverlayTaskbarWidget() override;
 
+  [[nodiscard]] bool isCompatible() const override;
   [[nodiscard]] int priority() const override { return 200; }
   void updateUsage(const core::OverlayRuntime& runtime) override;
   void setUsageUnavailable() override;
@@ -55,16 +58,19 @@ class OverlayTaskbarWidget final : public OverlayHubView {
   void paintEvent(QPaintEvent* ev) override;
 
  private:
-  bool attachPresentation() override;
-  [[nodiscard]] bool verifyPresentation() const override;
-  void detachPresentation() override;
+  AttachResult acquirePresentation() override;
+  AttachResult activatePresentation() override;
+  [[nodiscard]] VerificationResult verifyPresentation() const override;
+  void suspendPresentation() override;
+  ReleaseResult detachPresentation(ReleaseReason reason) override;
   [[nodiscard]] int healthCheckIntervalMs() const override { return 1000; }
+  [[nodiscard]] int retryIntervalMs(int consecutiveFailures) const override;
 
-  bool ensureNativeWindow();
   void showToolTip();
   void hideToolTip();
-  void releaseInvalidNativeWindow();
-  void releaseNativeWindow();
+  void closeContextMenu();
+  void resetNativeWindow();
+  void synchronizeContentGeometry();
   void updateAnimationTimer();
   [[nodiscard]] int desiredLogicalWidth() const;
 
@@ -72,6 +78,7 @@ class OverlayTaskbarWidget final : public OverlayHubView {
   QTimer* m_toolTipTimer = nullptr;
   std::unique_ptr<TaskbarLayoutCoordinator> m_layoutCoordinator;
   std::unique_ptr<QLabel> m_toolTipLabel;
+  QPointer<QMenu> m_contextMenu;
   core::OverlayRuntime m_runtime;
   bool m_hasRuntime = false;
   bool m_filterEnabled = false;

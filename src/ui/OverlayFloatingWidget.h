@@ -59,7 +59,7 @@ class OverlayFloatingWidget final : public OverlayHubView {
   void refreshText();
   void resizeToContent();
   void updateAnimationTimer();
-  [[nodiscard]] bool verifyPresentation() const override;
+  [[nodiscard]] VerificationResult verifyPresentation() const override;
   void moveToDefaultPosition();
   void syncHandleGeometry();
   void moveByHandleDrag(const QPoint& globalPos, const QPoint& dragOffset);

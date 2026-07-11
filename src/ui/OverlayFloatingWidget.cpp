@@ -360,11 +360,14 @@ void OverlayFloatingWidget::updateAnimationTimer() {
   }
 }
 
-bool OverlayFloatingWidget::verifyPresentation() const {
+OverlayHubView::VerificationResult OverlayFloatingWidget::verifyPresentation() const {
+  if (!presentationRequested() || !isVisible()) return VerificationResult::Invalid;
+  if (!m_hasPainted) return VerificationResult::Pending;
   const HWND hwnd = reinterpret_cast<HWND>(internalWinId());
   RECT windowRect{};
-  return presentationRequested() && m_hasPainted && isVisible() && hwnd && IsWindow(hwnd) && IsWindowVisible(hwnd) && GetWindowRect(hwnd, &windowRect) &&
-         windowRect.right > windowRect.left && windowRect.bottom > windowRect.top;
+  if (!hwnd || !IsWindow(hwnd) || !GetWindowRect(hwnd, &windowRect) || windowRect.right <= windowRect.left || windowRect.bottom <= windowRect.top)
+    return VerificationResult::Invalid;
+  return IsWindowVisible(hwnd) ? VerificationResult::Confirmed : VerificationResult::Invalid;
 }
 
 void OverlayFloatingWidget::resizeToContent() {

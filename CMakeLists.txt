@@ -21,7 +21,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ASan+UBSan
-option(UWF_SANITIZE "Build with AddressSanitizer + UBSan (Clang/GCC only)" ON)
+option(UWF_SANITIZE "Build with AddressSanitizer + UBSan (Clang/GCC only)" OFF)
+option(UWF_BUILD_TESTS "Build UWF lifecycle regression tests" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(tools)
@@ -29,26 +30,59 @@ include(tools)
 find_package(Qt6 COMPONENTS Widgets Svg Network LinguistTools REQUIRED)
 qt_standard_project_setup()
 
-set(UWF_SOURCES
-        main.cpp
-        src/app/SecureSingleInstance.h
-        src/app/SecureSingleInstance.cpp
+set(UWF_OVERLAY_RUNTIME_SOURCES
+        src/ui/OverlayFloatingWidget.h
+        src/ui/OverlayFloatingWidget.cpp
+        src/ui/OverlayHubView.h
+        src/ui/OverlayHubView.cpp
+        src/ui/OverlayHub.h
+        src/ui/OverlayHub.cpp
+        src/ui/OverlayTaskbarWidget.h
+        src/ui/OverlayTaskbarWidget.cpp
+        src/ui/TaskbarLayoutStrategy.h
+        src/ui/TaskbarLayoutCoordinator.h
+        src/ui/TaskbarLayoutCoordinator.cpp
+        src/ui/TaskbarLayoutCoordinatorFactory.cpp
+        src/ui/Win11TaskbarEnvironment.h
+        src/ui/Win11TaskbarEnvironment.cpp
+        src/ui/Win11TaskbarLayoutStrategy.h
+        src/ui/Win11TaskbarLayoutStrategy.cpp
+        src/ui/OverlayHudPalette.h
+        src/ui/OverlayHudRenderer.h
+        src/ui/OverlayHudRenderer.cpp
+        src/ui/ThemeManager.h
+        src/ui/ThemeManager.cpp
+        src/ui/I18n.h
+        src/ui/I18n.cpp
         src/util/Log.h
         src/util/Log.cpp
-        src/util/DriveLetter.h
-        src/util/DriveLetter.cpp
         src/util/RegistryKey.h
         src/util/RegistryKey.cpp
         src/util/StringUtil.h
         src/util/StringUtil.cpp
+        src/util/WindowsVersion.h
+        src/util/WindowsVersion.cpp
+)
+
+add_library(UwfOverlayRuntime STATIC ${UWF_OVERLAY_RUNTIME_SOURCES})
+target_include_directories(UwfOverlayRuntime PUBLIC "${PROJECT_SOURCE_DIR}/src")
+target_link_libraries(UwfOverlayRuntime PUBLIC Qt6::Widgets Qt6::Svg PRIVATE user32 shcore dwmapi)
+uwf_configure_cpp_target(UwfOverlayRuntime)
+
+set(UWF_SOURCES
+        main.cpp
+        src/app/CrashHandler.h
+        src/app/CrashHandler.cpp
+        src/app/SecureSingleInstance.h
+        src/app/SecureSingleInstance.cpp
+        src/util/DriveLetter.h
+        src/util/DriveLetter.cpp
         src/util/ByteFormat.h
         src/util/ByteFormat.cpp
         src/util/PathMatch.h
         src/util/PathMatch.cpp
         src/util/SystemHardwareInfo.h
         src/util/SystemHardwareInfo.cpp
-        src/util/WindowsVersion.h
-        src/util/WindowsVersion.cpp
         src/core/Config.h
         src/core/UwfModel.h
         src/core/UwfModel.cpp
@@ -134,33 +168,13 @@ set(UWF_SOURCES
         src/ui/ImportApplier.cpp
         src/ui/SwitchButton.h
         src/ui/SwitchButton.cpp
-        src/ui/OverlayFloatingWidget.h
-        src/ui/OverlayFloatingWidget.cpp
-        src/ui/OverlayHubView.h
-        src/ui/OverlayHubView.cpp
-        src/ui/OverlayHub.h
-        src/ui/OverlayHub.cpp
         src/ui/OverlayHubFactory.h
         src/ui/OverlayHubFactory.cpp
-        src/ui/OverlayTaskbarWidget.h
-        src/ui/OverlayTaskbarWidget.cpp
-        src/ui/TaskbarLayoutStrategy.h
-        src/ui/TaskbarLayoutCoordinator.h
-        src/ui/TaskbarLayoutCoordinator.cpp
-        src/ui/Win11TaskbarLayoutStrategy.h
-        src/ui/Win11TaskbarLayoutStrategy.cpp
-        src/ui/OverlayHudPalette.h
-        src/ui/OverlayHudRenderer.h
-        src/ui/OverlayHudRenderer.cpp
         src/ui/OverlayUsageBar.h
         src/ui/OverlayUsageBar.cpp
         src/ui/UsageBarGeometry.h
         src/ui/CenteredTextStyle.h
         src/ui/CenteredTextStyle.cpp
-        src/ui/ThemeManager.h
-        src/ui/ThemeManager.cpp
-        src/ui/I18n.h
-        src/ui/I18n.cpp
         src/ui/UiUtil.h
         src/ui/UiUtil.cpp
         src/ui/Pager.h
@@ -215,7 +229,8 @@ qt_add_translations(UWF
         resources/i18n/qtbase_zh_CN.ts
 )
 
-target_link_libraries(UWF PRIVATE Qt6::Widgets Qt6::Svg Qt6::Network)
+target_link_libraries(UWF PRIVATE UwfOverlayRuntime Qt6::Widgets Qt6::Svg Qt6::Network)
+uwf_configure_target(UWF)
 
 qt_import_plugins(UWF NO_DEFAULT
         INCLUDE_BY_TYPE platforms Qt6::QWindowsIntegrationPlugin
@@ -224,72 +239,8 @@ qt_import_plugins(UWF NO_DEFAULT
         INCLUDE_BY_TYPE imageformats Qt6::QSvgPlugin
 )
 
-target_sources(UWF PRIVATE resources/app.rc)
-
-if (MSVC)
-    target_sources(UWF PRIVATE resources/app.manifest)
-else ()
-    target_sources(UWF PRIVATE resources/app_manifest.rc)
-endif ()
-
-target_compile_definitions(UWF PRIVATE UNICODE _UNICODE _WIN32_DCOM NOMINMAX)
-
-target_link_libraries(UWF PRIVATE wbemuuid ole32 oleaut32 shell32 dwmapi dxgi)
-
-if (MSVC)
-    set_target_properties(UWF PROPERTIES
-            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-            INTERPROCEDURAL_OPTIMIZATION_RELEASE ON
-    )
-    target_compile_options(UWF PRIVATE
-            /W4 /WX /permissive-
-            /GS
-            $<$<CONFIG:Release>:/Os>
-            $<$<CONFIG:Release>:/Gy>
-            $<$<CONFIG:Release>:/Gw>
-            $<$<CONFIG:Release>:/guard:cf>
-            $<$<CONFIG:Release>:/sdl>
-    )
-    target_link_options(UWF PRIVATE
-            "/MANIFEST:NO"
-            "/MANIFESTUAC:NO"
-            $<$<CONFIG:Release>:/DYNAMICBASE>
-            $<$<CONFIG:Release>:/HIGHENTROPYVA>
-            $<$<CONFIG:Release>:/NXCOMPAT>
-            $<$<CONFIG:Release>:/GUARD:CF>
-            $<$<CONFIG:Release>:/CETCOMPAT>
-            $<$<CONFIG:Release>:/OPT:REF>
-            $<$<CONFIG:Release>:/OPT:ICF>
-    )
-else ()
-    target_compile_options(UWF PRIVATE
-            -Wall -Wextra -Wpedantic
-            -Wconversion -Wsign-conversion
-            -Werror
-            -Werror=sign-compare
-            -Werror=conversion
-            -Werror=sign-conversion
-            -Werror=narrowing
-            -fstack-protector-strong
-    )
-    target_link_options(UWF PRIVATE -fstack-protector-strong)
-    if (UWF_SANITIZE)
-        target_compile_options(UWF PRIVATE
-                -fsanitize=address,undefined
-                -fno-omit-frame-pointer
-                -fno-sanitize-recover=all
-        )
-        target_link_options(UWF PRIVATE
-                -fsanitize=address,undefined
-                -fuse-ld=lld
-        )
-    else ()
-        target_link_options(UWF PRIVATE
-                -static
-                -static-libgcc
-                -static-libstdc++
-                -fuse-ld=lld
-                -Wl,-Bstatic
-        )
-    endif ()
+if (UWF_BUILD_TESTS AND NOT MSVC)
+    enable_testing()
+    find_package(Qt6 COMPONENTS Test REQUIRED)
+    add_subdirectory(tests)
 endif ()

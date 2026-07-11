@@ -22,21 +22,29 @@
 
 namespace uwf::ui {
 
-// 仅匹配包含 Win11 XAML composition bridge 的原生任务栏。任何必要锚点或
-// 几何信息缺失都视为不可用，交由 Hub 回退，而不是使用经验魔数猜测位置。
+class Win11TaskbarLayoutStrategyTestAccess;
+
+// 将 Hub 原生窗口注入 Win11 主任务栏。任何本地 attachment 不变量异常都触发
+// 完整平台窗口重建；不在半失效 HWND 上继续做增量修复。
 class Win11TaskbarLayoutStrategy final : public TaskbarLayoutStrategy {
  public:
   Win11TaskbarLayoutStrategy();
   ~Win11TaskbarLayoutStrategy() override;
 
+  [[nodiscard]] bool isCompatible() const override;
   [[nodiscard]] int priority() const override { return 200; }
-  [[nodiscard]] bool available() const override;
-  bool attach(WId window, const QSize& logicalSize) override;
-  [[nodiscard]] bool verify(WId window) const override;
-  void detach(WId window) override;
-  void invalidate() override;
+  [[nodiscard]] std::unique_ptr<AttachTransaction> prepareAttach(QWindow* window, const QSize& logicalSize) override;
+  [[nodiscard]] VerificationResult verify(const QWindow* window, WId currentWindowId) const override;
+  DetachResult detach() override;
+  DetachResult invalidate() override;
 
  private:
+  // 仅供测试编译单元中的 Win11TaskbarLayoutStrategyTestAccess 使用；不在生产库中提供种植入口。
+  friend class Win11TaskbarLayoutStrategyTestAccess;
+  // Parent 提交不完整时与 detach() 共用严格回滚。
+  [[nodiscard]] AttachResult abortIncompleteParentCommit();
+  void recordVerificationDiagnostic(VerificationResult result, const char* reason) const;
+  class AttachTransactionImpl;
   struct Impl;
   std::unique_ptr<Impl> m_impl;
 };
