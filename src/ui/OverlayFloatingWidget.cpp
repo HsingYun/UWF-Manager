@@ -71,12 +71,31 @@ QRect primaryDesktopGeometry() {
 
 QRect cursorDesktopGeometry() {
   if (QScreen* screen = QGuiApplication::screenAt(QCursor::pos())) return screen->availableGeometry();
-  if (QScreen* screen = QGuiApplication::primaryScreen()) return screen->availableGeometry();
-  return {0, 0, 1280, 720};
+  return primaryDesktopGeometry();
 }
 
-QPoint clampedTopLeft(QPoint p, const QSize size) {
-  const QRect g = cursorDesktopGeometry();
+QRect windowDesktopGeometry(const QWidget* window) {
+  if (!window) return primaryDesktopGeometry();
+
+  const QRect windowGeometry = window->frameGeometry();
+  if (QScreen* screen = QGuiApplication::screenAt(windowGeometry.center())) return screen->availableGeometry();
+
+  // 窗口中心可能落在显示器之间的空隙。此时选择与窗口相交面积最大的屏幕，
+  // 避免仅因鼠标位于另一块屏幕，就在文本变宽 / 变窄时把浮窗跳过去。
+  QScreen* bestScreen = nullptr;
+  qint64 bestArea = 0;
+  for (QScreen* screen : QGuiApplication::screens()) {
+    const QRect intersection = windowGeometry.intersected(screen->geometry());
+    const qint64 area = static_cast<qint64>(intersection.width()) * intersection.height();
+    if (area > bestArea) {
+      bestArea = area;
+      bestScreen = screen;
+    }
+  }
+  return bestScreen ? bestScreen->availableGeometry() : primaryDesktopGeometry();
+}
+
+QPoint clampedTopLeft(QPoint p, const QSize size, const QRect& g) {
   p.setX(std::clamp(p.x(), g.left(), std::max(g.left(), g.right() - size.width() + 1)));
   p.setY(std::clamp(p.y(), g.top(), std::max(g.top(), g.bottom() - size.height() + 1)));
   return p;
@@ -328,10 +347,13 @@ void OverlayFloatingWidget::resizeToContent() {
   const int desiredW = std::max(kMinWindowW, kContentLeftMargin + textW + contentRightMargin());
   if (desiredW == width() && height() == kWindowH) return;
 
+  // resize 前锁定浮窗当前所在的屏幕。不能用光标所在屏幕：用户把鼠标移到
+  // 另一块显示器后，周期刷新引起的文字宽度变化不应让浮窗跟着跳屏。
+  const QRect desktopGeometry = windowDesktopGeometry(this);
   const int oldRight = geometry().right();
   resize(desiredW, kWindowH);
   if (isVisible() && m_positionInitialized) {
-    move(clampedTopLeft(QPoint(oldRight - width() + 1, y()), size()));
+    move(clampedTopLeft(QPoint(oldRight - width() + 1, y()), size(), desktopGeometry));
   }
   syncHandleGeometry();
 }
@@ -348,7 +370,8 @@ void OverlayFloatingWidget::syncHandleGeometry() {
 }
 
 void OverlayFloatingWidget::moveByHandleDrag(const QPoint& globalPos, const QPoint& dragOffset) {
-  move(clampedTopLeft(globalPos - dragOffset, size()));
+  // 主动拖动时仍以光标所在屏幕为边界，让浮窗可以自然跨屏。
+  move(clampedTopLeft(globalPos - dragOffset, size(), cursorDesktopGeometry()));
   syncHandleGeometry();
 }
 
