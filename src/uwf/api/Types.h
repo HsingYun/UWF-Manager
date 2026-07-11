@@ -93,7 +93,7 @@ struct VolumeRow {
   std::string path;
   bool currentSession = false;
   std::string driveLetter;  // 可能为空（没有盘符的卷）
-  std::string volumeName;   // \\?\Volume{GUID}\ 形式
+  std::string volumeName;   // UWF schema 的裸 "Volume{GUID}" 形式
   bool bindByDriveLetter = true;
   bool commitPending = false;  // 保留供 Microsoft 使用
   bool isProtected = false;    // WMI 上字段名为 "Protected"

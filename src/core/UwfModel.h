@@ -98,7 +98,7 @@ struct OverlayFileInfo {
 // isProtected 对应 CurrentSession / NextSession（布尔值，true
 // 表示该卷处于保护状态）。
 struct VolumeRecord {
-  std::string volumeName;   // 设备路径，例如 "\\?\Volume{...}"
+  std::string volumeName;   // UWF_Volume 的裸 "Volume{GUID}" 形式
   std::string driveLetter;  // 归一化后的盘符，如 "C:"
   bool isProtected = false;
   bool bindByDriveLetter = true;
@@ -111,7 +111,7 @@ struct SessionSnapshot {
   FilterState filter;
   OverlayConfig overlay;
   std::vector<VolumeRecord> volumes;
-  std::map<std::string, std::vector<std::string>> fileExclusions;  // key: volumeName（如 \\?\Volume{GUID}\）
+  std::map<std::string, std::vector<std::string>> fileExclusions;  // key: UWF volumeName（如 Volume{GUID}）
   std::vector<std::string> registryExclusions;                     // 注册表排除是全局的，不按卷分
   // UWF_RegistryFilter 的两个全局开关：是否在覆盖层中持久化域机密密钥
   // 与终端服务客户端访问许可证（TSCAL）。

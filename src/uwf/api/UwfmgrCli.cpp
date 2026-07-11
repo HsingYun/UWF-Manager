@@ -323,7 +323,7 @@ std::vector<UwfmgrCommand> renderSession(const core::SessionSnapshot& s) {
     out.push_back(makeCmd(v.isProtected ? UwfmgrKind::VolumeProtect : UwfmgrKind::VolumeUnprotect, {v.driveLetter}));
   }
 
-  // fileExclusions 的 key 是 volumeName（"\\?\Volume{...}"），但 add-exclusion
+  // fileExclusions 的 key 是 UWF 裸 volumeName（"Volume{GUID}"），但 add-exclusion
   // 的 path 已带盘符（约定），盘符回查就不必做了。
   for (const auto& [vname, paths] : s.fileExclusions) {
     (void)vname;

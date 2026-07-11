@@ -163,9 +163,9 @@ std::vector<core::DiskInfo> enumerateDisks(std::string* error) {
       cim.query("SELECT DeviceID, FileSystem, VolumeName, Size, FreeSpace, DriveType FROM Win32_LogicalDisk WHERE DriveType = 2 OR DriveType = 3", &err);
   if (!err.empty() && error) *error = err;
 
-  // Win32_Volume.DeviceID 形如 "\\?\Volume{GUID}\"，是 UWF_Volume
-  // 里的 VolumeName；用 DriveLetter 关联到 Win32_LogicalDisk 的每一行。
-  // 未注册到 UWF 的盘在 UWF_Volume 里查不到，只能从这里取 GUID。
+  // Win32_Volume.DeviceID 形如 "\\?\Volume{GUID}\"，与 UWF_Volume 使用的
+  // 裸 "Volume{GUID}" 格式不同。这里仅按 DriveLetter 给磁盘信息补充可显示的
+  // GUID；UWF 的实例键和排除列表仍始终使用 provider 返回的裸 VolumeName。
   std::string volErr;
   const auto volRows = cim.query("SELECT DeviceID, DriveLetter FROM Win32_Volume", &volErr);
   std::map<std::string, std::string> driveToGuid;
