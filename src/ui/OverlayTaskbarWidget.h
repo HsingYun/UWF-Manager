@@ -22,6 +22,9 @@
 #include "OverlayHubView.h"
 
 class QContextMenuEvent;
+class QEnterEvent;
+class QEvent;
+class QLabel;
 class QMouseEvent;
 class QPaintEvent;
 class QTimer;
@@ -46,6 +49,8 @@ class OverlayTaskbarWidget final : public OverlayHubView {
 
  protected:
   void contextMenuEvent(QContextMenuEvent* ev) override;
+  void enterEvent(QEnterEvent* ev) override;
+  void leaveEvent(QEvent* ev) override;
   void mouseReleaseEvent(QMouseEvent* ev) override;
   void paintEvent(QPaintEvent* ev) override;
 
@@ -56,17 +61,22 @@ class OverlayTaskbarWidget final : public OverlayHubView {
   [[nodiscard]] int healthCheckIntervalMs() const override { return 1000; }
 
   bool ensureNativeWindow();
+  void showToolTip();
+  void hideToolTip();
   void releaseInvalidNativeWindow();
   void releaseNativeWindow();
   void updateAnimationTimer();
   [[nodiscard]] int desiredLogicalWidth() const;
 
   QTimer* m_animationTimer = nullptr;
+  QTimer* m_toolTipTimer = nullptr;
   std::unique_ptr<TaskbarLayoutCoordinator> m_layoutCoordinator;
+  std::unique_ptr<QLabel> m_toolTipLabel;
   core::OverlayRuntime m_runtime;
   bool m_hasRuntime = false;
   bool m_filterEnabled = false;
   bool m_hasPainted = false;
+  bool m_pointerInside = false;
   qreal m_wavePhase = 0;
 };
 
