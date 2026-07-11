@@ -79,6 +79,7 @@ class OverlayHubView : public QWidget {
   void transitionToAttaching();
   void transitionToConfirmed();
   void transitionToUnavailable();
+  void recoverPresentation();
   void setDisplayState(DisplayState state);
 
   QTimer* m_confirmationTimer;

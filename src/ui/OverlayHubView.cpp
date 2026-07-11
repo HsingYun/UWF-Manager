@@ -47,13 +47,15 @@ OverlayHubView::OverlayHubView(QWidget* parent, const Qt::WindowFlags flags)
 
   m_healthTimer->setTimerType(Qt::CoarseTimer);
   connect(m_healthTimer, &QTimer::timeout, this, [this]() {
-    if (m_presentationRequested) refreshPresentation();
+    if (!m_presentationRequested) return;
+    if (m_displayState == DisplayState::Confirmed && verifyPresentation()) return;
+    recoverPresentation();
   });
 }
 
 void OverlayHubView::setPresentationRequested(const bool requested) {
   if (m_presentationRequested == requested) {
-    if (requested && m_displayState == DisplayState::Confirmed && !verifyPresentation()) refreshPresentation();
+    if (requested && m_displayState == DisplayState::Confirmed && !verifyPresentation()) recoverPresentation();
     return;
   }
   m_presentationRequested = requested;
@@ -95,7 +97,7 @@ void OverlayHubView::notifyPresentationChanged() {
   if (verifyPresentation()) {
     transitionToConfirmed();
   } else if (m_displayState == DisplayState::Confirmed) {
-    refreshPresentation();
+    recoverPresentation();
   }
 }
 
@@ -147,6 +149,12 @@ void OverlayHubView::transitionToUnavailable() {
     m_retryTimer->setInterval(interval);
     m_retryTimer->start();
   }
+}
+
+void OverlayHubView::recoverPresentation() {
+  if (!m_presentationRequested) return;
+  detachPresentation();
+  refreshPresentation();
 }
 
 void OverlayHubView::setDisplayState(const DisplayState state) {

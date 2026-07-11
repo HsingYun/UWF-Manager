@@ -47,6 +47,13 @@ struct DescendantSearch {
   HWND result = nullptr;
 };
 
+struct Placement {
+  int x = 0;
+  int y = 0;
+  int width = 0;
+  int height = 0;
+};
+
 BOOL CALLBACK findDescendantCallback(const HWND window, const LPARAM parameter) {
   auto* const search = reinterpret_cast<DescendantSearch*>(parameter);
   wchar_t className[128]{};
@@ -111,10 +118,40 @@ bool sameEnvironment(const Environment& lhs, const Environment& rhs) {
          lhs.taskbarProcessId == rhs.taskbarProcessId;
 }
 
+std::optional<Placement> calculatePlacement(const Environment& environment, const QSize& logicalSize) {
+  if (logicalSize.width() <= 0 || logicalSize.height() <= 0) return std::nullopt;
+
+  POINT notifyTopLeft{environment.notifyRect.left, environment.notifyRect.top};
+  if (!ScreenToClient(environment.taskbar, &notifyTopLeft)) return std::nullopt;
+
+  const int clientWidth = static_cast<int>(environment.taskbarClientRect.right - environment.taskbarClientRect.left);
+  const int clientHeight = static_cast<int>(environment.taskbarClientRect.bottom - environment.taskbarClientRect.top);
+  const int inset = scaled(kTaskbarInset, environment.dpi);
+  const int width = scaled(logicalSize.width(), environment.dpi);
+  const int height = std::min(scaled(logicalSize.height(), environment.dpi), clientHeight - 2 * inset);
+  const int x = static_cast<int>(notifyTopLeft.x) - width - inset;
+  const int y = (clientHeight - height) / 2;
+
+  // 不截断、不覆盖通知区，也不靠魔数猜测位置；空间不足即明确失败。
+  if (width <= 0 || height <= 0 || x < inset || y < 0 || x + width > static_cast<int>(notifyTopLeft.x) || x + width > clientWidth) {
+    return std::nullopt;
+  }
+  return Placement{x, y, width, height};
+}
+
+bool matchesPlacement(const HWND window, const Environment& environment, const Placement& placement) {
+  RECT windowRect{};
+  POINT taskbarOrigin{};
+  if (!GetWindowRect(window, &windowRect) || !ClientToScreen(environment.taskbar, &taskbarOrigin)) return false;
+  return windowRect.left == taskbarOrigin.x + placement.x && windowRect.top == taskbarOrigin.y + placement.y &&
+         windowRect.right - windowRect.left == placement.width && windowRect.bottom - windowRect.top == placement.height;
+}
+
 }  // namespace
 
 struct Win11TaskbarLayoutStrategy::Impl {
   std::optional<Environment> attachment;
+  QSize logicalSize;
 };
 
 Win11TaskbarLayoutStrategy::Win11TaskbarLayoutStrategy() : m_impl(std::make_unique<Impl>()) {}
@@ -126,46 +163,50 @@ bool Win11TaskbarLayoutStrategy::available() const { return probeEnvironment().h
 bool Win11TaskbarLayoutStrategy::attach(const WId windowId, const QSize& logicalSize) {
   const auto environment = probeEnvironment();
   const HWND window = reinterpret_cast<HWND>(windowId);
-  if (!environment || !window || !IsWindow(window) || logicalSize.width() <= 0 || logicalSize.height() <= 0) return false;
+  if (!environment || !window || !IsWindow(window)) return false;
+  const auto placement = calculatePlacement(*environment, logicalSize);
+  if (!placement) return false;
 
   if (m_impl->attachment && !sameEnvironment(*m_impl->attachment, *environment)) detach(windowId);
-  m_impl->attachment = environment;
 
   DWORD windowProcessId = 0;
   GetWindowThreadProcessId(window, &windowProcessId);
   if (windowProcessId != GetCurrentProcessId()) return false;
 
-  LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
-  style &= ~static_cast<LONG_PTR>(WS_POPUP);
-  style |= static_cast<LONG_PTR>(WS_CHILD);
-  if (!setWindowLongChecked(window, GWL_STYLE, style)) return false;
+  const LONG_PTR currentStyle = GetWindowLongPtrW(window, GWL_STYLE);
+  LONG_PTR desiredStyle = currentStyle;
+  desiredStyle &= ~static_cast<LONG_PTR>(WS_POPUP);
+  desiredStyle |= static_cast<LONG_PTR>(WS_CHILD);
+  const bool styleChanged = desiredStyle != currentStyle;
+  if (styleChanged && !setWindowLongChecked(window, GWL_STYLE, desiredStyle)) return false;
 
-  LONG_PTR exStyle = GetWindowLongPtrW(window, GWL_EXSTYLE);
-  exStyle &= ~static_cast<LONG_PTR>(WS_EX_APPWINDOW);
-  exStyle |= static_cast<LONG_PTR>(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
-  if (!setWindowLongChecked(window, GWL_EXSTYLE, exStyle)) return false;
+  const LONG_PTR currentExStyle = GetWindowLongPtrW(window, GWL_EXSTYLE);
+  LONG_PTR desiredExStyle = currentExStyle;
+  desiredExStyle &= ~static_cast<LONG_PTR>(WS_EX_APPWINDOW);
+  desiredExStyle |= static_cast<LONG_PTR>(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+  const bool exStyleChanged = desiredExStyle != currentExStyle;
+  if (exStyleChanged && !setWindowLongChecked(window, GWL_EXSTYLE, desiredExStyle)) return false;
 
-  if (GetParent(window) != environment->taskbar) {
+  const bool parentChanged = GetParent(window) != environment->taskbar;
+  if (parentChanged) {
     SetLastError(ERROR_SUCCESS);
     const HWND previousParent = SetParent(window, environment->taskbar);
     if (!previousParent && GetLastError() != ERROR_SUCCESS) return false;
   }
 
-  POINT notifyTopLeft{environment->notifyRect.left, environment->notifyRect.top};
-  if (!ScreenToClient(environment->taskbar, &notifyTopLeft)) return false;
+  const bool frameChanged = styleChanged || exStyleChanged;
+  const bool geometryChanged = parentChanged || !matchesPlacement(window, *environment, *placement);
+  const bool visibilityChanged = !IsWindowVisible(window);
+  if (frameChanged || geometryChanged || visibilityChanged) {
+    UINT flags = SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW;
+    if (frameChanged) flags |= SWP_FRAMECHANGED;
+    if (!geometryChanged) flags |= SWP_NOMOVE | SWP_NOSIZE;
+    if (!SetWindowPos(window, HWND_TOP, placement->x, placement->y, placement->width, placement->height, flags)) return false;
+  }
 
-  const int clientWidth = static_cast<int>(environment->taskbarClientRect.right - environment->taskbarClientRect.left);
-  const int clientHeight = static_cast<int>(environment->taskbarClientRect.bottom - environment->taskbarClientRect.top);
-  const int inset = scaled(kTaskbarInset, environment->dpi);
-  const int width = scaled(logicalSize.width(), environment->dpi);
-  const int height = std::min(scaled(logicalSize.height(), environment->dpi), clientHeight - 2 * inset);
-  const int x = static_cast<int>(notifyTopLeft.x) - width - inset;
-  const int y = (clientHeight - height) / 2;
-
-  // 不截断、不覆盖通知区，也不靠魔数猜测位置；空间不足即明确失败。
-  if (width <= 0 || height <= 0 || x < inset || y < 0 || x + width > static_cast<int>(notifyTopLeft.x) || x + width > clientWidth) return false;
-
-  return SetWindowPos(window, HWND_TOP, x, y, width, height, SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_SHOWWINDOW) != FALSE;
+  m_impl->attachment = environment;
+  m_impl->logicalSize = logicalSize;
+  return true;
 }
 
 bool Win11TaskbarLayoutStrategy::verify(const WId windowId) const {
@@ -183,13 +224,14 @@ bool Win11TaskbarLayoutStrategy::verify(const WId windowId) const {
 
   const LONG_PTR style = GetWindowLongPtrW(window, GWL_STYLE);
   if ((style & static_cast<LONG_PTR>(WS_CHILD)) == 0 || (style & static_cast<LONG_PTR>(WS_POPUP)) != 0) return false;
-
-  RECT windowRect{};
-  if (!GetWindowRect(window, &windowRect) || !hasArea(windowRect) || windowRect.left < environment->taskbarRect.left ||
-      windowRect.top < environment->taskbarRect.top || windowRect.right > environment->taskbarRect.right ||
-      windowRect.bottom > environment->taskbarRect.bottom || windowRect.right > environment->notifyRect.left) {
+  const LONG_PTR exStyle = GetWindowLongPtrW(window, GWL_EXSTYLE);
+  if ((exStyle & static_cast<LONG_PTR>(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE)) != static_cast<LONG_PTR>(WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE) ||
+      (exStyle & static_cast<LONG_PTR>(WS_EX_APPWINDOW)) != 0) {
     return false;
   }
+
+  const auto placement = calculatePlacement(*environment, m_impl->logicalSize);
+  if (!placement || !matchesPlacement(window, *environment, *placement)) return false;
 
   DWORD cloaked = 0;
   if (SUCCEEDED(DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked, static_cast<DWORD>(sizeof(cloaked)))) && cloaked != 0) return false;
@@ -208,8 +250,12 @@ void Win11TaskbarLayoutStrategy::detach(const WId windowId) {
     setWindowLongChecked(window, GWL_STYLE, style);
   }
   m_impl->attachment.reset();
+  m_impl->logicalSize = {};
 }
 
-void Win11TaskbarLayoutStrategy::invalidate() { m_impl->attachment.reset(); }
+void Win11TaskbarLayoutStrategy::invalidate() {
+  m_impl->attachment.reset();
+  m_impl->logicalSize = {};
+}
 
 }  // namespace uwf::ui
