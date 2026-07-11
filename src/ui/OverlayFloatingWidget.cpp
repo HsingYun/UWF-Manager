@@ -238,6 +238,7 @@ OverlayFloatingWidget::OverlayFloatingWidget(QWidget* parent)
 
 void OverlayFloatingWidget::popupContextMenuAt(const QPoint& globalPos) {
   QMenu menu(this);
+  addApplicationTitleToMenu(menu);
   QAction* showMainAct = menu.addAction(I18n::tr("Show main window"));
   QAction* restorePositionAct = menu.addAction(I18n::tr("Restore default position"));
   QAction* hideHubAct = menu.addAction(I18n::tr("Hide overlay hub"));

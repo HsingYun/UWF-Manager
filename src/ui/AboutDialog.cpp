@@ -56,7 +56,7 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
 
   // 标题：手动用 QLabel + 大字号 + bold（YaHei 真实字重 700）替代 <h3>，
   // 避免 QTextDocument 的 <h3> 默认合成粗体（同样的 hinting 问题）。
-  auto* title = new QLabel(I18n::tr("Unified Write Filter (UWF) Manager"), this);
+  auto* title = new QLabel(I18n::applicationTitle(), this);
   QFont titleFont = title->font();
   titleFont.setBold(true);
   titleFont.setPointSizeF(titleFont.pointSizeF() + 3);

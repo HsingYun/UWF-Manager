@@ -85,7 +85,7 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
   // 透明状态 show 出来——showEvent 照常触发，首屏 rebuildUi() 在 shown 状态下
   // 建好全部内容、拉完数据后才把不透明度恢复成 1 一次性揭幕。整个 buildUi +
   // refresh 期间窗口不可见，用户不会看到空窗 / 改尺寸 / 白屏等中间态。
-  setWindowTitle(I18n::tr("Unified Write Filter (UWF) Manager"));
+  setWindowTitle(I18n::applicationTitle());
   setWindowIcon(QIcon(":/icons/app.svg"));
   resize(1380, 760);
   setWindowOpacity(0.0);
@@ -145,7 +145,7 @@ void MainWindow::raiseToFront() { m_chrome->raiseToFront(m_firstShowDone); }
 void MainWindow::buildUi() {
   // 标题随语言切换重译，故每次 buildUi（含 rebuildUi 路径）都重设一次；
   // 图标与初始尺寸是一次性窗口外壳设置，已在构造函数里完成，这里不再重复。
-  setWindowTitle(I18n::tr("Unified Write Filter (UWF) Manager"));
+  setWindowTitle(I18n::applicationTitle());
   m_chrome->applyTitleBarTheme();
 
   // QSS 的 `padding` 在 QToolBar 上不可靠（rebuildUi 后 polish 时机问题），

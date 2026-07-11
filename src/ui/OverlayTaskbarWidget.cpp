@@ -89,6 +89,7 @@ void OverlayTaskbarWidget::setFilterEnabled(const bool enabled) {
 
 void OverlayTaskbarWidget::contextMenuEvent(QContextMenuEvent* ev) {
   QMenu menu(this);
+  addApplicationTitleToMenu(menu);
   QAction* showMainAct = menu.addAction(I18n::tr("Show main window"));
   QAction* hideHubAct = menu.addAction(I18n::tr("Hide overlay hub"));
   menu.addSeparator();

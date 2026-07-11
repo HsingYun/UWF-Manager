@@ -142,7 +142,7 @@ void TrayController::refreshUsage() {
   // 不重建托盘，故在这里随刷新一并重译——与状态项 / 占用条共用同一刷新周期，
   // 不另设重译入口。
   m_exitAction->setText(I18n::tr("Exit"));
-  m_tray->setToolTip(I18n::tr("Unified Write Filter (UWF) Manager"));
+  m_tray->setToolTip(I18n::applicationTitle());
 
   // 占用条与其上方的分隔线一起显隐——避免占用条隐藏后剩下两条相邻分隔线。
   const auto setUsageVisible = [this](bool show) {

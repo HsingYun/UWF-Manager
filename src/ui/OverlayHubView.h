@@ -20,6 +20,7 @@
 
 #include "../core/UwfModel.h"
 
+class QMenu;
 class QTimer;
 
 namespace uwf::ui {
@@ -69,6 +70,7 @@ class OverlayHubView : public QWidget {
   [[nodiscard]] virtual int retryIntervalMs() const { return 1000; }
 
   [[nodiscard]] bool presentationRequested() const { return m_presentationRequested; }
+  void addApplicationTitleToMenu(QMenu& menu) const;
   void requestPresentationRefresh();
   void notifyPresentationChanged();
 

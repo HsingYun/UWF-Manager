@@ -16,7 +16,11 @@
  */
 #include "OverlayHubView.h"
 
+#include <QAction>
+#include <QMenu>
 #include <QTimer>
+
+#include "I18n.h"
 
 namespace uwf::ui {
 
@@ -72,6 +76,15 @@ bool OverlayHubView::attachPresentation() {
 }
 
 void OverlayHubView::detachPresentation() { hide(); }
+
+void OverlayHubView::addApplicationTitleToMenu(QMenu& menu) const {
+  QAction* const title = menu.addAction(I18n::applicationTitle());
+  QFont titleFont = title->font();
+  titleFont.setBold(true);
+  title->setFont(titleFont);
+  title->setEnabled(false);
+  menu.addSeparator();
+}
 
 void OverlayHubView::requestPresentationRefresh() {
   if (m_presentationRequested) refreshPresentation();
