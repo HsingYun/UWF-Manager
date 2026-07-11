@@ -37,6 +37,25 @@
 
 namespace uwf::ui {
 
+namespace {
+
+std::wstring explorerPath() {
+  std::wstring windowsDir(MAX_PATH, L'\0');
+  UINT length = GetWindowsDirectoryW(windowsDir.data(), static_cast<UINT>(windowsDir.size()));
+  if (length == 0) return {};
+  if (length >= windowsDir.size()) {
+    windowsDir.resize(static_cast<size_t>(length) + 1);
+    length = GetWindowsDirectoryW(windowsDir.data(), static_cast<UINT>(windowsDir.size()));
+    if (length == 0 || length >= windowsDir.size()) return {};
+  }
+  windowsDir.resize(length);
+  if (!windowsDir.ends_with(L'\\')) windowsDir.push_back(L'\\');
+  windowsDir += L"explorer.exe";
+  return windowsDir;
+}
+
+}  // namespace
+
 void revealInExplorer(const QString& path) {
   const QString abs = QDir::toNativeSeparators(path);
 
@@ -62,9 +81,11 @@ void revealInExplorer(const QString& path) {
   }
   if (!folder.isEmpty() && QFileInfo::exists(folder)) {
     const std::wstring wf = QDir::toNativeSeparators(folder).toStdWString();
-    // 走 explorer.exe + 文件夹参数，避免 ShellExecute "open" 在某些机器上落到默认
-    // 文件管理器替身的问题。
-    ShellExecuteW(nullptr, L"open", L"explorer.exe", wf.c_str(), nullptr, SW_SHOWNORMAL);
+    // 高权限进程不能按裸文件名搜索 explorer.exe：当前目录 / PATH 若可写会形成
+    // binary planting。GetWindowsDirectoryW 来自内核，不信任可伪造的 SystemRoot
+    // 环境变量；完整路径也避免落到默认文件管理器替身。
+    const std::wstring explorer = explorerPath();
+    if (!explorer.empty()) ShellExecuteW(nullptr, L"open", explorer.c_str(), wf.c_str(), nullptr, SW_SHOWNORMAL);
   }
 }
 

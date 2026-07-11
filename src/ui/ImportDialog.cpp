@@ -28,10 +28,8 @@
 #include <QLabel>
 #include <QPlainTextEdit>
 #include <QPushButton>
-#include <QStringConverter>
 #include <QStringList>
 #include <QTableWidget>
-#include <QTextStream>
 #include <QVBoxLayout>
 #include <utility>
 
@@ -81,21 +79,26 @@ namespace {
 void appendUwfmgrLinesFromFile(QPlainTextEdit* target, const QString& path) {
   QFile f(path);
   constexpr qint64 kMaxBytes = 5 * 1024 * 1024;
-  if (f.size() > kMaxBytes) {
-    dialogs::warning(target, I18n::tr("File too large"),
-                     I18n::tr("File %1 is larger than 5 MB and was not parsed. Please filter it manually first.").arg(QFileInfo(path).fileName()));
-    return;
-  }
   if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
     dialogs::warning(target, I18n::tr("Cannot read file"), I18n::tr("Could not open file %1: %2").arg(QFileInfo(path).fileName(), f.errorString()));
     return;
   }
-  QTextStream ts(&f);
-  ts.setEncoding(QStringConverter::Utf8);
+  // 在打开句柄后检查并限量读取，消除“先 stat 路径、再 open”之间被替换或
+  // 增长的竞态。即使文件在读取期间继续增长，也最多接收 kMaxBytes + 1。
+  const QByteArray bytes = f.read(kMaxBytes + 1);
+  if (f.error() != QFileDevice::NoError) {
+    dialogs::warning(target, I18n::tr("Cannot read file"), I18n::tr("Could not open file %1: %2").arg(QFileInfo(path).fileName(), f.errorString()));
+    return;
+  }
+  if (bytes.size() > kMaxBytes || !f.atEnd()) {
+    dialogs::warning(target, I18n::tr("File too large"),
+                     I18n::tr("File %1 is larger than 5 MB and was not parsed. Please filter it manually first.").arg(QFileInfo(path).fileName()));
+    return;
+  }
 
   QStringList matched;
-  while (!ts.atEnd()) {
-    const QString line = ts.readLine();
+  const QStringList lines = QString::fromUtf8(bytes).split('\n');
+  for (const QString& line : lines) {
     if (line.contains(QStringLiteral("uwfmgr"), Qt::CaseInsensitive)) matched << line;
   }
 

@@ -179,6 +179,7 @@ std::vector<std::string> valueNames(std::string_view key) {
 }
 
 std::vector<RegValueInfo> values(std::string_view key) {
+  constexpr DWORD kMaxPreviewValueBytes = 16 * 1024 * 1024;
   std::vector<RegValueInfo> out;
   HKEY opened = nullptr;
   if (!openForRead(key, opened)) return out;
@@ -193,11 +194,15 @@ std::vector<RegValueInfo> values(std::string_view key) {
     DWORD type = 0;
     LONG rc = RegEnumValueW(opened, i, name.data(), &nameLen, nullptr, &type, data.data(), &dataLen);
     if (rc == ERROR_MORE_DATA) {
+      // Picker 只展示最多 200 字符的预览，不应为异常或恶意注册表值分配任意
+      // 大小的内存。跳过超限值，同时继续枚举后续条目。
+      if (dataLen > kMaxPreviewValueBytes) continue;
       data.resize(dataLen);
       nameLen = static_cast<DWORD>(name.size());
       dataLen = static_cast<DWORD>(data.size());
       rc = RegEnumValueW(opened, i, name.data(), &nameLen, nullptr, &type, data.data(), &dataLen);
     }
+    if (rc == ERROR_MORE_DATA) continue;
     if (rc != ERROR_SUCCESS) break;
     out.push_back({wideToUtf8(std::wstring(name.data(), nameLen)), type, std::vector<uint8_t>(data.begin(), data.begin() + dataLen)});
   }

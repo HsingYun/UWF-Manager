@@ -237,13 +237,21 @@ if (MSVC)
     )
     target_compile_options(UWF PRIVATE
             /W4 /WX /permissive-
+            /GS
             $<$<CONFIG:Release>:/Os>
             $<$<CONFIG:Release>:/Gy>
             $<$<CONFIG:Release>:/Gw>
+            $<$<CONFIG:Release>:/guard:cf>
+            $<$<CONFIG:Release>:/sdl>
     )
     target_link_options(UWF PRIVATE
             "/MANIFEST:NO"
             "/MANIFESTUAC:NO"
+            $<$<CONFIG:Release>:/DYNAMICBASE>
+            $<$<CONFIG:Release>:/HIGHENTROPYVA>
+            $<$<CONFIG:Release>:/NXCOMPAT>
+            $<$<CONFIG:Release>:/GUARD:CF>
+            $<$<CONFIG:Release>:/CETCOMPAT>
             $<$<CONFIG:Release>:/OPT:REF>
             $<$<CONFIG:Release>:/OPT:ICF>
     )
@@ -256,7 +264,9 @@ else ()
             -Werror=conversion
             -Werror=sign-conversion
             -Werror=narrowing
+            -fstack-protector-strong
     )
+    target_link_options(UWF PRIVATE -fstack-protector-strong)
     if (UWF_SANITIZE)
         target_compile_options(UWF PRIVATE
                 -fsanitize=address,undefined
