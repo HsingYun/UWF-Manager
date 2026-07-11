@@ -90,14 +90,14 @@ void OverlayTaskbarWidget::setFilterEnabled(const bool enabled) {
 void OverlayTaskbarWidget::contextMenuEvent(QContextMenuEvent* ev) {
   QMenu menu(this);
   QAction* showMainAct = menu.addAction(I18n::tr("Show main window"));
-  QAction* hideTaskbarAct = menu.addAction(I18n::tr("Hide taskbar view"));
+  QAction* hideHubAct = menu.addAction(I18n::tr("Hide overlay hub"));
   menu.addSeparator();
   QAction* exitAct = menu.addAction(I18n::tr("Exit application"));
   QAction* picked = menu.exec(ev->globalPos());
   if (picked == showMainAct) {
     emit showMainWindowRequested();
-  } else if (picked == hideTaskbarAct) {
-    emit hideViewRequested();
+  } else if (picked == hideHubAct) {
+    emit hideHubRequested();
   } else if (picked == exitAct) {
     emit exitApplicationRequested();
   }

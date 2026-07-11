@@ -31,9 +31,9 @@ OverlayHub::~OverlayHub() {
   m_shuttingDown = true;
   m_reconciling = true;
   m_pendingViews.clear();
-  for (const auto& entry : m_views) {
-    QObject::disconnect(entry.view.get(), nullptr, this, nullptr);
-    entry.view->setPresentationRequested(false);
+  for (const auto& view : m_views) {
+    QObject::disconnect(view.get(), nullptr, this, nullptr);
+    view->setPresentationRequested(false);
   }
   m_presentedView = nullptr;
 }
@@ -54,7 +54,7 @@ void OverlayHub::registerView(std::unique_ptr<OverlayHubView> view) {
 
 void OverlayHub::installView(std::unique_ptr<OverlayHubView> view) {
   OverlayHubView* const rawView = view.get();
-  m_views.push_back({std::move(view), m_newViewsEnabled});
+  m_views.push_back(std::move(view));
 
   rawView->setAttribute(Qt::WA_QuitOnClose, false);
   rawView->setFilterEnabled(m_filterEnabled);
@@ -65,13 +65,14 @@ void OverlayHub::installView(std::unique_ptr<OverlayHubView> view) {
   rawView->setPresentationRequested(false);
 
   connect(rawView, &OverlayHubView::showMainWindowRequested, this, &OverlayHub::showMainWindowRequested);
-  connect(rawView, &OverlayHubView::hideViewRequested, this, [this, rawView]() { hideView(rawView); });
+  connect(rawView, &OverlayHubView::hideHubRequested, this, [this]() { setRequestedVisible(false); });
   connect(rawView, &OverlayHubView::exitApplicationRequested, this, &OverlayHub::exitApplicationRequested);
   connect(rawView, &OverlayHubView::displayStateChanged, this, &OverlayHub::reconcilePresentation);
 }
 
 void OverlayHub::sortViewsByPriority() {
-  std::stable_sort(m_views.begin(), m_views.end(), [](const ViewEntry& lhs, const ViewEntry& rhs) { return lhs.view->priority() > rhs.view->priority(); });
+  std::stable_sort(m_views.begin(), m_views.end(),
+                   [](const std::unique_ptr<OverlayHubView>& lhs, const std::unique_ptr<OverlayHubView>& rhs) { return lhs->priority() > rhs->priority(); });
 }
 
 void OverlayHub::schedulePendingViewFlush() {
@@ -104,7 +105,7 @@ void OverlayHub::flushPendingViews() {
 void OverlayHub::updateUsage(const core::OverlayRuntime& runtime) {
   const bool availabilityChanged = !m_runtime.has_value();
   m_runtime = runtime;
-  for (const auto& entry : m_views) entry.view->updateUsage(runtime);
+  for (const auto& view : m_views) view->updateUsage(runtime);
   reconcilePresentation();
   if (availabilityChanged) emit stateChanged();
 }
@@ -112,7 +113,7 @@ void OverlayHub::updateUsage(const core::OverlayRuntime& runtime) {
 void OverlayHub::setUsageUnavailable() {
   if (!m_runtime) return;
   m_runtime.reset();
-  for (const auto& entry : m_views) entry.view->setUsageUnavailable();
+  for (const auto& view : m_views) view->setUsageUnavailable();
   reconcilePresentation();
   emit stateChanged();
 }
@@ -120,14 +121,13 @@ void OverlayHub::setUsageUnavailable() {
 void OverlayHub::setFilterEnabled(const bool enabled) {
   if (m_filterEnabled == enabled) return;
   m_filterEnabled = enabled;
-  for (const auto& entry : m_views) entry.view->setFilterEnabled(enabled);
+  for (const auto& view : m_views) view->setFilterEnabled(enabled);
   reconcilePresentation();
   emit stateChanged();
 }
 
 void OverlayHub::setRequestedVisible(const bool visible) {
-  m_newViewsEnabled = visible;
-  for (auto& entry : m_views) entry.enabled = visible;
+  m_requestedVisible = visible;
   m_temporarilyHidden = false;
   reconcilePresentation();
   emit stateChanged();
@@ -145,9 +145,7 @@ void OverlayHub::restoreAfterTemporaryHide() {
 
 bool OverlayHub::available() const { return m_runtime.has_value() && m_filterEnabled; }
 
-bool OverlayHub::enabled() const {
-  return available() && std::ranges::any_of(m_views, [](const ViewEntry& entry) { return entry.enabled; });
-}
+bool OverlayHub::enabled() const { return available() && m_requestedVisible && !m_views.empty(); }
 
 bool OverlayHub::presented() const { return available() && !m_temporarilyHidden && m_presentedView && m_presentedView->presentationVerified(); }
 
@@ -156,33 +154,28 @@ void OverlayHub::reconcilePresentation() {
   const QScopedValueRollback guard(m_reconciling, true);
 
   if (!enabled() || m_temporarilyHidden) {
-    for (const auto& entry : m_views) entry.view->setPresentationRequested(false);
+    for (const auto& view : m_views) view->setPresentationRequested(false);
     m_presentedView = nullptr;
     return;
   }
 
   OverlayHubView* stableView = m_presentedView;
-  const auto stableEntry = std::ranges::find_if(m_views, [stableView](const ViewEntry& entry) { return entry.view.get() == stableView; });
-  if (stableEntry == m_views.end() || !stableEntry->enabled || !stableView->presentationVerified()) {
+  const auto stableEntry = std::ranges::find_if(m_views, [stableView](const std::unique_ptr<OverlayHubView>& view) { return view.get() == stableView; });
+  if (stableEntry == m_views.end() || !stableView->presentationVerified()) {
     stableView = nullptr;
   }
 
   std::size_t frontier = m_views.size();
   OverlayHubView* confirmedView = nullptr;
   for (std::size_t i = 0; i < m_views.size(); ++i) {
-    auto& entry = m_views[i];
-    if (!entry.enabled) {
-      entry.view->setPresentationRequested(false);
-      continue;
-    }
-
-    entry.view->setPresentationRequested(true);
-    if (entry.view->presentationVerified()) {
+    auto& view = m_views[i];
+    view->setPresentationRequested(true);
+    if (view->presentationVerified()) {
       frontier = i;
-      confirmedView = entry.view.get();
+      confirmedView = view.get();
       break;
     }
-    if (entry.view->displayState() == OverlayHubView::DisplayState::Attaching) {
+    if (view->displayState() == OverlayHubView::DisplayState::Attaching) {
       frontier = i;
       break;
     }
@@ -194,20 +187,11 @@ void OverlayHub::reconcilePresentation() {
   // Attaching/Confirmed 的端点是当前决策边界。更低优先级端点只保留已经确认的
   // stable fallback，避免冷启动时逐个闪现，也避免高优先级恢复时产生空白。
   for (std::size_t i = 0; i < m_views.size(); ++i) {
-    auto& entry = m_views[i];
+    auto& view = m_views[i];
     const bool withinFrontier = frontier == m_views.size() || i <= frontier;
-    const bool keepStable = entry.view.get() == m_presentedView;
-    entry.view->setPresentationRequested(entry.enabled && (withinFrontier || keepStable));
+    const bool keepStable = view.get() == m_presentedView;
+    view->setPresentationRequested(withinFrontier || keepStable);
   }
-}
-
-void OverlayHub::hideView(OverlayHubView* view) {
-  const auto entry = std::ranges::find_if(m_views, [view](const ViewEntry& candidate) { return candidate.view.get() == view; });
-  if (entry == m_views.end() || !entry->enabled) return;
-  entry->enabled = false;
-  if (std::ranges::none_of(m_views, [](const ViewEntry& candidate) { return candidate.enabled; })) m_newViewsEnabled = false;
-  reconcilePresentation();
-  emit stateChanged();
 }
 
 }  // namespace uwf::ui
