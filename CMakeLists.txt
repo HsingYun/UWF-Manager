@@ -45,6 +45,8 @@ set(UWF_SOURCES
         src/util/ByteFormat.cpp
         src/util/PathMatch.h
         src/util/PathMatch.cpp
+        src/util/SystemHardwareInfo.h
+        src/util/SystemHardwareInfo.cpp
         src/util/WindowsVersion.h
         src/util/WindowsVersion.cpp
         src/core/Config.h
@@ -232,7 +234,7 @@ endif ()
 
 target_compile_definitions(UWF PRIVATE UNICODE _UNICODE _WIN32_DCOM NOMINMAX)
 
-target_link_libraries(UWF PRIVATE wbemuuid ole32 oleaut32 shell32 dwmapi)
+target_link_libraries(UWF PRIVATE wbemuuid ole32 oleaut32 shell32 dwmapi dxgi)
 
 if (MSVC)
     set_target_properties(UWF PROPERTIES

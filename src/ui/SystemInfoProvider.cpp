@@ -16,12 +16,10 @@
  */
 #include "SystemInfoProvider.h"
 
-#include <windows.h>
-
 #include <QStringList>
 #include <cstdint>
 
-#include "../util/RegistryKey.h"
+#include "../util/SystemHardwareInfo.h"
 #include "../util/WindowsVersion.h"
 #include "ThemeManager.h"
 
@@ -52,42 +50,62 @@ QString windowsVersionText() {
       .arg(version.revision);
 }
 
-QString cpuModelText() {
-  const QString name =
-      QString::fromStdString(regkey::readString(R"(HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0)", "ProcessorNameString"));
-  return name.trimmed().simplified();
+QString memoryCapacityText(const std::uint64_t bytes) {
+  if (bytes == 0) return {};
+  constexpr std::uint64_t kMiB = 1ULL << 20;
+  constexpr std::uint64_t kGiB = 1ULL << 30;
+  const std::uint64_t roundedGiB = (bytes + kGiB / 2) / kGiB;
+  if (roundedGiB >= 1) return QString("%1 GB").arg(roundedGiB);
+  return QString("%1 MB").arg(bytes / kMiB);
 }
 
-QString totalRamText() {
-  MEMORYSTATUSEX m{};
-  m.dwLength = sizeof(m);
-  if (!GlobalMemoryStatusEx(&m)) return {};
-  const auto gb = static_cast<uint64_t>((m.ullTotalPhys + (512ULL << 20)) / (1ULL << 30));
-  if (gb >= 1) return QString("%1 GB").arg(gb);
-  return QString("%1 MB").arg(m.ullTotalPhys / (1ULL << 20));
-}
-
-QString gpuModelText() {
-  DISPLAY_DEVICEW dev{};
-  dev.cb = sizeof(dev);
-  for (DWORD i = 0; EnumDisplayDevicesW(nullptr, i, &dev, 0); ++i) {
-    if (dev.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) return QString::fromWCharArray(dev.DeviceString).trimmed();
-    dev = {};
-    dev.cb = sizeof(dev);
+template <typename Value>
+Value commonMemoryValue(const std::vector<PhysicalMemoryModuleInfo>& modules, Value PhysicalMemoryModuleInfo::*member) {
+  if (modules.empty()) return {};
+  const Value value = modules.front().*member;
+  if (value == Value{}) return {};
+  for (const PhysicalMemoryModuleInfo& module : modules) {
+    if (module.*member != value) return {};
   }
-  dev = {};
-  dev.cb = sizeof(dev);
-  if (EnumDisplayDevicesW(nullptr, 0, &dev, 0)) return QString::fromWCharArray(dev.DeviceString).trimmed();
-  return {};
+  return value;
+}
+
+QString ramText(const SystemHardwareInfo& info) {
+  QStringList parts;
+  const QString capacity = memoryCapacityText(info.totalMemoryBytes);
+  if (!capacity.isEmpty()) parts << capacity;
+
+  const auto memoryType = commonMemoryValue(info.memoryModules, &PhysicalMemoryModuleInfo::memoryType);
+  const auto typeName = physicalMemoryTypeName(memoryType);
+  if (!typeName.empty()) parts << QString::fromLatin1(typeName.data(), static_cast<qsizetype>(typeName.size()));
+
+  const auto speed = commonMemoryValue(info.memoryModules, &PhysicalMemoryModuleInfo::configuredSpeedMtPerSecond);
+  if (speed != 0) parts << QString("%1 MT/s").arg(speed);
+
+  const auto installedModules = static_cast<std::uint64_t>(info.memoryModules.size());
+  if (installedModules != 0 && info.totalMemorySlots >= installedModules) {
+    parts << QString("%1/%2 slots").arg(installedModules).arg(info.totalMemorySlots);
+  }
+  return parts.join(QStringLiteral(" · "));
+}
+
+QString gpuText(const GraphicsAdapterInfo& adapter) {
+  QStringList parts;
+  const QString name = QString::fromStdString(adapter.name).trimmed().simplified();
+  if (!name.isEmpty()) parts << name;
+  const QString memory = memoryCapacityText(adapter.dedicatedVideoMemoryBytes);
+  if (!memory.isEmpty()) parts << memory;
+  return parts.join(QStringLiteral(" · "));
 }
 
 }  // namespace
 
 QString SystemInfoProvider::summaryHtml() {
+  const SystemHardwareInfo& hardware = systemHardwareInfo();
   const QString ver = windowsVersionText();
-  const QString cpu = cpuModelText();
-  const QString ram = totalRamText();
-  const QString gpu = gpuModelText();
+  const QString cpu = QString::fromStdString(hardware.cpuModel).trimmed().simplified();
+  const QString ram = ramText(hardware);
+  const QString gpu = gpuText(hardware.graphicsAdapter);
   QStringList rows;
   auto addPlain = [&](const QString& v) {
     if (!v.isEmpty()) rows << v.toHtmlEscaped();
