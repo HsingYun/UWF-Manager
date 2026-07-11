@@ -17,8 +17,8 @@ build/
 
 # Build Tools
 CMakePresets.json
-cmake/
+cmake/*
 
 # AI knowledge
-.claude/
+.*
 knowledge/

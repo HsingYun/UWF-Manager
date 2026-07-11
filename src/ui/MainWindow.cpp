@@ -68,7 +68,6 @@
 #include "TransientLabel.h"
 #include "TrayController.h"
 #include "WindowChromeController.h"
-#include "uwf_version.h"
 
 namespace uwf::ui {
 

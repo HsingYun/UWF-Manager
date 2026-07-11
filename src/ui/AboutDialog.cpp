@@ -64,9 +64,9 @@ AboutDialog::AboutDialog(QWidget* parent) : QDialog(parent) {
   title->setTextInteractionFlags(Qt::TextSelectableByMouse);
   titleBox->addWidget(title);
 
-  // 版本号紧贴标题下方、弱化显示。UWF_VER_STRING 由 cmake/GitVersion.cmake
-  // 在构建期注入 git 短哈希（无 git 仓库时回退为 "1.0.0.0"）。用内联 color
-  // 走富文本，理由同 body：避开 QSS / palette 对 QLabel 文字色的干扰。
+  // 版本号紧贴标题下方、弱化显示。UWF_VER_STRING 在构建期由最近的 Git 标签、
+  // 标签后的提交数和短哈希生成（无 Git 仓库时回退为 "1.0.0.0"）。用内联
+  // color 走富文本，理由同 body：避开 QSS / palette 对 QLabel 文字色的干扰。
   auto* version = new QLabel(this);
   version->setTextFormat(Qt::RichText);
   version->setTextInteractionFlags(Qt::TextSelectableByMouse);
