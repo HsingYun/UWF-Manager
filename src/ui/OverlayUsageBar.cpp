@@ -23,14 +23,12 @@
 #include <QPen>
 
 #include "ThemeManager.h"
+#include "UsageBarGeometry.h"
 
 namespace uwf::ui {
 
 namespace {
 constexpr int kBarH = 20;
-// 已用内存非 0 但极小时，给"已占用"色块一个最小可见宽度兜底，按横条全长的
-// 比例换算。实际生效宽度还会被 warning/critical/max 的 50% 封顶（见 paintEvent）。
-constexpr double kMinUsedHintFrac = 0.02;
 }  // namespace
 
 OverlayUsageBar::OverlayUsageBar(QWidget* parent) : QWidget(parent) {
@@ -137,11 +135,7 @@ void OverlayUsageBar::paintEvent(QPaintEvent*) {
   //    上限取 warning / critical / max 各自宽度的 50%，避免兜底把蓝块撑到
   //    看起来像占用已逼近某条阈值。自然宽度若本就更大则照旧，不受兜底影响。
   if (m_current > 0) {
-    qreal hintW = bar.width() * kMinUsedHintFrac;
-    if (m_warning > 0) hintW = std::min(hintW, widthFor(m_warning) * 0.5);
-    if (m_critical > 0) hintW = std::min(hintW, widthFor(m_critical) * 0.5);
-    if (m_max > 0) hintW = std::min(hintW, widthFor(m_max) * 0.5);
-    const qreal usedW = std::max(widthFor(m_current), hintW);
+    const qreal usedW = visibleUsedWidth(widthFor(m_current), bar.width(), widthFor(m_warning), widthFor(m_critical), widthFor(m_max));
     p.fillRect(QRectF(bar.left(), bar.top(), usedW, bar.height()), cUsed);
   }
 }

@@ -33,11 +33,15 @@
 #include <QScreen>
 #include <QShowEvent>
 #include <QStyle>
+#include <QTimer>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <cmath>
 #include <format>
+#include <numbers>
 
 #include "I18n.h"
+#include "UsageBarGeometry.h"
 
 namespace uwf::ui {
 
@@ -54,21 +58,27 @@ constexpr int kContentLeftMargin = 14;
 constexpr int kContentVPadding = 10;
 constexpr int kTextHandleGap = 8;
 constexpr int kRadius = 8;
+constexpr int kAnimationIntervalMs = 100;
+constexpr qreal kWaveExcursion = 1.5;
+constexpr qreal kWavePhaseStep = 0.12;
 
 // 浮窗覆盖的是桌面、网页、视频等任意内容，不能假定它背后的明暗与应用主题
 // 一致。固定使用一套低存在感的中性深色 HUD 配色：底色保留约 64% 不透明
 // 度，在压住复杂背景的同时仍能透出背后内容；深色背景上由浅色细边框维持
 // 轮廓，无需为日 / 夜主题维护两套值。
-const QColor kSurfaceColor(0x17, 0x1A, 0x20, 163);     // 64%
-const QColor kTextColor(0xF5, 0xF7, 0xFA, 240);        // 94%
-const QColor kOuterBorderColor(0xFF, 0xFF, 0xFF, 46);  // 18%
-const QColor kHandleFillColor(0xFF, 0xFF, 0xFF, 26);   // 10%
-const QColor kHandleIconColor(0xFF, 0xFF, 0xFF, 173);  // 68%
+const QColor kSurfaceColor(0x17, 0x1A, 0x20, 163);       // 64%
+const QColor kProgressFillColor(0x00, 0x78, 0xD4, 120);  // 47%
+const QColor kTextColor(0xF5, 0xF7, 0xFA, 240);          // 94%
+const QColor kOuterBorderColor(0xFF, 0xFF, 0xFF, 46);    // 18%
+const QColor kHandleFillColor(0xFF, 0xFF, 0xFF, 26);     // 10%
+const QColor kHandleIconColor(0xFF, 0xFF, 0xFF, 173);    // 68%
 
-QString formatUsageText(const uint32_t usedMb, const uint32_t totalMb) {
+QString formatUsageText(const uint32_t usedMb, const uint64_t totalMb) {
   const double pct = totalMb == 0 ? 0.0 : static_cast<double>(usedMb) * 100.0 / static_cast<double>(totalMb);
   return QString::fromStdString(std::format("{:.1f}% {}/{} MB", pct, usedMb, totalMb));
 }
+
+uint64_t overlayTotalMb(const core::OverlayRuntime& runtime) { return static_cast<uint64_t>(runtime.currentConsumptionMb) + runtime.availableSpaceMb; }
 
 QRect primaryDesktopGeometry() {
   if (QScreen* screen = QGuiApplication::primaryScreen()) return screen->availableGeometry();
@@ -90,7 +100,8 @@ QRect windowDesktopGeometry(const QWidget* window) {
   // 避免仅因鼠标位于另一块屏幕，就在文本变宽 / 变窄时把浮窗跳过去。
   QScreen* bestScreen = nullptr;
   qint64 bestArea = 0;
-  for (QScreen* screen : QGuiApplication::screens()) {
+  const auto screens = QGuiApplication::screens();
+  for (QScreen* screen : screens) {
     const QRect intersection = windowGeometry.intersected(screen->geometry());
     const qint64 area = static_cast<qint64>(intersection.width()) * intersection.height();
     if (area > bestArea) {
@@ -215,6 +226,13 @@ OverlayFloatingWidget::OverlayFloatingWidget(QWidget* parent)
   setMinimumWidth(kMinWindowW);
   setCursor(Qt::ArrowCursor);
   m_handle = new OverlayMoveHandle(this);
+  m_animationTimer = new QTimer(this);
+  m_animationTimer->setInterval(kAnimationIntervalMs);
+  m_animationTimer->setTimerType(Qt::CoarseTimer);
+  connect(m_animationTimer, &QTimer::timeout, this, [this]() {
+    m_wavePhase = std::fmod(m_wavePhase + kWavePhaseStep, 2.0 * std::numbers::pi_v<qreal>);
+    update();
+  });
 
   auto* outer = new QVBoxLayout(this);
   outer->setContentsMargins(kContentLeftMargin, kContentVPadding, contentRightMargin(), kContentVPadding);
@@ -279,9 +297,11 @@ void OverlayFloatingWidget::showEvent(QShowEvent* ev) {
   makeWindowMouseTransparent(reinterpret_cast<HWND>(winId()));
   syncHandleGeometry();
   if (m_handle) m_handle->show();
+  updateAnimationTimer();
 }
 
 void OverlayFloatingWidget::hideEvent(QHideEvent* ev) {
+  if (m_animationTimer) m_animationTimer->stop();
   if (m_handle) m_handle->hide();
   QWidget::hideEvent(ev);
 }
@@ -299,6 +319,39 @@ void OverlayFloatingWidget::paintEvent(QPaintEvent*) {
   QPainterPath path;
   path.addRoundedRect(r, kRadius, kRadius);
   p.fillPath(path, kSurfaceColor);
+
+  if (!m_unavailable && m_filterEnabled && m_hasRuntime) {
+    const uint64_t totalMb = overlayTotalMb(m_runtime);
+    if (totalMb > 0 && m_runtime.currentConsumptionMb > 0) {
+      if (static_cast<uint64_t>(m_runtime.currentConsumptionMb) >= totalMb) {
+        p.fillPath(path, kProgressFillColor);
+      } else {
+        const qreal ratio = static_cast<qreal>(m_runtime.currentConsumptionMb) / static_cast<qreal>(totalMb);
+        const qreal usedWidth = visibleUsedWidth(r.width() * ratio, r.width());
+        const qreal waveX = r.left() + usedWidth;
+        const qreal waveCycle = 2.0 * std::numbers::pi_v<qreal>;
+
+        const auto waveOffset = [](const qreal phase) { return kWaveExcursion * (std::sin(phase) + 1.0) * 0.5; };
+        constexpr qreal kWaveStepY = 2.0;
+        QPainterPath progressPath;
+        progressPath.moveTo(r.left(), r.top());
+        progressPath.lineTo(waveX + waveOffset(m_wavePhase), r.top());
+        for (qreal y = r.top() + kWaveStepY; y < r.bottom(); y += kWaveStepY) {
+          const qreal verticalPhase = (y - r.top()) / r.height() * waveCycle;
+          progressPath.lineTo(waveX + waveOffset(m_wavePhase + verticalPhase), y);
+        }
+        progressPath.lineTo(waveX + waveOffset(m_wavePhase + waveCycle), r.bottom());
+        progressPath.lineTo(r.left(), r.bottom());
+        progressPath.closeSubpath();
+
+        p.save();
+        p.setClipPath(path);
+        p.fillPath(progressPath, kProgressFillColor);
+        p.restore();
+      }
+    }
+  }
+
   p.setPen(QPen(kOuterBorderColor, 1.0));
   p.drawPath(path);
 }
@@ -319,24 +372,44 @@ void OverlayFloatingWidget::refreshText() {
   if (m_unavailable) {
     if (m_usage) m_usage->setText(QStringLiteral("—"));
     resizeToContent();
+    update();
+    updateAnimationTimer();
     return;
   }
 
   if (!m_filterEnabled) {
     if (m_usage) m_usage->setText(QStringLiteral("—"));
     resizeToContent();
+    update();
+    updateAnimationTimer();
     return;
   }
 
   if (!m_hasRuntime) {
     if (m_usage) m_usage->setText(QStringLiteral("—"));
     resizeToContent();
+    update();
+    updateAnimationTimer();
     return;
   }
 
-  const uint32_t totalMb = m_runtime.availableSpaceMb + m_runtime.currentConsumptionMb;
+  const uint64_t totalMb = overlayTotalMb(m_runtime);
   if (m_usage) m_usage->setText(formatUsageText(m_runtime.currentConsumptionMb, totalMb));
   resizeToContent();
+  update();
+  updateAnimationTimer();
+}
+
+void OverlayFloatingWidget::updateAnimationTimer() {
+  if (!m_animationTimer) return;
+  const uint64_t totalMb = overlayTotalMb(m_runtime);
+  const bool hasVisibleUsage = isVisible() && !m_unavailable && m_filterEnabled && m_hasRuntime && m_runtime.currentConsumptionMb > 0 &&
+                               static_cast<uint64_t>(m_runtime.currentConsumptionMb) < totalMb;
+  if (hasVisibleUsage) {
+    if (!m_animationTimer->isActive()) m_animationTimer->start();
+  } else {
+    m_animationTimer->stop();
+  }
 }
 
 void OverlayFloatingWidget::resizeToContent() {

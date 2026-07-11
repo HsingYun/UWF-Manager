@@ -29,6 +29,7 @@ class QMouseEvent;
 class QMoveEvent;
 class QPaintEvent;
 class QShowEvent;
+class QTimer;
 
 namespace uwf::ui {
 
@@ -62,6 +63,7 @@ class OverlayFloatingWidget : public QWidget {
   void applyHudStyle();
   void refreshText();
   void resizeToContent();
+  void updateAnimationTimer();
   void moveToDefaultPosition();
   void syncHandleGeometry();
   void moveByHandleDrag(const QPoint& globalPos, const QPoint& dragOffset);
@@ -69,12 +71,14 @@ class OverlayFloatingWidget : public QWidget {
 
   QLabel* m_usage = nullptr;
   OverlayMoveHandle* m_handle = nullptr;
+  QTimer* m_animationTimer = nullptr;
 
   core::OverlayRuntime m_runtime;
   bool m_hasRuntime = false;
   bool m_filterEnabled = false;
   bool m_unavailable = false;
   bool m_positionInitialized = false;
+  qreal m_wavePhase = 0;
 };
 
 }  // namespace uwf::ui

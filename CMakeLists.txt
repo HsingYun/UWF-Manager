@@ -132,6 +132,7 @@ set(UWF_SOURCES
         src/ui/OverlayFloatingWidget.cpp
         src/ui/OverlayUsageBar.h
         src/ui/OverlayUsageBar.cpp
+        src/ui/UsageBarGeometry.h
         src/ui/CenteredTextStyle.h
         src/ui/CenteredTextStyle.cpp
         src/ui/ThemeManager.h
