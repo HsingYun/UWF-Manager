@@ -17,6 +17,7 @@
 #include "OverlayHub.h"
 
 #include <QScopedValueRollback>
+#include <QTimer>
 #include <algorithm>
 #include <utility>
 
@@ -27,28 +28,75 @@ namespace uwf::ui {
 OverlayHub::OverlayHub(QObject* parent) : QObject(parent) {}
 
 OverlayHub::~OverlayHub() {
-  for (const auto& entry : m_views) entry.view->setPresentationRequested(false);
+  m_shuttingDown = true;
+  m_reconciling = true;
+  m_pendingViews.clear();
+  for (const auto& entry : m_views) {
+    QObject::disconnect(entry.view.get(), nullptr, this, nullptr);
+    entry.view->setPresentationRequested(false);
+  }
+  m_presentedView = nullptr;
 }
 
 void OverlayHub::registerView(std::unique_ptr<OverlayHubView> view) {
-  if (!view) return;
+  if (!view || m_shuttingDown) return;
+  if (m_reconciling) {
+    m_pendingViews.push_back(std::move(view));
+    schedulePendingViewFlush();
+    return;
+  }
 
+  installView(std::move(view));
+  sortViewsByPriority();
+  reconcilePresentation();
+  emit stateChanged();
+}
+
+void OverlayHub::installView(std::unique_ptr<OverlayHubView> view) {
   OverlayHubView* const rawView = view.get();
   m_views.push_back({std::move(view), m_newViewsEnabled});
-  std::stable_sort(m_views.begin(), m_views.end(), [](const ViewEntry& lhs, const ViewEntry& rhs) { return lhs.view->priority() > rhs.view->priority(); });
 
   rawView->setAttribute(Qt::WA_QuitOnClose, false);
-  connect(rawView, &OverlayHubView::showMainWindowRequested, this, &OverlayHub::showMainWindowRequested);
-  connect(rawView, &OverlayHubView::hideViewRequested, this, [this, rawView]() { hideView(rawView); });
-  connect(rawView, &OverlayHubView::exitApplicationRequested, this, &OverlayHub::exitApplicationRequested);
-  connect(rawView, &OverlayHubView::displayStateChanged, this, &OverlayHub::reconcilePresentation);
-
   rawView->setFilterEnabled(m_filterEnabled);
   if (m_runtime)
     rawView->updateUsage(*m_runtime);
   else
     rawView->setUsageUnavailable();
   rawView->setPresentationRequested(false);
+
+  connect(rawView, &OverlayHubView::showMainWindowRequested, this, &OverlayHub::showMainWindowRequested);
+  connect(rawView, &OverlayHubView::hideViewRequested, this, [this, rawView]() { hideView(rawView); });
+  connect(rawView, &OverlayHubView::exitApplicationRequested, this, &OverlayHub::exitApplicationRequested);
+  connect(rawView, &OverlayHubView::displayStateChanged, this, &OverlayHub::reconcilePresentation);
+}
+
+void OverlayHub::sortViewsByPriority() {
+  std::stable_sort(m_views.begin(), m_views.end(), [](const ViewEntry& lhs, const ViewEntry& rhs) { return lhs.view->priority() > rhs.view->priority(); });
+}
+
+void OverlayHub::schedulePendingViewFlush() {
+  if (m_pendingViewFlushScheduled || m_shuttingDown) return;
+  m_pendingViewFlushScheduled = true;
+  QTimer::singleShot(0, this, &OverlayHub::flushPendingViews);
+}
+
+void OverlayHub::flushPendingViews() {
+  m_pendingViewFlushScheduled = false;
+  if (m_shuttingDown) {
+    m_pendingViews.clear();
+    return;
+  }
+  if (m_reconciling) {
+    schedulePendingViewFlush();
+    return;
+  }
+  if (m_pendingViews.empty()) return;
+
+  auto pendingViews = std::move(m_pendingViews);
+  m_pendingViews.clear();
+  m_views.reserve(m_views.size() + pendingViews.size());
+  for (auto& pendingView : pendingViews) installView(std::move(pendingView));
+  sortViewsByPriority();
   reconcilePresentation();
   emit stateChanged();
 }
@@ -101,9 +149,7 @@ bool OverlayHub::enabled() const {
   return available() && std::ranges::any_of(m_views, [](const ViewEntry& entry) { return entry.enabled; });
 }
 
-bool OverlayHub::presented() const {
-  return available() && !m_temporarilyHidden && m_presentedView && m_presentedView->displayState() == OverlayHubView::DisplayState::Confirmed;
-}
+bool OverlayHub::presented() const { return available() && !m_temporarilyHidden && m_presentedView && m_presentedView->presentationVerified(); }
 
 void OverlayHub::reconcilePresentation() {
   if (m_reconciling) return;
@@ -117,7 +163,7 @@ void OverlayHub::reconcilePresentation() {
 
   OverlayHubView* stableView = m_presentedView;
   const auto stableEntry = std::ranges::find_if(m_views, [stableView](const ViewEntry& entry) { return entry.view.get() == stableView; });
-  if (stableEntry == m_views.end() || !stableEntry->enabled || stableView->displayState() != OverlayHubView::DisplayState::Confirmed) {
+  if (stableEntry == m_views.end() || !stableEntry->enabled || !stableView->presentationVerified()) {
     stableView = nullptr;
   }
 
@@ -131,7 +177,7 @@ void OverlayHub::reconcilePresentation() {
     }
 
     entry.view->setPresentationRequested(true);
-    if (entry.view->displayState() == OverlayHubView::DisplayState::Confirmed) {
+    if (entry.view->presentationVerified()) {
       frontier = i;
       confirmedView = entry.view.get();
       break;

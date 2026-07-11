@@ -53,6 +53,10 @@ class OverlayHub final : public QObject {
   void stateChanged();
 
  private:
+  void installView(std::unique_ptr<OverlayHubView> view);
+  void sortViewsByPriority();
+  void schedulePendingViewFlush();
+  void flushPendingViews();
   void reconcilePresentation();
   void hideView(OverlayHubView* view);
 
@@ -62,12 +66,15 @@ class OverlayHub final : public QObject {
   };
 
   std::vector<ViewEntry> m_views;
+  std::vector<std::unique_ptr<OverlayHubView>> m_pendingViews;
   std::optional<core::OverlayRuntime> m_runtime;
   OverlayHubView* m_presentedView = nullptr;
   bool m_filterEnabled = false;
   bool m_newViewsEnabled = true;
   bool m_temporarilyHidden = false;
   bool m_reconciling = false;
+  bool m_pendingViewFlushScheduled = false;
+  bool m_shuttingDown = false;
 };
 
 }  // namespace uwf::ui

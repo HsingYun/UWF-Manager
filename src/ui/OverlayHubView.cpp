@@ -48,7 +48,10 @@ OverlayHubView::OverlayHubView(QWidget* parent, const Qt::WindowFlags flags)
 }
 
 void OverlayHubView::setPresentationRequested(const bool requested) {
-  if (m_presentationRequested == requested) return;
+  if (m_presentationRequested == requested) {
+    if (requested && m_displayState == DisplayState::Confirmed && !verifyPresentation()) refreshPresentation();
+    return;
+  }
   m_presentationRequested = requested;
   if (!requested) {
     m_confirmationTimer->stop();
@@ -60,6 +63,8 @@ void OverlayHubView::setPresentationRequested(const bool requested) {
   }
   refreshPresentation();
 }
+
+bool OverlayHubView::presentationVerified() const { return m_presentationRequested && m_displayState == DisplayState::Confirmed && verifyPresentation(); }
 
 bool OverlayHubView::attachPresentation() {
   show();

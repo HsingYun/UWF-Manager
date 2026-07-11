@@ -501,12 +501,11 @@ void MainWindow::showTransientHint(const QString& text, const int msec) const {
 
 void MainWindow::requestExit() {
   m_exitRequested = true;
-  const bool restoreHub = m_overlayPresentation->hubEnabled();
 
-  const auto finishExit = [this, restoreHub]() {
+  const auto finishExit = [this]() {
     if (!close()) {
       m_exitRequested = false;
-      if (restoreHub) m_overlayPresentation->restoreHub();
+      m_overlayPresentation->restoreHub();
       return;
     }
     QCoreApplication::quit();

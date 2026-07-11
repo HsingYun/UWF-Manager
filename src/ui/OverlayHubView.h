@@ -49,6 +49,7 @@ class OverlayHubView : public QWidget {
   void setPresentationRequested(bool requested);
 
   [[nodiscard]] DisplayState displayState() const { return m_displayState; }
+  [[nodiscard]] bool presentationVerified() const;
 
  signals:
   void showMainWindowRequested();
