@@ -31,6 +31,8 @@ qt_standard_project_setup()
 
 set(UWF_SOURCES
         main.cpp
+        src/app/SecureSingleInstance.h
+        src/app/SecureSingleInstance.cpp
         src/util/Log.h
         src/util/Log.cpp
         src/util/DriveLetter.h
