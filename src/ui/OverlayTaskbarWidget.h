@@ -16,73 +16,65 @@
  */
 #pragma once
 
-#include <QPoint>
 #include <QWidget>
 #include <cstdint>
 
 #include "../core/UwfModel.h"
 
-class QLabel;
 class QContextMenuEvent;
-class QHideEvent;
 class QMouseEvent;
-class QMoveEvent;
 class QPaintEvent;
-class QShowEvent;
 class QTimer;
 
 namespace uwf::ui {
 
-class OverlayMoveHandle;
-
-// 桌面浮窗：按需显示当前 overlay 用量。窗口本身不读取 WMI，
-// 只接收 MainWindow 刷新周期喂进来的状态，避免多一条独立读取链。
-class OverlayFloatingWidget : public QWidget {
+// 嵌入 Windows 主任务栏通知区域左侧的 overlay 用量窗口。窗口只消费控制器
+// 已读取的运行时数据，不自行访问 WMI；宿主 Explorer 重启后会自动重新嵌入。
+class OverlayTaskbarWidget final : public QWidget {
   Q_OBJECT
  public:
-  explicit OverlayFloatingWidget(QWidget* parent = nullptr);
+  enum class DisplayState { Unavailable, Attaching, Confirmed };
+
+  explicit OverlayTaskbarWidget(QWidget* parent = nullptr);
 
   void updateUsage(const core::OverlayRuntime& runtime);
   void setUnavailable();
   void setFilterEnabled(bool enabled);
-  [[nodiscard]] bool displayConfirmed() const { return m_displayConfirmed; }
+  void setTaskbarVisible(bool visible);
+  [[nodiscard]] DisplayState displayState() const { return m_displayState; }
 
  signals:
   void showMainWindowRequested();
-  void hideFloatingWindowRequested();
+  void hideTaskbarViewRequested();
   void exitApplicationRequested();
-  void displayConfirmationChanged(bool confirmed);
+  void displayStateChanged();
 
  protected:
-  void showEvent(QShowEvent* ev) override;
-  void hideEvent(QHideEvent* ev) override;
-  void moveEvent(QMoveEvent* ev) override;
+  void contextMenuEvent(QContextMenuEvent* ev) override;
+  void mouseReleaseEvent(QMouseEvent* ev) override;
   void paintEvent(QPaintEvent* ev) override;
 
  private:
-  friend class OverlayMoveHandle;
-
-  void applyHudStyle();
-  void refreshText();
-  void resizeToContent();
+  bool attachAndPosition();
+  bool ensureNativeWindow();
+  void refreshHost();
+  void setDisplayState(DisplayState state);
   void updateAnimationTimer();
   void updateDisplayConfirmation();
-  void moveToDefaultPosition();
-  void syncHandleGeometry();
-  void moveByHandleDrag(const QPoint& globalPos, const QPoint& dragOffset);
-  void popupContextMenuAt(const QPoint& globalPos);
+  [[nodiscard]] bool verifyDisplayConfirmation() const;
+  [[nodiscard]] int desiredLogicalWidth() const;
 
-  QLabel* m_usage = nullptr;
-  OverlayMoveHandle* m_handle = nullptr;
+  QTimer* m_hostTimer = nullptr;
   QTimer* m_animationTimer = nullptr;
-
+  QTimer* m_confirmationTimer = nullptr;
   core::OverlayRuntime m_runtime;
+  bool m_requestedVisible = false;
   bool m_hasRuntime = false;
   bool m_filterEnabled = false;
   bool m_unavailable = false;
-  bool m_positionInitialized = false;
   bool m_hasPainted = false;
-  bool m_displayConfirmed = false;
+  bool m_attachmentSucceeded = false;
+  DisplayState m_displayState = DisplayState::Unavailable;
   qreal m_wavePhase = 0;
 };
 

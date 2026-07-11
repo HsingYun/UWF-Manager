@@ -37,11 +37,11 @@
 #include <QVBoxLayout>
 #include <algorithm>
 #include <cmath>
-#include <format>
 #include <numbers>
 
 #include "I18n.h"
-#include "UsageBarGeometry.h"
+#include "OverlayHudPalette.h"
+#include "OverlayHudRenderer.h"
 
 namespace uwf::ui {
 
@@ -59,26 +59,7 @@ constexpr int kContentVPadding = 10;
 constexpr int kTextHandleGap = 8;
 constexpr int kRadius = 8;
 constexpr int kAnimationIntervalMs = 100;
-constexpr qreal kWaveExcursion = 1.5;
 constexpr qreal kWavePhaseStep = 0.12;
-
-// 浮窗覆盖的是桌面、网页、视频等任意内容，不能假定它背后的明暗与应用主题
-// 一致。固定使用一套低存在感的中性深色 HUD 配色：底色保留约 64% 不透明
-// 度，在压住复杂背景的同时仍能透出背后内容；深色背景上由浅色细边框维持
-// 轮廓，无需为日 / 夜主题维护两套值。
-const QColor kSurfaceColor(0x17, 0x1A, 0x20, 163);       // 64%
-const QColor kProgressFillColor(0x00, 0x78, 0xD4, 120);  // 47%
-const QColor kTextColor(0xF5, 0xF7, 0xFA, 240);          // 94%
-const QColor kOuterBorderColor(0xFF, 0xFF, 0xFF, 46);    // 18%
-const QColor kHandleFillColor(0xFF, 0xFF, 0xFF, 26);     // 10%
-const QColor kHandleIconColor(0xFF, 0xFF, 0xFF, 173);    // 68%
-
-QString formatUsageText(const uint32_t usedMb, const uint64_t totalMb) {
-  const double pct = totalMb == 0 ? 0.0 : static_cast<double>(usedMb) * 100.0 / static_cast<double>(totalMb);
-  return QString::fromStdString(std::format("{:.1f}% {}/{} MB", pct, usedMb, totalMb));
-}
-
-uint64_t overlayTotalMb(const core::OverlayRuntime& runtime) { return static_cast<uint64_t>(runtime.currentConsumptionMb) + runtime.availableSpaceMb; }
 
 QRect primaryDesktopGeometry() {
   if (QScreen* screen = QGuiApplication::primaryScreen()) return screen->availableGeometry();
@@ -192,14 +173,15 @@ class OverlayMoveHandle final : public QWidget {
   void paintEvent(QPaintEvent*) override {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing, true);
+    const auto colors = overlayHudPalette(ThemeManager::instance().systemTheme());
 
     const QRectF h((width() - kHandleSide) / 2.0, (height() - kHandleSide) / 2.0, kHandleSide, kHandleSide);
     QPainterPath handlePath;
     handlePath.addRoundedRect(h.adjusted(2.5, 2.5, -2.5, -2.5), 5, 5);
-    p.fillPath(handlePath, kHandleFillColor);
+    p.fillPath(handlePath, colors.handleFill);
 
     const QPointF c = h.center();
-    p.setPen(QPen(kHandleIconColor, 1.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
+    p.setPen(QPen(colors.handleIcon, 1.6, Qt::SolidLine, Qt::RoundCap, Qt::RoundJoin));
     p.drawLine(QPointF(c.x() - 6, c.y()), QPointF(c.x() + 6, c.y()));
     p.drawLine(QPointF(c.x(), c.y() - 6), QPointF(c.x(), c.y() + 6));
     p.drawLine(QPointF(c.x() - 6, c.y()), QPointF(c.x() - 3.5, c.y() - 2.5));
@@ -233,6 +215,7 @@ OverlayFloatingWidget::OverlayFloatingWidget(QWidget* parent)
     m_wavePhase = std::fmod(m_wavePhase + kWavePhaseStep, 2.0 * std::numbers::pi_v<qreal>);
     update();
   });
+  connect(&ThemeManager::instance(), &ThemeManager::systemThemeChanged, this, [this](Theme) { applyHudStyle(); });
 
   auto* outer = new QVBoxLayout(this);
   outer->setContentsMargins(kContentLeftMargin, kContentVPadding, contentRightMargin(), kContentVPadding);
@@ -267,7 +250,7 @@ void OverlayFloatingWidget::popupContextMenuAt(const QPoint& globalPos) {
   } else if (picked == restorePositionAct) {
     moveToDefaultPosition();
   } else if (picked == closeAct) {
-    emit closeFloatingWindowRequested();
+    emit hideFloatingWindowRequested();
   } else if (picked == exitAct) {
     emit exitApplicationRequested();
   }
@@ -293,6 +276,8 @@ void OverlayFloatingWidget::setFilterEnabled(const bool enabled) {
 
 void OverlayFloatingWidget::showEvent(QShowEvent* ev) {
   QWidget::showEvent(ev);
+  m_hasPainted = false;
+  updateDisplayConfirmation();
   if (!m_positionInitialized) {
     moveToDefaultPosition();
     m_positionInitialized = true;
@@ -304,6 +289,8 @@ void OverlayFloatingWidget::showEvent(QShowEvent* ev) {
 }
 
 void OverlayFloatingWidget::hideEvent(QHideEvent* ev) {
+  m_hasPainted = false;
+  updateDisplayConfirmation();
   if (m_animationTimer) m_animationTimer->stop();
   if (m_handle) m_handle->hide();
   QWidget::hideEvent(ev);
@@ -317,55 +304,25 @@ void OverlayFloatingWidget::moveEvent(QMoveEvent* ev) {
 void OverlayFloatingWidget::paintEvent(QPaintEvent*) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing, true);
+  const auto colors = overlayHudPalette(ThemeManager::instance().systemTheme());
 
   const QRectF r = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
-  QPainterPath path;
-  path.addRoundedRect(r, kRadius, kRadius);
-  p.fillPath(path, kSurfaceColor);
-
-  if (!m_unavailable && m_filterEnabled && m_hasRuntime) {
-    const uint64_t totalMb = overlayTotalMb(m_runtime);
-    if (totalMb > 0 && m_runtime.currentConsumptionMb > 0) {
-      if (static_cast<uint64_t>(m_runtime.currentConsumptionMb) >= totalMb) {
-        p.fillPath(path, kProgressFillColor);
-      } else {
-        const qreal ratio = static_cast<qreal>(m_runtime.currentConsumptionMb) / static_cast<qreal>(totalMb);
-        const qreal usedWidth = visibleUsedWidth(r.width() * ratio, r.width());
-        const qreal waveX = r.left() + usedWidth;
-        const qreal waveCycle = 2.0 * std::numbers::pi_v<qreal>;
-
-        const auto waveOffset = [](const qreal phase) { return kWaveExcursion * (std::sin(phase) + 1.0) * 0.5; };
-        constexpr qreal kWaveStepY = 2.0;
-        QPainterPath progressPath;
-        progressPath.moveTo(r.left(), r.top());
-        progressPath.lineTo(waveX + waveOffset(m_wavePhase), r.top());
-        for (qreal y = r.top() + kWaveStepY; y < r.bottom(); y += kWaveStepY) {
-          const qreal verticalPhase = (y - r.top()) / r.height() * waveCycle;
-          progressPath.lineTo(waveX + waveOffset(m_wavePhase + verticalPhase), y);
-        }
-        progressPath.lineTo(waveX + waveOffset(m_wavePhase + waveCycle), r.bottom());
-        progressPath.lineTo(r.left(), r.bottom());
-        progressPath.closeSubpath();
-
-        p.save();
-        p.setClipPath(path);
-        p.fillPath(progressPath, kProgressFillColor);
-        p.restore();
-      }
-    }
+  const bool showUsage = !m_unavailable && m_filterEnabled && m_hasRuntime;
+  paintOverlayHud(p, r, kRadius, colors.floatingSurface, colors, m_runtime, showUsage, m_wavePhase);
+  if (!m_hasPainted) {
+    m_hasPainted = true;
+    QTimer::singleShot(0, this, &OverlayFloatingWidget::updateDisplayConfirmation);
   }
-
-  p.setPen(QPen(kOuterBorderColor, 1.0));
-  p.drawPath(path);
 }
 
 void OverlayFloatingWidget::applyHudStyle() {
+  const auto colors = overlayHudPalette(ThemeManager::instance().systemTheme());
   setStyleSheet(QStringLiteral("#overlayFloatingWidget { background: transparent; }"
                                "#overlayFloatUsage { color: rgba(%1, %2, %3, %4); font-weight: 600; }")
-                    .arg(kTextColor.red())
-                    .arg(kTextColor.green())
-                    .arg(kTextColor.blue())
-                    .arg(kTextColor.alpha()));
+                    .arg(colors.text.red())
+                    .arg(colors.text.green())
+                    .arg(colors.text.blue())
+                    .arg(colors.text.alpha()));
   if (m_handle) m_handle->update();
   update();
   refreshText();
@@ -396,8 +353,7 @@ void OverlayFloatingWidget::refreshText() {
     return;
   }
 
-  const uint64_t totalMb = overlayTotalMb(m_runtime);
-  if (m_usage) m_usage->setText(formatUsageText(m_runtime.currentConsumptionMb, totalMb));
+  if (m_usage) m_usage->setText(overlayUsageText(m_runtime));
   resizeToContent();
   update();
   updateAnimationTimer();
@@ -413,6 +369,16 @@ void OverlayFloatingWidget::updateAnimationTimer() {
   } else {
     m_animationTimer->stop();
   }
+}
+
+void OverlayFloatingWidget::updateDisplayConfirmation() {
+  const HWND hwnd = reinterpret_cast<HWND>(winId());
+  RECT windowRect{};
+  const bool confirmed = m_hasPainted && isVisible() && hwnd && IsWindow(hwnd) && IsWindowVisible(hwnd) && GetWindowRect(hwnd, &windowRect) &&
+                         windowRect.right > windowRect.left && windowRect.bottom > windowRect.top;
+  if (confirmed == m_displayConfirmed) return;
+  m_displayConfirmed = confirmed;
+  emit displayConfirmationChanged(confirmed);
 }
 
 void OverlayFloatingWidget::resizeToContent() {

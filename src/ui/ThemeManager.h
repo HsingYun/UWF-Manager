@@ -16,6 +16,7 @@
  */
 #pragma once
 
+#include <QAbstractNativeEventFilter>
 #include <QIcon>
 #include <QObject>
 #include <QSize>
@@ -46,13 +47,14 @@ enum class Sem {
 // 全局主题管理器：探测系统主题、加载对应 QSS、为 SVG 图标做按主题染色，
 // 并向自绘控件 / RichText 提供语义色。单例（按需懒加载）。
 // Qt-only 类型，仅供 src/ui 使用。
-class ThemeManager : public QObject {
+class ThemeManager : public QObject, private QAbstractNativeEventFilter {
   Q_OBJECT
  public:
   static ThemeManager& instance();
 
   [[nodiscard]] Theme current() const { return m_theme; }
   [[nodiscard]] bool isLight() const { return m_theme == Theme::Light; }
+  [[nodiscard]] Theme systemTheme() const { return m_systemTheme; }
 
   // 加载并应用对应 QSS 到 qApp，发射 themeChanged 信号。
   void apply(Theme t);
@@ -60,6 +62,8 @@ class ThemeManager : public QObject {
 
   // 读取 Windows 注册表 AppsUseLightTheme；非 Windows 或读失败时返回 Dark。
   static Theme detectSystemTheme();
+  // Windows 外壳（任务栏、开始菜单）主题使用独立的 SystemUsesLightTheme。
+  static Theme detectSystemShellTheme();
 
   // 把 svg 资源里的 dark 前景 #E8EAED 替换成当前主题的前景色，包装成 QIcon。
   // 真实渲染尺寸由 caller 决定（toolbar iconSize / pixmap(...)），ThemedSvgIconEngine
@@ -80,10 +84,15 @@ class ThemeManager : public QObject {
   // 信号参数必须全限定——MOC 按字面解析 header，跨 TU 的 queued connection
   // 会按字符串匹配类型名，写成 `Theme` 而非 `uwf::ui::Theme` 时匹配会失败。
   void themeChanged(uwf::ui::Theme t);
+  void systemThemeChanged(uwf::ui::Theme t);
 
  private:
   ThemeManager();
+  bool nativeEventFilter(const QByteArray& eventType, void* message, qintptr* result) override;
+  void refreshSystemTheme();
+
   Theme m_theme = Theme::Dark;
+  Theme m_systemTheme = Theme::Dark;
 };
 
 }  // namespace uwf::ui

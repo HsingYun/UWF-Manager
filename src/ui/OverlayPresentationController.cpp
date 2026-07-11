@@ -22,7 +22,7 @@
 #include <QTimer>
 
 #include "GlobalStatusPanel.h"
-#include "OverlayFloatingWidget.h"
+#include "OverlayHub.h"
 #include "ThemeManager.h"
 #include "TrayController.h"
 
@@ -32,14 +32,13 @@ OverlayPresentationController::OverlayPresentationController(WmiSession& session
     : QObject(parent),
       m_ownerWindow(ownerWindow),
       m_tray(tray),
-      m_floating(new OverlayFloatingWidget()),
+      m_hub(new OverlayHub()),
       m_usageTimer(new QTimer(this)),
       m_filter(session),
       m_overlay(session) {
-  m_floating->setAttribute(Qt::WA_QuitOnClose, false);
-  connect(m_floating, &OverlayFloatingWidget::showMainWindowRequested, this, &OverlayPresentationController::activateMainWindowRequested);
-  connect(m_floating, &OverlayFloatingWidget::closeFloatingWindowRequested, this, [this]() { setFloatingVisible(false); });
-  connect(m_floating, &OverlayFloatingWidget::exitApplicationRequested, this, &OverlayPresentationController::exitApplicationRequested);
+  connect(m_hub, &OverlayHub::showMainWindowRequested, this, &OverlayPresentationController::activateMainWindowRequested);
+  connect(m_hub, &OverlayHub::exitApplicationRequested, this, &OverlayPresentationController::exitApplicationRequested);
+  connect(m_hub, &OverlayHub::stateChanged, this, &OverlayPresentationController::syncAvailability);
 
   m_usageTimer->setInterval(5000);
   connect(m_usageTimer, &QTimer::timeout, this, &OverlayPresentationController::refreshUsage);
@@ -47,11 +46,11 @@ OverlayPresentationController::OverlayPresentationController(WmiSession& session
   syncAvailability();
 }
 
-OverlayPresentationController::~OverlayPresentationController() { delete m_floating; }
+OverlayPresentationController::~OverlayPresentationController() { delete m_hub; }
 
-void OverlayPresentationController::bindUi(GlobalStatusPanel* global, QAction* floatingAction) {
+void OverlayPresentationController::bindUi(GlobalStatusPanel* global, QAction* displaysAction) {
   m_global = global;
-  m_action = floatingAction;
+  m_action = displaysAction;
   syncAvailability();
 }
 
@@ -61,46 +60,37 @@ void OverlayPresentationController::unbindUi() {
 }
 
 void OverlayPresentationController::applySnapshot(const core::UwfSnapshot& snapshot) {
-  m_floatingAllowed = snapshot.uwfAvailable && snapshot.current.filter.enabled;
   if (snapshot.uwfAvailable) {
-    m_floating->setFilterEnabled(snapshot.current.filter.enabled);
-    m_floating->updateUsage(snapshot.runtime);
+    m_hub->setFilterEnabled(snapshot.current.filter.enabled);
+    m_hub->updateUsage(snapshot.runtime);
     m_usageTimer->start();
   } else {
-    m_floating->setUnavailable();
+    m_hub->setUnavailable();
     m_usageTimer->stop();
   }
   syncAvailability();
 }
 
-bool OverlayPresentationController::floatingVisible() const { return m_floating->isVisible(); }
+bool OverlayPresentationController::hubPresent() const { return m_hub->present(); }
 
-void OverlayPresentationController::setFloatingVisible(const bool visible) {
-  m_floatingRequested = visible;
-  const bool nextVisible = m_floatingRequested && m_floatingAllowed;
-  m_floating->setVisible(nextVisible);
-  if (m_action && m_action->isChecked() != nextVisible) {
-    const QSignalBlocker blocker(m_action);
-    m_action->setChecked(nextVisible);
-  }
-  refreshActionIcon();
-}
+void OverlayPresentationController::setHubVisible(const bool visible) { m_hub->setRequestedVisible(visible); }
 
-void OverlayPresentationController::hideFloatingTemporarily() { m_floating->hide(); }
+void OverlayPresentationController::hideHubTemporarily() { m_hub->hideTemporarily(); }
+
+void OverlayPresentationController::restoreHub() { m_hub->restoreAfterTemporaryHide(); }
 
 void OverlayPresentationController::refreshActionIcon() {
   if (!m_action) return;
   constexpr Qt::Alignment kCenter = Qt::AlignHCenter | Qt::AlignVCenter;
-  m_action->setIcon(ThemeManager::instance().icon(m_floating->isVisible() ? ":/icons/overlay_float_on.svg" : ":/icons/overlay_float_off.svg", kCenter));
+  m_action->setIcon(ThemeManager::instance().icon(m_hub->present() ? ":/icons/overlay_float_on.svg" : ":/icons/overlay_float_off.svg", kCenter));
 }
 
 void OverlayPresentationController::refreshUsage() {
   const auto filter = m_filter.read();
-  m_floatingAllowed = filter && filter->currentEnabled;
   if (!filter)
-    m_floating->setUnavailable();
+    m_hub->setUnavailable();
   else
-    m_floating->setFilterEnabled(filter->currentEnabled);
+    m_hub->setFilterEnabled(filter->currentEnabled);
 
   if (filter && filter->currentEnabled) {
     const auto overlay = m_overlay.read();
@@ -109,9 +99,9 @@ void OverlayPresentationController::refreshUsage() {
       runtime.currentConsumptionMb = overlay->overlayConsumption;
       runtime.availableSpaceMb = overlay->availableSpace;
       if (m_ownerWindow->isVisible() && m_global) m_global->updateUsage(runtime);
-      m_floating->updateUsage(runtime);
+      m_hub->updateUsage(runtime);
     } else {
-      m_floating->setUnavailable();
+      m_hub->setUnavailable();
     }
   }
   syncAvailability();
@@ -119,13 +109,11 @@ void OverlayPresentationController::refreshUsage() {
 }
 
 void OverlayPresentationController::syncAvailability() {
-  const bool visible = m_floatingAllowed && m_floatingRequested;
-  m_floating->setVisible(visible);
   if (m_action) {
-    m_action->setVisible(m_floatingAllowed);
-    if (m_action->isChecked() != visible) {
+    m_action->setVisible(m_hub->available());
+    if (m_action->isChecked() != m_hub->present()) {
       const QSignalBlocker blocker(m_action);
-      m_action->setChecked(visible);
+      m_action->setChecked(m_hub->present());
     }
   }
   refreshActionIcon();

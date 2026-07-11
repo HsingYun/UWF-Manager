@@ -16,8 +16,11 @@
  */
 #pragma once
 
+#include <QPainterPath>
 #include <QtGlobal>
 #include <algorithm>
+#include <cmath>
+#include <numbers>
 
 namespace uwf::ui {
 
@@ -33,6 +36,27 @@ namespace uwf::ui {
   if (criticalWidth > 0) hintWidth = std::min(hintWidth, criticalWidth * 0.5);
   if (maximumWidth > 0) hintWidth = std::min(hintWidth, maximumWidth * 0.5);
   return std::clamp(std::max(naturalWidth, hintWidth), qreal{0}, fullWidth);
+}
+
+// 从 bounds 左侧到 usedWidth 生成闭合填充面；右缘用只向外扩展的正弦波装饰，
+// 不会侵蚀真实进度或最小可见宽度。0% / 100% 由调用方单独处理。
+[[nodiscard]] inline QPainterPath waveProgressPath(const QRectF& bounds, const qreal usedWidth, const qreal phase, const qreal excursion = 1.5) {
+  const qreal waveX = bounds.left() + std::clamp(usedWidth, qreal{0}, bounds.width());
+  const qreal waveCycle = 2.0 * std::numbers::pi_v<qreal>;
+  const auto waveOffset = [excursion](const qreal p) { return excursion * (std::sin(p) + 1.0) * 0.5; };
+
+  constexpr qreal kWaveStepY = 2.0;
+  QPainterPath path;
+  path.moveTo(bounds.left(), bounds.top());
+  path.lineTo(waveX + waveOffset(phase), bounds.top());
+  for (qreal y = bounds.top() + kWaveStepY; y < bounds.bottom(); y += kWaveStepY) {
+    const qreal verticalPhase = (y - bounds.top()) / bounds.height() * waveCycle;
+    path.lineTo(waveX + waveOffset(phase + verticalPhase), y);
+  }
+  path.lineTo(waveX + waveOffset(phase + waveCycle), bounds.bottom());
+  path.lineTo(bounds.left(), bounds.bottom());
+  path.closeSubpath();
+  return path;
 }
 
 }  // namespace uwf::ui

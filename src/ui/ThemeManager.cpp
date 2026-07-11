@@ -18,6 +18,7 @@
 
 #include <windows.h>
 
+#include <QAbstractEventDispatcher>
 #include <QApplication>
 #include <QByteArray>
 #include <QFile>
@@ -84,7 +85,9 @@ ThemeManager& ThemeManager::instance() {
   return mgr;
 }
 
-ThemeManager::ThemeManager() = default;
+ThemeManager::ThemeManager() : m_systemTheme(detectSystemShellTheme()) {
+  if (auto* dispatcher = QAbstractEventDispatcher::instance()) dispatcher->installNativeEventFilter(this);
+}
 
 void ThemeManager::apply(Theme t) {
   m_theme = t;
@@ -165,10 +168,30 @@ void ThemeManager::apply(Theme t) {
 void ThemeManager::toggle() { apply(m_theme == Theme::Dark ? Theme::Light : Theme::Dark); }
 
 Theme ThemeManager::detectSystemTheme() {
-  // AppsUseLightTheme：0 = 深色应用主题，非 0 / 缺失 = 浅色。读不到该值
+  // AppsUseLightTheme：0 = 深色应用主题，非 0 = 浅色。读不到该值
   // （注册表项不存在等）时 readDword 返回 0——与"未配置时回退深色"一致。
   return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", "AppsUseLightTheme") == 0 ? Theme::Dark
                                                                                                                                           : Theme::Light;
+}
+
+Theme ThemeManager::detectSystemShellTheme() {
+  return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", "SystemUsesLightTheme") == 0 ? Theme::Dark
+                                                                                                                                             : Theme::Light;
+}
+
+bool ThemeManager::nativeEventFilter(const QByteArray& eventType, void* message, qintptr*) {
+  if (eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG") return false;
+
+  const auto* msg = static_cast<const MSG*>(message);
+  if (msg && (msg->message == WM_SETTINGCHANGE || msg->message == WM_THEMECHANGED)) refreshSystemTheme();
+  return false;
+}
+
+void ThemeManager::refreshSystemTheme() {
+  const Theme next = detectSystemShellTheme();
+  if (next == m_systemTheme) return;
+  m_systemTheme = next;
+  emit systemThemeChanged(next);
 }
 
 QColor ThemeManager::color(Sem s) const {

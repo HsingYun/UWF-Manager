@@ -30,26 +30,27 @@ class QTimer;
 namespace uwf::ui {
 
 class GlobalStatusPanel;
-class OverlayFloatingWidget;
+class OverlayHub;
 class TrayController;
 
-// Overlay 的展示编排：周期读取运行时用量、悬浮窗生命周期与显示偏好、
-// 工具栏开关状态及托盘刷新。MainWindow 只在 UI 重建后绑定面板和 QAction。
+// Overlay 的展示编排：周期读取运行时用量、Hub 生命周期、工具栏开关状态
+// 及托盘刷新。具体视图的互备由 OverlayHub 内部封装，MainWindow 不感知。
 class OverlayPresentationController : public QObject {
   Q_OBJECT
  public:
   OverlayPresentationController(WmiSession& session, QMainWindow* ownerWindow, TrayController* tray, QObject* parent = nullptr);
   ~OverlayPresentationController() override;
 
-  void bindUi(GlobalStatusPanel* global, QAction* floatingAction);
+  void bindUi(GlobalStatusPanel* global, QAction* displaysAction);
   void unbindUi();
   void applySnapshot(const core::UwfSnapshot& snapshot);
 
   [[nodiscard]] QTimer* usageTimer() const { return m_usageTimer; }
-  [[nodiscard]] bool floatingVisible() const;
+  [[nodiscard]] bool hubPresent() const;
 
-  void setFloatingVisible(bool visible);
-  void hideFloatingTemporarily();
+  void setHubVisible(bool visible);
+  void hideHubTemporarily();
+  void restoreHub();
   void refreshActionIcon();
 
  signals:
@@ -62,15 +63,13 @@ class OverlayPresentationController : public QObject {
 
   QMainWindow* m_ownerWindow;
   TrayController* m_tray;
-  OverlayFloatingWidget* m_floating;
+  OverlayHub* m_hub;
   QTimer* m_usageTimer;
   QPointer<GlobalStatusPanel> m_global;
   QPointer<QAction> m_action;
 
   api::UwfFilter m_filter;
   api::UwfOverlay m_overlay;
-  bool m_floatingAllowed = false;
-  bool m_floatingRequested = true;
 };
 
 }  // namespace uwf::ui

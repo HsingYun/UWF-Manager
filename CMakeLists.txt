@@ -130,6 +130,13 @@ set(UWF_SOURCES
         src/ui/SwitchButton.cpp
         src/ui/OverlayFloatingWidget.h
         src/ui/OverlayFloatingWidget.cpp
+        src/ui/OverlayHub.h
+        src/ui/OverlayHub.cpp
+        src/ui/OverlayTaskbarWidget.h
+        src/ui/OverlayTaskbarWidget.cpp
+        src/ui/OverlayHudPalette.h
+        src/ui/OverlayHudRenderer.h
+        src/ui/OverlayHudRenderer.cpp
         src/ui/OverlayUsageBar.h
         src/ui/OverlayUsageBar.cpp
         src/ui/UsageBarGeometry.h

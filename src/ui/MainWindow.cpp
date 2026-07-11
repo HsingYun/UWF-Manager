@@ -222,11 +222,11 @@ void MainWindow::buildUi() {
     tb->addWidget(spacer);
   }
 
-  auto* floatingAction = tb->addAction("");
-  floatingAction->setCheckable(true);
-  floatingAction->setToolTip(I18n::tr("Show or hide the overlay floating window."));
-  connect(floatingAction, &QAction::toggled, m_overlayPresentation, &OverlayPresentationController::setFloatingVisible);
-  if (auto* btn = qobject_cast<QToolButton*>(tb->widgetForAction(floatingAction))) {
+  auto* hubAction = tb->addAction("");
+  hubAction->setCheckable(true);
+  hubAction->setToolTip(I18n::tr("Show or hide the overlay hub."));
+  connect(hubAction, &QAction::toggled, m_overlayPresentation, &OverlayPresentationController::setHubVisible);
+  if (auto* btn = qobject_cast<QToolButton*>(tb->widgetForAction(hubAction))) {
     btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
   }
 
@@ -354,7 +354,7 @@ void MainWindow::buildUi() {
   globalLayout->setContentsMargins(18, 12, 18, 12);
   globalLayout->setSpacing(10);
   m_global = new GlobalStatusPanel(this);
-  m_overlayPresentation->bindUi(m_global, floatingAction);
+  m_overlayPresentation->bindUi(m_global, hubAction);
   // 系统版本未通过校验时，把兼容模式提示常驻在面板信息框里。提示文案在此
   // 现翻译——切语言会重跑 buildUi，文案随之跟着切；rebuildUi 重建 m_global
   // 后也连带重新灌入。
@@ -501,25 +501,25 @@ void MainWindow::showTransientHint(const QString& text, const int msec) const {
 
 void MainWindow::requestExit() {
   m_exitRequested = true;
-  const bool restoreFloat = m_overlayPresentation->floatingVisible();
+  const bool restoreHub = m_overlayPresentation->hubPresent();
 
-  const auto finishExit = [this, restoreFloat]() {
+  const auto finishExit = [this, restoreHub]() {
     if (!close()) {
       m_exitRequested = false;
-      if (restoreFloat) m_overlayPresentation->setFloatingVisible(true);
+      if (restoreHub) m_overlayPresentation->restoreHub();
       return;
     }
     QCoreApplication::quit();
   };
 
   if (m_global && collectPending(m_global, m_diskTabs).count() > 0 && !isVisible()) {
-    m_overlayPresentation->hideFloatingTemporarily();
+    m_overlayPresentation->hideHubTemporarily();
     raiseToFront();
     QTimer::singleShot(0, this, [this, finishExit]() { QTimer::singleShot(0, this, finishExit); });
     return;
   }
 
-  m_overlayPresentation->hideFloatingTemporarily();
+  m_overlayPresentation->hideHubTemporarily();
   finishExit();
 }
 
@@ -540,8 +540,20 @@ bool MainWindow::confirmDiscardPendingChanges() {
                           I18n::tr("There are %1 pending change(s) that have not been applied.\n\nContinue and discard them?").arg(pending));
 }
 
+void MainWindow::changeEvent(QEvent* ev) {
+  QMainWindow::changeEvent(ev);
+  if (ev->type() != QEvent::WindowStateChange || !isMinimized() || !m_overlayPresentation->hubPresent()) return;
+
+  // 等原生最小化状态切换完成后再隐藏，避免在 WindowStateChange 分发过程中
+  // 重入 show/hide。回调执行前重新检查：用户若已立即还原，或两个 overlay
+  // 恰好都被关闭，就保留当前窗口状态。
+  QTimer::singleShot(0, this, [this]() {
+    if (isMinimized() && m_overlayPresentation->hubPresent()) hide();
+  });
+}
+
 void MainWindow::closeEvent(QCloseEvent* ev) {
-  if (!m_exitRequested && m_overlayPresentation->floatingVisible()) {
+  if (!m_exitRequested && m_overlayPresentation->hubPresent()) {
     hide();
     ev->ignore();
     return;

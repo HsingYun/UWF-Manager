@@ -29,6 +29,7 @@ class QTabWidget;
 class QLabel;
 class QAction;
 class QCloseEvent;
+class QEvent;
 
 namespace uwf::ui {
 
@@ -73,6 +74,7 @@ class MainWindow : public QMainWindow {
   void commitRegistryDeletionKey(const QString& key, const QString& valueName);
 
  protected:
+  void changeEvent(QEvent* ev) override;
   void closeEvent(QCloseEvent* ev) override;
   void showEvent(QShowEvent* ev) override;
 
