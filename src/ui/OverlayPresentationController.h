@@ -46,9 +46,10 @@ class OverlayPresentationController : public QObject {
   void applySnapshot(const core::UwfSnapshot& snapshot);
 
   [[nodiscard]] QTimer* usageTimer() const { return m_usageTimer; }
-  [[nodiscard]] bool hubPresent() const;
+  [[nodiscard]] bool hubEnabled() const;
+  [[nodiscard]] bool hubPresented() const;
 
-  void setHubVisible(bool visible);
+  void setHubEnabled(bool enabled);
   void hideHubTemporarily();
   void restoreHub();
   void refreshActionIcon();

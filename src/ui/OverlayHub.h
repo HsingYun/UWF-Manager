@@ -17,13 +17,15 @@
 #pragma once
 
 #include <QObject>
+#include <memory>
+#include <optional>
+#include <vector>
 
 #include "../core/UwfModel.h"
 
 namespace uwf::ui {
 
-class OverlayFloatingWidget;
-class OverlayTaskbarWidget;
+class OverlayHubView;
 
 // 对外唯一可见的 overlay HUD。任务栏视图和桌面浮窗是内部互备实现；调用方
 // 只管理 Hub 的可用性、开关和数据，不感知当前实际承载者。
@@ -33,15 +35,17 @@ class OverlayHub final : public QObject {
   explicit OverlayHub(QObject* parent = nullptr);
   ~OverlayHub() override;
 
+  void registerView(std::unique_ptr<OverlayHubView> view);
   void updateUsage(const core::OverlayRuntime& runtime);
-  void setUnavailable();
+  void setUsageUnavailable();
   void setFilterEnabled(bool enabled);
   void setRequestedVisible(bool visible);
   void hideTemporarily();
   void restoreAfterTemporaryHide();
 
   [[nodiscard]] bool available() const;
-  [[nodiscard]] bool present() const;
+  [[nodiscard]] bool enabled() const;
+  [[nodiscard]] bool presented() const;
 
  signals:
   void showMainWindowRequested();
@@ -50,15 +54,18 @@ class OverlayHub final : public QObject {
 
  private:
   void reconcilePresentation();
-  void hideFloatingView();
-  void hideTaskbarView();
+  void hideView(OverlayHubView* view);
 
-  OverlayFloatingWidget* m_floating;
-  OverlayTaskbarWidget* m_taskbar;
+  struct ViewEntry {
+    std::unique_ptr<OverlayHubView> view;
+    bool enabled = true;
+  };
+
+  std::vector<ViewEntry> m_views;
+  std::optional<core::OverlayRuntime> m_runtime;
+  OverlayHubView* m_presentedView = nullptr;
   bool m_filterEnabled = false;
-  bool m_unavailable = true;
-  bool m_floatingEnabled = true;
-  bool m_taskbarEnabled = true;
+  bool m_newViewsEnabled = true;
   bool m_temporarilyHidden = false;
   bool m_reconciling = false;
 };

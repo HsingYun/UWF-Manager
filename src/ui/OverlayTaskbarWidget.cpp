@@ -40,9 +40,7 @@ namespace {
 constexpr int kMinimumLogicalWidth = 96;
 constexpr int kLogicalHeight = 32;
 constexpr int kHorizontalPadding = 8;
-constexpr int kHostRefreshIntervalMs = 1000;
 constexpr int kAnimationIntervalMs = 100;
-constexpr int kDisplayConfirmationTimeoutMs = 300;
 constexpr int kTaskbarInset = 3;
 constexpr int kRadius = 6;
 constexpr qreal kWavePhaseStep = 0.12;
@@ -52,10 +50,7 @@ int scaled(const int logicalPixels, const UINT dpi) { return MulDiv(logicalPixel
 }  // namespace
 
 OverlayTaskbarWidget::OverlayTaskbarWidget(QWidget* parent)
-    : QWidget(parent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowDoesNotAcceptFocus),
-      m_hostTimer(new QTimer(this)),
-      m_animationTimer(new QTimer(this)),
-      m_confirmationTimer(new QTimer(this)) {
+    : OverlayHubView(parent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowDoesNotAcceptFocus), m_animationTimer(new QTimer(this)) {
   setObjectName("overlayTaskbarWidget");
   setAttribute(Qt::WA_TranslucentBackground, true);
   setAttribute(Qt::WA_ShowWithoutActivating, true);
@@ -63,24 +58,11 @@ OverlayTaskbarWidget::OverlayTaskbarWidget(QWidget* parent)
   resize(kMinimumLogicalWidth, kLogicalHeight);
   setCursor(Qt::ArrowCursor);
 
-  m_hostTimer->setInterval(kHostRefreshIntervalMs);
-  m_hostTimer->setTimerType(Qt::CoarseTimer);
-  connect(m_hostTimer, &QTimer::timeout, this, &OverlayTaskbarWidget::refreshHost);
   m_animationTimer->setInterval(kAnimationIntervalMs);
   m_animationTimer->setTimerType(Qt::CoarseTimer);
   connect(m_animationTimer, &QTimer::timeout, this, [this]() {
     m_wavePhase = std::fmod(m_wavePhase + kWavePhaseStep, 2.0 * std::numbers::pi_v<qreal>);
     update();
-  });
-  m_confirmationTimer->setSingleShot(true);
-  m_confirmationTimer->setInterval(kDisplayConfirmationTimeoutMs);
-  connect(m_confirmationTimer, &QTimer::timeout, this, [this]() {
-    if (m_displayState != DisplayState::Attaching) return;
-    m_attachmentSucceeded = false;
-    m_hasPainted = false;
-    hide();
-    updateAnimationTimer();
-    setDisplayState(DisplayState::Unavailable);
   });
   connect(&ThemeManager::instance(), &ThemeManager::systemThemeChanged, this, [this](Theme) { update(); });
 }
@@ -88,14 +70,11 @@ OverlayTaskbarWidget::OverlayTaskbarWidget(QWidget* parent)
 void OverlayTaskbarWidget::updateUsage(const core::OverlayRuntime& runtime) {
   m_runtime = runtime;
   m_hasRuntime = true;
-  m_unavailable = false;
   update();
-  if (m_requestedVisible) refreshHost();
   updateAnimationTimer();
 }
 
-void OverlayTaskbarWidget::setUnavailable() {
-  m_unavailable = true;
+void OverlayTaskbarWidget::setUsageUnavailable() {
   m_hasRuntime = false;
   update();
   updateAnimationTimer();
@@ -105,24 +84,6 @@ void OverlayTaskbarWidget::setFilterEnabled(const bool enabled) {
   m_filterEnabled = enabled;
   update();
   updateAnimationTimer();
-}
-
-void OverlayTaskbarWidget::setTaskbarVisible(const bool visible) {
-  if (m_requestedVisible == visible) return;
-  m_requestedVisible = visible;
-  if (!visible) {
-    m_hostTimer->stop();
-    m_animationTimer->stop();
-    m_confirmationTimer->stop();
-    m_attachmentSucceeded = false;
-    m_hasPainted = false;
-    hide();
-    setDisplayState(DisplayState::Unavailable);
-    return;
-  }
-
-  if (!m_hostTimer->isActive()) m_hostTimer->start();
-  refreshHost();
 }
 
 void OverlayTaskbarWidget::contextMenuEvent(QContextMenuEvent* ev) {
@@ -135,7 +96,7 @@ void OverlayTaskbarWidget::contextMenuEvent(QContextMenuEvent* ev) {
   if (picked == showMainAct) {
     emit showMainWindowRequested();
   } else if (picked == hideTaskbarAct) {
-    emit hideTaskbarViewRequested();
+    emit hideViewRequested();
   } else if (picked == exitAct) {
     emit exitApplicationRequested();
   }
@@ -156,7 +117,7 @@ void OverlayTaskbarWidget::paintEvent(QPaintEvent*) {
   const auto colors = overlayHudPalette(ThemeManager::instance().systemTheme());
 
   const QRectF surface = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
-  const bool showUsage = !m_unavailable && m_filterEnabled && m_hasRuntime;
+  const bool showUsage = m_filterEnabled && m_hasRuntime;
   paintOverlayHud(painter, surface, kRadius, colors.taskbarSurface, colors, m_runtime, showUsage, m_wavePhase);
   painter.setPen(colors.text);
   QFont textFont = font();
@@ -165,8 +126,23 @@ void OverlayTaskbarWidget::paintEvent(QPaintEvent*) {
   painter.drawText(rect(), Qt::AlignCenter, showUsage ? overlayUsageText(m_runtime) : QStringLiteral("—"));
   if (!m_hasPainted) {
     m_hasPainted = true;
-    QTimer::singleShot(0, this, &OverlayTaskbarWidget::updateDisplayConfirmation);
+    QTimer::singleShot(0, this, &OverlayTaskbarWidget::notifyPresentationChanged);
   }
+}
+
+bool OverlayTaskbarWidget::attachPresentation() {
+  releaseInvalidNativeWindow();
+  if (!attachAndPosition()) return false;
+  if (!isVisible()) show();
+  updateAnimationTimer();
+  return true;
+}
+
+void OverlayTaskbarWidget::detachPresentation() {
+  m_animationTimer->stop();
+  m_hasPainted = false;
+  hide();
+  releaseNativeWindow();
 }
 
 bool OverlayTaskbarWidget::attachAndPosition() {
@@ -175,7 +151,7 @@ bool OverlayTaskbarWidget::attachAndPosition() {
   if (!taskbar || !notify) return false;
 
   if (!ensureNativeWindow()) return false;
-  const HWND widget = reinterpret_cast<HWND>(winId());
+  const HWND widget = reinterpret_cast<HWND>(internalWinId());
 
   if (GetParent(widget) != taskbar) {
     LONG_PTR style = GetWindowLongPtrW(widget, GWL_STYLE);
@@ -223,7 +199,9 @@ bool OverlayTaskbarWidget::attachAndPosition() {
 }
 
 bool OverlayTaskbarWidget::ensureNativeWindow() {
-  HWND widget = reinterpret_cast<HWND>(winId());
+  releaseInvalidNativeWindow();
+
+  HWND widget = reinterpret_cast<HWND>(internalWinId());
   DWORD processId = 0;
   if (widget && IsWindow(widget)) GetWindowThreadProcessId(widget, &processId);
   if (widget && IsWindow(widget) && processId == GetCurrentProcessId()) return true;
@@ -233,41 +211,33 @@ bool OverlayTaskbarWidget::ensureNativeWindow() {
   // alive, so first release Qt's stale platform-window state, then create a
   // fresh HWND that can be embedded into the new taskbar.
   m_hasPainted = false;
-  QWidget::destroy(true, false);
   QWidget::create(0, true, false);
 
-  widget = reinterpret_cast<HWND>(winId());
+  widget = reinterpret_cast<HWND>(internalWinId());
   processId = 0;
   if (widget && IsWindow(widget)) GetWindowThreadProcessId(widget, &processId);
   return widget && IsWindow(widget) && processId == GetCurrentProcessId();
 }
 
-void OverlayTaskbarWidget::refreshHost() {
-  if (!m_requestedVisible) return;
-  if (attachAndPosition()) {
-    m_attachmentSucceeded = true;
-    if (!isVisible()) show();
-    updateAnimationTimer();
-    updateDisplayConfirmation();
-  } else {
-    m_confirmationTimer->stop();
-    m_attachmentSucceeded = false;
-    m_hasPainted = false;
-    hide();
-    updateAnimationTimer();
-    setDisplayState(DisplayState::Unavailable);
-  }
+void OverlayTaskbarWidget::releaseInvalidNativeWindow() {
+  const HWND widget = reinterpret_cast<HWND>(internalWinId());
+  if (!widget) return;
+
+  DWORD processId = 0;
+  if (IsWindow(widget)) GetWindowThreadProcessId(widget, &processId);
+  if (IsWindow(widget) && processId == GetCurrentProcessId()) return;
+  releaseNativeWindow();
 }
 
-void OverlayTaskbarWidget::setDisplayState(const DisplayState state) {
-  if (state == m_displayState) return;
-  m_displayState = state;
-  emit displayStateChanged();
+void OverlayTaskbarWidget::releaseNativeWindow() {
+  if (!internalWinId()) return;
+  m_hasPainted = false;
+  QWidget::destroy(true, false);
 }
 
 void OverlayTaskbarWidget::updateAnimationTimer() {
   const uint64_t totalMb = overlayTotalMb(m_runtime);
-  const bool animate = m_requestedVisible && isVisible() && !m_unavailable && m_filterEnabled && m_hasRuntime && m_runtime.currentConsumptionMb > 0 &&
+  const bool animate = presentationRequested() && isVisible() && m_filterEnabled && m_hasRuntime && m_runtime.currentConsumptionMb > 0 &&
                        static_cast<uint64_t>(m_runtime.currentConsumptionMb) < totalMb;
   if (animate) {
     if (!m_animationTimer->isActive()) m_animationTimer->start();
@@ -277,36 +247,19 @@ void OverlayTaskbarWidget::updateAnimationTimer() {
 }
 
 int OverlayTaskbarWidget::desiredLogicalWidth() const {
-  const bool showUsage = !m_unavailable && m_filterEnabled && m_hasRuntime;
+  const bool showUsage = m_filterEnabled && m_hasRuntime;
   const QString text = showUsage ? overlayUsageText(m_runtime) : QStringLiteral("—");
   QFont textFont = font();
   textFont.setWeight(QFont::DemiBold);
   return std::max(kMinimumLogicalWidth, QFontMetrics(textFont).horizontalAdvance(text) + 2 * kHorizontalPadding);
 }
 
-void OverlayTaskbarWidget::updateDisplayConfirmation() {
-  if (verifyDisplayConfirmation()) {
-    m_confirmationTimer->stop();
-    setDisplayState(DisplayState::Confirmed);
-    return;
-  }
-
-  if (!m_requestedVisible || !m_attachmentSucceeded) {
-    m_confirmationTimer->stop();
-    setDisplayState(DisplayState::Unavailable);
-    return;
-  }
-
-  setDisplayState(DisplayState::Attaching);
-  if (!m_confirmationTimer->isActive()) m_confirmationTimer->start();
-}
-
-bool OverlayTaskbarWidget::verifyDisplayConfirmation() const {
-  if (!m_requestedVisible || !m_hasPainted || !isVisible()) return false;
+bool OverlayTaskbarWidget::verifyPresentation() const {
+  if (!presentationRequested() || !m_hasPainted || !isVisible()) return false;
 
   const HWND taskbar = FindWindowW(L"Shell_TrayWnd", nullptr);
   const HWND notify = taskbar ? FindWindowExW(taskbar, nullptr, L"TrayNotifyWnd", nullptr) : nullptr;
-  const HWND widget = reinterpret_cast<HWND>(winId());
+  const HWND widget = reinterpret_cast<HWND>(internalWinId());
   if (!taskbar || !notify || !widget || !IsWindow(widget) || !IsWindowVisible(widget) || GetParent(widget) != taskbar) return false;
 
   const LONG_PTR style = GetWindowLongPtrW(widget, GWL_STYLE);

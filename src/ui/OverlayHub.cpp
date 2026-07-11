@@ -17,55 +17,54 @@
 #include "OverlayHub.h"
 
 #include <QScopedValueRollback>
+#include <algorithm>
+#include <utility>
 
-#include "OverlayFloatingWidget.h"
-#include "OverlayTaskbarWidget.h"
+#include "OverlayHubView.h"
 
 namespace uwf::ui {
 
-namespace {
-
-// 调试切换点：
-//   true  = 优先任务栏视图，浮窗作为注入失败时的备选（产品默认）；
-//   false = 优先浮窗，任务栏视图作为浮窗展示失败时的备选。
-constexpr bool kUseFloatingAsFallback = true;
-
-}  // namespace
-
-OverlayHub::OverlayHub(QObject* parent) : QObject(parent), m_floating(new OverlayFloatingWidget()), m_taskbar(new OverlayTaskbarWidget()) {
-  m_floating->setAttribute(Qt::WA_QuitOnClose, false);
-  connect(m_floating, &OverlayFloatingWidget::showMainWindowRequested, this, &OverlayHub::showMainWindowRequested);
-  connect(m_floating, &OverlayFloatingWidget::hideFloatingWindowRequested, this, &OverlayHub::hideFloatingView);
-  connect(m_floating, &OverlayFloatingWidget::exitApplicationRequested, this, &OverlayHub::exitApplicationRequested);
-  connect(m_floating, &OverlayFloatingWidget::displayConfirmationChanged, this, [this](bool) { reconcilePresentation(); });
-
-  connect(m_taskbar, &OverlayTaskbarWidget::showMainWindowRequested, this, &OverlayHub::showMainWindowRequested);
-  connect(m_taskbar, &OverlayTaskbarWidget::hideTaskbarViewRequested, this, &OverlayHub::hideTaskbarView);
-  connect(m_taskbar, &OverlayTaskbarWidget::exitApplicationRequested, this, &OverlayHub::exitApplicationRequested);
-  connect(m_taskbar, &OverlayTaskbarWidget::displayStateChanged, this, &OverlayHub::reconcilePresentation);
-
-  reconcilePresentation();
-}
+OverlayHub::OverlayHub(QObject* parent) : QObject(parent) {}
 
 OverlayHub::~OverlayHub() {
-  delete m_taskbar;
-  delete m_floating;
+  for (const auto& entry : m_views) entry.view->setPresentationRequested(false);
+}
+
+void OverlayHub::registerView(std::unique_ptr<OverlayHubView> view) {
+  if (!view) return;
+
+  OverlayHubView* const rawView = view.get();
+  m_views.push_back({std::move(view), m_newViewsEnabled});
+  std::stable_sort(m_views.begin(), m_views.end(), [](const ViewEntry& lhs, const ViewEntry& rhs) { return lhs.view->priority() > rhs.view->priority(); });
+
+  rawView->setAttribute(Qt::WA_QuitOnClose, false);
+  connect(rawView, &OverlayHubView::showMainWindowRequested, this, &OverlayHub::showMainWindowRequested);
+  connect(rawView, &OverlayHubView::hideViewRequested, this, [this, rawView]() { hideView(rawView); });
+  connect(rawView, &OverlayHubView::exitApplicationRequested, this, &OverlayHub::exitApplicationRequested);
+  connect(rawView, &OverlayHubView::displayStateChanged, this, &OverlayHub::reconcilePresentation);
+
+  rawView->setFilterEnabled(m_filterEnabled);
+  if (m_runtime)
+    rawView->updateUsage(*m_runtime);
+  else
+    rawView->setUsageUnavailable();
+  rawView->setPresentationRequested(false);
+  reconcilePresentation();
+  emit stateChanged();
 }
 
 void OverlayHub::updateUsage(const core::OverlayRuntime& runtime) {
-  const bool availabilityChanged = m_unavailable;
-  m_unavailable = false;
-  m_floating->updateUsage(runtime);
-  m_taskbar->updateUsage(runtime);
+  const bool availabilityChanged = !m_runtime.has_value();
+  m_runtime = runtime;
+  for (const auto& entry : m_views) entry.view->updateUsage(runtime);
   reconcilePresentation();
   if (availabilityChanged) emit stateChanged();
 }
 
-void OverlayHub::setUnavailable() {
-  if (m_unavailable) return;
-  m_unavailable = true;
-  m_floating->setUnavailable();
-  m_taskbar->setUnavailable();
+void OverlayHub::setUsageUnavailable() {
+  if (!m_runtime) return;
+  m_runtime.reset();
+  for (const auto& entry : m_views) entry.view->setUsageUnavailable();
   reconcilePresentation();
   emit stateChanged();
 }
@@ -73,15 +72,14 @@ void OverlayHub::setUnavailable() {
 void OverlayHub::setFilterEnabled(const bool enabled) {
   if (m_filterEnabled == enabled) return;
   m_filterEnabled = enabled;
-  m_floating->setFilterEnabled(enabled);
-  m_taskbar->setFilterEnabled(enabled);
+  for (const auto& entry : m_views) entry.view->setFilterEnabled(enabled);
   reconcilePresentation();
   emit stateChanged();
 }
 
 void OverlayHub::setRequestedVisible(const bool visible) {
-  m_floatingEnabled = visible;
-  m_taskbarEnabled = visible;
+  m_newViewsEnabled = visible;
+  for (auto& entry : m_views) entry.enabled = visible;
   m_temporarilyHidden = false;
   reconcilePresentation();
   emit stateChanged();
@@ -97,63 +95,71 @@ void OverlayHub::restoreAfterTemporaryHide() {
   reconcilePresentation();
 }
 
-bool OverlayHub::available() const { return !m_unavailable && m_filterEnabled; }
+bool OverlayHub::available() const { return m_runtime.has_value() && m_filterEnabled; }
 
-bool OverlayHub::present() const { return available() && (m_floatingEnabled || m_taskbarEnabled); }
+bool OverlayHub::enabled() const {
+  return available() && std::ranges::any_of(m_views, [](const ViewEntry& entry) { return entry.enabled; });
+}
+
+bool OverlayHub::presented() const {
+  return available() && !m_temporarilyHidden && m_presentedView && m_presentedView->displayState() == OverlayHubView::DisplayState::Confirmed;
+}
 
 void OverlayHub::reconcilePresentation() {
   if (m_reconciling) return;
   const QScopedValueRollback guard(m_reconciling, true);
 
-  if (!available() || m_temporarilyHidden || (!m_floatingEnabled && !m_taskbarEnabled)) {
-    m_floating->hide();
-    m_taskbar->setTaskbarVisible(false);
+  if (!enabled() || m_temporarilyHidden) {
+    for (const auto& entry : m_views) entry.view->setPresentationRequested(false);
+    m_presentedView = nullptr;
     return;
   }
 
-  if constexpr (kUseFloatingAsFallback) {
-    if (m_taskbarEnabled) {
-      m_taskbar->setTaskbarVisible(true);
-      switch (m_taskbar->displayState()) {
-        case OverlayTaskbarWidget::DisplayState::Confirmed:
-          m_floating->hide();
-          break;
-        case OverlayTaskbarWidget::DisplayState::Unavailable:
-          m_floating->setVisible(m_floatingEnabled);
-          break;
-        case OverlayTaskbarWidget::DisplayState::Attaching:
-          // Keep the current stable presentation while the new taskbar HWND
-          // waits for its first confirmed paint.  This avoids flashing the
-          // fallback on a normal toolbar enable and avoids a blank gap while
-          // recovering from an Explorer restart.
-          if (!m_floatingEnabled) m_floating->hide();
-          break;
-      }
-    } else {
-      m_taskbar->setTaskbarVisible(false);
-      m_floating->setVisible(m_floatingEnabled);
+  OverlayHubView* stableView = m_presentedView;
+  const auto stableEntry = std::ranges::find_if(m_views, [stableView](const ViewEntry& entry) { return entry.view.get() == stableView; });
+  if (stableEntry == m_views.end() || !stableEntry->enabled || stableView->displayState() != OverlayHubView::DisplayState::Confirmed) {
+    stableView = nullptr;
+  }
+
+  std::size_t frontier = m_views.size();
+  OverlayHubView* confirmedView = nullptr;
+  for (std::size_t i = 0; i < m_views.size(); ++i) {
+    auto& entry = m_views[i];
+    if (!entry.enabled) {
+      entry.view->setPresentationRequested(false);
+      continue;
     }
-  } else {
-    if (m_floatingEnabled) {
-      m_floating->show();
-      m_taskbar->setTaskbarVisible(m_taskbarEnabled && !m_floating->displayConfirmed());
-    } else {
-      m_floating->hide();
-      m_taskbar->setTaskbarVisible(m_taskbarEnabled);
+
+    entry.view->setPresentationRequested(true);
+    if (entry.view->displayState() == OverlayHubView::DisplayState::Confirmed) {
+      frontier = i;
+      confirmedView = entry.view.get();
+      break;
     }
+    if (entry.view->displayState() == OverlayHubView::DisplayState::Attaching) {
+      frontier = i;
+      break;
+    }
+  }
+
+  m_presentedView = confirmedView ? confirmedView : stableView;
+
+  // 所有高于 frontier 的不可用端点继续保持请求，以便自行恢复；第一个正在
+  // Attaching/Confirmed 的端点是当前决策边界。更低优先级端点只保留已经确认的
+  // stable fallback，避免冷启动时逐个闪现，也避免高优先级恢复时产生空白。
+  for (std::size_t i = 0; i < m_views.size(); ++i) {
+    auto& entry = m_views[i];
+    const bool withinFrontier = frontier == m_views.size() || i <= frontier;
+    const bool keepStable = entry.view.get() == m_presentedView;
+    entry.view->setPresentationRequested(entry.enabled && (withinFrontier || keepStable));
   }
 }
 
-void OverlayHub::hideFloatingView() {
-  if (!m_floatingEnabled) return;
-  m_floatingEnabled = false;
-  reconcilePresentation();
-  emit stateChanged();
-}
-
-void OverlayHub::hideTaskbarView() {
-  if (!m_taskbarEnabled) return;
-  m_taskbarEnabled = false;
+void OverlayHub::hideView(OverlayHubView* view) {
+  const auto entry = std::ranges::find_if(m_views, [view](const ViewEntry& candidate) { return candidate.view.get() == view; });
+  if (entry == m_views.end() || !entry->enabled) return;
+  entry->enabled = false;
+  if (std::ranges::none_of(m_views, [](const ViewEntry& candidate) { return candidate.enabled; })) m_newViewsEnabled = false;
   reconcilePresentation();
   emit stateChanged();
 }

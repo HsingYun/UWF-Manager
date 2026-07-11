@@ -225,7 +225,7 @@ void MainWindow::buildUi() {
   auto* hubAction = tb->addAction("");
   hubAction->setCheckable(true);
   hubAction->setToolTip(I18n::tr("Show or hide the overlay hub."));
-  connect(hubAction, &QAction::toggled, m_overlayPresentation, &OverlayPresentationController::setHubVisible);
+  connect(hubAction, &QAction::toggled, m_overlayPresentation, &OverlayPresentationController::setHubEnabled);
   if (auto* btn = qobject_cast<QToolButton*>(tb->widgetForAction(hubAction))) {
     btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
   }
@@ -501,7 +501,7 @@ void MainWindow::showTransientHint(const QString& text, const int msec) const {
 
 void MainWindow::requestExit() {
   m_exitRequested = true;
-  const bool restoreHub = m_overlayPresentation->hubPresent();
+  const bool restoreHub = m_overlayPresentation->hubEnabled();
 
   const auto finishExit = [this, restoreHub]() {
     if (!close()) {
@@ -542,18 +542,18 @@ bool MainWindow::confirmDiscardPendingChanges() {
 
 void MainWindow::changeEvent(QEvent* ev) {
   QMainWindow::changeEvent(ev);
-  if (ev->type() != QEvent::WindowStateChange || !isMinimized() || !m_overlayPresentation->hubPresent()) return;
+  if (ev->type() != QEvent::WindowStateChange || !isMinimized() || !m_overlayPresentation->hubPresented()) return;
 
   // 等原生最小化状态切换完成后再隐藏，避免在 WindowStateChange 分发过程中
   // 重入 show/hide。回调执行前重新检查：用户若已立即还原，或两个 overlay
   // 恰好都被关闭，就保留当前窗口状态。
   QTimer::singleShot(0, this, [this]() {
-    if (isMinimized() && m_overlayPresentation->hubPresent()) hide();
+    if (isMinimized() && m_overlayPresentation->hubPresented()) hide();
   });
 }
 
 void MainWindow::closeEvent(QCloseEvent* ev) {
-  if (!m_exitRequested && m_overlayPresentation->hubPresent()) {
+  if (!m_exitRequested && m_overlayPresentation->hubPresented()) {
     hide();
     ev->ignore();
     return;

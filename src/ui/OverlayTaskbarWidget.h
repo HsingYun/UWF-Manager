@@ -16,10 +16,9 @@
  */
 #pragma once
 
-#include <QWidget>
 #include <cstdint>
 
-#include "../core/UwfModel.h"
+#include "OverlayHubView.h"
 
 class QContextMenuEvent;
 class QMouseEvent;
@@ -30,24 +29,15 @@ namespace uwf::ui {
 
 // 嵌入 Windows 主任务栏通知区域左侧的 overlay 用量窗口。窗口只消费控制器
 // 已读取的运行时数据，不自行访问 WMI；宿主 Explorer 重启后会自动重新嵌入。
-class OverlayTaskbarWidget final : public QWidget {
+class OverlayTaskbarWidget final : public OverlayHubView {
   Q_OBJECT
  public:
-  enum class DisplayState { Unavailable, Attaching, Confirmed };
-
   explicit OverlayTaskbarWidget(QWidget* parent = nullptr);
 
-  void updateUsage(const core::OverlayRuntime& runtime);
-  void setUnavailable();
-  void setFilterEnabled(bool enabled);
-  void setTaskbarVisible(bool visible);
-  [[nodiscard]] DisplayState displayState() const { return m_displayState; }
-
- signals:
-  void showMainWindowRequested();
-  void hideTaskbarViewRequested();
-  void exitApplicationRequested();
-  void displayStateChanged();
+  [[nodiscard]] int priority() const override { return 200; }
+  void updateUsage(const core::OverlayRuntime& runtime) override;
+  void setUsageUnavailable() override;
+  void setFilterEnabled(bool enabled) override;
 
  protected:
   void contextMenuEvent(QContextMenuEvent* ev) override;
@@ -55,26 +45,23 @@ class OverlayTaskbarWidget final : public QWidget {
   void paintEvent(QPaintEvent* ev) override;
 
  private:
+  bool attachPresentation() override;
+  [[nodiscard]] bool verifyPresentation() const override;
+  void detachPresentation() override;
+  [[nodiscard]] int healthCheckIntervalMs() const override { return 1000; }
+
   bool attachAndPosition();
   bool ensureNativeWindow();
-  void refreshHost();
-  void setDisplayState(DisplayState state);
+  void releaseInvalidNativeWindow();
+  void releaseNativeWindow();
   void updateAnimationTimer();
-  void updateDisplayConfirmation();
-  [[nodiscard]] bool verifyDisplayConfirmation() const;
   [[nodiscard]] int desiredLogicalWidth() const;
 
-  QTimer* m_hostTimer = nullptr;
   QTimer* m_animationTimer = nullptr;
-  QTimer* m_confirmationTimer = nullptr;
   core::OverlayRuntime m_runtime;
-  bool m_requestedVisible = false;
   bool m_hasRuntime = false;
   bool m_filterEnabled = false;
-  bool m_unavailable = false;
   bool m_hasPainted = false;
-  bool m_attachmentSucceeded = false;
-  DisplayState m_displayState = DisplayState::Unavailable;
   qreal m_wavePhase = 0;
 };
 

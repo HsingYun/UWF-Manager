@@ -17,10 +17,9 @@
 #pragma once
 
 #include <QPoint>
-#include <QWidget>
 #include <cstdint>
 
-#include "../core/UwfModel.h"
+#include "OverlayHubView.h"
 
 class QLabel;
 class QContextMenuEvent;
@@ -37,21 +36,15 @@ class OverlayMoveHandle;
 
 // 桌面浮窗：按需显示当前 overlay 用量。窗口本身不读取 WMI，
 // 只接收 MainWindow 刷新周期喂进来的状态，避免多一条独立读取链。
-class OverlayFloatingWidget : public QWidget {
+class OverlayFloatingWidget final : public OverlayHubView {
   Q_OBJECT
  public:
   explicit OverlayFloatingWidget(QWidget* parent = nullptr);
 
-  void updateUsage(const core::OverlayRuntime& runtime);
-  void setUnavailable();
-  void setFilterEnabled(bool enabled);
-  [[nodiscard]] bool displayConfirmed() const { return m_displayConfirmed; }
-
- signals:
-  void showMainWindowRequested();
-  void hideFloatingWindowRequested();
-  void exitApplicationRequested();
-  void displayConfirmationChanged(bool confirmed);
+  [[nodiscard]] int priority() const override { return 100; }
+  void updateUsage(const core::OverlayRuntime& runtime) override;
+  void setUsageUnavailable() override;
+  void setFilterEnabled(bool enabled) override;
 
  protected:
   void showEvent(QShowEvent* ev) override;
@@ -66,7 +59,7 @@ class OverlayFloatingWidget : public QWidget {
   void refreshText();
   void resizeToContent();
   void updateAnimationTimer();
-  void updateDisplayConfirmation();
+  [[nodiscard]] bool verifyPresentation() const override;
   void moveToDefaultPosition();
   void syncHandleGeometry();
   void moveByHandleDrag(const QPoint& globalPos, const QPoint& dragOffset);
@@ -79,10 +72,8 @@ class OverlayFloatingWidget : public QWidget {
   core::OverlayRuntime m_runtime;
   bool m_hasRuntime = false;
   bool m_filterEnabled = false;
-  bool m_unavailable = false;
   bool m_positionInitialized = false;
   bool m_hasPainted = false;
-  bool m_displayConfirmed = false;
   qreal m_wavePhase = 0;
 };
 

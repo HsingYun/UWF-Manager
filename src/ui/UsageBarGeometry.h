@@ -45,11 +45,12 @@ namespace uwf::ui {
   const qreal waveCycle = 2.0 * std::numbers::pi_v<qreal>;
   const auto waveOffset = [excursion](const qreal p) { return excursion * (std::sin(p) + 1.0) * 0.5; };
 
-  constexpr qreal kWaveStepY = 2.0;
+  constexpr int kWaveStepY = 2;
   QPainterPath path;
   path.moveTo(bounds.left(), bounds.top());
   path.lineTo(waveX + waveOffset(phase), bounds.top());
-  for (qreal y = bounds.top() + kWaveStepY; y < bounds.bottom(); y += kWaveStepY) {
+  for (int yOffset = kWaveStepY; static_cast<qreal>(yOffset) < bounds.height(); yOffset += kWaveStepY) {
+    const qreal y = bounds.top() + static_cast<qreal>(yOffset);
     const qreal verticalPhase = (y - bounds.top()) / bounds.height() * waveCycle;
     path.lineTo(waveX + waveOffset(phase + verticalPhase), y);
   }

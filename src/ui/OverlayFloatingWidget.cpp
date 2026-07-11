@@ -201,14 +201,13 @@ class OverlayMoveHandle final : public QWidget {
 };
 
 OverlayFloatingWidget::OverlayFloatingWidget(QWidget* parent)
-    : QWidget(parent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint) {
+    : OverlayHubView(parent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint | Qt::NoDropShadowWindowHint), m_animationTimer(new QTimer(this)) {
   setObjectName("overlayFloatingWidget");
   setAttribute(Qt::WA_TranslucentBackground, true);
   setFixedHeight(kWindowH);
   setMinimumWidth(kMinWindowW);
   setCursor(Qt::ArrowCursor);
   m_handle = new OverlayMoveHandle(this);
-  m_animationTimer = new QTimer(this);
   m_animationTimer->setInterval(kAnimationIntervalMs);
   m_animationTimer->setTimerType(Qt::CoarseTimer);
   connect(m_animationTimer, &QTimer::timeout, this, [this]() {
@@ -250,7 +249,7 @@ void OverlayFloatingWidget::popupContextMenuAt(const QPoint& globalPos) {
   } else if (picked == restorePositionAct) {
     moveToDefaultPosition();
   } else if (picked == closeAct) {
-    emit hideFloatingWindowRequested();
+    emit hideViewRequested();
   } else if (picked == exitAct) {
     emit exitApplicationRequested();
   }
@@ -259,12 +258,10 @@ void OverlayFloatingWidget::popupContextMenuAt(const QPoint& globalPos) {
 void OverlayFloatingWidget::updateUsage(const core::OverlayRuntime& runtime) {
   m_runtime = runtime;
   m_hasRuntime = true;
-  m_unavailable = false;
   refreshText();
 }
 
-void OverlayFloatingWidget::setUnavailable() {
-  m_unavailable = true;
+void OverlayFloatingWidget::setUsageUnavailable() {
   m_hasRuntime = false;
   refreshText();
 }
@@ -277,7 +274,6 @@ void OverlayFloatingWidget::setFilterEnabled(const bool enabled) {
 void OverlayFloatingWidget::showEvent(QShowEvent* ev) {
   QWidget::showEvent(ev);
   m_hasPainted = false;
-  updateDisplayConfirmation();
   if (!m_positionInitialized) {
     moveToDefaultPosition();
     m_positionInitialized = true;
@@ -290,10 +286,10 @@ void OverlayFloatingWidget::showEvent(QShowEvent* ev) {
 
 void OverlayFloatingWidget::hideEvent(QHideEvent* ev) {
   m_hasPainted = false;
-  updateDisplayConfirmation();
   if (m_animationTimer) m_animationTimer->stop();
   if (m_handle) m_handle->hide();
   QWidget::hideEvent(ev);
+  QTimer::singleShot(0, this, &OverlayFloatingWidget::notifyPresentationChanged);
 }
 
 void OverlayFloatingWidget::moveEvent(QMoveEvent* ev) {
@@ -307,11 +303,11 @@ void OverlayFloatingWidget::paintEvent(QPaintEvent*) {
   const auto colors = overlayHudPalette(ThemeManager::instance().systemTheme());
 
   const QRectF r = QRectF(rect()).adjusted(0.5, 0.5, -0.5, -0.5);
-  const bool showUsage = !m_unavailable && m_filterEnabled && m_hasRuntime;
+  const bool showUsage = m_filterEnabled && m_hasRuntime;
   paintOverlayHud(p, r, kRadius, colors.floatingSurface, colors, m_runtime, showUsage, m_wavePhase);
   if (!m_hasPainted) {
     m_hasPainted = true;
-    QTimer::singleShot(0, this, &OverlayFloatingWidget::updateDisplayConfirmation);
+    QTimer::singleShot(0, this, &OverlayFloatingWidget::notifyPresentationChanged);
   }
 }
 
@@ -329,14 +325,6 @@ void OverlayFloatingWidget::applyHudStyle() {
 }
 
 void OverlayFloatingWidget::refreshText() {
-  if (m_unavailable) {
-    if (m_usage) m_usage->setText(QStringLiteral("—"));
-    resizeToContent();
-    update();
-    updateAnimationTimer();
-    return;
-  }
-
   if (!m_filterEnabled) {
     if (m_usage) m_usage->setText(QStringLiteral("—"));
     resizeToContent();
@@ -362,8 +350,8 @@ void OverlayFloatingWidget::refreshText() {
 void OverlayFloatingWidget::updateAnimationTimer() {
   if (!m_animationTimer) return;
   const uint64_t totalMb = overlayTotalMb(m_runtime);
-  const bool hasVisibleUsage = isVisible() && !m_unavailable && m_filterEnabled && m_hasRuntime && m_runtime.currentConsumptionMb > 0 &&
-                               static_cast<uint64_t>(m_runtime.currentConsumptionMb) < totalMb;
+  const bool hasVisibleUsage =
+      isVisible() && m_filterEnabled && m_hasRuntime && m_runtime.currentConsumptionMb > 0 && static_cast<uint64_t>(m_runtime.currentConsumptionMb) < totalMb;
   if (hasVisibleUsage) {
     if (!m_animationTimer->isActive()) m_animationTimer->start();
   } else {
@@ -371,14 +359,11 @@ void OverlayFloatingWidget::updateAnimationTimer() {
   }
 }
 
-void OverlayFloatingWidget::updateDisplayConfirmation() {
-  const HWND hwnd = reinterpret_cast<HWND>(winId());
+bool OverlayFloatingWidget::verifyPresentation() const {
+  const HWND hwnd = reinterpret_cast<HWND>(internalWinId());
   RECT windowRect{};
-  const bool confirmed = m_hasPainted && isVisible() && hwnd && IsWindow(hwnd) && IsWindowVisible(hwnd) && GetWindowRect(hwnd, &windowRect) &&
-                         windowRect.right > windowRect.left && windowRect.bottom > windowRect.top;
-  if (confirmed == m_displayConfirmed) return;
-  m_displayConfirmed = confirmed;
-  emit displayConfirmationChanged(confirmed);
+  return presentationRequested() && m_hasPainted && isVisible() && hwnd && IsWindow(hwnd) && IsWindowVisible(hwnd) && GetWindowRect(hwnd, &windowRect) &&
+         windowRect.right > windowRect.left && windowRect.bottom > windowRect.top;
 }
 
 void OverlayFloatingWidget::resizeToContent() {
