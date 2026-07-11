@@ -21,6 +21,7 @@ function(cc_git_rev target)
 
     string(TOLOWER "${ARG_PREFIX}_version" _version_target)
     set(_header "${ARG_OUTPUT_DIR}/${_version_target}.h")
+    set(_copy_script "${ARG_OUTPUT_DIR}/${_version_target}_copy.cmake")
     set(_generator "${_CC_GIT_VERSION_MODULE_DIR}/GenerateGitVersion.cmake")
 
     find_package(Git QUIET)
@@ -28,6 +29,7 @@ function(cc_git_rev target)
             "-DPREFIX=${ARG_PREFIX}"
             "-DFALLBACK_VERSION=${ARG_VERSION}"
             "-DOUTPUT_FILE=${_header}"
+            "-DCOPY_SCRIPT=${_copy_script}"
             "-DSOURCE_DIR=${ARG_SOURCE_DIR}"
             "-DGIT_EXECUTABLE=${GIT_EXECUTABLE}"
     )
@@ -50,7 +52,7 @@ function(cc_git_rev target)
     if (NOT TARGET ${_version_target})
         add_custom_target(${_version_target}
                 COMMAND "${CMAKE_COMMAND}" ${_generator_args} -DQUIET=TRUE -P "${_generator}"
-                BYPRODUCTS "${_header}"
+                BYPRODUCTS "${_header}" "${_copy_script}"
                 COMMENT "Updating Git version"
                 VERBATIM
         )
@@ -59,4 +61,9 @@ function(cc_git_rev target)
     add_dependencies(${target} ${_version_target})
     target_sources(${target} PRIVATE "${_header}")
     target_include_directories(${target} PRIVATE "${ARG_OUTPUT_DIR}")
+    add_custom_command(TARGET ${target} POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" "-DSOURCE_FILE=$<TARGET_FILE:${target}>" -P "${_copy_script}"
+            COMMENT "Creating versioned executable"
+            VERBATIM
+    )
 endfunction()

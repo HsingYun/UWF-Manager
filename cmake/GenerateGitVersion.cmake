@@ -117,6 +117,33 @@ if (NOT _old_content STREQUAL _content)
     file(WRITE "${OUTPUT_FILE}" "${_content}")
 endif ()
 
+if (COPY_SCRIPT)
+    set(_copy_content "if (NOT SOURCE_FILE OR NOT EXISTS \"\${SOURCE_FILE}\")
+    message(FATAL_ERROR \"VersionedBinary: SOURCE_FILE does not exist: \${SOURCE_FILE}\")
+endif ()
+
+get_filename_component(_binary_dir \"\${SOURCE_FILE}\" DIRECTORY)
+get_filename_component(_binary_ext \"\${SOURCE_FILE}\" EXT)
+set(_versioned_file \"\${_binary_dir}/${PREFIX}.${_ver_string}\${_binary_ext}\")
+execute_process(
+        COMMAND \"\${CMAKE_COMMAND}\" -E copy_if_different \"\${SOURCE_FILE}\" \"\${_versioned_file}\"
+        RESULT_VARIABLE _copy_result
+)
+if (NOT _copy_result EQUAL 0)
+    message(FATAL_ERROR \"VersionedBinary: copy failed with exit code \${_copy_result}\")
+endif ()
+message(STATUS \"Versioned executable: \${_versioned_file}\")
+")
+
+    set(_old_copy_content "")
+    if (EXISTS "${COPY_SCRIPT}")
+        file(READ "${COPY_SCRIPT}" _old_copy_content)
+    endif ()
+    if (NOT _old_copy_content STREQUAL _copy_content)
+        file(WRITE "${COPY_SCRIPT}" "${_copy_content}")
+    endif ()
+endif ()
+
 if (NOT QUIET)
     message(STATUS "Git version: ${_ver_string} (${_v_major}.${_v_minor}.${_v_patch}.${_v_build})")
 endif ()
