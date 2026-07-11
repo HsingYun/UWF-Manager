@@ -132,7 +132,7 @@ class OverlayMoveHandle final : public QWidget {
     setAttribute(Qt::WA_TranslucentBackground, true);
     setAttribute(Qt::WA_ShowWithoutActivating, true);
     setFixedSize(kHandleWindowSide, kHandleWindowSide);
-    setCursor(Qt::SizeAllCursor);
+    setCursor(Qt::ArrowCursor);
   }
 
  protected:
@@ -144,7 +144,6 @@ class OverlayMoveHandle final : public QWidget {
     if (m_owner && ev->button() == Qt::LeftButton) {
       m_dragging = true;
       m_dragOffset = ev->globalPosition().toPoint() - m_owner->frameGeometry().topLeft();
-      setCursor(Qt::ClosedHandCursor);
       ev->accept();
       return;
     }
@@ -163,11 +162,20 @@ class OverlayMoveHandle final : public QWidget {
   void mouseReleaseEvent(QMouseEvent* ev) override {
     if (ev->button() == Qt::LeftButton && m_dragging) {
       m_dragging = false;
-      setCursor(Qt::SizeAllCursor);
       ev->accept();
       return;
     }
     QWidget::mouseReleaseEvent(ev);
+  }
+
+  void mouseDoubleClickEvent(QMouseEvent* ev) override {
+    if (m_owner && ev->button() == Qt::LeftButton) {
+      m_dragging = false;
+      emit m_owner->showMainWindowRequested();
+      ev->accept();
+      return;
+    }
+    QWidget::mouseDoubleClickEvent(ev);
   }
 
   void paintEvent(QPaintEvent*) override {
