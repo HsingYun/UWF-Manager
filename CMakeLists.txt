@@ -91,6 +91,16 @@ set(UWF_SOURCES
         src/ui/RegistryPickerDialog.cpp
         src/ui/TransientLabel.h
         src/ui/TransientLabel.cpp
+        src/ui/SystemInfoProvider.h
+        src/ui/SystemInfoProvider.cpp
+        src/ui/HoverHintController.h
+        src/ui/HoverHintController.cpp
+        src/ui/WindowChromeController.h
+        src/ui/WindowChromeController.cpp
+        src/ui/OverlayPresentationController.h
+        src/ui/OverlayPresentationController.cpp
+        src/ui/PowerController.h
+        src/ui/PowerController.cpp
         src/ui/MarqueeHintBox.h
         src/ui/MarqueeHintBox.cpp
         src/ui/LogViewerDialog.h

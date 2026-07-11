@@ -16,35 +16,18 @@
  */
 #include "MainWindow.h"
 
-#include <dwmapi.h>
-#include <windows.h>
-
-#include <QAbstractItemView>
 #include <QAction>
 #include <QActionGroup>
 #include <QApplication>
 #include <QCloseEvent>
-#include <QColor>
-#include <QCursor>
-#include <QDateTime>
-#include <QDialog>
 #include <QEvent>
-#include <QGuiApplication>
 #include <QHBoxLayout>
-#include <QHoverEvent>
 #include <QIcon>
 #include <QKeySequence>
 #include <QLabel>
 #include <QMap>
 #include <QMenu>
-#include <QMouseEvent>
-#include <QPainter>
-#include <QSignalBlocker>
 #include <QStatusBar>
-#include <QStyle>
-#include <QStyleOption>
-#include <QSvgRenderer>
-#include <QTabBar>
 #include <QTabWidget>
 #include <QTextBrowser>
 #include <QTextDocument>
@@ -54,19 +37,15 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
-#include <QWindow>
-#include <algorithm>
 #include <chrono>
 #include <format>
 #include <optional>
-#include <string_view>
 #include <utility>
 
 #include "../core/Config.h"
 #include "../util/DriveLetter.h"
 #include "../util/Log.h"
 #include "../util/PathMatch.h"
-#include "../util/RegistryKey.h"
 #include "../uwf/UwfSnapshot.h"
 #include "../uwf/api/UwfmgrCli.h"
 #include "../uwf/wmi/WmiResult.h"
@@ -75,188 +54,29 @@
 #include "Dialogs.h"
 #include "DiskTab.h"
 #include "GlobalStatusPanel.h"
+#include "HoverHintController.h"
 #include "I18n.h"
 #include "ImportApplier.h"
 #include "ImportDialog.h"
 #include "LogViewerDialog.h"
 #include "MarqueeHintBox.h"
-#include "OverlayFloatingWidget.h"
+#include "OverlayPresentationController.h"
 #include "PendingCollect.h"
+#include "PowerController.h"
+#include "SystemInfoProvider.h"
 #include "ThemeManager.h"
 #include "TransientLabel.h"
 #include "TrayController.h"
+#include "WindowChromeController.h"
 #include "uwf_version.h"
 
 namespace uwf::ui {
 
 namespace {
 
-// 旧的 warnSelectable / confirmYesNo helper 已迁移到 ui::dialogs（QDialog 实现，
-// 走 app font，避免 QMessageBox 的中文渲染糊问题）。
-using uwf::ui::dialogs::confirm;
-using uwf::ui::dialogs::warning;
-
-constexpr DWORD kDwmAttrUseImmersiveDarkMode = 20;
-constexpr DWORD kDwmAttrWindowCornerPreference = 33;
-constexpr DWORD kDwmAttrBorderColor = 34;
-constexpr DWORD kDwmAttrCaptionColor = 35;
-constexpr DWORD kDwmAttrTextColor = 36;
-constexpr int kDwmCornerRound = 2;  // DWMWCP_ROUND
-
-COLORREF colorRef(const QColor& c) { return RGB(c.red(), c.green(), c.blue()); }
-
-template <typename T>
-void setDwmAttr(HWND hwnd, DWORD attr, const T& value) {
-  (void)DwmSetWindowAttribute(hwnd, attr, &value, static_cast<DWORD>(sizeof(value)));
-}
-
-// QToolBar 溢出时最右侧的扩展按钮（qt_toolbar_ext_button）：被 QSS 的
-// `QToolBar QToolButton` 规则命中后转由 QStyleSheetStyle 渲染，后者既不画
-// PE_IndicatorToolBarExtension 雪佛龙、又因该按钮自绘 paintEvent 而忽略 setIcon，
-// 于是只剩一个空白方块。QSS background-image 能补图标，但 SVG 被位图栅格化、
-// 高分屏放大后发糊。这里用事件过滤器接管它的 Paint：先用 PE_Widget 画出 QSS
-// 背景（保留 hover），再用 QSvgRenderer 矢量绘制雪佛龙——任意 DPI 都清晰。
-class ToolbarExtIcon : public QObject {
- public:
-  using QObject::QObject;
-
-  bool eventFilter(QObject* obj, QEvent* ev) override {
-    if (ev->type() != QEvent::Paint) return QObject::eventFilter(obj, ev);
-    auto* w = qobject_cast<QWidget*>(obj);
-    if (!w) return false;
-    QPainter p(w);
-    QStyleOption opt;
-    opt.initFrom(w);
-    w->style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, w);  // QSS 背景（含 hover）
-    static QSvgRenderer svg{QStringLiteral(":/icons/arrow_right.svg")};
-    constexpr qreal kSide = 14.0;
-    svg.render(&p, QRectF((w->width() - kSide) / 2.0, (w->height() - kSide) / 2.0, kSide, kSide));
-    return true;  // 自己画完，吃掉默认那次空白绘制
-  }
-};
-
 // 盘符逻辑统一在 uwf::drive（见 src/util/DriveLetter.h）。本函数只做 QString
 // ↔ std::string 的边界适配，不含任何盘符逻辑。
 QString systemDriveLetter() { return QString::fromStdString(drive::systemLetter()); }
-
-bool isToolbarDragTarget(QObject* obj) {
-  auto* w = qobject_cast<QWidget*>(obj);
-  if (!w || qobject_cast<QToolButton*>(w)) return false;
-  for (QObject* p = w; p; p = p->parent()) {
-    if (qobject_cast<QToolButton*>(p) || qobject_cast<QMenu*>(p)) return false;
-    if (auto* tb = qobject_cast<QToolBar*>(p); tb && tb->objectName() == "mainToolbar") return true;
-  }
-  return false;
-}
-
-// RtlGetVersion 是唯一一个在 Windows 8.1+ 上仍返回真实版本号（而不是被
-// 应用兼容性"撒谎"成 Windows 8）的接口。动态加载避免对 ntdll 的直接 link。
-// 版本型号则从 CurrentVersion\ProductName / EditionID 里取——Windows 11 的
-// ProductName 字段至今仍写作 "Windows 10 Xxx"，所以家族名得靠 build 号自己判，
-// 型号部分再从 ProductName 去掉前缀拿出来。LTSC 变体 ProductName 里不一定写
-// "LTSC" 字样，需要再看 EditionID 末尾有没有 "S"。
-QString windowsVersionText() {
-  using Fn = LONG(WINAPI*)(OSVERSIONINFOW*);
-  auto fn = reinterpret_cast<Fn>(reinterpret_cast<void*>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlGetVersion")));
-  OSVERSIONINFOW v{};
-  v.dwOSVersionInfoSize = sizeof(v);
-  if (!fn || fn(&v) != 0) return QStringLiteral("Windows");
-
-  constexpr std::string_view kCur = config::kRegPathWindowsCurrentVersion;
-  const auto ubr = regkey::readDword(kCur, "UBR");
-  const QString productName = QString::fromStdString(regkey::readString(kCur, "ProductName")).trimmed();
-  const QString editionId = QString::fromStdString(regkey::readString(kCur, "EditionID")).trimmed();
-
-  // 家族名（Windows 10 / 11 共享 Major=10，靠 build ≥ 22000 区分）。
-  QString family = QStringLiteral("Windows");
-  if (v.dwMajorVersion == 10) {
-    family = v.dwBuildNumber >= static_cast<DWORD>(config::kWindows11MinBuildNumber) ? QStringLiteral("Windows 11") : QStringLiteral("Windows 10");
-  }
-
-  // 从 ProductName 去掉"Windows 10/11 "前缀拿型号（Pro / Enterprise / Home /
-  // ...）。
-  QString edition = productName;
-  for (const QString& p : {QStringLiteral("Windows 11 "), QStringLiteral("Windows 10 "), QStringLiteral("Windows ")}) {
-    if (edition.startsWith(p, Qt::CaseInsensitive)) {
-      edition = edition.mid(p.size()).trimmed();
-      break;
-    }
-  }
-
-  // LTSC / LTSB 变体：EditionID = EnterpriseS / EnterpriseSN / IoTEnterpriseS …
-  // ProductName 并不总是把 "LTSC" 写出来，需要自己补上。
-  const QString ed = editionId.toLower();
-  const bool isLtsc =
-      std::ranges::any_of(config::kLtscEditionIds, [&ed](std::string_view id) { return ed == QLatin1String(id.data(), static_cast<qsizetype>(id.size())); });
-  if (isLtsc && !edition.contains("LTSC", Qt::CaseInsensitive) && !edition.contains("LTSB", Qt::CaseInsensitive)) {
-    edition = edition.isEmpty() ? QStringLiteral("LTSC") : (edition + QStringLiteral(" LTSC"));
-  }
-
-  QString head = edition.isEmpty() ? family : (family + ' ' + edition);
-  return QString("%1 · %2.%3.%4.%5").arg(head).arg(v.dwMajorVersion).arg(v.dwMinorVersion).arg(v.dwBuildNumber).arg(ubr);
-}
-
-QString cpuModelText() {
-  const QString name =
-      QString::fromStdString(regkey::readString(R"(HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0)", "ProcessorNameString"));
-  // BIOS 厂商常常在名字里塞大量尾随空格，去一下。
-  return name.trimmed().simplified();
-}
-
-QString totalRamText() {
-  MEMORYSTATUSEX m{};
-  m.dwLength = sizeof(m);
-  if (!GlobalMemoryStatusEx(&m)) return {};
-  // 实际物理内存常常略少于 N GB（给 GPU、硬件保留）。用就近取整的 GB，
-  // 失败再退回 MB。例：16777216 KB ≈ 16 GB。
-  const auto gb = static_cast<uint64_t>((m.ullTotalPhys + (512ULL << 20)) / (1ULL << 30));
-  if (gb >= 1) return QString("%1 GB").arg(gb);
-  return QString("%1 MB").arg(m.ullTotalPhys / (1ULL << 20));
-}
-
-QString gpuModelText() {
-  // EnumDisplayDevices 的 DeviceString 就是设备厂商/型号字符串。
-  // 优先选"挂在桌面上"的主适配器，避免拿到 Remote / Mirror 这类假设备。
-  DISPLAY_DEVICEW dev{};
-  dev.cb = sizeof(dev);
-  for (DWORD i = 0; EnumDisplayDevicesW(nullptr, i, &dev, 0); ++i) {
-    if (dev.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) {
-      return QString::fromWCharArray(dev.DeviceString).trimmed();
-    }
-    dev = {};
-    dev.cb = sizeof(dev);
-  }
-  dev = {};
-  dev.cb = sizeof(dev);
-  if (EnumDisplayDevicesW(nullptr, 0, &dev, 0)) {
-    return QString::fromWCharArray(dev.DeviceString).trimmed();
-  }
-  return {};
-}
-
-// 紧凑排版：一行一个条目；系统/CPU/显卡本身名字就够识别（"Windows 11"、
-// "Intel ..."、"NVIDIA ..."），不再加"系统："之类的 key 标签。
-// 只有"XX GB"这种纯数字单位需要 RAM 前缀才知道是内存总量。
-QString systemInfoHtml() {
-  const QString ver = windowsVersionText();
-  const QString cpu = cpuModelText();
-  const QString ram = totalRamText();
-  const QString gpu = gpuModelText();
-  QStringList rows;
-  auto addPlain = [&](const QString& v) {
-    if (!v.isEmpty()) rows << v.toHtmlEscaped();
-  };
-  const QString muted = ThemeManager::instance().color(Sem::FgMuted).name();
-  auto addWithKey = [&](const QString& k, const QString& v) {
-    if (v.isEmpty()) return;
-    rows << QString("<span style='color:%1'>%2</span>&nbsp;%3").arg(muted, k.toHtmlEscaped(), v.toHtmlEscaped());
-  };
-  addPlain(ver);
-  addPlain(cpu);
-  addWithKey("RAM", ram);
-  addPlain(gpu);
-  return rows.join("<br>");
-}
 
 }  // namespace
 
@@ -270,6 +90,8 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
   setWindowIcon(QIcon(":/icons/app.svg"));
   resize(1380, 760);
   setWindowOpacity(0.0);
+  m_hoverHints = new HoverHintController(this, this);
+  m_chrome = new WindowChromeController(this, this);
 
   // 写会话提前连接一次；读快照时会另起一个独立会话。
   std::string err;
@@ -283,23 +105,14 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
   connect(m_tray, &TrayController::activateWindowRequested, this, &MainWindow::raiseToFront);
   connect(m_tray, &TrayController::exitApplicationRequested, this, &MainWindow::requestExit);
 
-  m_overlayFloat = new OverlayFloatingWidget();
-  m_overlayFloat->setAttribute(Qt::WA_QuitOnClose, false);
-  connect(m_overlayFloat, &OverlayFloatingWidget::showMainWindowRequested, this, &MainWindow::raiseToFront);
-  connect(m_overlayFloat, &OverlayFloatingWidget::closeFloatingWindowRequested, this, [this]() { setOverlayFloatingVisible(false); });
-  connect(m_overlayFloat, &OverlayFloatingWidget::exitApplicationRequested, this, &MainWindow::requestExit);
-  syncOverlayFloatingAvailability();
+  m_overlayPresentation = new OverlayPresentationController(m_writeSession, this, m_tray, this);
+  connect(m_overlayPresentation, &OverlayPresentationController::activateMainWindowRequested, this, &MainWindow::raiseToFront);
+  connect(m_overlayPresentation, &OverlayPresentationController::exitApplicationRequested, this, &MainWindow::requestExit);
+  m_power = new PowerController(m_writeSession, this, this);
 
-  // 每 5s 周期刷新 Usage 数据（占用条）——只读 UWF_Overlay，不做整体 refresh。
-  m_usageTimer = new QTimer(this);
-  m_usageTimer->setInterval(5000);
-  connect(m_usageTimer, &QTimer::timeout, this, &MainWindow::refreshUsage);
-  m_usageTimer->start();
-
-  // 4 个 commit{File,FileDeletion,Registry,RegistryDeletion}Path 槽的实际工作都
-  // 在 CommitDispatcher 里跑——这里只需把 4 个槽变成代理。注意构造时点：要在
-  // m_usageTimer 创建之后，因为 dispatcher 会把它当 ScopedTimerPause 的对象。
-  m_commit = std::make_unique<CommitDispatcher>(m_writeSession, m_snapshot, m_usageTimer, this);
+  // 4 个 commit 槽的实际工作都在 CommitDispatcher 里跑；提交期间暂停 Overlay
+  // 控制器的 usage timer，避免并发读取 WMI。
+  m_commit = std::make_unique<CommitDispatcher>(m_writeSession, m_snapshot, m_overlayPresentation->usageTimer(), this);
 
   // 首屏 rebuildUi 不在 ctor 里同步触发——widget 此时还没 show，Qt 一些 polish
   // / 几何计算在 widget 真正进入 shown 状态前结果不稳定，会跟后续"切主题 /
@@ -307,74 +120,34 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
   // 触发后用 singleShot 调度，确保首次 rebuild 也在 shown 状态下跑。
 }
 
-void MainWindow::raiseToFront() {
-  // 最小化时先恢复；否则确保可见。再 raise + activate 抢前台——配合启动方
-  // 进程调用的 AllowSetForegroundWindow，能真正前置而非只闪任务栏。
-  const bool revealFromHidden = !isVisible() && m_firstShowDone;
-  if (revealFromHidden) setWindowOpacity(0.0);
-  if (isMinimized())
-    showNormal();
-  else
-    show();
-  raise();
-  activateWindow();
-  if (revealFromHidden) {
-    QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
-    repaint();
-    QTimer::singleShot(0, this, [this]() {
-      setWindowOpacity(1.0);
-      raise();
-      activateWindow();
-    });
-  }
+MainWindow::~MainWindow() {
+  // QObject 子对象默认要等 QMainWindow / QObject 基类析构时才删除，而
+  // m_writeSession 作为 C++ 成员会更早析构。显式按依赖逆序释放，保证所有
+  // 持有 session / timer 引用的对象都在其依赖仍存活时结束生命周期。
+  m_commit.reset();
+
+  delete m_power;
+  m_power = nullptr;
+  delete m_overlayPresentation;  // 先于它引用的 tray
+  m_overlayPresentation = nullptr;
+  delete m_tray;
+  m_tray = nullptr;
+
+  // 两个 qApp 级事件过滤器也在窗口仍完整时移除，避免进入 QWidget / QObject
+  // 基类析构后还持有一个正在拆解的 root window。
+  delete m_chrome;
+  m_chrome = nullptr;
+  delete m_hoverHints;
+  m_hoverHints = nullptr;
 }
 
-void MainWindow::refreshUsage() {
-  // 周期更新只动 Usage 数据：主窗口可见时刷新主面板占用条；托盘那半段交给
-  // TrayController（它内部判断右键菜单是否正在显示）。
-  const auto filter = m_filter.read();
-  m_overlayFloatingAllowed = filter && filter->currentEnabled;
-  if (m_overlayFloat) {
-    if (!filter) {
-      m_overlayFloat->setUnavailable(I18n::tr("UWF namespace is not available"));
-    } else {
-      m_overlayFloat->setFilterEnabled(filter->currentEnabled);
-    }
-  }
-
-  if (filter && filter->currentEnabled) {
-    std::string overlayErr;
-    const auto overlay = m_overlay.read(&overlayErr);
-    const auto cfg = m_overlayConfig.read(/*currentSession=*/true);
-    if (overlay) {
-      core::OverlayRuntime rt;
-      rt.currentConsumptionMb = overlay->overlayConsumption;
-      rt.availableSpaceMb = overlay->availableSpace;
-      if (isVisible() && m_global) m_global->updateUsage(rt);
-      if (m_overlayFloat) {
-        if (cfg) {
-          core::OverlayConfig c;
-          c.type = cfg->type == api::OverlayType::Disk ? core::OverlayType::Disk : core::OverlayType::RAM;
-          c.maximumSizeMb = static_cast<uint32_t>(std::max(0, cfg->maximumSize));
-          c.warningThresholdMb = overlay->warningOverlayThreshold;
-          c.criticalThresholdMb = overlay->criticalOverlayThreshold;
-          m_overlayFloat->setOverlayConfig(c);
-        }
-        m_overlayFloat->updateUsage(rt);
-      }
-    } else if (m_overlayFloat) {
-      m_overlayFloat->setUnavailable(overlayErr.empty() ? I18n::tr("Failed to read overlay usage") : QString::fromStdString(overlayErr));
-    }
-  }
-  syncOverlayFloatingAvailability();
-  if (m_tray) m_tray->refreshUsage();
-}
+void MainWindow::raiseToFront() { m_chrome->raiseToFront(m_firstShowDone); }
 
 void MainWindow::buildUi() {
   // 标题随语言切换重译，故每次 buildUi（含 rebuildUi 路径）都重设一次；
   // 图标与初始尺寸是一次性窗口外壳设置，已在构造函数里完成，这里不再重复。
   setWindowTitle(I18n::tr("Unified Write Filter (UWF) Manager"));
-  applyNativeTitleBarTheme();
+  m_chrome->applyTitleBarTheme();
 
   // QSS 的 `padding` 在 QToolBar 上不可靠（rebuildUi 后 polish 时机问题），
   // 用 spacer widget 给水平方向兜底。垂直方向不再人为加 margin——
@@ -426,11 +199,11 @@ void MainWindow::buildUi() {
 
   m_actShutdown = tb->addAction(I18n::tr("Safe shutdown"));
   m_actShutdown->setToolTip(I18n::tr("Shut down safely, even when the UWF overlay is full."));
-  connect(m_actShutdown, &QAction::triggered, this, [this]() { safeShutdown(); });
+  connect(m_actShutdown, &QAction::triggered, m_power, &PowerController::safeShutdown);
 
   m_actRestart = tb->addAction(I18n::tr("Safe restart"));
   m_actRestart->setToolTip(I18n::tr("Restart safely, even when the UWF overlay is full."));
-  connect(m_actRestart, &QAction::triggered, this, [this]() { safeRestart(); });
+  connect(m_actRestart, &QAction::triggered, m_power, &PowerController::safeRestart);
 
   tb->addSeparator();
 
@@ -450,15 +223,13 @@ void MainWindow::buildUi() {
     tb->addWidget(spacer);
   }
 
-  m_actFloat = tb->addAction("");
-  m_actFloat->setCheckable(true);
-  m_actFloat->setChecked(overlayFloatingAllowed() && m_overlayFloatingRequested);
-  m_actFloat->setToolTip(I18n::tr("Show or hide the overlay floating window."));
-  connect(m_actFloat, &QAction::toggled, this, &MainWindow::setOverlayFloatingVisible);
-  if (auto* btn = qobject_cast<QToolButton*>(tb->widgetForAction(m_actFloat))) {
+  auto* floatingAction = tb->addAction("");
+  floatingAction->setCheckable(true);
+  floatingAction->setToolTip(I18n::tr("Show or hide the overlay floating window."));
+  connect(floatingAction, &QAction::toggled, m_overlayPresentation, &OverlayPresentationController::setFloatingVisible);
+  if (auto* btn = qobject_cast<QToolButton*>(tb->widgetForAction(floatingAction))) {
     btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
   }
-  m_actFloat->setVisible(overlayFloatingAllowed());
 
   // 语言切换按钮（IconOnly，下拉菜单展示支持的语言）。
   m_actLang = tb->addAction("");
@@ -542,11 +313,7 @@ void MainWindow::buildUi() {
     tb->addWidget(rightPad);
   }
 
-  // 给工具栏溢出扩展按钮装上雪佛龙绘制器（见 ToolbarExtIcon 注释）。过滤器对象
-  // parent 设为按钮本身——rebuildUi 重建 toolbar 时随按钮一并回收。
-  if (auto* ext = tb->findChild<QToolButton*>(QStringLiteral("qt_toolbar_ext_button"))) {
-    ext->installEventFilter(new ToolbarExtIcon(ext));
-  }
+  m_chrome->decorateToolbar(tb);
 
   // 主题切换走和语言切换完全相同的入口：rebuildUi 整体重建 toolbar + 中央
   // widget。两套刷新走同一条路径，避免之前"主题切换只刷 icon、语言切换全
@@ -588,6 +355,7 @@ void MainWindow::buildUi() {
   globalLayout->setContentsMargins(18, 12, 18, 12);
   globalLayout->setSpacing(10);
   m_global = new GlobalStatusPanel(this);
+  m_overlayPresentation->bindUi(m_global, floatingAction);
   // 系统版本未通过校验时，把兼容模式提示常驻在面板信息框里。提示文案在此
   // 现翻译——切语言会重跑 buildUi，文案随之跟着切；rebuildUi 重建 m_global
   // 后也连带重新灌入。
@@ -610,26 +378,27 @@ void MainWindow::buildUi() {
   // MarqueeHintBox（QTextBrowser 子类）：英文下个别提示（域机密密钥 / TSCAL 的默认
   // 排除说明）超过这 110px 放不下，本类在溢出时自动循环来回滚动让全文都能看到；
   // 放得下时静止。其余配置照旧——它对外仍是个普通 QTextBrowser。
-  m_hoverHint = new MarqueeHintBox(this);
-  m_hoverHint->setObjectName("hoverHintBox");
-  m_hoverHint->setWordWrapMode(QTextOption::WrapAnywhere);
-  m_hoverHint->setFrameShape(QFrame::NoFrame);
-  m_hoverHint->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  m_hoverHint->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  m_hoverHint->setTextInteractionFlags(Qt::NoTextInteraction);
-  m_hoverHint->setFocusPolicy(Qt::NoFocus);
+  auto* hoverHint = new MarqueeHintBox(this);
+  hoverHint->setObjectName("hoverHintBox");
+  hoverHint->setWordWrapMode(QTextOption::WrapAnywhere);
+  hoverHint->setFrameShape(QFrame::NoFrame);
+  hoverHint->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  hoverHint->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  hoverHint->setTextInteractionFlags(Qt::NoTextInteraction);
+  hoverHint->setFocusPolicy(Qt::NoFocus);
   // document margin 归零，内边距完全交给 QSS 的 padding，与原 QLabel 视觉对齐。
-  m_hoverHint->document()->setDocumentMargin(0);
+  hoverHint->document()->setDocumentMargin(0);
   // viewport 透明，让 QSS 画在 frame 上的圆角灰底透出来（否则文本区方角会盖角）。
-  m_hoverHint->viewport()->setAutoFillBackground(false);
-  m_hoverHint->setFixedHeight(110);
-  m_hoverHint->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+  hoverHint->viewport()->setAutoFillBackground(false);
+  hoverHint->setFixedHeight(110);
+  hoverHint->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   // 默认文案是机器基本信息（OS / CPU / RAM / GPU）的 HTML，悬停事件临时覆盖成
   // 纯文本 tooltip。QTextBrowser::setText 走 Qt::mightBeRichText 自动判别：HTML
   // 基线按富文本渲染，纯文本 tooltip 按纯文本渲染，里面的 & / < 不会被解析走样。
-  m_hoverCtl = new TransientLabel(m_hoverHint, m_hoverHint);
-  m_hoverCtl->setBaseline(systemInfoHtml());
-  globalLayout->addWidget(m_hoverHint, 0);
+  m_hoverCtl = new TransientLabel(hoverHint, hoverHint);
+  m_hoverCtl->setBaseline(SystemInfoProvider::summaryHtml());
+  m_hoverHints->setTarget(m_hoverCtl);
+  globalLayout->addWidget(hoverHint, 0);
   globalWrap->setObjectName("globalWrap");
   globalWrap->setFixedWidth(420);
   // 右侧面板整体最小高度 = 外壳最小高 + 滚动内容完整高。GlobalStatusPanel 的滚动区
@@ -642,8 +411,6 @@ void MainWindow::buildUi() {
 
   // 让 MainWindow 也跟随到这个最小高度（加上工具栏和状态栏的大致高度）。
   setMinimumHeight(globalWrap->minimumHeight() + 80);
-
-  qApp->installEventFilter(this);
 
   centralLayout->addLayout(mainRow, 1);
   setCentralWidget(central);
@@ -661,7 +428,7 @@ void MainWindow::buildUi() {
   m_statusCtl = new TransientLabel(m_statusText, m_statusText);
 
   // buildUi 末尾统一应用一次主题：toolbar 图标、disk tab 图标、hover hint
-  // 默认文案都按当前主题色生成（构造期间 connect 时 m_hoverHint 还是 null，
+  // 默认文案都按当前主题色生成（构造期间 connect 时 m_hoverCtl 还是 null，
   // 这里补一次初始化）。
   refreshThemedUi();
 }
@@ -678,6 +445,7 @@ void MainWindow::rebuildUi() {
   // ThemeManager 是单例，buildUi 每次都新增一个 themeChanged 连接，重建前
   // 必须先把上一轮的连接拆掉，否则刷主题时回调会被多次触发。
   disconnect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, nullptr);
+  m_overlayPresentation->unbindUi();
 
   if (auto* tb = findChild<QToolBar*>("mainToolbar")) {
     removeToolBar(tb);
@@ -697,13 +465,13 @@ void MainWindow::rebuildUi() {
   }
   // m_statusCtl / m_hoverCtl 的 QObject parent 设为对应 label，label 上面
   // deleteLater 时它们一起 deleteLater——不需要单独管。
+  m_hoverHints->setTarget(nullptr);
 
   // 重置所有指针成员；buildUi 会重新填充。
   m_actRefresh = m_actImport = m_actPlan = m_actShutdown = m_actRestart = nullptr;
-  m_actLog = m_actAbout = m_actFloat = m_actLang = m_actTheme = nullptr;
+  m_actLog = m_actAbout = m_actLang = m_actTheme = nullptr;
   m_tabs = nullptr;
   m_global = nullptr;
-  m_hoverHint = nullptr;
   m_statusText = nullptr;
   m_statusCtl = m_hoverCtl = nullptr;
   m_diskTabs.clear();
@@ -732,79 +500,28 @@ void MainWindow::showTransientHint(const QString& text, const int msec) const {
   if (m_statusCtl) m_statusCtl->flash(text, msec);
 }
 
-bool MainWindow::overlayFloatingAllowed() const {
-  return m_overlayFloatingAllowed;
-}
-
-void MainWindow::syncOverlayFloatingAvailability() {
-  const bool allowed = overlayFloatingAllowed();
-  const bool visible = allowed && m_overlayFloatingRequested;
-  if (m_overlayFloat) m_overlayFloat->setVisible(visible);
-  if (m_actFloat) {
-    m_actFloat->setVisible(allowed);
-    if (m_actFloat->isChecked() != visible) {
-      QSignalBlocker blocker(m_actFloat);
-      m_actFloat->setChecked(visible);
-    }
-  }
-  refreshOverlayFloatingActionIcon();
-}
-
-void MainWindow::setOverlayFloatingVisible(const bool visible) {
-  m_overlayFloatingRequested = visible;
-  const bool nextVisible = m_overlayFloatingRequested && overlayFloatingAllowed();
-  if (m_overlayFloat) m_overlayFloat->setVisible(nextVisible);
-  if (m_actFloat && m_actFloat->isChecked() != nextVisible) {
-    QSignalBlocker blocker(m_actFloat);
-    m_actFloat->setChecked(nextVisible);
-  }
-  refreshOverlayFloatingActionIcon();
-}
-
 void MainWindow::requestExit() {
   m_exitRequested = true;
-  const bool restoreFloat = m_overlayFloat && m_overlayFloat->isVisible();
+  const bool restoreFloat = m_overlayPresentation->floatingVisible();
 
   const auto finishExit = [this, restoreFloat]() {
     if (!close()) {
       m_exitRequested = false;
-      if (restoreFloat) setOverlayFloatingVisible(true);
+      if (restoreFloat) m_overlayPresentation->setFloatingVisible(true);
       return;
     }
     QCoreApplication::quit();
   };
 
   if (m_global && collectPending(m_global, m_diskTabs).count() > 0 && !isVisible()) {
-    if (m_overlayFloat) m_overlayFloat->hide();
+    m_overlayPresentation->hideFloatingTemporarily();
     raiseToFront();
     QTimer::singleShot(0, this, [this, finishExit]() { QTimer::singleShot(0, this, finishExit); });
     return;
   }
 
-  if (m_overlayFloat) m_overlayFloat->hide();
+  m_overlayPresentation->hideFloatingTemporarily();
   finishExit();
-}
-
-void MainWindow::applyNativeTitleBarTheme() {
-  const auto hwnd = reinterpret_cast<HWND>(winId());
-  if (!hwnd) return;
-
-  auto& tm = ThemeManager::instance();
-  const BOOL dark = tm.current() == Theme::Dark ? TRUE : FALSE;
-  setDwmAttr(hwnd, kDwmAttrUseImmersiveDarkMode, dark);
-
-  const int corner = kDwmCornerRound;
-  setDwmAttr(hwnd, kDwmAttrWindowCornerPreference, corner);
-
-  const QColor caption = tm.color(Sem::Surface);
-  const QColor text = tm.color(Sem::Fg);
-  const QColor border = tm.color(Sem::Border);
-  const COLORREF captionColor = colorRef(caption);
-  const COLORREF textColor = colorRef(text);
-  const COLORREF borderColor = colorRef(border);
-  setDwmAttr(hwnd, kDwmAttrBorderColor, borderColor);
-  setDwmAttr(hwnd, kDwmAttrCaptionColor, captionColor);
-  setDwmAttr(hwnd, kDwmAttrTextColor, textColor);
 }
 
 bool MainWindow::confirmDiscardPendingChanges() {
@@ -825,7 +542,7 @@ bool MainWindow::confirmDiscardPendingChanges() {
 }
 
 void MainWindow::closeEvent(QCloseEvent* ev) {
-  if (!m_exitRequested && m_overlayFloat && m_overlayFloat->isVisible()) {
+  if (!m_exitRequested && m_overlayPresentation->floatingVisible()) {
     hide();
     ev->ignore();
     return;
@@ -840,7 +557,7 @@ void MainWindow::closeEvent(QCloseEvent* ev) {
 
 void MainWindow::showEvent(QShowEvent* ev) {
   QMainWindow::showEvent(ev);
-  applyNativeTitleBarTheme();
+  m_chrome->applyTitleBarTheme();
   if (!m_firstShowDone) {
     m_firstShowDone = true;
     // 首次 show（此时窗口是全透明的）后立刻调度一次 rebuildUi——和"切主题 /
@@ -864,7 +581,7 @@ void MainWindow::refreshThemedUi() {
   // 纯图标按钮（语言 / 主题）：没有文字，图标要在按钮里居中，故用 AlignHCenter 渲染，
   // 不受工具栏那 6px 右侧透明边影响。
   constexpr Qt::Alignment kCenter = Qt::AlignHCenter | Qt::AlignVCenter;
-  refreshOverlayFloatingActionIcon();
+  m_overlayPresentation->refreshActionIcon();
   if (m_actLang) m_actLang->setIcon(tm.icon(":/icons/language.svg", kCenter));
   if (m_actTheme) {
     // 当前 dark → 显示太阳图标（点了切到 light）；当前 light → 显示月亮。
@@ -886,120 +603,7 @@ void MainWindow::refreshThemedUi() {
   }
   // hoverHint 默认 HTML 含 inline color，主题切换后重新生成；处于 hover
   // transient 时 TransientLabel 内部会自动延后到回基线时再刷。
-  if (m_hoverCtl) m_hoverCtl->setBaseline(systemInfoHtml());
-}
-
-void MainWindow::refreshOverlayFloatingActionIcon() {
-  if (!m_actFloat) return;
-  constexpr Qt::Alignment kCenter = Qt::AlignHCenter | Qt::AlignVCenter;
-  const bool visible = m_overlayFloat && m_overlayFloat->isVisible();
-  m_actFloat->setIcon(ThemeManager::instance().icon(visible ? ":/icons/overlay_float_on.svg" : ":/icons/overlay_float_off.svg", kCenter));
-}
-
-bool MainWindow::eventFilter(QObject* obj, QEvent* ev) {
-  if (ev->type() == QEvent::MouseButtonPress && isToolbarDragTarget(obj)) {
-    auto* me = static_cast<QMouseEvent*>(ev);
-    if (me->button() == Qt::LeftButton) {
-      if (QWindow* wh = windowHandle(); wh && wh->startSystemMove()) return true;
-      ReleaseCapture();
-      SendMessageW(reinterpret_cast<HWND>(winId()), WM_NCLBUTTONDOWN, HTCAPTION, 0);
-      return true;
-    }
-  }
-
-  // hover 到任意带 hoverHint 属性（或 toolTip）的控件，就把说明塞到右侧面板的
-  // 提示框里；离开时延迟回基线。走 qApp 级事件过滤器才能捕获所有子控件。
-  // restoreAfter 用 120ms：光标在相邻控件之间移动时下一次 enter 会立刻 show，
-  // 取消未到期的恢复，避免文字闪烁。
-  constexpr int kHoverRestoreMs = 120;
-  if (!m_hoverCtl) return QMainWindow::eventFilter(obj, ev);
-  // QDialog 子控件原样放行——对话框走原生 QToolTip 矩形气泡，不复用主窗口
-  // 右下角的 hint 面板：模态对话框遮住面板的话面板里的字根本看不到，且每个
-  // 对话框上下文独立、和主窗口的 baseline 没关系。RegistryPickerDialog 的
-  // Name/Type/Data cell 就指望这条放行让原生 tooltip 弹出来。
-  // 走 QObject::parent() 链而不是 window()——QMenu 之类的 popup 自身是 top-level，
-  // 但它们的 QObject 父链仍指回触发它们的 widget，能正确判断是不是属于对话框。
-  for (QObject* p = obj; p; p = p->parent()) {
-    if (qobject_cast<QDialog*>(p)) return QMainWindow::eventFilter(obj, ev);
-  }
-  const auto type = ev->type();
-  // 屏蔽原生 tooltip 气泡：截停 ToolTip 事件，说明文字只在右下角面板里。
-  if (type == QEvent::ToolTip) return true;
-
-  // QMenu 上的 QAction 不是 QWidget——下面的 parent-toolTip 链拿不到它；落到
-  // QMenu 自身上又只会走出菜单按钮的 toolTip（不是当前悬停的那一项）。这里专门
-  // 拦菜单的悬停事件：用 menu->activeAction() 反查当前选中项，把它显式设置过的
-  // toolTip 推到提示框。判定"显式设置"= toolTip() != text()——Qt 默认把未设置的
-  // toolTip 回落到 text()，相同时把同一句话再推一次没有价值。
-  if (auto* menu = qobject_cast<QMenu*>(obj)) {
-    if (type == QEvent::MouseMove || type == QEvent::HoverMove || type == QEvent::Enter || type == QEvent::HoverEnter) {
-      const QAction* act = menu->activeAction();
-      const QString tip = act ? act->toolTip() : QString();
-      if (act && !tip.isEmpty() && tip != act->text()) {
-        m_hoverCtl->show(tip);
-      } else {
-        // 当前项没有专门 toolTip：让面板回到默认（用 delay 抗闪烁）。
-        m_hoverCtl->restoreAfter(kHoverRestoreMs);
-      }
-    } else if (type == QEvent::Leave || type == QEvent::HoverLeave || type == QEvent::Hide) {
-      m_hoverCtl->restoreAfter(kHoverRestoreMs);
-    }
-    return QMainWindow::eventFilter(obj, ev);
-  }
-
-  if (type == QEvent::Enter || type == QEvent::HoverEnter || type == QEvent::MouseMove || type == QEvent::HoverMove) {
-    auto* w = qobject_cast<QWidget*>(obj);
-    if (!w) return QMainWindow::eventFilter(obj, ev);
-    // QTabBar 需要按坐标查出当前悬停在哪个 tab 上，再取对应的 tooltip。
-    if (auto* bar = qobject_cast<QTabBar*>(w)) {
-      QPoint pos;
-      if (auto* me = dynamic_cast<QMouseEvent*>(ev))
-        pos = me->pos();
-      else if (auto* he = dynamic_cast<QHoverEvent*>(ev))
-        pos = he->position().toPoint();
-      else
-        pos = bar->mapFromGlobal(QCursor::pos());
-      const int idx = bar->tabAt(pos);
-      if (idx >= 0) {
-        const QString tip = bar->tabToolTip(idx);
-        if (!tip.isEmpty()) {
-          m_hoverCtl->show(tip);
-          return QMainWindow::eventFilter(obj, ev);
-        }
-      }
-    }
-    // QListWidget / QTableWidget / QTreeWidget 的 item tooltip 存在
-    // QListWidgetItem / QTableWidgetItem 上，view 自身的 toolTip() 是空的；
-    // 走下方通用的 parent 链拿不到。事件落在 viewport 上（hover/move 都是），
-    // 这里按命中坐标反查 index，把 Qt::ToolTipRole 推到提示框。命中空白或
-    // item 没设 tooltip 时不 return，落到 parent 链兜底（让 view 自身的
-    // toolTip——若有——仍能展示）。
-    if (auto* view = qobject_cast<QAbstractItemView*>(w->parentWidget()); view && view->viewport() == w) {
-      QPoint pos;
-      if (auto* me = dynamic_cast<QMouseEvent*>(ev))
-        pos = me->pos();
-      else if (auto* he = dynamic_cast<QHoverEvent*>(ev))
-        pos = he->position().toPoint();
-      else
-        pos = w->mapFromGlobal(QCursor::pos());
-      const QModelIndex idx = view->indexAt(pos);
-      if (idx.isValid()) {
-        const QString tip = idx.data(Qt::ToolTipRole).toString();
-        if (!tip.isEmpty()) {
-          m_hoverCtl->show(tip);
-          return QMainWindow::eventFilter(obj, ev);
-        }
-      }
-    }
-    QWidget* cur = w;
-    while (cur && cur->toolTip().isEmpty() && cur != this) cur = cur->parentWidget();
-    if (cur && !cur->toolTip().isEmpty()) {
-      m_hoverCtl->show(cur->toolTip());
-    }
-  } else if (type == QEvent::Leave || type == QEvent::HoverLeave) {
-    m_hoverCtl->restoreAfter(kHoverRestoreMs);
-  }
-  return QMainWindow::eventFilter(obj, ev);
+  if (m_hoverCtl) m_hoverCtl->setBaseline(SystemInfoProvider::summaryHtml());
 }
 
 void MainWindow::updatePendingSummary() {
@@ -1119,7 +723,6 @@ void MainWindow::refresh() {
   // 各处按需分别判断，不合并成单一标志。
   const bool uwfAvailable = m_snapshot.uwfAvailable;
   const bool elevated = m_snapshot.elevated;
-  m_overlayFloatingAllowed = uwfAvailable && m_snapshot.current.filter.enabled;
 
   // 工具栏：UWF 不可用时除"日志 / 关于 / 主题 / 语言"外整体禁用。其中"刷新"
   // 只是重新读取、不写入 UWF，故未提权也允许点——只要 UWF 可读就放开；
@@ -1128,34 +731,17 @@ void MainWindow::refresh() {
   for (QAction* a : {m_actImport, m_actPlan, m_actShutdown, m_actRestart})
     if (a) a->setEnabled(uwfAvailable && elevated);
 
-  // Usage 定时器只跟随 UWF 可读性——未提权不影响读取占用，故不停表；
-  // 仅在 UWF 不可用时停掉，避免每 5s 一次徒劳的 UWF_Overlay 读取。
-  if (m_usageTimer) {
-    if (uwfAvailable)
-      m_usageTimer->start();
-    else
-      m_usageTimer->stop();
-  }
-
   rebuildTabs(disks);
   if (uwfAvailable) {
     m_global->setData(m_snapshot.current, m_snapshot.next, m_snapshot.runtime);
-    if (m_overlayFloat) {
-      m_overlayFloat->setFilterEnabled(m_snapshot.current.filter.enabled);
-      m_overlayFloat->setOverlayConfig(m_snapshot.current.overlay);
-      m_overlayFloat->updateUsage(m_snapshot.runtime);
-    }
     // UWF 可读但未提权：补一条红色"需要管理员权限"横幅。UWF 不可用时不补——
     // 那条不可用横幅优先级更高，已由下面的 setUnavailable 占据同一横幅。
     if (!elevated) m_global->showElevationRequired();
     if (!volumeErr.empty()) m_global->showVolumeInfoWarning(QString::fromStdString(volumeErr));
   } else {
     m_global->setUnavailable(snapshotErr.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(snapshotErr));
-    if (m_overlayFloat) {
-      m_overlayFloat->setUnavailable(snapshotErr.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(snapshotErr));
-    }
   }
-  syncOverlayFloatingAvailability();
+  m_overlayPresentation->applySnapshot(m_snapshot);
   // setData 会把滚动区控件全部恢复 enabled——未提权时随即再统一置灰一次。
   m_global->setControlsEnabled(uwfAvailable && elevated);
   for (auto& t : m_diskTabs)
@@ -1182,7 +768,7 @@ void MainWindow::showPlan() {
   // 再 refresh，避免在回调里递归进 refresh 的弹窗 / WMI 读。
   ApplyPlanDialog dlg(m_global, m_diskTabs, m_snapshot, m_writeSession, this);
   connect(&dlg, &ApplyPlanDialog::applied, this, &MainWindow::refresh, Qt::QueuedConnection);
-  connect(&dlg, &ApplyPlanDialog::safeRestartRequested, this, &MainWindow::safeRestart);
+  connect(&dlg, &ApplyPlanDialog::safeRestartRequested, m_power, &PowerController::safeRestart);
   dlg.exec();
 }
 
@@ -1200,36 +786,6 @@ void MainWindow::showAbout() {
 void MainWindow::showLogs() {
   LogViewerDialog dlg(this);
   dlg.exec();
-}
-
-void MainWindow::safeShutdown() {
-  if (!confirm(this, I18n::tr("Safe shutdown"), I18n::tr("The system will shut down safely.\nUncommitted changes in this session will be lost.\n\nContinue?")))
-    return;
-
-  std::string err;
-  auto row = m_filter.read(&err);
-  if (!row) {
-    warning(this, I18n::tr("Safe shutdown failed"), I18n::tr("Failed to read filter state: %1").arg(QString::fromStdString(err)));
-    return;
-  }
-  if (const auto r = m_filter.shutdownSystem(*row); !r.ok) {
-    warning(this, I18n::tr("Safe shutdown failed"), I18n::tr("Shutdown failed: %1").arg(QString::fromStdString(r.detail)));
-  }
-}
-
-void MainWindow::safeRestart() {
-  if (!confirm(this, I18n::tr("Safe restart"), I18n::tr("The system will restart safely.\nUncommitted changes in this session will be lost.\n\nContinue?")))
-    return;
-
-  std::string err;
-  auto row = m_filter.read(&err);
-  if (!row) {
-    warning(this, I18n::tr("Safe restart failed"), I18n::tr("Failed to read filter state: %1").arg(QString::fromStdString(err)));
-    return;
-  }
-  if (const auto r = m_filter.restartSystem(*row); !r.ok) {
-    warning(this, I18n::tr("Safe restart failed"), I18n::tr("Restart failed: %1").arg(QString::fromStdString(r.detail)));
-  }
 }
 
 // 4 个 commit 槽自身只是 dispatcher 的代理——拿到 DiskTab / ExclusionListWidget /

@@ -41,9 +41,8 @@ class OverlayFloatingWidget : public QWidget {
  public:
   explicit OverlayFloatingWidget(QWidget* parent = nullptr);
 
-  void setOverlayConfig(const core::OverlayConfig& cfg);
   void updateUsage(const core::OverlayRuntime& runtime);
-  void setUnavailable(const QString& reason);
+  void setUnavailable();
   void setFilterEnabled(bool enabled);
 
  signals:

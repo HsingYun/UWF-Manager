@@ -59,11 +59,11 @@ constexpr int kRadius = 8;
 // 一致。固定使用一套低存在感的中性深色 HUD 配色：底色保留约 64% 不透明
 // 度，在压住复杂背景的同时仍能透出背后内容；深色背景上由浅色细边框维持
 // 轮廓，无需为日 / 夜主题维护两套值。
-const QColor kSurfaceColor(0x17, 0x1A, 0x20, 163);       // 64%
-const QColor kTextColor(0xF5, 0xF7, 0xFA, 240);          // 94%
-const QColor kOuterBorderColor(0xFF, 0xFF, 0xFF, 46);    // 18%
-const QColor kHandleFillColor(0xFF, 0xFF, 0xFF, 26);     // 10%
-const QColor kHandleIconColor(0xFF, 0xFF, 0xFF, 173);    // 68%
+const QColor kSurfaceColor(0x17, 0x1A, 0x20, 163);     // 64%
+const QColor kTextColor(0xF5, 0xF7, 0xFA, 240);        // 94%
+const QColor kOuterBorderColor(0xFF, 0xFF, 0xFF, 46);  // 18%
+const QColor kHandleFillColor(0xFF, 0xFF, 0xFF, 26);   // 10%
+const QColor kHandleIconColor(0xFF, 0xFF, 0xFF, 173);  // 68%
 
 QString formatUsageText(const uint32_t usedMb, const uint32_t totalMb) {
   const double pct = totalMb == 0 ? 0.0 : static_cast<double>(usedMb) * 100.0 / static_cast<double>(totalMb);
@@ -252,11 +252,6 @@ void OverlayFloatingWidget::popupContextMenuAt(const QPoint& globalPos) {
   }
 }
 
-void OverlayFloatingWidget::setOverlayConfig(const core::OverlayConfig& cfg) {
-  (void)cfg;
-  refreshText();
-}
-
 void OverlayFloatingWidget::updateUsage(const core::OverlayRuntime& runtime) {
   m_runtime = runtime;
   m_hasRuntime = true;
@@ -264,8 +259,7 @@ void OverlayFloatingWidget::updateUsage(const core::OverlayRuntime& runtime) {
   refreshText();
 }
 
-void OverlayFloatingWidget::setUnavailable(const QString& reason) {
-  (void)reason;
+void OverlayFloatingWidget::setUnavailable() {
   m_unavailable = true;
   m_hasRuntime = false;
   refreshText();
