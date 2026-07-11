@@ -42,12 +42,7 @@ QString windowsVersionText() {
   }
 
   if (version.major == 0) return head;
-  return QString("%1 · %2.%3.%4.%5")
-      .arg(head)
-      .arg(version.major)
-      .arg(version.minor)
-      .arg(version.build)
-      .arg(version.revision);
+  return QString("%1 · %2.%3.%4.%5").arg(head).arg(version.major).arg(version.minor).arg(version.build).arg(version.revision);
 }
 
 QString memoryCapacityText(const std::uint64_t bytes) {
@@ -60,7 +55,7 @@ QString memoryCapacityText(const std::uint64_t bytes) {
 }
 
 template <typename Value>
-Value commonMemoryValue(const std::vector<PhysicalMemoryModuleInfo>& modules, Value PhysicalMemoryModuleInfo::*member) {
+Value commonMemoryValue(const std::vector<PhysicalMemoryModuleInfo>& modules, Value PhysicalMemoryModuleInfo::* member) {
   if (modules.empty()) return {};
   const Value value = modules.front().*member;
   if (value == Value{}) return {};

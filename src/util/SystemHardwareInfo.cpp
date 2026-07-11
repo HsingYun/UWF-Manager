@@ -56,9 +56,7 @@ class ComPtr final {
   T* m_ptr = nullptr;
 };
 
-std::string cpuModel() {
-  return regkey::readString(R"(HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0)", "ProcessorNameString");
-}
+std::string cpuModel() { return regkey::readString(R"(HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0)", "ProcessorNameString"); }
 
 std::wstring primaryDisplayDeviceName() {
   const HMONITOR monitor = MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY);
@@ -110,8 +108,7 @@ GraphicsAdapterInfo graphicsAdapter() {
     if (FAILED(enumerateResult)) break;
 
     DXGI_ADAPTER_DESC1 description{};
-    if (FAILED(adapter->GetDesc1(&description)) ||
-        (description.Flags & static_cast<UINT>(DXGI_ADAPTER_FLAG_SOFTWARE | DXGI_ADAPTER_FLAG_REMOTE)) != 0) {
+    if (FAILED(adapter->GetDesc1(&description)) || (description.Flags & static_cast<UINT>(DXGI_ADAPTER_FLAG_SOFTWARE | DXGI_ADAPTER_FLAG_REMOTE)) != 0) {
       continue;
     }
 

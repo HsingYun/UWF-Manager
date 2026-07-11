@@ -50,9 +50,7 @@ bool editionSupported(const std::string& editionId) {
   return false;
 }
 
-bool windowsFamilySupported(const WindowsFamily family) {
-  return family == WindowsFamily::Windows10 || family == WindowsFamily::Windows11;
-}
+bool windowsFamilySupported(const WindowsFamily family) { return family == WindowsFamily::Windows10 || family == WindowsFamily::Windows11; }
 
 }  // namespace
 
