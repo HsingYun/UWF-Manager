@@ -18,15 +18,14 @@
 
 #include <windows.h>
 
-#include <charconv>
 #include <filesystem>
 #include <string>
 #include <string_view>
 
 #include "../core/Config.h"
 #include "../util/Log.h"
-#include "../util/RegistryKey.h"
 #include "../util/StringUtil.h"
+#include "../util/WindowsVersion.h"
 
 namespace uwf {
 
@@ -42,19 +41,6 @@ std::string envVar(const wchar_t* name) {
   return wideToUtf8(buf);
 }
 
-// Windows 11 上注册表的 ProductName 仍写着 "Windows 10"——微软从未更新过这个
-// 值。用 CurrentBuildNumber 兜底：>= 22000 即 Windows 11，把名称里的
-// "Windows 10" 改写成 "Windows 11"；解析不出构建号或非 Win11 时原样返回。
-std::string correctWin11Name(std::string productName) {
-  const std::string build = regkey::readString(config::kRegPathWindowsCurrentVersion, "CurrentBuildNumber");
-  int buildNum = 0;
-  std::from_chars(build.data(), build.data() + build.size(), buildNum);
-  if (buildNum < config::kWindows11MinBuildNumber) return productName;
-  const auto pos = productName.find(config::kProductNameWin10Token);
-  if (pos != std::string::npos) productName.replace(pos, config::kProductNameWin10Token.size(), config::kProductNameWin11Token);
-  return productName;
-}
-
 bool editionSupported(const std::string& editionId) {
   const std::string e = toLowerAscii(editionId);
   if (e.empty()) return false;
@@ -62,6 +48,10 @@ bool editionSupported(const std::string& editionId) {
     if (e.find(keyword) != std::string::npos) return true;
   }
   return false;
+}
+
+bool windowsFamilySupported(const WindowsFamily family) {
+  return family == WindowsFamily::Windows10 || family == WindowsFamily::Windows11;
 }
 
 }  // namespace
@@ -95,11 +85,12 @@ std::string uwfmgrPath() {
 
 SystemCheckResult runSystemChecks() {
   SystemCheckResult r;
-  r.editionId = regkey::readString(config::kRegPathWindowsCurrentVersion, "EditionID");
-  r.productName = correctWin11Name(regkey::readString(config::kRegPathWindowsCurrentVersion, "ProductName"));
+  const WindowsVersionInfo& version = windowsVersionInfo();
+  r.editionId = version.editionId;
+  r.productName = version.productName;
 
-  if (!editionSupported(r.editionId)) {
-    r.status = CheckStatus::UnsupportedEdition;
+  if (!windowsFamilySupported(version.family) || !editionSupported(r.editionId)) {
+    r.status = CheckStatus::UnsupportedSystem;
     return r;
   }
   // uwfmgr.exe 的存在性只作为参考记录一条日志——本程序经 WMI 操作 UWF，

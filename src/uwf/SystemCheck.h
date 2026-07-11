@@ -25,14 +25,14 @@
 namespace uwf {
 
 enum class CheckStatus {
-  Ok,                  // 一切就绪
-  UnsupportedEdition,  // 不是 Enterprise / Education / IoT Enterprise
+  Ok,                 // Windows 10/11 客户端且 Edition 受 UWF 支持
+  UnsupportedSystem,  // 系统家族或 Edition 不在支持范围
 };
 
 struct SystemCheckResult {
   CheckStatus status = CheckStatus::Ok;
-  std::string editionId;    // 读自注册表 EditionID，比如 "Enterprise"
-  std::string productName;  // 读自注册表 ProductName，比如 "Windows 11 Enterprise"
+  std::string editionId;    // 注册表 EditionID，比如 "Enterprise"
+  std::string productName;  // 已按真实系统家族修正的展示名
 };
 
 SystemCheckResult runSystemChecks();

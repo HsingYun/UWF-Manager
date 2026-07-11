@@ -49,8 +49,8 @@ inline constexpr const char* kWmiNamespaceCimv2 = "root\\cimv2";
 
 // ── Windows 版本与版本号 ────────────────────────────────────────────────────
 
-// Windows 11 起 CurrentBuildNumber >= 22000；Win10 / Win11 共享 Major=10，
-// 只能靠 build 号区分。
+// Windows 11 正式客户端从 Build 22000 起；Win10 / Win11 共享 Major=10，
+// 对 VER_NT_WORKSTATION 系统只能靠 RtlGetVersion 返回的 Build 区分。
 inline constexpr int kWindows11MinBuildNumber = 22000;
 
 // Windows 11 的注册表 ProductName 至今仍写作 "Windows 10 …"——微软从未更新，
@@ -58,8 +58,8 @@ inline constexpr int kWindows11MinBuildNumber = 22000;
 inline constexpr std::string_view kProductNameWin10Token = "Windows 10";
 inline constexpr std::string_view kProductNameWin11Token = "Windows 11";
 
-// 注册表中 OS 版本信息（ProductName / EditionID / CurrentBuildNumber / UBR）
-// 所在项的完整键路径（含 hive）。
+// 注册表中 OS 展示信息（ProductName / EditionID / DisplayVersion / UBR）所在项
+// 的完整键路径（含 hive）。系统家族与 Build 不从这里判断。
 inline constexpr std::string_view kRegPathWindowsCurrentVersion = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
 
 // 支持 UWF 的 Windows 版本——EditionID 里只要（不分大小写）包含其中任一关键字

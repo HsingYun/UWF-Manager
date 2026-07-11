@@ -45,6 +45,8 @@ set(UWF_SOURCES
         src/util/ByteFormat.cpp
         src/util/PathMatch.h
         src/util/PathMatch.cpp
+        src/util/WindowsVersion.h
+        src/util/WindowsVersion.cpp
         src/core/Config.h
         src/core/UwfModel.h
         src/core/UwfModel.cpp

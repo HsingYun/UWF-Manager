@@ -19,54 +19,37 @@
 #include <windows.h>
 
 #include <QStringList>
-#include <algorithm>
 #include <cstdint>
-#include <string_view>
 
-#include "../core/Config.h"
 #include "../util/RegistryKey.h"
+#include "../util/WindowsVersion.h"
 #include "ThemeManager.h"
 
 namespace uwf::ui {
 
 namespace {
 
-// RtlGetVersion 是唯一一个在 Windows 8.1+ 上仍返回真实版本号（而不是被
-// 应用兼容性"撒谎"成 Windows 8）的接口。动态加载避免对 ntdll 的直接 link。
 QString windowsVersionText() {
-  using Fn = LONG(WINAPI*)(OSVERSIONINFOW*);
-  auto fn = reinterpret_cast<Fn>(GetProcAddress(GetModuleHandleW(L"ntdll.dll"), "RtlGetVersion"));
-  OSVERSIONINFOW v{};
-  v.dwOSVersionInfoSize = sizeof(v);
-  if (!fn || fn(&v) != 0) return QStringLiteral("Windows");
+  const WindowsVersionInfo& version = windowsVersionInfo();
+  QString head = QString::fromStdString(version.productName).trimmed();
+  if (head.isEmpty()) head = QStringLiteral("Windows");
 
-  constexpr std::string_view kCur = config::kRegPathWindowsCurrentVersion;
-  const auto ubr = regkey::readDword(kCur, "UBR");
-  const QString productName = QString::fromStdString(regkey::readString(kCur, "ProductName")).trimmed();
-  const QString editionId = QString::fromStdString(regkey::readString(kCur, "EditionID")).trimmed();
-
-  QString family = QStringLiteral("Windows");
-  if (v.dwMajorVersion == 10) {
-    family = v.dwBuildNumber >= static_cast<DWORD>(config::kWindows11MinBuildNumber) ? QStringLiteral("Windows 11") : QStringLiteral("Windows 10");
+  if (version.longTermServicing && !head.contains("LTSC", Qt::CaseInsensitive) && !head.contains("LTSB", Qt::CaseInsensitive)) {
+    head += QStringLiteral(" LTSC");
+  }
+  const QString displayVersion = QString::fromStdString(version.displayVersion).trimmed();
+  if (!displayVersion.isEmpty() && !head.contains(displayVersion, Qt::CaseInsensitive)) {
+    head += ' ';
+    head += displayVersion;
   }
 
-  QString edition = productName;
-  for (const QString& p : {QStringLiteral("Windows 11 "), QStringLiteral("Windows 10 "), QStringLiteral("Windows ")}) {
-    if (edition.startsWith(p, Qt::CaseInsensitive)) {
-      edition = edition.mid(p.size()).trimmed();
-      break;
-    }
-  }
-
-  const QString ed = editionId.toLower();
-  const bool isLtsc =
-      std::ranges::any_of(config::kLtscEditionIds, [&ed](std::string_view id) { return ed == QLatin1String(id.data(), static_cast<qsizetype>(id.size())); });
-  if (isLtsc && !edition.contains("LTSC", Qt::CaseInsensitive) && !edition.contains("LTSB", Qt::CaseInsensitive)) {
-    edition = edition.isEmpty() ? QStringLiteral("LTSC") : (edition + QStringLiteral(" LTSC"));
-  }
-
-  const QString head = edition.isEmpty() ? family : (family + ' ' + edition);
-  return QString("%1 · %2.%3.%4.%5").arg(head).arg(v.dwMajorVersion).arg(v.dwMinorVersion).arg(v.dwBuildNumber).arg(ubr);
+  if (version.major == 0) return head;
+  return QString("%1 · %2.%3.%4.%5")
+      .arg(head)
+      .arg(version.major)
+      .arg(version.minor)
+      .arg(version.build)
+      .arg(version.revision);
 }
 
 QString cpuModelText() {

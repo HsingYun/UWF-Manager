@@ -360,7 +360,7 @@ void MainWindow::buildUi() {
   // 后也连带重新灌入。
   if (m_compatibilityMode) {
     m_global->setCompatibilityNotice(
-        I18n::tr("The current system \"%1\" (%2) is not a recognized supported edition. UWF Manager is running in compatibility mode "
+        I18n::tr("The current system \"%1\" (%2) is not a recognized supported Windows 10/11 edition. UWF Manager is running in compatibility mode "
                  "and some features may be unavailable.")
             .arg(m_osProductName, m_osEditionId));
   }

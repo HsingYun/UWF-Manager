@@ -31,8 +31,8 @@
 
     <!-- main.cpp: 兼容模式提示 -->
     <message>
-        <source>The current system &quot;%1&quot; (%2) is not a recognized supported edition. UWF Manager is running in compatibility mode and some features may be unavailable.</source>
-        <translation>当前系统「%1」（%2）不是已知的受支持版本，UWF 管理器正以兼容模式运行，部分功能可能不可用。</translation>
+        <source>The current system &quot;%1&quot; (%2) is not a recognized supported Windows 10/11 edition. UWF Manager is running in compatibility mode and some features may be unavailable.</source>
+        <translation>当前系统「%1」（%2）不是已知的受支持 Windows 10/11 版本，UWF 管理器正以兼容模式运行，部分功能可能不可用。</translation>
     </message>
 
     <!-- StatusPanel -->

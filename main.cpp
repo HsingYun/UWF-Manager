@@ -73,8 +73,9 @@ uwf::SystemCheckResult checkRuntimeEnvironment() {
   // 不会跟着变（详见 MainWindow 构造函数注释）。
   const auto check = uwf::runSystemChecks();
   switch (check.status) {
-    case uwf::CheckStatus::UnsupportedEdition:
-      UWF_LOG_W("main") << "unsupported edition; running in compatibility mode; product=" << check.productName << " edition=" << check.editionId;
+    case uwf::CheckStatus::UnsupportedSystem:
+      UWF_LOG_W("main") << "unsupported Windows family or edition; running in compatibility mode; product=" << check.productName
+                        << " edition=" << check.editionId;
       break;
     case uwf::CheckStatus::Ok:
       UWF_LOG_I("main") << "system check ok: product=" << check.productName << " edition=" << check.editionId;
@@ -91,7 +92,7 @@ uwf::SystemCheckResult checkRuntimeEnvironment() {
 
 int runMainWindow(QApplication& app, uwf::app::SecureSingleInstance& singleInstance,
                   const uwf::SystemCheckResult& check) {
-  uwf::ui::MainWindow w(check.status == uwf::CheckStatus::UnsupportedEdition, QString::fromStdString(check.productName),
+  uwf::ui::MainWindow w(check.status == uwf::CheckStatus::UnsupportedSystem, QString::fromStdString(check.productName),
                         QString::fromStdString(check.editionId));
 
   QObject::connect(&singleInstance, &uwf::app::SecureSingleInstance::activationRequested, &w, &uwf::ui::MainWindow::raiseToFront);
