@@ -32,7 +32,6 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
-#include <QWindow>
 
 #include "ThemeManager.h"
 
@@ -137,9 +136,13 @@ bool WindowChromeController::eventFilter(QObject* obj, QEvent* ev) {
   if (ev->type() == QEvent::MouseButtonPress && isToolbarDragTarget(obj)) {
     auto* me = static_cast<QMouseEvent*>(ev);
     if (me->button() == Qt::LeftButton) {
-      if (QWindow* handle = m_window->windowHandle(); handle && handle->startSystemMove()) return true;
+      const QPoint globalPos = me->globalPosition().toPoint();
+      // startSystemMove() leaves Qt's toolbar hover tracking stale after a
+      // click on Windows.  Let the native caption loop own this interaction;
+      // unlike a delayed startSystemMove(), it also preserves drag-to-move.
       ReleaseCapture();
-      SendMessageW(reinterpret_cast<HWND>(m_window->winId()), WM_NCLBUTTONDOWN, HTCAPTION, 0);
+      SendMessageW(reinterpret_cast<HWND>(m_window->winId()), WM_NCLBUTTONDOWN, HTCAPTION,
+                   MAKELPARAM(globalPos.x(), globalPos.y()));
       return true;
     }
   }
