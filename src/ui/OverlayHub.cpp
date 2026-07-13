@@ -65,6 +65,8 @@ void OverlayHub::installView(std::unique_ptr<OverlayHubView> view) {
 
   connect(rawView, &OverlayHubView::showMainWindowRequested, this, &OverlayHub::showMainWindowRequested);
   connect(rawView, &OverlayHubView::hideHubRequested, this, [this]() { setRequestedVisible(false); });
+  connect(rawView, &OverlayHubView::safeShutdownRequested, this, &OverlayHub::safeShutdownRequested);
+  connect(rawView, &OverlayHubView::safeRestartRequested, this, &OverlayHub::safeRestartRequested);
   connect(rawView, &OverlayHubView::exitApplicationRequested, this, &OverlayHub::exitApplicationRequested);
   connect(rawView, &OverlayHubView::displayStateChanged, this, [this]() {
     if (m_reconciling)

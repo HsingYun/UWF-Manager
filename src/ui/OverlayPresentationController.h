@@ -56,6 +56,8 @@ class OverlayPresentationController : public QObject {
 
  signals:
   void activateMainWindowRequested();
+  void safeShutdownRequested();
+  void safeRestartRequested();
   void exitApplicationRequested();
 
  private:

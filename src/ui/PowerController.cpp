@@ -20,19 +20,17 @@
 
 #include "Dialogs.h"
 #include "I18n.h"
+#include "PowerConfirmDialog.h"
 
 namespace uwf::ui {
 
-using dialogs::confirm;
 using dialogs::warning;
 
 PowerController::PowerController(WmiSession& session, QWidget* dialogParent, QObject* parent)
     : QObject(parent), m_dialogParent(dialogParent), m_filter(session) {}
 
 void PowerController::safeShutdown() {
-  if (!confirm(m_dialogParent, I18n::tr("Safe shutdown"),
-               I18n::tr("The system will shut down safely.\nUncommitted changes in this session will be lost.\n\nContinue?")))
-    return;
+  if (!confirmPowerAction(m_dialogParent, PowerAction::Shutdown)) return;
 
   std::string err;
   const auto row = m_filter.read(&err);
@@ -46,9 +44,7 @@ void PowerController::safeShutdown() {
 }
 
 void PowerController::safeRestart() {
-  if (!confirm(m_dialogParent, I18n::tr("Safe restart"),
-               I18n::tr("The system will restart safely.\nUncommitted changes in this session will be lost.\n\nContinue?")))
-    return;
+  if (!confirmPowerAction(m_dialogParent, PowerAction::Restart)) return;
 
   std::string err;
   const auto row = m_filter.read(&err);

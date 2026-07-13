@@ -864,6 +864,8 @@ class WindowsTaskbarIntegrationTests final : public QObject {
   void taskbarMouseTooltipAndContextMenuActions() {
     ProductionUi ui;
     QSignalSpy showSpy(&ui.hub, &OverlayHub::showMainWindowRequested);
+    QSignalSpy shutdownSpy(&ui.hub, &OverlayHub::safeShutdownRequested);
+    QSignalSpy restartSpy(&ui.hub, &OverlayHub::safeRestartRequested);
     QSignalSpy exitSpy(&ui.hub, &OverlayHub::exitApplicationRequested);
     ui.registerTaskbarFirst();
     QVERIFY(waitUntil([&ui]() { return ui.taskbarConfirmed(); }));
@@ -901,6 +903,16 @@ class WindowsTaskbarIntegrationTests final : public QObject {
     QVERIFY(waitUntil([]() { return visibleMenu() == nullptr; }));
 
     QVERIFY(openContextMenu(*ui.taskbarView));
+    QVERIFY(clickVisibleMenuAction(I18n::tr("Safe shutdown")));
+    QVERIFY(waitUntil([&shutdownSpy]() { return shutdownSpy.count() == 1; }));
+    QCOMPARE(shutdownSpy.count(), 1);
+
+    QVERIFY(openContextMenu(*ui.taskbarView));
+    QVERIFY(clickVisibleMenuAction(I18n::tr("Safe restart")));
+    QVERIFY(waitUntil([&restartSpy]() { return restartSpy.count() == 1; }));
+    QCOMPARE(restartSpy.count(), 1);
+
+    QVERIFY(openContextMenu(*ui.taskbarView));
     QVERIFY(clickVisibleMenuAction(I18n::tr("Exit application")));
     QVERIFY(waitUntil([&exitSpy]() { return exitSpy.count() == 1; }));
     QCOMPARE(exitSpy.count(), 1);
@@ -914,6 +926,8 @@ class WindowsTaskbarIntegrationTests final : public QObject {
   void floatingWidgetRealInteractionsAndDataBoundaries() {
     ProductionUi ui;
     QSignalSpy showSpy(&ui.hub, &OverlayHub::showMainWindowRequested);
+    QSignalSpy shutdownSpy(&ui.hub, &OverlayHub::safeShutdownRequested);
+    QSignalSpy restartSpy(&ui.hub, &OverlayHub::safeRestartRequested);
     QSignalSpy exitSpy(&ui.hub, &OverlayHub::exitApplicationRequested);
     ui.registerFloatingOnly();
     QVERIFY(waitUntil([&ui]() { return ui.floatingConfirmed(); }));
@@ -971,6 +985,18 @@ class WindowsTaskbarIntegrationTests final : public QObject {
     QVERIFY(nativeMouseClick(*handle, Qt::RightButton));
     QVERIFY(waitUntil([&clicked]() { return clicked; }, 2000));
     QCOMPARE(showSpy.count(), 2);
+
+    clicked = false;
+    scheduleFloatingMenuAction(I18n::tr("Safe shutdown"), clicked);
+    QVERIFY(nativeMouseClick(*handle, Qt::RightButton));
+    QVERIFY(waitUntil([&clicked]() { return clicked; }, 2000));
+    QCOMPARE(shutdownSpy.count(), 1);
+
+    clicked = false;
+    scheduleFloatingMenuAction(I18n::tr("Safe restart"), clicked);
+    QVERIFY(nativeMouseClick(*handle, Qt::RightButton));
+    QVERIFY(waitUntil([&clicked]() { return clicked; }, 2000));
+    QCOMPARE(restartSpy.count(), 1);
 
     clicked = false;
     scheduleFloatingMenuAction(I18n::tr("Exit application"), clicked);

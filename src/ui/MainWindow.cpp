@@ -108,6 +108,8 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
   connect(m_overlayPresentation, &OverlayPresentationController::activateMainWindowRequested, this, &MainWindow::raiseToFront);
   connect(m_overlayPresentation, &OverlayPresentationController::exitApplicationRequested, this, &MainWindow::requestExit);
   m_power = new PowerController(m_writeSession, this, this);
+  connect(m_overlayPresentation, &OverlayPresentationController::safeShutdownRequested, m_power, &PowerController::safeShutdown);
+  connect(m_overlayPresentation, &OverlayPresentationController::safeRestartRequested, m_power, &PowerController::safeRestart);
 
   // 4 个 commit 槽的实际工作都在 CommitDispatcher 里跑；提交期间暂停 Overlay
   // 控制器的 usage timer，避免并发读取 WMI。

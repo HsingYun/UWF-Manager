@@ -139,6 +139,8 @@ set(UWF_SOURCES
         src/ui/WindowChromeController.cpp
         src/ui/OverlayPresentationController.h
         src/ui/OverlayPresentationController.cpp
+        src/ui/PowerConfirmDialog.h
+        src/ui/PowerConfirmDialog.cpp
         src/ui/PowerController.h
         src/ui/PowerController.cpp
         src/ui/MarqueeHintBox.h

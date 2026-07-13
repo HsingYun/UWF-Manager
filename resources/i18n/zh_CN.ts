@@ -637,29 +637,19 @@ Canceled by user; %1 entries not processed.</source>
     <message><source>Message</source><translation>内容</translation></message>
 
     <!-- Safe shutdown / restart -->
-    <message>
-        <source>The system will shut down safely.
-Uncommitted changes in this session will be lost.
-
-Continue?</source>
-        <translation>即将安全关机。
-未提交的会话内修改将丢失。
-
-确定要继续吗？</translation>
-    </message>
+    <message><source>Confirm safe shutdown?</source><translation>确定要安全关机吗？</translation></message>
+    <message><source>Confirm safe restart?</source><translation>确定要安全重启吗？</translation></message>
+    <message><source>Shut down</source><translation>关机</translation></message>
+    <message><source>Restart</source><translation>重启</translation></message>
+    <message><source>The system will shut down safely through UWF.</source><translation>系统将通过 UWF 安全关机。</translation></message>
+    <message><source>The system will restart safely through UWF.</source><translation>系统将通过 UWF 安全重启。</translation></message>
+    <message><source>UWF protection</source><translation>UWF 保护</translation></message>
+    <message><source>This operation remains available even if the UWF overlay is full.</source><translation>即使 UWF 覆盖层已满，仍可安全执行此操作。</translation></message>
+    <message><source>Uncommitted changes will be lost</source><translation>尚未提交的更改将会丢失</translation></message>
+    <message><source>Before continuing, save your work and commit any changes that you want to keep permanently.</source><translation>继续前，请保存当前工作，并通过 UWF 提交需要永久保留的更改。</translation></message>
     <message><source>Safe shutdown failed</source><translation>安全关机失败</translation></message>
     <message><source>Failed to read filter state: %1</source><translation>读取筛选器状态失败：%1</translation></message>
     <message><source>Shutdown failed: %1</source><translation>关机失败：%1</translation></message>
-    <message>
-        <source>The system will restart safely.
-Uncommitted changes in this session will be lost.
-
-Continue?</source>
-        <translation>即将安全重启。
-未提交的会话内修改将丢失。
-
-确定要继续吗？</translation>
-    </message>
     <message><source>Safe restart failed</source><translation>安全重启失败</translation></message>
     <message><source>Restart failed: %1</source><translation>重启失败：%1</translation></message>
 

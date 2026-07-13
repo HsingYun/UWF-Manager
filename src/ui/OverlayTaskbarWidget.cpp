@@ -220,9 +220,14 @@ void OverlayTaskbarWidget::contextMenuEvent(QContextMenuEvent* ev) {
   QAction* const showMainAct = menu->addAction(I18n::tr("Show main window"));
   QAction* const hideHubAct = menu->addAction(I18n::tr("Hide overlay hub"));
   menu->addSeparator();
+  QAction* const shutdownAct = menu->addAction(I18n::tr("Safe shutdown"));
+  QAction* const restartAct = menu->addAction(I18n::tr("Safe restart"));
+  menu->addSeparator();
   QAction* const exitAct = menu->addAction(I18n::tr("Exit application"));
   connect(showMainAct, &QAction::triggered, this, &OverlayTaskbarWidget::showMainWindowRequested);
   connect(hideHubAct, &QAction::triggered, this, &OverlayTaskbarWidget::hideHubRequested);
+  connect(shutdownAct, &QAction::triggered, this, &OverlayTaskbarWidget::safeShutdownRequested);
+  connect(restartAct, &QAction::triggered, this, &OverlayTaskbarWidget::safeRestartRequested);
   connect(exitAct, &QAction::triggered, this, &OverlayTaskbarWidget::exitApplicationRequested);
   connect(menu, &QMenu::aboutToHide, this, [this, menu]() {
     if (m_contextMenu == menu) m_contextMenu.clear();

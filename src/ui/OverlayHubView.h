@@ -71,6 +71,8 @@ class OverlayHubView : public QWidget {
  signals:
   void showMainWindowRequested();
   void hideHubRequested();
+  void safeShutdownRequested();
+  void safeRestartRequested();
   void exitApplicationRequested();
   void displayStateChanged();
 

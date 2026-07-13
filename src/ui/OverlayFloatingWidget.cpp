@@ -243,6 +243,9 @@ void OverlayFloatingWidget::popupContextMenuAt(const QPoint& globalPos) {
   QAction* restorePositionAct = menu.addAction(I18n::tr("Restore default position"));
   QAction* hideHubAct = menu.addAction(I18n::tr("Hide overlay hub"));
   menu.addSeparator();
+  QAction* shutdownAct = menu.addAction(I18n::tr("Safe shutdown"));
+  QAction* restartAct = menu.addAction(I18n::tr("Safe restart"));
+  menu.addSeparator();
   QAction* exitAct = menu.addAction(I18n::tr("Exit application"));
   QAction* picked = menu.exec(globalPos);
   if (picked == showMainAct) {
@@ -251,6 +254,10 @@ void OverlayFloatingWidget::popupContextMenuAt(const QPoint& globalPos) {
     moveToDefaultPosition();
   } else if (picked == hideHubAct) {
     emit hideHubRequested();
+  } else if (picked == shutdownAct) {
+    emit safeShutdownRequested();
+  } else if (picked == restartAct) {
+    emit safeRestartRequested();
   } else if (picked == exitAct) {
     emit exitApplicationRequested();
   }

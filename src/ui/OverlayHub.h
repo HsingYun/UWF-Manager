@@ -49,6 +49,8 @@ class OverlayHub final : public QObject {
 
  signals:
   void showMainWindowRequested();
+  void safeShutdownRequested();
+  void safeRestartRequested();
   void exitApplicationRequested();
   void stateChanged();
 

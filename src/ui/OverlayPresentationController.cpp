@@ -38,6 +38,8 @@ OverlayPresentationController::OverlayPresentationController(WmiSession& session
       m_filter(session),
       m_overlay(session) {
   connect(m_hub, &OverlayHub::showMainWindowRequested, this, &OverlayPresentationController::activateMainWindowRequested);
+  connect(m_hub, &OverlayHub::safeShutdownRequested, this, &OverlayPresentationController::safeShutdownRequested);
+  connect(m_hub, &OverlayHub::safeRestartRequested, this, &OverlayPresentationController::safeRestartRequested);
   connect(m_hub, &OverlayHub::exitApplicationRequested, this, &OverlayPresentationController::exitApplicationRequested);
   connect(m_hub, &OverlayHub::stateChanged, this, &OverlayPresentationController::syncAvailability);
 
