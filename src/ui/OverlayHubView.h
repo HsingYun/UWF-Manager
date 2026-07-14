@@ -34,18 +34,32 @@ namespace uwf::ui {
 //   Confirmed ──用户关──► Withdrawing ─┬─ 重开 ─► Recovering → 再挂载
 //                                      └─ 完成 ─► Withdrawn ──重开──► Recovering
 //   * ──身份失败──► Failing ──Release/HostReleaseCompleted──► Unavailable ──重试──► Probing
+//   Probing/Activating ──进程能力不兼容──► Incompatible（进程生命周期内终态）
 //   Recovering ──Shell 瞬时失败──► 有限次排他重试 ──耗尽──► Failing（让出 fallback）
 //   Withdrawing/Failing 忽略 HostReleaseStarted（不打断清理），但必须接受
 //   HostReleaseCompleted（cleanup 升级为 HostInvalidated 时只发 Host 完成事件）。
 class OverlayHubView : public QWidget {
   Q_OBJECT
  public:
-  enum class DisplayState { Disabled, Withdrawn, Unavailable, Probing, Activating, Attaching, Refreshing, Withdrawing, Failing, Recovering, Confirmed };
-  enum class AttachResult { Prepared, Attached, TemporarilyUnavailable, ReleasePending, ReleaseBlocked, Failed };
+  enum class DisplayState {
+    Disabled,
+    Withdrawn,
+    Unavailable,
+    Incompatible,
+    Probing,
+    Activating,
+    Attaching,
+    Refreshing,
+    Withdrawing,
+    Failing,
+    Recovering,
+    Confirmed
+  };
+  enum class AttachResult { Prepared, Attached, Retained, TemporarilyUnavailable, Incompatible, ReleasePending, ReleaseBlocked, Failed };
   // Pending 仅用于首次展示尚未完成；Retained 表示已确认 View 的宿主身份仍然
-  // 有效，只是外部系统暂时无法确认其可见性；RefreshRequired 表示身份仍在、
-  // 只需原地重修。只有 Confirmed/Retained 能维持 Hub 的当前优先级，普通隐藏
-  // 和身份丢失必须返回 Invalid。
+  // 有效，只是外部系统暂时无法确认其可见性；RefreshRequired 表示身份仍在，
+  // 但必须进入 attach 事务重修或重新分类能力。只有 Confirmed/Retained 能维持
+  // Hub 的当前优先级，普通隐藏和身份丢失必须返回 Invalid。
   enum class VerificationResult { Confirmed, Pending, Retained, RefreshRequired, Invalid };
 
   explicit OverlayHubView(QWidget* parent = nullptr, Qt::WindowFlags flags = {});
@@ -182,6 +196,7 @@ class OverlayHubView : public QWidget {
   [[nodiscard]] static Transition probePresentation(DisplayState state, const Event& event);
   [[nodiscard]] static Transition refreshPresentation(DisplayState state, const Event& event);
   [[nodiscard]] static Transition disablePresentation(DisplayState state, const Event& event);
+  [[nodiscard]] static Transition withdrawFailingPresentation(DisplayState state, const Event& event);
   [[nodiscard]] static Transition enableFromWithdrawn(DisplayState state, const Event& event);
   [[nodiscard]] static Transition enableDuringWithdraw(DisplayState state, const Event& event);
   [[nodiscard]] static Transition verifyConfirmation(DisplayState state, const Event& event);

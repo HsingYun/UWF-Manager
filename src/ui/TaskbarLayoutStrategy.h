@@ -30,7 +30,9 @@ namespace uwf::ui {
 class TaskbarLayoutStrategy {
  public:
   enum class AttachReadiness { Ready, TemporarilyUnavailable, Unavailable };
-  enum class AttachResult { Attached, TemporarilyUnavailable, Invalid };
+  // Incompatible 表示当前进程缺少该策略所需的固定能力；Coordinator 可以继续
+  // 尝试低优先级策略，但上层不得把它当作 Shell 瞬态进行定时重试。
+  enum class AttachResult { Attached, TemporarilyUnavailable, Incompatible, Invalid };
   // Retained 只表示 attachment 身份仍有效但 Shell 正处于瞬时过渡；它不是
   // attach 失败，也不能用于掩盖本 View 自身的 Qt 可见性或 HWND 身份错误。
   enum class VerificationResult { Confirmed, Retained, RefreshRequired, Invalid };

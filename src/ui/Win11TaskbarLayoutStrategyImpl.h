@@ -49,6 +49,9 @@ struct Win11TaskbarLayoutStrategy::Impl {
   };
   std::optional<Attachment> attachment;
   bool hardResetRequired = false;
+  // 只有一次完整的 commit + visible finalize 成功后，才证明当前进程支持
+  // layered child。此后同一属性丢失属于可恢复的 HWND 状态损坏，而不是能力变化。
+  bool layeredChildCapabilityConfirmed = false;
   mutable TaskbarLayoutStrategy::VerificationResult lastDiagnosticResult = TaskbarLayoutStrategy::VerificationResult::Confirmed;
   mutable std::string lastDiagnosticReason;
 };

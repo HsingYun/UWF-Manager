@@ -71,11 +71,11 @@ TaskbarLayoutCoordinator::~TaskbarLayoutCoordinator() {
 }
 
 TaskbarLayoutCoordinator::AttachResult TaskbarLayoutCoordinator::prepareAttach(QWindow* const window, const QSize& logicalSize,
-                                                                               const VisibilityCommit& makeVisible, const VisibilityRollback& makeInvisible) {
-  if (!window) return AttachResult::Failed;
-  m_request = AttachRequest{window, logicalSize, makeVisible, makeInvisible};
+                                                                               const VisibilityCommit& makeVisible, const VisibilityRollback& makeInvisible,
+                                                                               const NativeWindowRecreate& recreateNativeWindow) {
+  if (!window || !recreateNativeWindow) return AttachResult::Failed;
   m_lastAttachResult = AttachResult::Failed;
-  postEvent(Event{EventType::AcquireRequested});
+  postEvent(Event{EventType::AcquireRequested, false, AttachRequest{window, logicalSize, makeVisible, makeInvisible, recreateNativeWindow}});
   return m_lastAttachResult;
 }
 
@@ -97,7 +97,7 @@ TaskbarLayoutCoordinator::DetachStatus TaskbarLayoutCoordinator::detach() {
 }
 
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::reduce(const State state, const Event& event) {
-  constexpr std::size_t stateCount = static_cast<std::size_t>(State::Detaching) + 1;
+  constexpr std::size_t stateCount = static_cast<std::size_t>(State::RecreatingAfterDetach) + 1;
   constexpr std::size_t eventCount = static_cast<std::size_t>(EventType::DetachCompleted) + 1;
   using Table = std::array<std::array<TransitionHandler, eventCount>, stateCount>;
   static const Table table = [] {
@@ -117,39 +117,92 @@ TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::reduce(const Stat
     set(State::Preparing, EventType::OperationPrepared, &TaskbarLayoutCoordinator::prepared);
     set(State::Preparing, EventType::OperationRetained, &TaskbarLayoutCoordinator::retained);
     set(State::Preparing, EventType::OperationTemporary, &TaskbarLayoutCoordinator::temporary);
+    set(State::Preparing, EventType::OperationIncompatible, &TaskbarLayoutCoordinator::incompatible);
     set(State::Preparing, EventType::OperationFailed, &TaskbarLayoutCoordinator::failed);
-    set(State::Preparing, EventType::OperationDestroyed, &TaskbarLayoutCoordinator::destroyed);
+    set(State::Preparing, EventType::OperationRecreatePrepare, &TaskbarLayoutCoordinator::recreateForPrepare);
+    set(State::Preparing, EventType::OperationRecreateFailure, &TaskbarLayoutCoordinator::recreateForFailure);
+    set(State::Preparing, EventType::OperationRecreateIncompatible, &TaskbarLayoutCoordinator::recreateForIncompatible);
     set(State::Preparing, EventType::OperationNeedsDetach, &TaskbarLayoutCoordinator::needsDetach);
+
+    set(State::RecreatingForPrepare, EventType::WindowRecreated, &TaskbarLayoutCoordinator::resumePrepare);
+    set(State::RecreatingForPrepare, EventType::WindowRecreationFailed, &TaskbarLayoutCoordinator::failWindowRecreation);
+
     set(State::Finalizing, EventType::OperationAttached, &TaskbarLayoutCoordinator::attached);
     set(State::Finalizing, EventType::OperationTemporary, &TaskbarLayoutCoordinator::temporary);
+    set(State::Finalizing, EventType::OperationIncompatible, &TaskbarLayoutCoordinator::incompatible);
     set(State::Finalizing, EventType::OperationFailed, &TaskbarLayoutCoordinator::failed);
-    set(State::Finalizing, EventType::OperationDestroyed, &TaskbarLayoutCoordinator::destroyed);
+    set(State::Finalizing, EventType::OperationRetryPrepare, &TaskbarLayoutCoordinator::retryPrepare);
+    set(State::Finalizing, EventType::OperationRecreateActivation, &TaskbarLayoutCoordinator::recreateForActivation);
+    set(State::Finalizing, EventType::OperationRecreateFailure, &TaskbarLayoutCoordinator::recreateForFailure);
+    set(State::Finalizing, EventType::OperationRecreateIncompatible, &TaskbarLayoutCoordinator::recreateForIncompatible);
     set(State::Finalizing, EventType::OperationNeedsDetach, &TaskbarLayoutCoordinator::needsDetach);
 
-    for (const State active : {State::Preparing, State::Prepared, State::Finalizing, State::Attached}) {
+    set(State::Repreparing, EventType::OperationPrepared, &TaskbarLayoutCoordinator::beginFinalize);
+    set(State::Repreparing, EventType::OperationRetained, &TaskbarLayoutCoordinator::retained);
+    set(State::Repreparing, EventType::OperationTemporary, &TaskbarLayoutCoordinator::temporary);
+    set(State::Repreparing, EventType::OperationIncompatible, &TaskbarLayoutCoordinator::incompatible);
+    set(State::Repreparing, EventType::OperationFailed, &TaskbarLayoutCoordinator::failed);
+    set(State::Repreparing, EventType::OperationRecreateActivation, &TaskbarLayoutCoordinator::recreateForActivation);
+    set(State::Repreparing, EventType::OperationRecreateFailure, &TaskbarLayoutCoordinator::recreateForFailure);
+    set(State::Repreparing, EventType::OperationRecreateIncompatible, &TaskbarLayoutCoordinator::recreateForIncompatible);
+    set(State::Repreparing, EventType::OperationNeedsDetach, &TaskbarLayoutCoordinator::needsDetach);
+
+    set(State::RecreatingForActivation, EventType::WindowRecreated, &TaskbarLayoutCoordinator::resumeActivation);
+    set(State::RecreatingForActivation, EventType::WindowRecreationFailed, &TaskbarLayoutCoordinator::failWindowRecreation);
+    set(State::RecreatingForFailure, EventType::WindowRecreated, &TaskbarLayoutCoordinator::completeAfterRecreation);
+    set(State::RecreatingForFailure, EventType::WindowRecreationFailed, &TaskbarLayoutCoordinator::completeAfterRecreation);
+    set(State::RecreatingForIncompatible, EventType::WindowRecreated, &TaskbarLayoutCoordinator::completeAfterRecreation);
+    set(State::RecreatingForIncompatible, EventType::WindowRecreationFailed, &TaskbarLayoutCoordinator::completeAfterRecreation);
+
+    for (const State active : {State::Preparing, State::RecreatingForPrepare, State::Prepared, State::Finalizing, State::Repreparing,
+                               State::RecreatingForActivation, State::RecreatingForFailure, State::RecreatingForIncompatible, State::Attached}) {
       set(active, EventType::DetachRequested, &TaskbarLayoutCoordinator::beginUserDetach);
       set(active, EventType::HostInvalidated, &TaskbarLayoutCoordinator::beginHostDetach);
     }
     set(State::Detached, EventType::HostInvalidated, &TaskbarLayoutCoordinator::notifyDetachedHostRefresh);
     set(State::Detaching, EventType::HostInvalidated, &TaskbarLayoutCoordinator::escalateHostDetach);
     set(State::Detaching, EventType::AcquireRequested, &TaskbarLayoutCoordinator::reportReleaseStatus);
+    set(State::RecreatingAfterDetach, EventType::AcquireRequested, &TaskbarLayoutCoordinator::reportReleaseStatus);
+    set(State::RecreatingAfterDetach, EventType::ActivateRequested, &TaskbarLayoutCoordinator::reportReleaseStatus);
     set(State::Detaching, EventType::DetachDue, &TaskbarLayoutCoordinator::advanceDetach);
     set(State::Detaching, EventType::DetachBlocked, &TaskbarLayoutCoordinator::repeatDetach);
     set(State::Detaching, EventType::DetachCompleted, &TaskbarLayoutCoordinator::completeDetach);
+    set(State::RecreatingAfterDetach, EventType::WindowRecreated, &TaskbarLayoutCoordinator::finishDetachedRecreation);
+    set(State::RecreatingAfterDetach, EventType::WindowRecreationFailed, &TaskbarLayoutCoordinator::finishDetachedRecreation);
     return result;
   }();
   return table[static_cast<std::size_t>(state)][static_cast<std::size_t>(event.type)](state, event);
 }
 
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::ignoreEvent(const State state, const Event&) { return {state}; }
-TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::beginPrepare(State, const Event&) { return {State::Preparing, Action::Prepare}; }
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::beginPrepare(State, const Event&) { return {State::Preparing, Action::AcceptRequest}; }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::beginFinalize(State, const Event&) { return {State::Finalizing, Action::Finalize}; }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::prepared(State, const Event&) { return {State::Prepared, Action::CompletePrepared}; }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::attached(State, const Event&) { return {State::Attached, Action::CompleteAttached}; }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::retained(State, const Event&) { return {State::Attached, Action::CompleteRetained}; }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::temporary(State, const Event&) { return {State::Detached, Action::CompleteTemporary}; }
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::incompatible(State, const Event&) { return {State::Detached, Action::CompleteIncompatible}; }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::failed(State, const Event&) { return {State::Detached, Action::CompleteFailed}; }
-TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::destroyed(State, const Event&) { return {State::Detached, Action::CompleteDestroyed}; }
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::retryPrepare(State, const Event&) { return {State::Repreparing, Action::Prepare}; }
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::recreateForPrepare(State, const Event&) {
+  return {State::RecreatingForPrepare, Action::RecreateWindow};
+}
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::recreateForActivation(State, const Event&) {
+  return {State::RecreatingForActivation, Action::RecreateWindow};
+}
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::recreateForFailure(State, const Event&) {
+  return {State::RecreatingForFailure, Action::RecreateWindow};
+}
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::recreateForIncompatible(State, const Event&) {
+  return {State::RecreatingForIncompatible, Action::RecreateWindow};
+}
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::resumePrepare(State, const Event&) { return {State::Preparing, Action::Prepare}; }
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::resumeActivation(State, const Event&) { return {State::Repreparing, Action::Prepare}; }
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::completeAfterRecreation(const State state, const Event& event) {
+  if (event.type == EventType::WindowRecreationFailed) return {State::Detached, Action::CompleteFailed};
+  return {State::Detached, state == State::RecreatingForIncompatible ? Action::CompleteIncompatible : Action::CompleteFailed};
+}
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::failWindowRecreation(State, const Event&) { return {State::Detached, Action::CompleteFailed}; }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::needsDetach(State, const Event&) { return {State::Detaching, Action::BeginUserDetach}; }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::beginUserDetach(State, const Event&) { return {State::Detaching, Action::BeginUserDetach}; }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::beginHostDetach(State, const Event&) { return {State::Detaching, Action::BeginHostDetach}; }
@@ -158,7 +211,13 @@ TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::escalateHostDetac
 }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::advanceDetach(const State state, const Event&) { return {state, Action::AdvanceDetach}; }
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::repeatDetach(const State state, const Event&) { return {state, Action::ScheduleDetach}; }
-TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::completeDetach(State, const Event&) { return {State::Detached, Action::CompleteDetach}; }
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::completeDetach(State, const Event& event) {
+  return event.nativeWindowDestroyed ? Transition{State::RecreatingAfterDetach, Action::RecreateDetachedWindow}
+                                     : Transition{State::Detached, Action::CompleteDetach};
+}
+TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::finishDetachedRecreation(State, const Event&) {
+  return {State::Detached, Action::CompleteDetach};
+}
 TaskbarLayoutCoordinator::Transition TaskbarLayoutCoordinator::notifyDetachedHostRefresh(const State state, const Event&) {
   return {state, Action::NotifyDetachedHostRefresh};
 }
@@ -178,15 +237,19 @@ void TaskbarLayoutCoordinator::processEvents() {
     m_events.pop_front();
     const Transition transition = reduce(m_state, event);
     m_state = transition.nextState;
-    execute(transition.action);
+    execute(transition.action, event);
   }
   m_processingEvents = false;
   flushNotifications();
 }
 
-void TaskbarLayoutCoordinator::execute(const Action action) {
+void TaskbarLayoutCoordinator::execute(const Action action, const Event& event) {
   switch (action) {
     case Action::None:
+      return;
+    case Action::AcceptRequest:
+      m_request = event.attachRequest;
+      runPrepare();
       return;
     case Action::Prepare:
       runPrepare();
@@ -203,20 +266,26 @@ void TaskbarLayoutCoordinator::execute(const Action action) {
       finishOperation(AttachResult::Attached);
       return;
     case Action::CompleteRetained:
-      finishOperation(AttachResult::TemporarilyUnavailable);
+      finishOperation(AttachResult::Retained);
       return;
     case Action::CompleteTemporary:
       finishOperation(AttachResult::TemporarilyUnavailable);
       return;
+    case Action::CompleteIncompatible:
+      finishOperation(AttachResult::Incompatible);
+      return;
     case Action::CompleteFailed:
       finishOperation(AttachResult::Failed);
       return;
-    case Action::CompleteDestroyed:
-      m_attachment.reset();
-      finishOperation(AttachResult::NativeWindowDestroyed);
-      return;
     case Action::CompleteReleaseStatus:
-      finishOperation(m_detaching && m_detaching->attempts > 0 ? AttachResult::ReleaseBlocked : AttachResult::ReleasePending);
+      finishOperation(m_state == State::RecreatingAfterDetach || !m_detaching || m_detaching->attempts == 0 ? AttachResult::ReleasePending
+                                                                                                            : AttachResult::ReleaseBlocked);
+      return;
+    case Action::RecreateWindow:
+      recreateWindow();
+      return;
+    case Action::RecreateDetachedWindow:
+      recreateDetachedWindow();
       return;
     case Action::BeginUserDetach:
       beginDetaching(DetachmentCause::UserRequested);
@@ -235,7 +304,7 @@ void TaskbarLayoutCoordinator::execute(const Action action) {
           const bool present = std::ranges::any_of(m_detaching->strategies, [&strategy](const auto& candidate) { return &candidate.get() == strategy.get(); });
           if (!present) m_detaching->strategies.emplace_back(*strategy);
         }
-        publish(DetachEvent{DetachPhase::Started, DetachReason::HostInvalidated, false});
+        publish(DetachEvent{DetachPhase::Started, DetachReason::HostInvalidated});
         m_asyncTimer->start(0);
       }
       return;
@@ -251,9 +320,9 @@ void TaskbarLayoutCoordinator::execute(const Action action) {
       m_attachment.reset();
       m_transaction.reset();
       m_preparedStrategy = nullptr;
+      m_request.reset();
       publish(DetachEvent{DetachPhase::Completed,
-                          completed.cause == DetachmentCause::HostInvalidated ? DetachReason::HostInvalidated : DetachReason::PresentationReleased,
-                          completed.disposition == NativeWindowDisposition::Destroyed});
+                          completed.cause == DetachmentCause::HostInvalidated ? DetachReason::HostInvalidated : DetachReason::PresentationReleased});
       return;
     }
     case Action::NotifyDetachedHostRefresh:
@@ -264,13 +333,14 @@ void TaskbarLayoutCoordinator::execute(const Action action) {
 
 void TaskbarLayoutCoordinator::runPrepare() {
   if (!m_request || !m_request->window) {
-    postEvent(Event{EventType::OperationFailed});
+    postEvent(Event{m_attachment || m_transaction ? EventType::OperationNeedsDetach : EventType::OperationFailed});
     return;
   }
 
   bool temporary = false;
   for (const auto& strategyOwner : m_strategies) {
     TaskbarLayoutStrategy& strategy = *strategyOwner;
+    if (isProcessIncompatible(strategy)) continue;
     auto transaction = strategy.prepareAttach(m_request->window, m_request->logicalSize);
     if (!transaction) continue;
     if (transaction->readiness() == TaskbarLayoutStrategy::AttachReadiness::TemporarilyUnavailable) {
@@ -279,6 +349,9 @@ void TaskbarLayoutCoordinator::runPrepare() {
         return;
       }
       temporary = true;
+      continue;
+    }
+    if (transaction->readiness() == TaskbarLayoutStrategy::AttachReadiness::Unavailable) {
       continue;
     }
     if (transaction->readiness() != TaskbarLayoutStrategy::AttachReadiness::Ready) continue;
@@ -293,7 +366,7 @@ void TaskbarLayoutCoordinator::runPrepare() {
       }
       m_attachment.reset();
       if (detachResult == TaskbarLayoutStrategy::DetachResult::NativeWindowDestroyed) {
-        postEvent(Event{EventType::OperationDestroyed});
+        postEvent(Event{m_state == State::Repreparing ? EventType::OperationRecreateActivation : EventType::OperationRecreatePrepare});
         return;
       }
     }
@@ -302,22 +375,37 @@ void TaskbarLayoutCoordinator::runPrepare() {
     if (commitResult == TaskbarLayoutStrategy::AttachResult::Attached) {
       m_preparedStrategy = &strategy;
       m_transaction = std::move(transaction);
-      m_attachment = ActiveAttachment{strategy, m_request->window, m_request->hideWindow};
+      m_attachment = ActiveAttachment{strategy, m_request->window, m_request->hideWindow, m_request->recreateWindow};
       postEvent(Event{EventType::OperationPrepared});
       return;
     }
 
+    // rollback 可能把 HWND 从 Explorer 子窗口恢复为顶层窗口。所有非成功
+    // 结果都必须先撤销可见性；是否为固定能力失败不影响可见性所有权。
+    if (m_request->hideWindow) m_request->hideWindow();
+    if (commitResult == TaskbarLayoutStrategy::AttachResult::Incompatible) {
+      markProcessIncompatible(strategy);
+    }
     const auto rollbackResult = transaction->rollback();
     if (rollbackResult == TaskbarLayoutStrategy::DetachResult::Failed) {
       m_preparedStrategy = &strategy;
-      m_attachment = ActiveAttachment{strategy, m_request->window, m_request->hideWindow};
+      m_attachment = ActiveAttachment{strategy, m_request->window, m_request->hideWindow, m_request->recreateWindow};
       postEvent(Event{EventType::OperationNeedsDetach});
       return;
     }
     if (m_attachment && m_attachment->uses(strategy)) m_attachment.reset();
     if (rollbackResult == TaskbarLayoutStrategy::DetachResult::NativeWindowDestroyed) {
-      postEvent(Event{EventType::OperationDestroyed});
+      if (commitResult == TaskbarLayoutStrategy::AttachResult::Incompatible) {
+        postEvent(Event{hasProcessCompatibleStrategy()
+                            ? (m_state == State::Repreparing ? EventType::OperationRecreateActivation : EventType::OperationRecreatePrepare)
+                            : EventType::OperationRecreateIncompatible});
+      } else {
+        postEvent(Event{EventType::OperationRecreateFailure});
+      }
       return;
+    }
+    if (commitResult == TaskbarLayoutStrategy::AttachResult::Incompatible) {
+      continue;
     }
     temporary = temporary || commitResult == TaskbarLayoutStrategy::AttachResult::TemporarilyUnavailable;
   }
@@ -331,16 +419,17 @@ void TaskbarLayoutCoordinator::runPrepare() {
     }
     m_attachment.reset();
     if (detachResult == TaskbarLayoutStrategy::DetachResult::NativeWindowDestroyed) {
-      postEvent(Event{EventType::OperationDestroyed});
+      postEvent(Event{EventType::OperationRecreateFailure});
       return;
     }
   }
-  postEvent(Event{temporary ? EventType::OperationTemporary : EventType::OperationFailed});
+  const bool endpointIncompatible = !m_strategies.empty() && !hasProcessCompatibleStrategy();
+  postEvent(Event{temporary ? EventType::OperationTemporary : endpointIncompatible ? EventType::OperationIncompatible : EventType::OperationFailed});
 }
 
 void TaskbarLayoutCoordinator::runFinalize() {
   if (!m_request || !m_request->window || !m_transaction || !m_attachment) {
-    postEvent(Event{EventType::OperationFailed});
+    postEvent(Event{m_attachment || m_transaction ? EventType::OperationNeedsDetach : EventType::OperationFailed});
     return;
   }
   if (m_request->showWindow) m_request->showWindow();
@@ -351,6 +440,7 @@ void TaskbarLayoutCoordinator::runFinalize() {
   }
 
   if (m_request->hideWindow) m_request->hideWindow();
+  if (result == TaskbarLayoutStrategy::AttachResult::Incompatible && m_preparedStrategy) markProcessIncompatible(*m_preparedStrategy);
   const auto rollbackResult = m_transaction->rollback();
   m_transaction.reset();
   if (rollbackResult == TaskbarLayoutStrategy::DetachResult::Failed) {
@@ -359,11 +449,43 @@ void TaskbarLayoutCoordinator::runFinalize() {
   }
   m_attachment.reset();
   m_preparedStrategy = nullptr;
+  const bool strategyIncompatible = result == TaskbarLayoutStrategy::AttachResult::Incompatible;
+  const bool endpointIncompatible = strategyIncompatible && !hasProcessCompatibleStrategy();
+  if (strategyIncompatible) {
+    if (rollbackResult == TaskbarLayoutStrategy::DetachResult::NativeWindowDestroyed) {
+      postEvent(Event{endpointIncompatible ? EventType::OperationRecreateIncompatible : EventType::OperationRecreateActivation});
+    } else {
+      postEvent(Event{endpointIncompatible ? EventType::OperationIncompatible : EventType::OperationRetryPrepare});
+    }
+    return;
+  }
   if (rollbackResult == TaskbarLayoutStrategy::DetachResult::NativeWindowDestroyed) {
-    postEvent(Event{EventType::OperationDestroyed});
+    postEvent(Event{EventType::OperationRecreateFailure});
     return;
   }
   postEvent(Event{result == TaskbarLayoutStrategy::AttachResult::TemporarilyUnavailable ? EventType::OperationTemporary : EventType::OperationFailed});
+}
+
+void TaskbarLayoutCoordinator::recreateWindow() {
+  if (!m_request || !m_request->recreateWindow) {
+    postEvent(Event{EventType::WindowRecreationFailed});
+    return;
+  }
+  QWindow* const window = m_request->recreateWindow();
+  if (!window) {
+    postEvent(Event{EventType::WindowRecreationFailed});
+    return;
+  }
+  m_request->window = window;
+  postEvent(Event{EventType::WindowRecreated});
+}
+
+void TaskbarLayoutCoordinator::recreateDetachedWindow() {
+  if (!m_detaching || !m_detaching->recreateWindow) {
+    postEvent(Event{EventType::WindowRecreationFailed});
+    return;
+  }
+  postEvent(Event{m_detaching->recreateWindow() ? EventType::WindowRecreated : EventType::WindowRecreationFailed});
 }
 
 void TaskbarLayoutCoordinator::beginDetaching(const DetachmentCause cause) {
@@ -371,6 +493,8 @@ void TaskbarLayoutCoordinator::beginDetaching(const DetachmentCause cause) {
   DetachingContext context;
   context.cause = cause;
   context.attachment = std::move(m_attachment);
+  if (context.attachment) context.recreateWindow = context.attachment->recreateWindow;
+  if (!context.recreateWindow && m_request) context.recreateWindow = m_request->recreateWindow;
   if (context.attachment && context.attachment->hideWindow) context.attachment->hideWindow();
 
   bool preparedRollbackFailed = false;
@@ -398,8 +522,9 @@ void TaskbarLayoutCoordinator::beginDetaching(const DetachmentCause cause) {
   m_preparedStrategy = nullptr;
   m_detaching = std::move(context);
 
-  if (cause == DetachmentCause::HostInvalidated) publish(DetachEvent{DetachPhase::Started, DetachReason::HostInvalidated, false});
-  postEvent(Event{m_detaching->strategies.empty() ? EventType::DetachCompleted : EventType::DetachBlocked});
+  if (cause == DetachmentCause::HostInvalidated) publish(DetachEvent{DetachPhase::Started, DetachReason::HostInvalidated});
+  postEvent(Event{m_detaching->strategies.empty() ? EventType::DetachCompleted : EventType::DetachBlocked,
+                  m_detaching->disposition == NativeWindowDisposition::Destroyed});
 }
 
 void TaskbarLayoutCoordinator::advanceDetaching() {
@@ -417,12 +542,12 @@ void TaskbarLayoutCoordinator::advanceDetaching() {
     iterator = m_detaching->strategies.erase(iterator);
   }
   if (m_detaching->strategies.empty()) {
-    postEvent(Event{EventType::DetachCompleted});
+    postEvent(Event{EventType::DetachCompleted, m_detaching->disposition == NativeWindowDisposition::Destroyed});
     return;
   }
   if (m_detaching->attempts == 1)
     publish(DetachEvent{DetachPhase::Blocked,
-                        m_detaching->cause == DetachmentCause::HostInvalidated ? DetachReason::HostInvalidated : DetachReason::PresentationReleased, false});
+                        m_detaching->cause == DetachmentCause::HostInvalidated ? DetachReason::HostInvalidated : DetachReason::PresentationReleased});
   if (m_detaching->attempts == kFastRetryAttempts) UWF_LOG_E("taskbar") << "taskbar detachment remains pending; strategies=" << m_detaching->strategies.size();
   m_asyncTimer->start(m_detaching->attempts < kFastRetryAttempts ? kFastRetryIntervalMs : kSlowRetryIntervalMs);
 }
@@ -434,12 +559,13 @@ void TaskbarLayoutCoordinator::finishOperation(const AttachResult result) {
 
 void TaskbarLayoutCoordinator::scheduleDetachedHostRefresh() {
   // Detached 没有资源可释放，不能伪造 Started/Recovering。只在离开原生消息栈
-  // 后通知 View 重新探测新的 Explorer 宿主。
-  if (m_hostRefreshScheduled) return;
+  // 后通知 View 重新探测新的 Explorer 宿主。进程能力已经淘汰全部策略时，
+  // Explorer 重建不会改变能力边界，也不应产生无效的重探测事件。
+  if (!hasProcessCompatibleStrategy() || m_hostRefreshScheduled) return;
   m_hostRefreshScheduled = true;
   QTimer::singleShot(0, this, [this]() {
     m_hostRefreshScheduled = false;
-    if (m_detachObserver) m_detachObserver(DetachEvent{DetachPhase::Completed, DetachReason::HostInvalidated, false});
+    if (m_detachObserver) m_detachObserver(DetachEvent{DetachPhase::Completed, DetachReason::HostInvalidated});
   });
 }
 
@@ -451,6 +577,19 @@ void TaskbarLayoutCoordinator::flushNotifications() {
     m_notifications.pop_front();
     if (m_detachObserver) m_detachObserver(event);
   }
+}
+
+bool TaskbarLayoutCoordinator::hasProcessCompatibleStrategy() const {
+  return std::ranges::any_of(m_strategies,
+                             [this](const std::unique_ptr<TaskbarLayoutStrategy>& strategy) { return strategy && !isProcessIncompatible(*strategy); });
+}
+
+void TaskbarLayoutCoordinator::markProcessIncompatible(TaskbarLayoutStrategy& strategy) {
+  if (!isProcessIncompatible(strategy)) m_processIncompatibleStrategies.push_back(&strategy);
+}
+
+bool TaskbarLayoutCoordinator::isProcessIncompatible(const TaskbarLayoutStrategy& strategy) const {
+  return std::ranges::find(m_processIncompatibleStrategies, &strategy) != m_processIncompatibleStrategies.end();
 }
 
 bool TaskbarLayoutCoordinator::nativeEventFilter(const QByteArray&, void* const message, qintptr*) {

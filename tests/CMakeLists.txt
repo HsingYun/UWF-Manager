@@ -36,4 +36,25 @@ if (WIN32)
             LABELS "windows-integration"
             RUN_SERIAL TRUE
     )
+
+    qt_add_executable(UwfWindowsTaskbarIncompatibilityTests
+            WindowsTaskbarIncompatibilityTests.cpp
+    )
+    target_include_directories(UwfWindowsTaskbarIncompatibilityTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/src")
+    target_link_libraries(UwfWindowsTaskbarIncompatibilityTests PRIVATE UwfOverlayRuntime Qt6::Widgets Qt6::Test user32 shcore dwmapi)
+    # 故意不声明 Windows 8+ supportedOS：这是 layered child window 不可用的
+    # 真实进程能力边界，不通过生产故障注入伪造。
+    if (MSVC)
+        target_sources(UwfWindowsTaskbarIncompatibilityTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/windows_taskbar_incompatible.manifest")
+    else ()
+        target_sources(UwfWindowsTaskbarIncompatibilityTests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/windows_taskbar_incompatible_manifest.rc")
+    endif ()
+    uwf_configure_cpp_target(UwfWindowsTaskbarIncompatibilityTests)
+
+    add_test(NAME UwfWindowsTaskbarIncompatibilityTests COMMAND UwfWindowsTaskbarIncompatibilityTests)
+    set_tests_properties(UwfWindowsTaskbarIncompatibilityTests PROPERTIES
+            ENVIRONMENT "QT_QPA_PLATFORM=windows"
+            LABELS "windows-integration"
+            RUN_SERIAL TRUE
+    )
 endif ()

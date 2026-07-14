@@ -81,11 +81,17 @@ struct InjectedStateObservation {
   bool parentMatches = false;
   bool child = false;
   bool popup = false;
+  bool layered = false;
   bool toolWindow = false;
   bool noActivate = false;
   bool appWindow = false;
 
-  [[nodiscard]] bool valid() const { return parentMatches && child && !popup && noActivate && !appWindow; }
+  enum class Classification { Valid, LayeredChildUnsupported, Invalid };
+
+  [[nodiscard]] Classification classify() const {
+    if (!parentMatches || !child || popup || !noActivate || appWindow) return Classification::Invalid;
+    return layered ? Classification::Valid : Classification::LayeredChildUnsupported;
+  }
 };
 
 InjectedStateObservation observeInjectedState(const HWND window, const HWND taskbar) {
@@ -94,12 +100,25 @@ InjectedStateObservation observeInjectedState(const HWND window, const HWND task
   return {GetParent(window) == taskbar,
           (style & static_cast<LONG_PTR>(WS_CHILD)) != 0,
           (style & static_cast<LONG_PTR>(WS_POPUP)) != 0,
+          (exStyle & static_cast<LONG_PTR>(WS_EX_LAYERED)) != 0,
           (exStyle & static_cast<LONG_PTR>(WS_EX_TOOLWINDOW)) != 0,
           (exStyle & static_cast<LONG_PTR>(WS_EX_NOACTIVATE)) != 0,
           (exStyle & static_cast<LONG_PTR>(WS_EX_APPWINDOW)) != 0};
 }
 
-bool hasInjectedState(const HWND window, const HWND taskbar) { return observeInjectedState(window, taskbar).valid(); }
+TaskbarLayoutStrategy::AttachResult classifyInjectedState(const InjectedStateObservation& observation, const bool capabilityConfirmed) {
+  switch (observation.classify()) {
+    case InjectedStateObservation::Classification::Valid:
+      return TaskbarLayoutStrategy::AttachResult::Attached;
+    case InjectedStateObservation::Classification::LayeredChildUnsupported:
+      if (capabilityConfirmed) return TaskbarLayoutStrategy::AttachResult::Invalid;
+      UWF_LOG_W("taskbar") << "taskbar endpoint incompatible: reason=layered-child-unsupported";
+      return TaskbarLayoutStrategy::AttachResult::Incompatible;
+    case InjectedStateObservation::Classification::Invalid:
+      return TaskbarLayoutStrategy::AttachResult::Invalid;
+  }
+  Q_UNREACHABLE_RETURN(TaskbarLayoutStrategy::AttachResult::Invalid);
+}
 
 }  // namespace
 
@@ -197,9 +216,12 @@ TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::AttachTransactio
   if (m_owner->m_impl->attachment) {
     auto& attached = *m_owner->m_impl->attachment;
     window = ownedWindow(m_windowId, attached.cookie);
-    if (!window || attached.window != qtWindow || attached.windowId != m_windowId || !sameEnvironment(attached.environment, m_environment) ||
-        !hasInjectedState(window, m_environment.taskbar))
+    if (!window || attached.window != qtWindow || attached.windowId != m_windowId || !sameEnvironment(attached.environment, m_environment))
       return hardReset("active-attachment-invariant");
+    const InjectedStateObservation observation = observeInjectedState(window, m_environment.taskbar);
+    const AttachResult injectedState = classifyInjectedState(observation, m_owner->m_impl->layeredChildCapabilityConfirmed);
+    if (injectedState == AttachResult::Incompatible) return injectedState;
+    if (injectedState != AttachResult::Attached) return hardReset("active-attachment-invariant");
     if (!matchesPlacement(window, m_environment, m_placement) &&
         !SetWindowPos(window, HWND_TOP, m_placement.x, m_placement.y, m_placement.width, m_placement.height, SWP_NOACTIVATE | SWP_NOOWNERZORDER))
       return AttachResult::TemporarilyUnavailable;
@@ -245,6 +267,10 @@ TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::AttachTransactio
   if (!SetWindowPos(window, HWND_TOP, m_placement.x, m_placement.y, m_placement.width, m_placement.height,
                     SWP_FRAMECHANGED | SWP_NOACTIVATE | SWP_NOOWNERZORDER))
     return hardReset("native-placement-transaction", GetLastError());
+  const InjectedStateObservation observation = observeInjectedState(window, m_environment.taskbar);
+  const AttachResult injectedState = classifyInjectedState(observation, m_owner->m_impl->layeredChildCapabilityConfirmed);
+  if (injectedState == AttachResult::Incompatible) return injectedState;
+  if (injectedState != AttachResult::Attached) return hardReset("native-attachment-invariant");
   m_owner->m_impl->hardResetRequired = false;
   m_state = State::Committed;
   return AttachResult::Attached;
@@ -258,14 +284,18 @@ TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::AttachTransactio
   const HWND window = ownedWindow(m_windowId, attached.cookie);
   if (!window) return hardReset("finalize-identity");
   const InjectedStateObservation observation = observeInjectedState(window, m_environment.taskbar);
-  if (!observation.valid()) {
+  const AttachResult injectedState = classifyInjectedState(observation, m_owner->m_impl->layeredChildCapabilityConfirmed);
+  if (injectedState == AttachResult::Incompatible) return injectedState;
+  if (injectedState != AttachResult::Attached) {
     UWF_LOG_W("taskbar") << "finalize invariant: parent=" << observation.parentMatches << " child=" << observation.child << " popup=" << observation.popup
-                         << " toolWindow=" << observation.toolWindow << " noActivate=" << observation.noActivate << " appWindow=" << observation.appWindow;
+                         << " layered=" << observation.layered << " toolWindow=" << observation.toolWindow << " noActivate=" << observation.noActivate
+                         << " appWindow=" << observation.appWindow;
     return hardReset("finalize-invariant");
   }
   if (!matchesPlacement(window, m_environment, m_placement) &&
       !SetWindowPos(window, HWND_TOP, m_placement.x, m_placement.y, m_placement.width, m_placement.height, SWP_NOACTIVATE | SWP_NOOWNERZORDER))
     return hardReset("finalize-placement", GetLastError());
+  m_owner->m_impl->layeredChildCapabilityConfirmed = true;
   m_state = State::Finished;
   return AttachResult::Attached;
 }
@@ -288,8 +318,21 @@ TaskbarLayoutStrategy::VerificationResult Win11TaskbarLayoutStrategy::verify(con
   }
   const auto& attached = *m_impl->attachment;
   const HWND window = ownedWindow(currentWindowId, attached.cookie);
-  if (!qtWindow || attached.window != qtWindow || currentWindowId != attached.windowId || !window || !qtWindow->isVisible() ||
-      !hasInjectedState(window, attached.environment.taskbar)) {
+  if (!qtWindow || attached.window != qtWindow || currentWindowId != attached.windowId || !window || !qtWindow->isVisible()) {
+    m_impl->hardResetRequired = true;
+    recordVerificationDiagnostic(VerificationResult::Invalid, "local-attachment-invariant");
+    return VerificationResult::Invalid;
+  }
+  const InjectedStateObservation injectedState = observeInjectedState(window, attached.environment.taskbar);
+  const auto injectedStateClassification = injectedState.classify();
+  if (injectedStateClassification == InjectedStateObservation::Classification::LayeredChildUnsupported) {
+    // 已激活 attachment 必然通过过 finalize，因此进程能力已经得到证明。
+    // 此处的 style 丢失只能是运行时状态损坏，必须重建 HWND，不能永久淘汰策略。
+    m_impl->hardResetRequired = true;
+    recordVerificationDiagnostic(VerificationResult::Invalid, "layered-child-state-lost");
+    return VerificationResult::Invalid;
+  }
+  if (injectedStateClassification == InjectedStateObservation::Classification::Invalid) {
     m_impl->hardResetRequired = true;
     recordVerificationDiagnostic(VerificationResult::Invalid, "local-attachment-invariant");
     return VerificationResult::Invalid;

@@ -21,6 +21,7 @@
 #include <QTest>
 #include <QTimer>
 #include <QWidget>
+#include <QWindow>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -414,6 +415,33 @@ class WindowsTaskbarIntegrationTests final : public QObject {
     ui.visibility->observe();
     QVERIFY(!ui.visibility->overlapObserved());
     QVERIFY(!ui.visibility->floatingSeen());
+  }
+
+  void layeredChildStateLossHardResetsAndRecovers() {
+    ProductionUi ui;
+    ui.registerTaskbarFirst();
+    QVERIFY2(waitUntil([&ui]() { return ui.taskbarConfirmed(); }), diagnosticLog().constData());
+
+    const HWND oldWindow = nativeWindow(*ui.taskbarView);
+    LONG_PTR exStyle = GetWindowLongPtrW(oldWindow, GWL_EXSTYLE);
+    QVERIFY((exStyle & WS_EX_LAYERED) != 0);
+    exStyle &= ~static_cast<LONG_PTR>(WS_EX_LAYERED);
+    SetLastError(ERROR_SUCCESS);
+    QVERIFY(SetWindowLongPtrW(oldWindow, GWL_EXSTYLE, exStyle) != 0 || GetLastError() == ERROR_SUCCESS);
+    QVERIFY(SetWindowPos(oldWindow, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOZORDER));
+
+    ui.visibility->reset();
+    QVERIFY2(waitUntil(
+                 [&ui, oldWindow, this]() {
+                   const HWND current = nativeWindow(*ui.taskbarView);
+                   return current && current != oldWindow && !IsWindow(oldWindow) && ui.taskbarConfirmed() && GetParent(current) == m_explorerTaskbar &&
+                          (GetWindowLongPtrW(current, GWL_EXSTYLE) & WS_EX_LAYERED) != 0;
+                 },
+                 15000),
+             diagnosticLog().constData());
+    ui.visibility->observe();
+    QVERIFY2(!ui.visibility->overlapObserved(), diagnosticLog().constData());
+    QCOMPARE(attachmentWindows(m_explorerTaskbar).size(), std::size_t{1});
   }
 
   void showTaskbarToolbarBriefly() {

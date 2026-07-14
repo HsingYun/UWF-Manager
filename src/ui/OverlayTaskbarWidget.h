@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "OverlayHubView.h"
+#include "TaskbarLayoutCoordinator.h"
 
 class QContextMenuEvent;
 class QEnterEvent;
@@ -30,10 +31,9 @@ class QMenu;
 class QMouseEvent;
 class QPaintEvent;
 class QTimer;
+class QWindow;
 
 namespace uwf::ui {
-
-class TaskbarLayoutCoordinator;
 
 // 嵌入 Windows 主任务栏通知区域左侧的 overlay 用量窗口。窗口只消费控制器
 // 已读取的运行时数据，不自行访问 WMI，也不感知具体任务栏实现；布局选择、
@@ -69,7 +69,8 @@ class OverlayTaskbarWidget final : public OverlayHubView {
   void showToolTip();
   void hideToolTip();
   void closeContextMenu();
-  void resetNativeWindow();
+  [[nodiscard]] QWindow* recreateNativeWindow();
+  void handleLayoutDetachEvent(const TaskbarLayoutCoordinator::DetachEvent& event);
   void synchronizeContentGeometry();
   void updateAnimationTimer();
   [[nodiscard]] int desiredLogicalWidth() const;

@@ -36,6 +36,8 @@ const char* displayStateName(const OverlayHubView::DisplayState state) {
       return "withdrawn";
     case OverlayHubView::DisplayState::Unavailable:
       return "unavailable";
+    case OverlayHubView::DisplayState::Incompatible:
+      return "incompatible";
     case OverlayHubView::DisplayState::Probing:
       return "probing";
     case OverlayHubView::DisplayState::Activating:
@@ -62,8 +64,12 @@ const char* attachResultName(const OverlayHubView::AttachResult result) {
       return "prepared";
     case OverlayHubView::AttachResult::Attached:
       return "attached";
+    case OverlayHubView::AttachResult::Retained:
+      return "retained";
     case OverlayHubView::AttachResult::TemporarilyUnavailable:
       return "temporarily-unavailable";
+    case OverlayHubView::AttachResult::Incompatible:
+      return "incompatible";
     case OverlayHubView::AttachResult::ReleasePending:
       return "release-pending";
     case OverlayHubView::AttachResult::ReleaseBlocked:
@@ -173,7 +179,7 @@ OverlayHubView::Transition OverlayHubView::reduce(const DisplayState state, cons
     setPresenting(EventType::RequestDisabled, &OverlayHubView::disablePresentation);
     set(DisplayState::Withdrawn, EventType::RequestDisabled, &OverlayHubView::disablePresentation);
     set(DisplayState::Withdrawing, EventType::RequestDisabled, &OverlayHubView::disablePresentation);
-    set(DisplayState::Failing, EventType::RequestDisabled, &OverlayHubView::disablePresentation);
+    set(DisplayState::Failing, EventType::RequestDisabled, &OverlayHubView::withdrawFailingPresentation);
 
     set(DisplayState::Unavailable, EventType::ExternalRefresh, &OverlayHubView::probePresentation);
     set(DisplayState::Unavailable, EventType::RetryDue, &OverlayHubView::probePresentation);
@@ -195,6 +201,7 @@ OverlayHubView::Transition OverlayHubView::reduce(const DisplayState state, cons
 
     setPresenting(EventType::ReleaseStarted, &OverlayHubView::handleReleaseStarted);
     setPresenting(EventType::ReleaseBlocked, &OverlayHubView::enterFailing);
+    set(DisplayState::Withdrawing, EventType::ReleaseBlocked, &OverlayHubView::ignoreEvent);
     set(DisplayState::Recovering, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
     set(DisplayState::Withdrawing, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
     set(DisplayState::Failing, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
@@ -224,9 +231,10 @@ OverlayHubView::Transition OverlayHubView::refreshPresentation(DisplayState, con
 
 OverlayHubView::Transition OverlayHubView::disablePresentation(const DisplayState state, const Event&) {
   if (state == DisplayState::Disabled || state == DisplayState::Withdrawn || state == DisplayState::Withdrawing) return {state};
-  if (state == DisplayState::Failing) return {state};
   return {DisplayState::Withdrawing, Action::ReleaseRequest, true};
 }
+
+OverlayHubView::Transition OverlayHubView::withdrawFailingPresentation(DisplayState, const Event&) { return {DisplayState::Withdrawing}; }
 
 OverlayHubView::Transition OverlayHubView::enableFromWithdrawn(DisplayState, const Event&) { return {DisplayState::Recovering, Action::AttachAcquire}; }
 
@@ -246,9 +254,13 @@ OverlayHubView::Transition OverlayHubView::handleAttachFinished(const DisplaySta
       return state == DisplayState::Refreshing ? Transition{state, Action::Activate} : Transition{DisplayState::Activating};
     case AttachResult::Attached:
       return {DisplayState::Failing, Action::ReleaseRecovery, true};
+    case AttachResult::Retained:
+      return state == DisplayState::Refreshing ? Transition{DisplayState::Confirmed} : Transition{DisplayState::Failing, Action::ReleaseRecovery, true};
     case AttachResult::TemporarilyUnavailable:
       if (state == DisplayState::Recovering) return {state, Action::ScheduleRecoverRetry};
-      return state == DisplayState::Refreshing ? Transition{DisplayState::Confirmed} : Transition{DisplayState::Unavailable, Action::Suspend, true};
+      return {DisplayState::Unavailable, Action::Suspend, true};
+    case AttachResult::Incompatible:
+      return {DisplayState::Incompatible, Action::Suspend, true};
     case AttachResult::ReleasePending:
       return {DisplayState::Recovering};
     case AttachResult::ReleaseBlocked:
@@ -264,8 +276,12 @@ OverlayHubView::Transition OverlayHubView::handleActivationFinished(const Displa
   switch (event.attachResult) {
     case AttachResult::Attached:
       return state == DisplayState::Refreshing ? Transition{state, Action::VerifyAttach} : Transition{DisplayState::Attaching, Action::VerifyAttach};
+    case AttachResult::Retained:
+      return state == DisplayState::Refreshing ? Transition{DisplayState::Confirmed} : Transition{DisplayState::Failing, Action::ReleaseRecovery, true};
     case AttachResult::TemporarilyUnavailable:
-      return state == DisplayState::Refreshing ? Transition{DisplayState::Confirmed} : Transition{DisplayState::Unavailable, Action::Suspend, true};
+      return {DisplayState::Unavailable, Action::Suspend, true};
+    case AttachResult::Incompatible:
+      return {DisplayState::Incompatible, Action::Suspend, true};
     case AttachResult::ReleasePending:
       return {DisplayState::Recovering};
     case AttachResult::ReleaseBlocked:

@@ -44,20 +44,22 @@ class TaskbarLayoutCoordinator final : public QObject, private QAbstractNativeEv
   struct DetachEvent {
     DetachPhase phase = DetachPhase::Completed;
     DetachReason reason = DetachReason::PresentationReleased;
-    bool nativeWindowResetRequired = false;
   };
   using DetachObserver = std::function<void(DetachEvent)>;
   using VisibilityCommit = std::function<void()>;
   using VisibilityRollback = std::function<void()>;
-  enum class AttachResult { Prepared, Attached, TemporarilyUnavailable, ReleasePending, ReleaseBlocked, NativeWindowDestroyed, Failed };
+  using NativeWindowRecreate = std::function<QWindow*()>;
+  // Incompatible 保留策略层的固定能力判定；Failed 仍表示普通事务失败。
+  // 原生窗口是否在 rollback 中被销毁是独立的清理结果，不能编码进失败原因。
+  enum class AttachResult { Prepared, Attached, Retained, TemporarilyUnavailable, Incompatible, ReleasePending, ReleaseBlocked, Failed };
   enum class DetachStatus { AlreadyDetached, Pending };
 
   explicit TaskbarLayoutCoordinator(std::vector<std::unique_ptr<TaskbarLayoutStrategy>> strategies, DetachObserver detachObserver);
   ~TaskbarLayoutCoordinator() override;
 
   [[nodiscard]] bool isCompatible() const { return !m_strategies.empty(); }
-
-  AttachResult prepareAttach(QWindow* window, const QSize& logicalSize, const VisibilityCommit& makeVisible, const VisibilityRollback& makeInvisible);
+  AttachResult prepareAttach(QWindow* window, const QSize& logicalSize, const VisibilityCommit& makeVisible, const VisibilityRollback& makeInvisible,
+                             const NativeWindowRecreate& recreateNativeWindow);
   AttachResult activatePrepared();
   [[nodiscard]] TaskbarLayoutStrategy::VerificationResult verify(const QWindow* window, WId currentWindowId) const;
   DetachStatus detach();
@@ -65,7 +67,27 @@ class TaskbarLayoutCoordinator final : public QObject, private QAbstractNativeEv
  private:
   friend class TaskbarLayoutCoordinatorTestAccess;
 
-  enum class State { Detached, Preparing, Prepared, Finalizing, Attached, Detaching };
+  enum class State {
+    Detached,
+    Preparing,
+    RecreatingForPrepare,
+    Prepared,
+    Finalizing,
+    Repreparing,
+    RecreatingForActivation,
+    RecreatingForFailure,
+    RecreatingForIncompatible,
+    Attached,
+    Detaching,
+    RecreatingAfterDetach
+  };
+  struct AttachRequest {
+    QPointer<QWindow> window;
+    QSize logicalSize;
+    VisibilityCommit showWindow;
+    VisibilityRollback hideWindow;
+    NativeWindowRecreate recreateWindow;
+  };
   enum class EventType {
     AcquireRequested,
     ActivateRequested,
@@ -75,8 +97,15 @@ class TaskbarLayoutCoordinator final : public QObject, private QAbstractNativeEv
     OperationAttached,
     OperationRetained,
     OperationTemporary,
+    OperationIncompatible,
     OperationFailed,
-    OperationDestroyed,
+    OperationRetryPrepare,
+    OperationRecreatePrepare,
+    OperationRecreateActivation,
+    OperationRecreateFailure,
+    OperationRecreateIncompatible,
+    WindowRecreated,
+    WindowRecreationFailed,
     OperationNeedsDetach,
     DetachDue,
     DetachBlocked,
@@ -84,15 +113,18 @@ class TaskbarLayoutCoordinator final : public QObject, private QAbstractNativeEv
   };
   enum class Action {
     None,
+    AcceptRequest,
     Prepare,
     Finalize,
     CompletePrepared,
     CompleteAttached,
     CompleteRetained,
     CompleteTemporary,
+    CompleteIncompatible,
     CompleteFailed,
-    CompleteDestroyed,
     CompleteReleaseStatus,
+    RecreateWindow,
+    RecreateDetachedWindow,
     BeginUserDetach,
     BeginHostDetach,
     EscalateHostDetach,
@@ -103,6 +135,8 @@ class TaskbarLayoutCoordinator final : public QObject, private QAbstractNativeEv
   };
   struct Event {
     EventType type;
+    bool nativeWindowDestroyed = false;
+    std::optional<AttachRequest> attachRequest = std::nullopt;
   };
   struct Transition {
     State nextState;
@@ -110,16 +144,11 @@ class TaskbarLayoutCoordinator final : public QObject, private QAbstractNativeEv
   };
   using TransitionHandler = Transition (*)(State, const Event&);
 
-  struct AttachRequest {
-    QPointer<QWindow> window;
-    QSize logicalSize;
-    VisibilityCommit showWindow;
-    VisibilityRollback hideWindow;
-  };
   struct ActiveAttachment {
     std::reference_wrapper<TaskbarLayoutStrategy> strategy;
     QPointer<QWindow> window;
     VisibilityRollback hideWindow;
+    NativeWindowRecreate recreateWindow;
 
     [[nodiscard]] bool uses(const TaskbarLayoutStrategy& candidate) const { return &strategy.get() == &candidate; }
   };
@@ -131,6 +160,7 @@ class TaskbarLayoutCoordinator final : public QObject, private QAbstractNativeEv
     std::vector<std::reference_wrapper<TaskbarLayoutStrategy>> strategies;
     int attempts = 0;
     NativeWindowDisposition disposition = NativeWindowDisposition::Preserved;
+    NativeWindowRecreate recreateWindow;
   };
 
   [[nodiscard]] static Transition reduce(State state, const Event& event);
@@ -141,8 +171,17 @@ class TaskbarLayoutCoordinator final : public QObject, private QAbstractNativeEv
   [[nodiscard]] static Transition attached(State state, const Event& event);
   [[nodiscard]] static Transition retained(State state, const Event& event);
   [[nodiscard]] static Transition temporary(State state, const Event& event);
+  [[nodiscard]] static Transition incompatible(State state, const Event& event);
   [[nodiscard]] static Transition failed(State state, const Event& event);
-  [[nodiscard]] static Transition destroyed(State state, const Event& event);
+  [[nodiscard]] static Transition retryPrepare(State state, const Event& event);
+  [[nodiscard]] static Transition recreateForPrepare(State state, const Event& event);
+  [[nodiscard]] static Transition recreateForActivation(State state, const Event& event);
+  [[nodiscard]] static Transition recreateForFailure(State state, const Event& event);
+  [[nodiscard]] static Transition recreateForIncompatible(State state, const Event& event);
+  [[nodiscard]] static Transition resumePrepare(State state, const Event& event);
+  [[nodiscard]] static Transition resumeActivation(State state, const Event& event);
+  [[nodiscard]] static Transition completeAfterRecreation(State state, const Event& event);
+  [[nodiscard]] static Transition failWindowRecreation(State state, const Event& event);
   [[nodiscard]] static Transition needsDetach(State state, const Event& event);
   [[nodiscard]] static Transition beginUserDetach(State state, const Event& event);
   [[nodiscard]] static Transition beginHostDetach(State state, const Event& event);
@@ -150,23 +189,30 @@ class TaskbarLayoutCoordinator final : public QObject, private QAbstractNativeEv
   [[nodiscard]] static Transition advanceDetach(State state, const Event& event);
   [[nodiscard]] static Transition repeatDetach(State state, const Event& event);
   [[nodiscard]] static Transition completeDetach(State state, const Event& event);
+  [[nodiscard]] static Transition finishDetachedRecreation(State state, const Event& event);
   [[nodiscard]] static Transition notifyDetachedHostRefresh(State state, const Event& event);
   [[nodiscard]] static Transition reportReleaseStatus(State state, const Event& event);
 
   void postEvent(Event event);
   void processEvents();
-  void execute(Action action);
+  void execute(Action action, const Event& event);
   void runPrepare();
   void runFinalize();
+  void recreateWindow();
+  void recreateDetachedWindow();
   void beginDetaching(DetachmentCause cause);
   void advanceDetaching();
   void finishOperation(AttachResult result);
   void scheduleDetachedHostRefresh();
   void publish(DetachEvent event);
   void flushNotifications();
+  void markProcessIncompatible(TaskbarLayoutStrategy& strategy);
+  [[nodiscard]] bool hasProcessCompatibleStrategy() const;
+  [[nodiscard]] bool isProcessIncompatible(const TaskbarLayoutStrategy& strategy) const;
   [[nodiscard]] bool nativeEventFilter(const QByteArray& eventType, void* message, qintptr* result) override;
 
   std::vector<std::unique_ptr<TaskbarLayoutStrategy>> m_strategies;
+  std::vector<TaskbarLayoutStrategy*> m_processIncompatibleStrategies;
   State m_state = State::Detached;
   std::deque<Event> m_events;
   std::deque<DetachEvent> m_notifications;

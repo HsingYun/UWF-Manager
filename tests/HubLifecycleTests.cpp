@@ -47,7 +47,20 @@ namespace uwf::ui {
 
 class TaskbarLayoutCoordinatorTestAccess {
  public:
-  enum class TestState { Detached, Preparing, Prepared, Finalizing, Attached, Detaching };
+  enum class TestState {
+    Detached,
+    Preparing,
+    RecreatingForPrepare,
+    Prepared,
+    Finalizing,
+    Repreparing,
+    RecreatingForActivation,
+    RecreatingForFailure,
+    RecreatingForIncompatible,
+    Attached,
+    Detaching,
+    RecreatingAfterDetach
+  };
   enum class TestEvent {
     AcquireRequested,
     ActivateRequested,
@@ -57,8 +70,15 @@ class TaskbarLayoutCoordinatorTestAccess {
     OperationAttached,
     OperationRetained,
     OperationTemporary,
+    OperationIncompatible,
     OperationFailed,
-    OperationDestroyed,
+    OperationRetryPrepare,
+    OperationRecreatePrepare,
+    OperationRecreateActivation,
+    OperationRecreateFailure,
+    OperationRecreateIncompatible,
+    WindowRecreated,
+    WindowRecreationFailed,
     OperationNeedsDetach,
     DetachDue,
     DetachBlocked,
@@ -66,15 +86,18 @@ class TaskbarLayoutCoordinatorTestAccess {
   };
   enum class TestAction {
     None,
+    AcceptRequest,
     Prepare,
     Finalize,
     CompletePrepared,
     CompleteAttached,
     CompleteRetained,
     CompleteTemporary,
+    CompleteIncompatible,
     CompleteFailed,
-    CompleteDestroyed,
     CompleteReleaseStatus,
+    RecreateWindow,
+    RecreateDetachedWindow,
     BeginUserDetach,
     BeginHostDetach,
     EscalateHostDetach,
@@ -87,20 +110,56 @@ class TaskbarLayoutCoordinatorTestAccess {
     int nextState;
     int action;
   };
-  [[nodiscard]] static int stateCount() { return static_cast<int>(TaskbarLayoutCoordinator::State::Detaching) + 1; }
+  [[nodiscard]] static int stateCount() { return static_cast<int>(TaskbarLayoutCoordinator::State::RecreatingAfterDetach) + 1; }
   [[nodiscard]] static int eventCount() { return static_cast<int>(TaskbarLayoutCoordinator::EventType::DetachCompleted) + 1; }
   [[nodiscard]] static Result reduce(const int state, const int event) {
     const auto transition = TaskbarLayoutCoordinator::reduce(static_cast<TaskbarLayoutCoordinator::State>(state),
                                                              TaskbarLayoutCoordinator::Event{static_cast<TaskbarLayoutCoordinator::EventType>(event)});
     return {static_cast<int>(transition.nextState), static_cast<int>(transition.action)};
   }
+  [[nodiscard]] static Result reduceDetachCompleted(const bool nativeWindowDestroyed) {
+    const auto transition =
+        TaskbarLayoutCoordinator::reduce(TaskbarLayoutCoordinator::State::Detaching,
+                                         TaskbarLayoutCoordinator::Event{TaskbarLayoutCoordinator::EventType::DetachCompleted, nativeWindowDestroyed});
+    return {static_cast<int>(transition.nextState), static_cast<int>(transition.action)};
+  }
   [[nodiscard]] static const char* stateName(const int value) {
-    static constexpr std::array names{"detached", "preparing", "prepared", "finalizing", "attached", "detaching"};
+    static constexpr std::array names{"detached",
+                                      "preparing",
+                                      "recreating-for-prepare",
+                                      "prepared",
+                                      "finalizing",
+                                      "repreparing",
+                                      "recreating-for-activation",
+                                      "recreating-for-failure",
+                                      "recreating-for-incompatible",
+                                      "attached",
+                                      "detaching",
+                                      "recreating-after-detach"};
     return names.at(static_cast<std::size_t>(value));
   }
   [[nodiscard]] static const char* eventName(const int value) {
-    static constexpr std::array names{"acquire",   "activate", "detach",    "host-invalidated", "prepared",   "attached",       "retained",
-                                      "temporary", "failed",   "destroyed", "needs-detach",     "detach-due", "detach-blocked", "detach-completed"};
+    static constexpr std::array names{"acquire",
+                                      "activate",
+                                      "detach",
+                                      "host-invalidated",
+                                      "prepared",
+                                      "attached",
+                                      "retained",
+                                      "temporary",
+                                      "incompatible",
+                                      "failed",
+                                      "retry-prepare",
+                                      "recreate-prepare",
+                                      "recreate-activation",
+                                      "recreate-failure",
+                                      "recreate-incompatible",
+                                      "window-recreated",
+                                      "window-recreate-failed",
+                                      "needs-detach",
+                                      "detach-due",
+                                      "detach-blocked",
+                                      "detach-completed"};
     return names.at(static_cast<std::size_t>(value));
   }
   static void invalidateHost(TaskbarLayoutCoordinator& coordinator) {
@@ -114,7 +173,17 @@ class TaskbarLayoutCoordinatorTestAccess {
   static void advanceDetaching(TaskbarLayoutCoordinator& coordinator) {
     coordinator.postEvent(TaskbarLayoutCoordinator::Event{TaskbarLayoutCoordinator::EventType::DetachDue});
   }
+  [[nodiscard]] static TaskbarLayoutCoordinator::AttachResult deliverAcquireWithoutPayload(TaskbarLayoutCoordinator& coordinator) {
+    coordinator.m_lastAttachResult = TaskbarLayoutCoordinator::AttachResult::Prepared;
+    coordinator.postEvent(TaskbarLayoutCoordinator::Event{TaskbarLayoutCoordinator::EventType::AcquireRequested});
+    return coordinator.m_lastAttachResult;
+  }
   [[nodiscard]] static int retryInterval(const TaskbarLayoutCoordinator& coordinator) { return coordinator.m_asyncTimer->interval(); }
+  [[nodiscard]] static bool isDetached(const TaskbarLayoutCoordinator& coordinator) { return coordinator.m_state == TaskbarLayoutCoordinator::State::Detached; }
+  [[nodiscard]] static bool hasRequest(const TaskbarLayoutCoordinator& coordinator) { return coordinator.m_request.has_value(); }
+  [[nodiscard]] static bool ownsAttachResources(const TaskbarLayoutCoordinator& coordinator) {
+    return coordinator.m_attachment.has_value() || coordinator.m_transaction != nullptr;
+  }
   [[nodiscard]] static bool isDetaching(const TaskbarLayoutCoordinator& coordinator) {
     return coordinator.m_state == TaskbarLayoutCoordinator::State::Detaching;
   }
@@ -137,13 +206,17 @@ class OverlayHubViewTestAccess {
     HostReleaseCompleted,
     AttachPrepared,
     AttachAttached,
+    AttachRetained,
     AttachTemporarilyUnavailable,
+    AttachIncompatible,
     AttachReleasePending,
     AttachReleaseBlocked,
     AttachFailed,
     ActivationPrepared,
     ActivationAttached,
+    ActivationRetained,
     ActivationTemporarilyUnavailable,
+    ActivationIncompatible,
     ActivationReleasePending,
     ActivationReleaseBlocked,
     ActivationFailed,
@@ -227,13 +300,17 @@ class OverlayHubViewTestAccess {
                                       "host-release-completed",
                                       "attach-prepared",
                                       "attach-attached",
+                                      "attach-retained",
                                       "attach-temporary",
+                                      "attach-incompatible",
                                       "attach-release-pending",
                                       "attach-release-blocked",
                                       "attach-failed",
                                       "activation-prepared",
                                       "activation-attached",
+                                      "activation-retained",
                                       "activation-temporary",
+                                      "activation-incompatible",
                                       "activation-release-pending",
                                       "activation-release-blocked",
                                       "activation-failed",
@@ -363,30 +440,61 @@ TaskbarLayoutCoordinatorTestAccess::Result expectedCoordinatorTransition(const T
     return TaskbarLayoutCoordinatorTestAccess::Result{static_cast<int>(next), static_cast<int>(action)};
   };
 
-  if (event == Event::AcquireRequested && (state == State::Detached || state == State::Attached)) return result(State::Preparing, Action::Prepare);
+  if (event == Event::AcquireRequested && (state == State::Detached || state == State::Attached)) return result(State::Preparing, Action::AcceptRequest);
   if (event == Event::ActivateRequested && state == State::Prepared) return result(State::Finalizing, Action::Finalize);
   if (event == Event::ActivateRequested && state == State::Attached) return result(State::Attached, Action::CompleteAttached);
   if (event == Event::ActivateRequested && state == State::Detached) return result(State::Detached, Action::CompleteFailed);
   if (event == Event::ActivateRequested && state == State::Detaching) return result(state, Action::CompleteReleaseStatus);
-  if (state == State::Preparing) {
-    if (event == Event::OperationPrepared) return result(State::Prepared, Action::CompletePrepared);
+
+  const auto operationResult = [&](const bool resumeActivation) -> std::optional<TaskbarLayoutCoordinatorTestAccess::Result> {
+    if (event == Event::OperationPrepared)
+      return resumeActivation ? result(State::Finalizing, Action::Finalize) : result(State::Prepared, Action::CompletePrepared);
     if (event == Event::OperationRetained) return result(State::Attached, Action::CompleteRetained);
     if (event == Event::OperationTemporary) return result(State::Detached, Action::CompleteTemporary);
+    if (event == Event::OperationIncompatible) return result(State::Detached, Action::CompleteIncompatible);
     if (event == Event::OperationFailed) return result(State::Detached, Action::CompleteFailed);
-    if (event == Event::OperationDestroyed) return result(State::Detached, Action::CompleteDestroyed);
+    if (event == Event::OperationRecreateFailure) return result(State::RecreatingForFailure, Action::RecreateWindow);
+    if (event == Event::OperationRecreateIncompatible) return result(State::RecreatingForIncompatible, Action::RecreateWindow);
     if (event == Event::OperationNeedsDetach) return result(State::Detaching, Action::BeginUserDetach);
+    if (!resumeActivation && event == Event::OperationRecreatePrepare) return result(State::RecreatingForPrepare, Action::RecreateWindow);
+    if (resumeActivation && event == Event::OperationRecreateActivation) return result(State::RecreatingForActivation, Action::RecreateWindow);
+    return std::nullopt;
+  };
+  if (state == State::Preparing) {
+    if (const auto transition = operationResult(false)) return *transition;
+  }
+  if (state == State::Repreparing) {
+    if (const auto transition = operationResult(true)) return *transition;
   }
   if (state == State::Finalizing) {
     if (event == Event::OperationAttached) return result(State::Attached, Action::CompleteAttached);
     if (event == Event::OperationTemporary) return result(State::Detached, Action::CompleteTemporary);
+    if (event == Event::OperationIncompatible) return result(State::Detached, Action::CompleteIncompatible);
     if (event == Event::OperationFailed) return result(State::Detached, Action::CompleteFailed);
-    if (event == Event::OperationDestroyed) return result(State::Detached, Action::CompleteDestroyed);
+    if (event == Event::OperationRetryPrepare) return result(State::Repreparing, Action::Prepare);
+    if (event == Event::OperationRecreateActivation) return result(State::RecreatingForActivation, Action::RecreateWindow);
+    if (event == Event::OperationRecreateFailure) return result(State::RecreatingForFailure, Action::RecreateWindow);
+    if (event == Event::OperationRecreateIncompatible) return result(State::RecreatingForIncompatible, Action::RecreateWindow);
     if (event == Event::OperationNeedsDetach) return result(State::Detaching, Action::BeginUserDetach);
   }
-  if ((state == State::Preparing || state == State::Prepared || state == State::Finalizing || state == State::Attached) && event == Event::DetachRequested)
-    return result(State::Detaching, Action::BeginUserDetach);
-  if ((state == State::Preparing || state == State::Prepared || state == State::Finalizing || state == State::Attached) && event == Event::HostInvalidated)
-    return result(State::Detaching, Action::BeginHostDetach);
+  if (state == State::RecreatingForPrepare) {
+    if (event == Event::WindowRecreated) return result(State::Preparing, Action::Prepare);
+    if (event == Event::WindowRecreationFailed) return result(State::Detached, Action::CompleteFailed);
+  }
+  if (state == State::RecreatingForActivation) {
+    if (event == Event::WindowRecreated) return result(State::Repreparing, Action::Prepare);
+    if (event == Event::WindowRecreationFailed) return result(State::Detached, Action::CompleteFailed);
+  }
+  if (state == State::RecreatingForFailure && (event == Event::WindowRecreated || event == Event::WindowRecreationFailed))
+    return result(State::Detached, Action::CompleteFailed);
+  if (state == State::RecreatingForIncompatible && event == Event::WindowRecreated) return result(State::Detached, Action::CompleteIncompatible);
+  if (state == State::RecreatingForIncompatible && event == Event::WindowRecreationFailed) return result(State::Detached, Action::CompleteFailed);
+
+  const bool activeOperation = state == State::Preparing || state == State::RecreatingForPrepare || state == State::Prepared || state == State::Finalizing ||
+                               state == State::Repreparing || state == State::RecreatingForActivation || state == State::RecreatingForFailure ||
+                               state == State::RecreatingForIncompatible || state == State::Attached;
+  if (activeOperation && event == Event::DetachRequested) return result(State::Detaching, Action::BeginUserDetach);
+  if (activeOperation && event == Event::HostInvalidated) return result(State::Detaching, Action::BeginHostDetach);
   if (state == State::Detached && event == Event::HostInvalidated) return result(state, Action::NotifyDetachedHostRefresh);
   if (state == State::Detaching) {
     if (event == Event::AcquireRequested) return result(state, Action::CompleteReleaseStatus);
@@ -395,12 +503,19 @@ TaskbarLayoutCoordinatorTestAccess::Result expectedCoordinatorTransition(const T
     if (event == Event::DetachBlocked) return result(state, Action::ScheduleDetach);
     if (event == Event::DetachCompleted) return result(State::Detached, Action::CompleteDetach);
   }
+  if (state == State::RecreatingAfterDetach && (event == Event::AcquireRequested || event == Event::ActivateRequested))
+    return result(state, Action::CompleteReleaseStatus);
+  if (state == State::RecreatingAfterDetach && (event == Event::WindowRecreated || event == Event::WindowRecreationFailed))
+    return result(State::Detached, Action::CompleteDetach);
   return result(state);
 }
 
 ExpectedTransition expectedTransition(const FsmState state, const FsmVariant variant) {
   if (variant == FsmVariant::RequestDisabled) {
-    if (state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Withdrawing || state == FsmState::Failing) return {state};
+    if (state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible || state == FsmState::Withdrawing) {
+      return {state};
+    }
+    if (state == FsmState::Failing) return {FsmState::Withdrawing};
     return {FsmState::Withdrawing, FsmAction::ReleaseRequest, true};
   }
   if (variant == FsmVariant::RequestEnabled) {
@@ -429,7 +544,9 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
   if (variant == FsmVariant::ActivationAuthorized)
     return state == FsmState::Activating ? ExpectedTransition{state, FsmAction::Activate} : ExpectedTransition{state};
   if (variant == FsmVariant::ReleaseBlocked)
-    return state == FsmState::Disabled || state == FsmState::Withdrawn ? ExpectedTransition{state} : ExpectedTransition{FsmState::Failing};
+    return state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible || state == FsmState::Withdrawing
+               ? ExpectedTransition{state}
+               : ExpectedTransition{FsmState::Failing};
   if (variant == FsmVariant::ReleaseCompleted) {
     if (state == FsmState::Recovering) return {state, FsmAction::AttachAcquire};
     if (state == FsmState::Withdrawing) return {FsmState::Withdrawn};
@@ -437,11 +554,12 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
     return {state};
   }
   if (variant == FsmVariant::HostReleaseStarted)
-    return state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Withdrawing || state == FsmState::Failing
+    return state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible || state == FsmState::Withdrawing ||
+                   state == FsmState::Failing
                ? ExpectedTransition{state}
                : ExpectedTransition{FsmState::Recovering};
   if (variant == FsmVariant::HostReleaseCompleted) {
-    if (state == FsmState::Disabled || state == FsmState::Withdrawn) return {state};
+    if (state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible) return {state};
     if (state == FsmState::Withdrawing) return {FsmState::Withdrawn};
     if (state == FsmState::Failing) return {FsmState::Unavailable};
     if (state == FsmState::Recovering) return {state, FsmAction::AttachAcquire};
@@ -458,9 +576,14 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
         return state == FsmState::Refreshing ? ExpectedTransition{state, FsmAction::Activate} : ExpectedTransition{FsmState::Activating};
       case OverlayHubView::AttachResult::Attached:
         return {FsmState::Failing, FsmAction::ReleaseRecovery, true};
+      case OverlayHubView::AttachResult::Retained:
+        return state == FsmState::Refreshing ? ExpectedTransition{FsmState::Confirmed}
+                                             : ExpectedTransition{FsmState::Failing, FsmAction::ReleaseRecovery, true};
       case OverlayHubView::AttachResult::TemporarilyUnavailable:
         if (state == FsmState::Recovering) return {state, FsmAction::ScheduleRecoverRetry};
-        return state == FsmState::Refreshing ? ExpectedTransition{FsmState::Confirmed} : ExpectedTransition{FsmState::Unavailable, FsmAction::Suspend, true};
+        return {FsmState::Unavailable, FsmAction::Suspend, true};
+      case OverlayHubView::AttachResult::Incompatible:
+        return {FsmState::Incompatible, FsmAction::Suspend, true};
       case OverlayHubView::AttachResult::ReleasePending:
         return {FsmState::Recovering};
       case OverlayHubView::AttachResult::ReleaseBlocked:
@@ -478,8 +601,13 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
       case OverlayHubView::AttachResult::Attached:
         return state == FsmState::Refreshing ? ExpectedTransition{state, FsmAction::VerifyAttach}
                                              : ExpectedTransition{FsmState::Attaching, FsmAction::VerifyAttach};
+      case OverlayHubView::AttachResult::Retained:
+        return state == FsmState::Refreshing ? ExpectedTransition{FsmState::Confirmed}
+                                             : ExpectedTransition{FsmState::Failing, FsmAction::ReleaseRecovery, true};
       case OverlayHubView::AttachResult::TemporarilyUnavailable:
-        return state == FsmState::Refreshing ? ExpectedTransition{FsmState::Confirmed} : ExpectedTransition{FsmState::Unavailable, FsmAction::Suspend, true};
+        return {FsmState::Unavailable, FsmAction::Suspend, true};
+      case OverlayHubView::AttachResult::Incompatible:
+        return {FsmState::Incompatible, FsmAction::Suspend, true};
       case OverlayHubView::AttachResult::ReleasePending:
         return {FsmState::Recovering};
       case OverlayHubView::AttachResult::ReleaseBlocked:
@@ -490,7 +618,7 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
     }
   }
   if (variant == FsmVariant::ReleaseComplete || variant == FsmVariant::ReleasePending) {
-    if (state == FsmState::Disabled || state == FsmState::Withdrawn) return {state};
+    if (state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible) return {state};
     if (state == FsmState::Withdrawing || state == FsmState::Failing)
       return variant == FsmVariant::ReleasePending ? ExpectedTransition{state} : ExpectedTransition{FsmState::Unavailable};
     return variant == FsmVariant::ReleasePending ? ExpectedTransition{FsmState::Failing} : ExpectedTransition{FsmState::Unavailable};
@@ -579,6 +707,7 @@ class FakeTransaction final : public TaskbarLayoutStrategy::AttachTransaction {
 
   TaskbarLayoutStrategy::DetachResult rollback() override {
     ++m_state->rollbackCalls;
+    if (m_state->trace) m_state->trace->push_back("rollback:" + m_state->name);
     return m_state->rollbackResult;
   }
 
@@ -658,6 +787,7 @@ class FakeHubView final : public OverlayHubView {
 
   void hostReleaseStarted() { notifyHostPresentationReleaseStarted(); }
   void hostReleaseCompleted() { notifyHostPresentationReleaseCompleted(); }
+  void releaseCompleted() { notifyPresentationReleaseCompleted(); }
 
  private:
   AttachResult acquirePresentation() override {
@@ -735,19 +865,26 @@ class CoordinatorBackedHubView final : public OverlayHubView {
  private:
   AttachResult acquirePresentation() override {
     m_windowId = m_window.winId();
-    const auto result = m_coordinator->prepareAttach(&m_window, QSize(80, 24), {}, {});
+    const auto result = m_coordinator->prepareAttach(&m_window, QSize(80, 24), {}, {}, [this]() -> QWindow* {
+      m_window.destroy();
+      m_windowId = m_window.winId();
+      return &m_window;
+    });
     switch (result) {
       case TaskbarLayoutCoordinator::AttachResult::Prepared:
         return AttachResult::Prepared;
       case TaskbarLayoutCoordinator::AttachResult::Attached:
         return AttachResult::Failed;
+      case TaskbarLayoutCoordinator::AttachResult::Retained:
+        return AttachResult::Retained;
       case TaskbarLayoutCoordinator::AttachResult::TemporarilyUnavailable:
         return AttachResult::TemporarilyUnavailable;
+      case TaskbarLayoutCoordinator::AttachResult::Incompatible:
+        return AttachResult::Incompatible;
       case TaskbarLayoutCoordinator::AttachResult::ReleasePending:
         return AttachResult::ReleasePending;
       case TaskbarLayoutCoordinator::AttachResult::ReleaseBlocked:
         return AttachResult::ReleaseBlocked;
-      case TaskbarLayoutCoordinator::AttachResult::NativeWindowDestroyed:
       case TaskbarLayoutCoordinator::AttachResult::Failed:
         return AttachResult::Failed;
     }
@@ -759,14 +896,17 @@ class CoordinatorBackedHubView final : public OverlayHubView {
     switch (result) {
       case TaskbarLayoutCoordinator::AttachResult::Attached:
         return AttachResult::Attached;
+      case TaskbarLayoutCoordinator::AttachResult::Retained:
+        return AttachResult::Retained;
       case TaskbarLayoutCoordinator::AttachResult::TemporarilyUnavailable:
         return AttachResult::TemporarilyUnavailable;
+      case TaskbarLayoutCoordinator::AttachResult::Incompatible:
+        return AttachResult::Incompatible;
       case TaskbarLayoutCoordinator::AttachResult::ReleasePending:
         return AttachResult::ReleasePending;
       case TaskbarLayoutCoordinator::AttachResult::ReleaseBlocked:
         return AttachResult::ReleaseBlocked;
       case TaskbarLayoutCoordinator::AttachResult::Prepared:
-      case TaskbarLayoutCoordinator::AttachResult::NativeWindowDestroyed:
       case TaskbarLayoutCoordinator::AttachResult::Failed:
         return AttachResult::Failed;
     }
@@ -801,7 +941,12 @@ class CoordinatorBackedHubView final : public OverlayHubView {
 TaskbarLayoutCoordinator::AttachResult attachCoordinator(TaskbarLayoutCoordinator& coordinator, QWindow* const window, const QSize& size,
                                                          const TaskbarLayoutCoordinator::VisibilityCommit& show = {},
                                                          const TaskbarLayoutCoordinator::VisibilityRollback& hide = {}) {
-  const auto prepared = coordinator.prepareAttach(window, size, show, hide);
+  const auto prepared = coordinator.prepareAttach(window, size, show, hide, [window]() -> QWindow* {
+    if (!window) return nullptr;
+    window->destroy();
+    (void)window->winId();
+    return window;
+  });
   return prepared == TaskbarLayoutCoordinator::AttachResult::Prepared ? coordinator.activatePrepared() : prepared;
 }
 
@@ -834,6 +979,83 @@ void testPriorityFallbackAndTemporaryResult() {
   QVERIFY2(result == TaskbarLayoutCoordinator::AttachResult::Attached, "lower priority strategy must provide fallback");
   QVERIFY2(*trace == std::vector<std::string>({"prepare:high", "prepare:low", "commit:low"}), "strategies must be evaluated in priority order");
 
+  auto incompatibleHigh = std::make_shared<StrategyState>();
+  auto availableLow = std::make_shared<StrategyState>();
+  incompatibleHigh->priority = 200;
+  incompatibleHigh->commitResult = TaskbarLayoutStrategy::AttachResult::Incompatible;
+  availableLow->priority = 100;
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> incompatibleFallbackStrategies;
+  incompatibleFallbackStrategies.push_back(fakeStrategy(availableLow));
+  incompatibleFallbackStrategies.push_back(fakeStrategy(incompatibleHigh));
+  TaskbarLayoutCoordinator incompatibleFallbackCoordinator(std::move(incompatibleFallbackStrategies), {});
+  QVERIFY2(attachCoordinator(incompatibleFallbackCoordinator, &window, QSize(80, 24)) == TaskbarLayoutCoordinator::AttachResult::Attached,
+           "an incompatible strategy must yield to a lower-priority strategy");
+  QCOMPARE(incompatibleHigh->rollbackCalls, 1);
+  QCOMPARE(availableLow->commitCalls, 1);
+
+  auto activeIncompatible = std::make_shared<StrategyState>();
+  const auto activeTrace = std::make_shared<std::vector<std::string>>();
+  activeIncompatible->name = "active";
+  activeIncompatible->trace = activeTrace;
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> activeStrategies;
+  activeStrategies.push_back(fakeStrategy(activeIncompatible));
+  TaskbarLayoutCoordinator activeCoordinator(std::move(activeStrategies), {});
+  QCOMPARE(attachCoordinator(activeCoordinator, &window, QSize(80, 24)), TaskbarLayoutCoordinator::AttachResult::Attached);
+  activeTrace->clear();
+  activeIncompatible->commitResult = TaskbarLayoutStrategy::AttachResult::Incompatible;
+  const auto activeOutcome =
+      activeCoordinator.prepareAttach(&window, QSize(80, 24), {}, [activeTrace]() { activeTrace->push_back("hide:active"); }, [&window]() { return &window; });
+  QCOMPARE(activeOutcome, TaskbarLayoutCoordinator::AttachResult::Incompatible);
+  QVERIFY2(*activeTrace == std::vector<std::string>({"prepare:active", "commit:active", "hide:active", "rollback:active"}),
+           "an active incompatible attachment must be hidden before rollback restores its top-level parent");
+
+  auto incompatibleWithUnavailableHigh = std::make_shared<StrategyState>();
+  auto unavailableLow = std::make_shared<StrategyState>();
+  incompatibleWithUnavailableHigh->priority = 200;
+  incompatibleWithUnavailableHigh->commitResult = TaskbarLayoutStrategy::AttachResult::Incompatible;
+  unavailableLow->priority = 100;
+  unavailableLow->readiness = TaskbarLayoutStrategy::AttachReadiness::Unavailable;
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> unavailableFallbackStrategies;
+  unavailableFallbackStrategies.push_back(fakeStrategy(unavailableLow));
+  unavailableFallbackStrategies.push_back(fakeStrategy(incompatibleWithUnavailableHigh));
+  TaskbarLayoutCoordinator unavailableFallbackCoordinator(std::move(unavailableFallbackStrategies), {});
+  QVERIFY2(attachCoordinator(unavailableFallbackCoordinator, &window, QSize(80, 24)) == TaskbarLayoutCoordinator::AttachResult::Failed,
+           "one incompatible strategy must not terminalize an endpoint whose remaining strategy is currently unavailable");
+  unavailableLow->readiness = TaskbarLayoutStrategy::AttachReadiness::Ready;
+  QVERIFY2(attachCoordinator(unavailableFallbackCoordinator, &window, QSize(80, 24)) == TaskbarLayoutCoordinator::AttachResult::Attached &&
+               incompatibleWithUnavailableHigh->commitCalls == 1,
+           "a remaining strategy must recover without re-probing the process-incompatible strategy");
+
+  auto destructiveIncompatibleHigh = std::make_shared<StrategyState>();
+  auto availableAfterReset = std::make_shared<StrategyState>();
+  destructiveIncompatibleHigh->priority = 200;
+  destructiveIncompatibleHigh->commitResult = TaskbarLayoutStrategy::AttachResult::Incompatible;
+  destructiveIncompatibleHigh->rollbackResult = TaskbarLayoutStrategy::DetachResult::NativeWindowDestroyed;
+  availableAfterReset->priority = 100;
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> destructiveFallbackStrategies;
+  destructiveFallbackStrategies.push_back(fakeStrategy(availableAfterReset));
+  destructiveFallbackStrategies.push_back(fakeStrategy(destructiveIncompatibleHigh));
+  TaskbarLayoutCoordinator destructiveFallbackCoordinator(std::move(destructiveFallbackStrategies), {});
+  const HWND destroyedWindow = reinterpret_cast<HWND>(window.winId());
+  const auto resetOutcome = attachCoordinator(destructiveFallbackCoordinator, &window, QSize(80, 24));
+  QVERIFY2(resetOutcome == TaskbarLayoutCoordinator::AttachResult::Attached && !IsWindow(destroyedWindow) && destructiveIncompatibleHigh->commitCalls == 1 &&
+               availableAfterReset->commitCalls == 1,
+           "the coordinator FSM must recreate a destroyed HWND before the remaining strategy attaches");
+
+  auto finalizeIncompatibleHigh = std::make_shared<StrategyState>();
+  auto availableAfterFinalize = std::make_shared<StrategyState>();
+  finalizeIncompatibleHigh->priority = 200;
+  finalizeIncompatibleHigh->finalizeResult = TaskbarLayoutStrategy::AttachResult::Incompatible;
+  availableAfterFinalize->priority = 100;
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> finalizeFallbackStrategies;
+  finalizeFallbackStrategies.push_back(fakeStrategy(availableAfterFinalize));
+  finalizeFallbackStrategies.push_back(fakeStrategy(finalizeIncompatibleHigh));
+  TaskbarLayoutCoordinator finalizeFallbackCoordinator(std::move(finalizeFallbackStrategies), {});
+  const auto finalizeContinuation = attachCoordinator(finalizeFallbackCoordinator, &window, QSize(80, 24));
+  QVERIFY2(finalizeContinuation == TaskbarLayoutCoordinator::AttachResult::Attached && finalizeIncompatibleHigh->finalizeCalls == 1 &&
+               availableAfterFinalize->commitCalls == 1 && availableAfterFinalize->finalizeCalls == 1,
+           "finalize incompatibility must remain inside the FSM until the lower strategy is fully attached");
+
   auto temporary = std::make_shared<StrategyState>();
   temporary->readiness = TaskbarLayoutStrategy::AttachReadiness::TemporarilyUnavailable;
   std::vector<std::unique_ptr<TaskbarLayoutStrategy>> temporaryStrategies;
@@ -841,6 +1063,55 @@ void testPriorityFallbackAndTemporaryResult() {
   TaskbarLayoutCoordinator temporaryCoordinator(std::move(temporaryStrategies), {});
   QVERIFY2(attachCoordinator(temporaryCoordinator, &window, QSize(80, 24)) == TaskbarLayoutCoordinator::AttachResult::TemporarilyUnavailable,
            "temporary readiness must not collapse into a permanent failure");
+
+  auto incompatible = std::make_shared<StrategyState>();
+  incompatible->commitResult = TaskbarLayoutStrategy::AttachResult::Incompatible;
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> incompatibleStrategies;
+  incompatibleStrategies.push_back(fakeStrategy(incompatible));
+  int incompatibleHostRefreshes = 0;
+  TaskbarLayoutCoordinator incompatibleCoordinator(std::move(incompatibleStrategies),
+                                                   [&incompatibleHostRefreshes](const TaskbarLayoutCoordinator::DetachEvent&) { ++incompatibleHostRefreshes; });
+  QVERIFY2(attachCoordinator(incompatibleCoordinator, &window, QSize(80, 24)) == TaskbarLayoutCoordinator::AttachResult::Incompatible,
+           "an incompatible endpoint must remain distinct from retryable and generic failures");
+  TaskbarLayoutCoordinatorTestAccess::deliverTaskbarCreated(incompatibleCoordinator);
+  QCoreApplication::processEvents();
+  QCOMPARE(incompatibleHostRefreshes, 0);
+}
+
+void testRetainedAttachmentIsDistinctFromReleasedTemporaryFailure() {
+  auto state = std::make_shared<StrategyState>();
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> strategies;
+  strategies.push_back(fakeStrategy(state));
+  TaskbarLayoutCoordinator coordinator(std::move(strategies), {});
+  QWindow window;
+  QCOMPARE(attachCoordinator(coordinator, &window, QSize(80, 24)), TaskbarLayoutCoordinator::AttachResult::Attached);
+
+  int hideCalls = 0;
+  state->readiness = TaskbarLayoutStrategy::AttachReadiness::TemporarilyUnavailable;
+  const auto retained = coordinator.prepareAttach(
+      &window, QSize(80, 24), {}, [&hideCalls]() { ++hideCalls; },
+      [&window]() -> QWindow* {
+        window.destroy();
+        (void)window.winId();
+        return &window;
+      });
+  QCOMPARE(retained, TaskbarLayoutCoordinator::AttachResult::Retained);
+  QCOMPARE(hideCalls, 0);
+  QCOMPARE(coordinator.verify(&window, window.winId()), TaskbarLayoutStrategy::VerificationResult::Confirmed);
+
+  state->readiness = TaskbarLayoutStrategy::AttachReadiness::Ready;
+  state->commitResult = TaskbarLayoutStrategy::AttachResult::TemporarilyUnavailable;
+  const auto released = coordinator.prepareAttach(
+      &window, QSize(80, 24), {}, [&hideCalls]() { ++hideCalls; },
+      [&window]() -> QWindow* {
+        window.destroy();
+        (void)window.winId();
+        return &window;
+      });
+  QCOMPARE(released, TaskbarLayoutCoordinator::AttachResult::TemporarilyUnavailable);
+  QCOMPARE(hideCalls, 1);
+  QCOMPARE(state->rollbackCalls, 1);
+  QCOMPARE(coordinator.verify(&window, window.winId()), TaskbarLayoutStrategy::VerificationResult::Invalid);
 }
 
 void testAttachDetachLifecycle() {
@@ -888,6 +1159,58 @@ void testActivatePreparedReportsStatusForEveryCoordinatorState() {
   QCOMPARE(coordinator.activatePrepared(), TaskbarLayoutCoordinator::AttachResult::Failed);
 }
 
+void testIgnoredAcquireDoesNotReplacePreparedRequest() {
+  auto state = std::make_shared<StrategyState>();
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> strategies;
+  strategies.push_back(fakeStrategy(state));
+  TaskbarLayoutCoordinator coordinator(std::move(strategies), {});
+  QWindow firstWindow;
+  QWindow secondWindow;
+  int firstShowCalls = 0;
+  int secondShowCalls = 0;
+
+  QCOMPARE(coordinator.prepareAttach(
+               &firstWindow, QSize(80, 24), [&firstShowCalls]() { ++firstShowCalls; }, {}, [&firstWindow]() -> QWindow* { return &firstWindow; }),
+           TaskbarLayoutCoordinator::AttachResult::Prepared);
+  QCOMPARE(coordinator.prepareAttach(
+               &secondWindow, QSize(120, 32), [&secondShowCalls]() { ++secondShowCalls; }, {}, [&secondWindow]() -> QWindow* { return &secondWindow; }),
+           TaskbarLayoutCoordinator::AttachResult::Failed);
+  QCOMPARE(coordinator.activatePrepared(), TaskbarLayoutCoordinator::AttachResult::Attached);
+
+  QCOMPARE(state->prepareCalls, 1);
+  QCOMPARE(state->preparedWindow.data(), &firstWindow);
+  QCOMPARE(firstShowCalls, 1);
+  QCOMPARE(secondShowCalls, 0);
+}
+
+void testMalformedAcquirePayloadConvergesToDetached() {
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> strategies;
+  TaskbarLayoutCoordinator coordinator(std::move(strategies), {});
+  QCOMPARE(TaskbarLayoutCoordinatorTestAccess::deliverAcquireWithoutPayload(coordinator), TaskbarLayoutCoordinator::AttachResult::Failed);
+  QVERIFY(TaskbarLayoutCoordinatorTestAccess::isDetached(coordinator));
+}
+
+void testDestroyedPreparedWindowReleasesTransaction() {
+  auto state = std::make_shared<StrategyState>();
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> strategies;
+  strategies.push_back(fakeStrategy(state));
+  int completed = 0;
+  TaskbarLayoutCoordinator coordinator(std::move(strategies), [&completed](const TaskbarLayoutCoordinator::DetachEvent event) {
+    completed += event.phase == TaskbarLayoutCoordinator::DetachPhase::Completed;
+  });
+  auto window = std::make_unique<QWindow>();
+  QCOMPARE(coordinator.prepareAttach(window.get(), QSize(80, 24), {}, {}, [&window]() -> QWindow* { return window.get(); }),
+           TaskbarLayoutCoordinator::AttachResult::Prepared);
+  window.reset();
+
+  QCOMPARE(coordinator.activatePrepared(), TaskbarLayoutCoordinator::AttachResult::ReleasePending);
+  QCOMPARE(state->rollbackCalls, 1);
+  QCOMPARE(completed, 1);
+  QVERIFY(TaskbarLayoutCoordinatorTestAccess::isDetached(coordinator));
+  QVERIFY(!TaskbarLayoutCoordinatorTestAccess::ownsAttachResources(coordinator));
+  QVERIFY(!TaskbarLayoutCoordinatorTestAccess::hasRequest(coordinator));
+}
+
 void testVisibilityIsCommittedBeforeFinalization() {
   auto state = std::make_shared<StrategyState>();
   state->requireVisibleAtFinalize = true;
@@ -924,6 +1247,7 @@ void testDetachDuringAttachIsSerialized() {
   QVERIFY2(state->finalizeCalls == 1 && state->rollbackCalls == 1 && state->detachCalls == 0,
            "detach during finalize must roll back the prepared transaction without a second strategy detach");
   QVERIFY2(hideCalls >= 1 && refreshCalls == 1, "serialized detach must finish through the normal completion path");
+  QVERIFY2(!TaskbarLayoutCoordinatorTestAccess::hasRequest(coordinator), "release completion must discard the prepared request callbacks");
 }
 
 void testRollbackFailureEntersDetaching() {
@@ -1019,14 +1343,13 @@ void testDetachRetryAndNativeWindowReset() {
   std::vector<std::unique_ptr<TaskbarLayoutStrategy>> strategies;
   strategies.push_back(fakeStrategy(state));
   int refreshCalls = 0;
-  bool nativeWindowResetRequired = false;
   TaskbarLayoutCoordinator coordinator(std::move(strategies), [&](const TaskbarLayoutCoordinator::DetachEvent event) {
     if (event.phase != TaskbarLayoutCoordinator::DetachPhase::Completed) return;
     ++refreshCalls;
-    nativeWindowResetRequired = event.nativeWindowResetRequired;
   });
   QWindow window;
   QVERIFY2(attachCoordinator(coordinator, &window, QSize(80, 24)) == TaskbarLayoutCoordinator::AttachResult::Attached, "setup attach must succeed");
+  const WId originalWindow = window.winId();
   coordinator.detach();
 
   TaskbarLayoutCoordinatorTestAccess::advanceDetaching(coordinator);
@@ -1036,7 +1359,8 @@ void testDetachRetryAndNativeWindowReset() {
   TaskbarLayoutCoordinatorTestAccess::advanceDetaching(coordinator);
   QVERIFY2(TaskbarLayoutCoordinatorTestAccess::retryInterval(coordinator) == 5000 && refreshCalls == 0, "third detach failure must enter slow retry");
   TaskbarLayoutCoordinatorTestAccess::advanceDetaching(coordinator);
-  QVERIFY2(refreshCalls == 1 && nativeWindowResetRequired, "native window destruction must propagate through the completion callback");
+  QVERIFY2(refreshCalls == 1 && window.winId() != originalWindow,
+           "the coordinator must recreate a destroyed native window before publishing detach completion");
 }
 
 void testAttachNativeWindowResetRecovery() {
@@ -1048,12 +1372,36 @@ void testAttachNativeWindowResetRecovery() {
   TaskbarLayoutCoordinator coordinator(std::move(strategies), {});
   QWindow window;
 
-  QVERIFY2(attachCoordinator(coordinator, &window, QSize(80, 24)) == TaskbarLayoutCoordinator::AttachResult::NativeWindowDestroyed,
-           "a rejected native parent must request native-window recreation instead of ordinary retry");
+  const WId rejectedWindow = window.winId();
+  const auto failedOutcome = attachCoordinator(coordinator, &window, QSize(80, 24));
+  QVERIFY2(failedOutcome == TaskbarLayoutCoordinator::AttachResult::Failed && window.winId() != rejectedWindow,
+           "a rejected native parent must be recreated before the failed operation completes");
   state->commitResult = TaskbarLayoutStrategy::AttachResult::Attached;
   state->rollbackResult = TaskbarLayoutStrategy::DetachResult::Detached;
   QVERIFY2(attachCoordinator(coordinator, &window, QSize(80, 24)) == TaskbarLayoutCoordinator::AttachResult::Attached,
            "coordinator must permit a clean attach immediately after native-window recreation");
+
+  auto incompatibleState = std::make_shared<StrategyState>();
+  incompatibleState->commitResult = TaskbarLayoutStrategy::AttachResult::Incompatible;
+  incompatibleState->rollbackResult = TaskbarLayoutStrategy::DetachResult::NativeWindowDestroyed;
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> incompatibleStrategies;
+  incompatibleStrategies.push_back(fakeStrategy(incompatibleState));
+  TaskbarLayoutCoordinator incompatibleCoordinator(std::move(incompatibleStrategies), {});
+  QWindow incompatibleWindow;
+  const WId incompatibleNativeWindow = incompatibleWindow.winId();
+  const auto incompatibleOutcome = attachCoordinator(incompatibleCoordinator, &incompatibleWindow, QSize(80, 24));
+  QVERIFY2(incompatibleOutcome == TaskbarLayoutCoordinator::AttachResult::Incompatible && incompatibleWindow.winId() != incompatibleNativeWindow,
+           "terminal incompatibility must still finish native-window recreation before returning");
+
+  auto failedRecreationState = std::make_shared<StrategyState>();
+  failedRecreationState->commitResult = TaskbarLayoutStrategy::AttachResult::Incompatible;
+  failedRecreationState->rollbackResult = TaskbarLayoutStrategy::DetachResult::NativeWindowDestroyed;
+  std::vector<std::unique_ptr<TaskbarLayoutStrategy>> failedRecreationStrategies;
+  failedRecreationStrategies.push_back(fakeStrategy(failedRecreationState));
+  TaskbarLayoutCoordinator failedRecreationCoordinator(std::move(failedRecreationStrategies), {});
+  QWindow failedRecreationWindow;
+  QCOMPARE(failedRecreationCoordinator.prepareAttach(&failedRecreationWindow, QSize(80, 24), {}, {}, []() -> QWindow* { return nullptr; }),
+           TaskbarLayoutCoordinator::AttachResult::Failed);
 }
 
 void testRapidToggleConverges() {
@@ -1177,6 +1525,8 @@ void testOverlayViewStateMachineMatrix() {
            "a concrete cleanup failure must leave exclusive recovery and expose fallback ownership");
   QVERIFY2(OverlayHubViewTestAccess::releaseCompleted(State::Withdrawing).nextState == OverlayHubViewTestAccess::state(State::Withdrawn),
            "user-revoked release completion must enter Withdrawn when presentation is not re-requested");
+  QVERIFY2(OverlayHubViewTestAccess::releaseBlocked(State::Withdrawing).nextState == OverlayHubViewTestAccess::state(State::Withdrawing),
+           "blocked cleanup must not erase an outstanding user withdrawal");
   QVERIFY2(OverlayHubViewTestAccess::releaseCompleted(State::Failing).nextState == OverlayHubViewTestAccess::state(State::Unavailable),
            "recovery release completion must yield Unavailable for fallback");
   QVERIFY2(OverlayHubViewTestAccess::hostReleaseCompleted(State::Failing).nextState == OverlayHubViewTestAccess::state(State::Unavailable),
@@ -1192,9 +1542,16 @@ void testOverlayViewStateMachineMatrix() {
 
   for (int state = 0; state < stateCount; ++state) {
     const auto disabled = OverlayHubViewTestAccess::requestDisabled(static_cast<State>(state));
-    if (static_cast<State>(state) == State::Disabled || static_cast<State>(state) == State::Withdrawn || static_cast<State>(state) == State::Withdrawing ||
-        static_cast<State>(state) == State::Failing) {
-      QVERIFY2(disabled.nextState == state, "RequestDisabled must be idempotent on idle/withdrawn/withdrawing/failing");
+    if (static_cast<State>(state) == State::Incompatible) {
+      QVERIFY2(disabled.nextState == OverlayHubViewTestAccess::state(State::Incompatible), "RequestDisabled must not erase a process-lifetime incompatibility");
+      QVERIFY2(!disabled.hasAction, "an incompatible endpoint owns no presentation resource to release");
+      continue;
+    }
+    if (static_cast<State>(state) == State::Disabled || static_cast<State>(state) == State::Withdrawn || static_cast<State>(state) == State::Withdrawing) {
+      QVERIFY2(disabled.nextState == state, "RequestDisabled must be idempotent on idle/withdrawn/withdrawing");
+    } else if (static_cast<State>(state) == State::Failing) {
+      QVERIFY2(disabled.nextState == OverlayHubViewTestAccess::state(State::Withdrawing) && !disabled.hasAction,
+               "disabling during failed cleanup must retain the in-flight release and remember user withdrawal");
     } else {
       QVERIFY2(disabled.nextState == OverlayHubViewTestAccess::state(State::Withdrawing),
                "RequestDisabled must enter Withdrawing so an explicit re-enable can resume via Recovering");
@@ -1205,6 +1562,17 @@ void testOverlayViewStateMachineMatrix() {
   const auto temporaryAttach = OverlayHubViewTestAccess::attachFinished(State::Probing, OverlayHubView::AttachResult::TemporarilyUnavailable);
   QVERIFY2(temporaryAttach.nextState == OverlayHubViewTestAccess::state(State::Unavailable) && temporaryAttach.actionBeforeStateChange,
            "failed acquisition must hide the high-priority view before fallback becomes eligible");
+  const auto retainedRefresh = OverlayHubViewTestAccess::attachFinished(State::Refreshing, OverlayHubView::AttachResult::Retained);
+  QVERIFY2(retainedRefresh.nextState == OverlayHubViewTestAccess::state(State::Confirmed) && !retainedRefresh.hasAction,
+           "only an explicitly retained attachment may return a refresh operation to Confirmed");
+  const auto releasedRefresh = OverlayHubViewTestAccess::attachFinished(State::Refreshing, OverlayHubView::AttachResult::TemporarilyUnavailable);
+  QVERIFY2(releasedRefresh.nextState == OverlayHubViewTestAccess::state(State::Unavailable) && releasedRefresh.actionBeforeStateChange,
+           "a temporary result after releasing attachment ownership must not be promoted back to Confirmed");
+  const auto incompatibleAttach = OverlayHubViewTestAccess::attachFinished(State::Probing, OverlayHubView::AttachResult::Incompatible);
+  QVERIFY2(incompatibleAttach.nextState == OverlayHubViewTestAccess::state(State::Incompatible) && incompatibleAttach.actionBeforeStateChange,
+           "a process-incompatible endpoint must yield fallback ownership without scheduling retries");
+  QVERIFY2(OverlayHubViewTestAccess::retryDue(State::Incompatible).nextState == OverlayHubViewTestAccess::state(State::Incompatible),
+           "Incompatible must ignore timer retry events");
   QVERIFY2(OverlayHubViewTestAccess::attachFinished(State::Probing, OverlayHubView::AttachResult::ReleasePending).nextState ==
                OverlayHubViewTestAccess::state(State::Recovering),
            "attach during clean release must wait for its completion event");
@@ -1293,6 +1661,30 @@ void testReleaseAnnouncementPrecedesSyncCompletion() {
   QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Unavailable && lowView->presentationConfirmed(),
            "a sync release completion that overtakes detach() must settle on Unavailable for fallback");
   QVERIFY2(highView->detachCalls == 1, "ownership transfer must perform exactly one release");
+}
+
+void testDisableDuringFailedCleanupConvergesToWithdrawn() {
+  OverlayHub hub;
+  auto view = std::make_unique<FakeHubView>(200);
+  FakeHubView* const viewPtr = view.get();
+  viewPtr->detachReturnsPending = true;
+  viewPtr->retryInterval = 0;
+  hub.registerView(std::move(view));
+  hub.setFilterEnabled(true);
+  hub.updateUsage(uwf::core::OverlayRuntime{});
+  QVERIFY(viewPtr->presentationConfirmed());
+
+  viewPtr->verificationResult = OverlayHubView::VerificationResult::Invalid;
+  viewPtr->verifyNow();
+  QVERIFY(viewPtr->displayState() == OverlayHubView::DisplayState::Failing);
+  hub.setRequestedVisible(false);
+  QVERIFY2(viewPtr->displayState() == OverlayHubView::DisplayState::Withdrawing,
+           "user withdrawal during recovery cleanup must become explicit state without starting a second detach");
+  QCOMPARE(viewPtr->detachCalls, 1);
+
+  viewPtr->releaseCompleted();
+  QVERIFY2(viewPtr->displayState() == OverlayHubView::DisplayState::Withdrawn && viewPtr->observedFailureCounts.empty(),
+           "cleanup completion after user withdrawal must not enter Unavailable or arm a retry");
 }
 
 void testPersistentPlacementMismatchDoesNotSpin() {
@@ -1537,6 +1929,31 @@ void testInterleavedToolbarAndHostTransitionsConverge() {
            "interleaved toolbar toggles and host transitions must converge to the recovered higher-priority taskbar");
 }
 
+void testRefreshOwnershipControlsFallbackEligibility() {
+  auto strategyState = std::make_shared<StrategyState>();
+  OverlayHub hub;
+  auto high = std::make_unique<CoordinatorBackedHubView>(strategyState);
+  CoordinatorBackedHubView* const highView = high.get();
+  auto low = std::make_unique<FakeHubView>(100);
+  FakeHubView* const lowView = low.get();
+  hub.registerView(std::move(high));
+  hub.registerView(std::move(low));
+  hub.setFilterEnabled(true);
+  hub.updateUsage(uwf::core::OverlayRuntime{});
+  QVERIFY2(highView->presentationConfirmed() && !lowView->requested(), "taskbar must own the initial presentation");
+
+  strategyState->verificationResult = TaskbarLayoutStrategy::VerificationResult::RefreshRequired;
+  strategyState->readiness = TaskbarLayoutStrategy::AttachReadiness::TemporarilyUnavailable;
+  highView->verifyNow();
+  QVERIFY2(highView->presentationConfirmed() && !lowView->requested(), "a refresh that explicitly retains its attachment must keep fallback ineligible");
+
+  strategyState->readiness = TaskbarLayoutStrategy::AttachReadiness::Ready;
+  strategyState->commitResult = TaskbarLayoutStrategy::AttachResult::TemporarilyUnavailable;
+  highView->verifyNow();
+  QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Unavailable && lowView->presentationConfirmed(),
+           "a refresh that rolled attachment ownership back must yield to fallback instead of claiming confirmation");
+}
+
 void testStartMenuJitterThenToolbarToggleKeepsTaskbarExclusive() {
   // Reproduces the product failure mode that motivated the hub lifecycle refactor:
   // repeated Start-menu open/close leaves the taskbar attachment in a transient
@@ -1740,8 +2157,12 @@ class HubLifecycleTests final : public QObject {
  private slots:
   void staticCompatibilityFiltering() { testStaticCompatibilityFiltering(); }
   void priorityFallbackAndTemporaryResult() { testPriorityFallbackAndTemporaryResult(); }
+  void retainedAttachmentIsDistinctFromReleasedTemporaryFailure() { testRetainedAttachmentIsDistinctFromReleasedTemporaryFailure(); }
   void attachDetachLifecycle() { testAttachDetachLifecycle(); }
   void activatePreparedReportsStatusForEveryCoordinatorState() { testActivatePreparedReportsStatusForEveryCoordinatorState(); }
+  void ignoredAcquireDoesNotReplacePreparedRequest() { testIgnoredAcquireDoesNotReplacePreparedRequest(); }
+  void malformedAcquirePayloadConvergesToDetached() { testMalformedAcquirePayloadConvergesToDetached(); }
+  void destroyedPreparedWindowReleasesTransaction() { testDestroyedPreparedWindowReleasesTransaction(); }
   void visibilityIsCommittedBeforeFinalization() { testVisibilityIsCommittedBeforeFinalization(); }
   void detachDuringAttachIsSerialized() { testDetachDuringAttachIsSerialized(); }
   void rollbackFailureEntersDetaching() { testRollbackFailureEntersDetaching(); }
@@ -1787,8 +2208,8 @@ class HubLifecycleTests final : public QObject {
     QTest::addColumn<int>("action");
     QTest::addColumn<bool>("actionBeforeStateChange");
 
-    static constexpr std::array stateNames{"disabled",   "withdrawn",   "unavailable", "probing",    "activating", "attaching",
-                                           "refreshing", "withdrawing", "failing",     "recovering", "confirmed"};
+    static constexpr std::array stateNames{"disabled",  "withdrawn",  "unavailable", "incompatible", "probing",    "activating",
+                                           "attaching", "refreshing", "withdrawing", "failing",      "recovering", "confirmed"};
     for (int stateIndex = 0; stateIndex < OverlayHubViewTestAccess::stateCount(); ++stateIndex) {
       for (int variantIndex = 0; variantIndex < OverlayHubViewTestAccess::variantCount(); ++variantIndex) {
         const auto expected = expectedTransition(static_cast<FsmState>(stateIndex), static_cast<FsmVariant>(variantIndex));
@@ -1813,6 +2234,17 @@ class HubLifecycleTests final : public QObject {
   }
 
   void fsmTotalityAndPayloadTransitions() { testOverlayViewStateMachineMatrix(); }
+
+  void coordinatorPayloadTransitions() {
+    using State = TaskbarLayoutCoordinatorTestAccess::TestState;
+    using Action = TaskbarLayoutCoordinatorTestAccess::TestAction;
+    const auto preserved = TaskbarLayoutCoordinatorTestAccess::reduceDetachCompleted(false);
+    QCOMPARE(preserved.nextState, static_cast<int>(State::Detached));
+    QCOMPARE(preserved.action, static_cast<int>(Action::CompleteDetach));
+    const auto destroyed = TaskbarLayoutCoordinatorTestAccess::reduceDetachCompleted(true);
+    QCOMPARE(destroyed.nextState, static_cast<int>(State::RecreatingAfterDetach));
+    QCOMPARE(destroyed.action, static_cast<int>(Action::RecreateDetachedWindow));
+  }
 
   void fsmPublishesReleaseBeforeFallbackAttach() {
     auto trace = std::make_shared<std::vector<std::string>>();
@@ -1868,6 +2300,51 @@ class HubLifecycleTests final : public QObject {
     QVERIFY(lowView->requested());
     QVERIFY(std::ranges::find(*trace, "low:detach") == trace->end());
     QVERIFY(std::ranges::find(*trace, "low:acquire") == trace->end());
+  }
+
+  void incompatibleProbeKeepsConfirmedFallbackStableWithoutRetry() {
+    auto trace = std::make_shared<std::vector<std::string>>();
+    OverlayHub hub;
+    auto high = std::make_unique<FakeHubView>(200);
+    FakeHubView* const highView = high.get();
+    highView->attachResult = OverlayHubView::AttachResult::TemporarilyUnavailable;
+    highView->trace = trace;
+    highView->traceName = "high";
+    auto low = std::make_unique<FakeHubView>(100);
+    FakeHubView* const lowView = low.get();
+    lowView->trace = trace;
+    lowView->traceName = "low";
+    hub.registerView(std::move(high));
+    hub.registerView(std::move(low));
+    hub.setFilterEnabled(true);
+    hub.updateUsage(uwf::core::OverlayRuntime{});
+    QVERIFY(lowView->presentationConfirmed());
+
+    trace->clear();
+    highView->observedFailureCounts.clear();
+    highView->attachResult = OverlayHubView::AttachResult::Incompatible;
+    highView->retryNow();
+    const int attachCalls = highView->attachCalls;
+    QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Incompatible, "incompatible endpoint must enter the non-retrying state");
+    QVERIFY(lowView->presentationConfirmed());
+    QVERIFY(lowView->requested());
+    QVERIFY(std::ranges::find(*trace, "low:detach") == trace->end());
+    QVERIFY2(highView->observedFailureCounts.empty(), "Incompatible must not arm the retry timer");
+
+    highView->retryNow();
+    QCOMPARE(highView->attachCalls, attachCalls);
+    QVERIFY(lowView->presentationConfirmed());
+
+    highView->hostReleaseCompleted();
+    QCOMPARE(highView->attachCalls, attachCalls);
+    QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Incompatible,
+             "Explorer recreation must not clear a capability fixed for the process lifetime");
+
+    hub.setRequestedVisible(false);
+    hub.setRequestedVisible(true);
+    QCOMPARE(highView->attachCalls, attachCalls);
+    QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Incompatible && lowView->presentationConfirmed(),
+             "turning the hub off and on must not re-probe a process-incompatible endpoint");
   }
 
   void activationWaitsForFallbackRelease() {
@@ -1936,6 +2413,7 @@ class HubLifecycleTests final : public QObject {
   void failureCounterResetsOnlyAfterConfirmation() { testFailureCounterResetsOnlyAfterConfirmation(); }
   void confirmationTimeoutRepairsRefreshablePresentation() { testConfirmationTimeoutRepairsRefreshablePresentation(); }
   void releaseAnnouncementPrecedesSyncCompletion() { testReleaseAnnouncementPrecedesSyncCompletion(); }
+  void disableDuringFailedCleanupConvergesToWithdrawn() { testDisableDuringFailedCleanupConvergesToWithdrawn(); }
   void persistentPlacementMismatchDoesNotSpin() { testPersistentPlacementMismatchDoesNotSpin(); }
   void fallbackRemainsStableAfterTaskbarRelease() { testFallbackRemainsStableAfterTaskbarRelease(); }
   void explicitReenableResumesWhenCleanupCompletes() { testExplicitReenableResumesWhenCleanupCompletes(); }
@@ -1945,6 +2423,7 @@ class HubLifecycleTests final : public QObject {
   void attachingViewRepairsChangedPlacement() { testAttachingViewRepairsChangedPlacement(); }
   void toolbarToggleDuringTransientShellPresentation() { testToolbarToggleDuringTransientShellPresentation(); }
   void interleavedToolbarAndHostTransitionsConverge() { testInterleavedToolbarAndHostTransitionsConverge(); }
+  void refreshOwnershipControlsFallbackEligibility() { testRefreshOwnershipControlsFallbackEligibility(); }
   void startMenuJitterThenToolbarToggleKeepsTaskbarExclusive() { testStartMenuJitterThenToolbarToggleKeepsTaskbarExclusive(); }
   void healthDueRepairsConfirmedPresentationInPlace() { testHealthDueRepairsConfirmedPresentationInPlace(); }
   void failingHostInvalidatedCompletionDoesNotDeadlock() { testFailingHostInvalidatedCompletionDoesNotDeadlock(); }

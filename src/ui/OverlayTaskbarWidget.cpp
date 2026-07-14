@@ -129,24 +129,8 @@ OverlayTaskbarWidget::OverlayTaskbarWidget(QWidget* parent)
     : OverlayHubView(parent, Qt::Tool | Qt::FramelessWindowHint | Qt::WindowDoesNotAcceptFocus),
       m_animationTimer(new QTimer(this)),
       m_toolTipTimer(new QTimer(this)),
-      m_layoutCoordinator(createDefaultTaskbarLayoutCoordinator([this](const TaskbarLayoutCoordinator::DetachEvent event) {
-        if (event.phase == TaskbarLayoutCoordinator::DetachPhase::Started) {
-          notifyHostPresentationReleaseStarted();
-          return;
-        }
-        if (event.phase == TaskbarLayoutCoordinator::DetachPhase::Blocked) {
-          notifyPresentationReleaseBlocked();
-          return;
-        }
-        if (event.nativeWindowResetRequired) resetNativeWindow();
-        // Explorer 重建直接触发重新发现；普通释放则把完成事件交回 HubView，
-        // 由 Recovering 状态决定兑现显式重开，或进入稳定 fallback/低频探测。
-        if (event.reason == TaskbarLayoutCoordinator::DetachReason::HostInvalidated) {
-          notifyHostPresentationReleaseCompleted();
-        } else {
-          notifyPresentationReleaseCompleted();
-        }
-      })) {
+      m_layoutCoordinator(
+          createDefaultTaskbarLayoutCoordinator([this](const TaskbarLayoutCoordinator::DetachEvent event) { handleLayoutDetachEvent(event); })) {
   setObjectName("overlayTaskbarWidget");
   setAttribute(Qt::WA_TranslucentBackground, true);
   setAttribute(Qt::WA_ShowWithoutActivating, true);
@@ -305,36 +289,56 @@ OverlayHubView::AttachResult OverlayTaskbarWidget::acquirePresentation() {
   const auto result = m_layoutCoordinator->prepareAttach(
       window, desiredSize,
       [this]() {
+        const HWND attachedWindow = reinterpret_cast<HWND>(internalWinId());
+        const win11_taskbar::ScopedThreadDpiAwareness dpiScope(attachedWindow ? GetParent(attachedWindow) : nullptr);
         if (!isVisible()) show();
         const HWND nativeWindow = reinterpret_cast<HWND>(internalWinId());
         if (nativeWindow && !IsWindowVisible(nativeWindow)) (void)ShowWindow(nativeWindow, SW_SHOWNOACTIVATE);
       },
       [this]() {
         if (isVisible()) hide();
-      });
-  if (result == TaskbarLayoutCoordinator::AttachResult::TemporarilyUnavailable) return AttachResult::TemporarilyUnavailable;
-  if (result == TaskbarLayoutCoordinator::AttachResult::ReleasePending) return AttachResult::ReleasePending;
-  if (result == TaskbarLayoutCoordinator::AttachResult::ReleaseBlocked) return AttachResult::ReleaseBlocked;
-  if (result == TaskbarLayoutCoordinator::AttachResult::NativeWindowDestroyed) {
-    resetNativeWindow();
-    return AttachResult::Failed;
+      },
+      [this]() { return recreateNativeWindow(); });
+  switch (result) {
+    case TaskbarLayoutCoordinator::AttachResult::Prepared:
+      return AttachResult::Prepared;
+    case TaskbarLayoutCoordinator::AttachResult::Retained:
+      return AttachResult::Retained;
+    case TaskbarLayoutCoordinator::AttachResult::TemporarilyUnavailable:
+      return AttachResult::TemporarilyUnavailable;
+    case TaskbarLayoutCoordinator::AttachResult::Incompatible:
+      return AttachResult::Incompatible;
+    case TaskbarLayoutCoordinator::AttachResult::ReleasePending:
+      return AttachResult::ReleasePending;
+    case TaskbarLayoutCoordinator::AttachResult::ReleaseBlocked:
+      return AttachResult::ReleaseBlocked;
+    case TaskbarLayoutCoordinator::AttachResult::Attached:
+    case TaskbarLayoutCoordinator::AttachResult::Failed:
+      return AttachResult::Failed;
   }
-  if (result != TaskbarLayoutCoordinator::AttachResult::Prepared) return AttachResult::Failed;
-  return AttachResult::Prepared;
+  Q_UNREACHABLE_RETURN(AttachResult::Failed);
 }
 
 OverlayHubView::AttachResult OverlayTaskbarWidget::activatePresentation() {
-  const auto result = m_layoutCoordinator->activatePrepared();
-  if (result == TaskbarLayoutCoordinator::AttachResult::TemporarilyUnavailable) return AttachResult::TemporarilyUnavailable;
-  if (result == TaskbarLayoutCoordinator::AttachResult::ReleasePending) return AttachResult::ReleasePending;
-  if (result == TaskbarLayoutCoordinator::AttachResult::ReleaseBlocked) return AttachResult::ReleaseBlocked;
-  if (result == TaskbarLayoutCoordinator::AttachResult::NativeWindowDestroyed) {
-    resetNativeWindow();
-    return AttachResult::Failed;
+  switch (m_layoutCoordinator->activatePrepared()) {
+    case TaskbarLayoutCoordinator::AttachResult::Attached:
+      updateAnimationTimer();
+      return AttachResult::Attached;
+    case TaskbarLayoutCoordinator::AttachResult::Retained:
+      return AttachResult::Retained;
+    case TaskbarLayoutCoordinator::AttachResult::TemporarilyUnavailable:
+      return AttachResult::TemporarilyUnavailable;
+    case TaskbarLayoutCoordinator::AttachResult::Incompatible:
+      return AttachResult::Incompatible;
+    case TaskbarLayoutCoordinator::AttachResult::ReleasePending:
+      return AttachResult::ReleasePending;
+    case TaskbarLayoutCoordinator::AttachResult::ReleaseBlocked:
+      return AttachResult::ReleaseBlocked;
+    case TaskbarLayoutCoordinator::AttachResult::Prepared:
+    case TaskbarLayoutCoordinator::AttachResult::Failed:
+      return AttachResult::Failed;
   }
-  if (result != TaskbarLayoutCoordinator::AttachResult::Attached) return AttachResult::Failed;
-  updateAnimationTimer();
-  return AttachResult::Attached;
+  Q_UNREACHABLE_RETURN(AttachResult::Failed);
 }
 
 void OverlayTaskbarWidget::suspendPresentation() {
@@ -390,7 +394,10 @@ void OverlayTaskbarWidget::closeContextMenu() {
   m_contextMenu.clear();
 }
 
-void OverlayTaskbarWidget::resetNativeWindow() {
+QWindow* OverlayTaskbarWidget::recreateNativeWindow() {
+  const auto environmentProbe = win11_taskbar::probeEnvironment();
+  const HWND taskbar = environmentProbe.environment ? environmentProbe.environment->taskbar : nullptr;
+  const win11_taskbar::ScopedThreadDpiAwareness dpiScope(taskbar);
   m_animationTimer->stop();
   m_toolTipTimer->stop();
   m_pointerInside = false;
@@ -400,6 +407,25 @@ void OverlayTaskbarWidget::resetNativeWindow() {
   m_hasPainted = false;
   releaseMouse();
   if (internalWinId()) QWidget::destroy(true, false);
+  (void)winId();
+  return windowHandle();
+}
+
+void OverlayTaskbarWidget::handleLayoutDetachEvent(const TaskbarLayoutCoordinator::DetachEvent& event) {
+  if (event.phase == TaskbarLayoutCoordinator::DetachPhase::Started) {
+    notifyHostPresentationReleaseStarted();
+    return;
+  }
+  if (event.phase == TaskbarLayoutCoordinator::DetachPhase::Blocked) {
+    notifyPresentationReleaseBlocked();
+    return;
+  }
+  // Explorer 重建直接触发重新发现；普通释放则把完成事件交回 HubView，
+  // 由 Recovering 状态决定兑现显式重开，或进入稳定 fallback/低频探测。
+  if (event.reason == TaskbarLayoutCoordinator::DetachReason::HostInvalidated)
+    notifyHostPresentationReleaseCompleted();
+  else
+    notifyPresentationReleaseCompleted();
 }
 
 void OverlayTaskbarWidget::synchronizeContentGeometry() {
