@@ -419,26 +419,44 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
                  I18n::tr("These changes will be <span style='color:%1'>written to the system</span>; most take effect after the next reboot.<br><br>Continue?")
                      .arg(warn2)))
       return;
-    // 一个对话框只应用一次：确认后立即禁用 Apply。applied() 会触发宿主 refresh
+    // 一个对话框只应用一次：确认后立即禁用 Apply。对账请求会触发宿主 refresh
     // 重新读快照并改写 m_snapshot（本对话框按引用持有它）；若不禁用，用户再点
     // 一次会把同一批 m_changes 对着已刷新的快照重放。
     commitBtn->setEnabled(false);
-    restartBtn->setVisible(true);
     std::vector<std::string> outcome;
+    struct ApplyProgress {
+      bool attempted = false;
+      bool confirmed = false;
+      bool needsRefresh = false;
+
+      WmiResult track(WmiResult result) {
+        attempted = attempted || result.attempted;
+        confirmed = confirmed || result.ok;
+        needsRefresh = needsRefresh || result.attempted;
+        return result;
+      }
+
+      void observe(const bool writeAttempted, const bool writeConfirmed) {
+        attempted = attempted || writeAttempted;
+        confirmed = confirmed || writeConfirmed;
+        needsRefresh = needsRefresh || writeAttempted;
+      }
+
+      void observeConvergedState() { needsRefresh = true; }
+    } progress;
 
     // 每一步单独收集错误，不因单点失败终止其它写入。同步辅助、跟 outcome
     // 同一栈帧；clazy 的 lambda-in-connect 看 [&] 就报警，行尾抑制。
     auto note = [&](const std::string& line) { outcome.push_back(line); };  // clazy:exclude=lambda-in-connect
 
-    if (!m_session.isConnected()) {
-      std::string err;
-      if (!m_session.connect(config::kWmiNamespaceEmbedded, &err)) {
-        note(I18n::tr("✘ Failed to connect to the system: %1").arg(QString::fromStdString(err)).toStdString());
-        const std::string body = formatBlockPlain(I18n::tr("Applied changes").toStdString(), m_changeCmds) + "\n:: ==== " + I18n::tr("Result").toStdString() +
-                                 " ====\n" + joinLines(outcome);
-        pendingText->setPlainText(QString::fromStdString(body));
-        return;
-      }
+    std::string sessionError;
+    if (!m_session.ensureConnected(&sessionError)) {
+      note(I18n::tr("✘ Failed to connect to the system: %1").arg(QString::fromStdString(sessionError)).toStdString());
+      const std::string body = formatBlockPlain(I18n::tr("Applied changes").toStdString(), m_changeCmds) + "\n:: ==== " + I18n::tr("Result").toStdString() +
+                               " ====\n" + joinLines(outcome);
+      pendingText->setPlainText(QString::fromStdString(body));
+      commitBtn->setEnabled(true);
+      return;
     }
 
     // ── UWF_Filter ───────────────────────────────────────
@@ -448,7 +466,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       if (!row) {
         note(I18n::tr("✘ Failed to read filter state: %1").arg(QString::fromStdString(err)).toStdString());
       } else {
-        const auto r = *m_changes.setFilterEnabled ? m_filter.enable(*row) : m_filter.disable(*row);
+        const auto r = progress.track(*m_changes.setFilterEnabled ? m_filter.enable(*row) : m_filter.disable(*row));
         note(r.ok ? I18n::tr("✓ Filter: %1").arg(*m_changes.setFilterEnabled ? I18n::tr("Enabled") : I18n::tr("Disabled")).toStdString()
                   : I18n::tr("✘ Failed to %1 filter: %2")
                         .arg(*m_changes.setFilterEnabled ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(r.detail))
@@ -462,13 +480,13 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       std::string err;
       if (auto overlay = m_overlay.read(&err)) {
         if (const auto v = m_changes.setOverlay.warningThresholdMb) {
-          if (const auto r = m_overlay.setWarningThreshold(*overlay, *v); r.ok)
+          if (const auto r = progress.track(m_overlay.setWarningThreshold(*overlay, *v)); r.ok)
             note(I18n::tr("✓ Overlay warning threshold set to %1 MB").arg(*v).toStdString());
           else
             note(I18n::tr("✘ Failed to set warning threshold: %1").arg(QString::fromStdString(r.detail)).toStdString());
         }
         if (const auto v = m_changes.setOverlay.criticalThresholdMb) {
-          if (const auto r = m_overlay.setCriticalThreshold(*overlay, *v); r.ok)
+          if (const auto r = progress.track(m_overlay.setCriticalThreshold(*overlay, *v)); r.ok)
             note(I18n::tr("✓ Overlay critical threshold set to %1 MB").arg(*v).toStdString());
           else
             note(I18n::tr("✘ Failed to set critical threshold: %1").arg(QString::fromStdString(r.detail)).toStdString());
@@ -485,11 +503,11 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
         note(I18n::tr("✘ Type / maximum size not applied: the filter is currently enabled. Disable the filter and reboot first.").toStdString());
       } else {
         std::string err;
-        const auto configs = m_overlayConfig.readAll(&err);
-        if (const auto* next = api::findBySession(configs, /*wantCurrent=*/false)) {
+        const auto next = m_overlayConfig.read(/*currentSession=*/false, &err);
+        if (next) {
           if (const auto t = m_changes.setOverlay.type) {
             const char* tStr = *t == core::OverlayType::RAM ? "RAM" : "Disk";
-            if (const auto r = m_overlayConfig.setType(*next, coreTypeToApi(*t)); r.ok)
+            if (const auto r = progress.track(m_overlayConfig.setType(*next, coreTypeToApi(*t))); r.ok)
               note(I18n::tr("✓ Overlay type set to %1").arg(tStr).toStdString());
             else
               note(I18n::tr("✘ Failed to set overlay type: %1").arg(QString::fromStdString(r.detail)).toStdString());
@@ -500,7 +518,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
             const auto effType = m_changes.setOverlay.type.value_or(m_snapshot.next.overlay.type);
             if (effType == core::OverlayType::Disk && *v < config::kDiskOverlayMinSizeMb) {
               note(I18n::tr("✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.").arg(config::kDiskOverlayMinSizeMb).toStdString());
-            } else if (const auto r = m_overlayConfig.setMaximumSize(*next, *v); r.ok) {
+            } else if (const auto r = progress.track(m_overlayConfig.setMaximumSize(*next, *v)); r.ok) {
               note(I18n::tr("✓ Overlay maximum size set to %1 MB").arg(*v).toStdString());
             } else {
               note(I18n::tr("✘ Failed to set maximum size: %1").arg(QString::fromStdString(r.detail)).toStdString());
@@ -515,80 +533,93 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     // ── UWF_Volume ───────────────────────────────────────
     if (!m_changes.volumeProtect.empty() || !m_changes.volumeBindByVolumeName.empty() || !m_changes.addFileExclusions.empty() ||
         !m_changes.removeFileExclusions.empty()) {
-      auto volumes = m_volume.readAll();
-
-      // 找 next session row；找不到就让 ensureNextSessionEntry 从同卷的
-      // current session 行复制 VolumeName 创建一份 next session 实例。
-      // 返回 by value，同时把新 row append 到 volumes 让后续的 caller 也
-      // 能命中（避免对同一卷的多个 pending 改动重复触发 PutInstance）。
-      // [&] 同步辅助、跟 outcome / volumes / note 同一栈帧；clazy 在每个
-      // captured-by-ref 变量的使用行报警，逐行抑制。
-      auto getOrCreateNextVolume = [&](const std::string& dl) -> std::optional<api::VolumeRow> {
-        if (const auto* hit = findNextVolume(volumes, dl)) return *hit;  // clazy:exclude=lambda-in-connect
-        std::string e;
-        auto created = m_volume.ensureNextSessionEntry(dl, &e);
-        if (!created) {
-          note(I18n::tr("✘ Volume %1: failed to register with UWF: %2")  // clazy:exclude=lambda-in-connect
-                   .arg(QString::fromStdString(dl), QString::fromStdString(e))
-                   .toStdString());
-          return std::nullopt;
-        }
-        volumes.push_back(*created);  // clazy:exclude=lambda-in-connect
-        return created;
-      };
-
-      for (const auto& [dl, wantProtect] : m_changes.volumeProtect) {
-        auto v = getOrCreateNextVolume(dl);
-        if (!v) continue;
-        const auto r = wantProtect ? m_volume.protectVolume(*v) : m_volume.unprotect(*v);
-        note(
-            r.ok
-                ? I18n::tr("✓ Volume %1 protection: %2").arg(QString::fromStdString(dl), wantProtect ? I18n::tr("Enabled") : I18n::tr("Disabled")).toStdString()
-                : I18n::tr("✘ Failed to %1 protection on volume %2: %3")
-                      .arg(wantProtect ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(dl), QString::fromStdString(r.detail))
-                      .toStdString());
-      }
-
-      for (const auto& [dl, byVolumeName] : m_changes.volumeBindByVolumeName) {
-        auto v = getOrCreateNextVolume(dl);
-        if (!v) continue;
-        // changes 里以"按卷 ID 绑定"为语义（byVolumeName）；UWF_Volume.SetBindByDriveLetter
-        // 的入参 bBindByDriveLetter 语义相反，传参时取反。
-        const auto r = m_volume.setBindByDriveLetter(*v, !byVolumeName);
-        note(r.ok ? I18n::tr("✓ Volume %1 bind by: %2")
-                        .arg(QString::fromStdString(dl), byVolumeName ? I18n::tr("volume ID") : I18n::tr("drive letter"))
-                        .toStdString()
-                  : I18n::tr("✘ Failed to set binding for volume %1: %2").arg(QString::fromStdString(dl), QString::fromStdString(r.detail)).toStdString());
-      }
-
-      for (const auto& [dl, paths] : m_changes.addFileExclusions) {
-        if (paths.empty()) continue;
-        auto v = getOrCreateNextVolume(dl);
-        if (!v) continue;
-        for (const auto& path : paths) {
-          if (const auto r = m_volume.addExclusion(*v, path); r.ok)
-            note(I18n::tr("✓ Volume %1 added file exclusion: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)).toStdString());
-          else
-            note(I18n::tr("✘ Volume %1 failed to add file exclusion %2: %3")
-                     .arg(QString::fromStdString(dl), QString::fromStdString(path), QString::fromStdString(r.detail))
+      std::string volumeReadError;
+      auto volumes = m_volume.readAll(&volumeReadError);
+      if (!volumeReadError.empty()) {
+        note(I18n::tr("✘ Failed to read volume configuration: %1").arg(QString::fromStdString(volumeReadError)).toStdString());
+      } else {
+        // 找 next session row；找不到就让 ensureNextSessionEntry 从同卷的
+        // current session 行复制 VolumeName 创建一份 next session 实例。
+        // 返回 by value，同时把新 row append 到 volumes 让后续的 caller 也
+        // 能命中（避免对同一卷的多个 pending 改动重复触发 PutInstance）。
+        // [&] 同步辅助、跟 outcome / volumes / note 同一栈帧；clazy 在每个
+        // captured-by-ref 变量的使用行报警，逐行抑制。
+        auto getOrCreateNextVolume = [&](const std::string& dl) -> std::optional<api::VolumeRow> {
+          if (const auto* hit = findNextVolume(volumes, dl)) return *hit;  // clazy:exclude=lambda-in-connect
+          auto ensured = m_volume.ensureNextSessionEntry(dl);
+          progress.observe(ensured.writeAttempted, ensured.writeConfirmed);  // clazy:exclude=lambda-in-connect
+          if (!ensured.entry) {
+            note(I18n::tr("✘ Volume %1: failed to register with UWF: %2")  // clazy:exclude=lambda-in-connect
+                     .arg(QString::fromStdString(dl), QString::fromStdString(ensured.error))
                      .toStdString());
+            return std::nullopt;
+          }
+          volumes.push_back(*ensured.entry);  // clazy:exclude=lambda-in-connect
+          return ensured.entry;
+        };
+
+        for (const auto& [dl, wantProtect] : m_changes.volumeProtect) {
+          auto v = getOrCreateNextVolume(dl);
+          if (!v) continue;
+          const auto r = progress.track(wantProtect ? m_volume.protectVolume(*v) : m_volume.unprotect(*v));
+          note(r.ok ? I18n::tr("✓ Volume %1 protection: %2")
+                          .arg(QString::fromStdString(dl), wantProtect ? I18n::tr("Enabled") : I18n::tr("Disabled"))
+                          .toStdString()
+                    : I18n::tr("✘ Failed to %1 protection on volume %2: %3")
+                          .arg(wantProtect ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(dl), QString::fromStdString(r.detail))
+                          .toStdString());
         }
-      }
-      for (const auto& [dl, paths] : m_changes.removeFileExclusions) {
-        if (paths.empty()) continue;
-        // remove 分支不能走 getOrCreateNextVolume：如果 next-session 行
-        // 还不存在，那这个卷在 next session 里压根没有任何排除项，本来
-        // 就没东西可删；不应该为了"删一条不存在的排除"而触发
-        // PutInstance 把卷无故注册进 UWF。直接跳过即可。
-        const auto* v = findNextVolume(volumes, dl);
-        if (!v) continue;
-        for (const auto& path : paths) {
-          if (const auto r = m_volume.removeExclusion(*v, path); r.ok)
-            note(I18n::tr("✓ Volume %1 removed file exclusion: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)).toStdString());
-          else
-            note(I18n::tr("✘ Volume %1 failed to remove file exclusion %2: %3")
-                     .arg(QString::fromStdString(dl), QString::fromStdString(path), QString::fromStdString(r.detail))
-                     .toStdString());
+
+        for (const auto& [dl, byVolumeName] : m_changes.volumeBindByVolumeName) {
+          auto v = getOrCreateNextVolume(dl);
+          if (!v) continue;
+          // changes 里以"按卷 ID 绑定"为语义（byVolumeName）；UWF_Volume.SetBindByDriveLetter
+          // 的入参 bBindByDriveLetter 语义相反，传参时取反。
+          const auto r = progress.track(m_volume.setBindByDriveLetter(*v, !byVolumeName));
+          note(r.ok ? I18n::tr("✓ Volume %1 bind by: %2")
+                          .arg(QString::fromStdString(dl), byVolumeName ? I18n::tr("volume ID") : I18n::tr("drive letter"))
+                          .toStdString()
+                    : I18n::tr("✘ Failed to set binding for volume %1: %2").arg(QString::fromStdString(dl), QString::fromStdString(r.detail)).toStdString());
+        }
+
+        for (const auto& [dl, paths] : m_changes.addFileExclusions) {
+          if (paths.empty()) continue;
+          auto v = getOrCreateNextVolume(dl);
+          if (!v) continue;
+          for (const auto& path : paths) {
+            if (const auto r = progress.track(m_volume.addExclusion(*v, path)); r.ok)
+              note(I18n::tr("✓ Volume %1 added file exclusion: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)).toStdString());
+            else
+              note(I18n::tr("✘ Volume %1 failed to add file exclusion %2: %3")
+                       .arg(QString::fromStdString(dl), QString::fromStdString(path), QString::fromStdString(r.detail))
+                       .toStdString());
+          }
+        }
+        for (const auto& [dl, paths] : m_changes.removeFileExclusions) {
+          if (paths.empty()) continue;
+          // remove 分支不能走 getOrCreateNextVolume：如果 next-session 行
+          // 还不存在，那这个卷在 next session 里压根没有任何排除项，本来
+          // 就没东西可删；不应该为了"删一条不存在的排除"而触发
+          // PutInstance 把卷无故注册进 UWF。直接跳过即可。
+          const auto* v = findNextVolume(volumes, dl);
+          if (!v) {
+            // 本轮重新读取已确认该 next-session 实例不存在，所有待删路径都
+            // 已经收敛到目标状态。无需制造实例再删除，但必须刷新宿主快照，
+            // 否则旧 pending 会一直留在 UI 中。
+            progress.observeConvergedState();
+            for (const auto& path : paths) {
+              note(I18n::tr("✓ Volume %1 file exclusion already absent: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)).toStdString());
+            }
+            continue;
+          }
+          for (const auto& path : paths) {
+            if (const auto r = progress.track(m_volume.removeExclusion(*v, path)); r.ok)
+              note(I18n::tr("✓ Volume %1 removed file exclusion: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)).toStdString());
+            else
+              note(I18n::tr("✘ Volume %1 failed to remove file exclusion %2: %3")
+                       .arg(QString::fromStdString(dl), QString::fromStdString(path), QString::fromStdString(r.detail))
+                       .toStdString());
+          }
         }
       }
     }
@@ -597,19 +628,18 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     if (!m_changes.addRegistryExclusions.empty() || !m_changes.removeRegistryExclusions.empty() || m_changes.setPersistDomainSecretKey ||
         m_changes.setPersistTSCAL) {
       std::string err;
-      const auto regs = m_registry.readAll(&err);
-      const auto* next = api::findBySession(regs, /*wantCurrent=*/false);
+      const auto next = m_registry.read(/*currentSession=*/false, &err);
       if (!next) {
         note(I18n::tr("✘ Failed to read registry filter: %1").arg(QString::fromStdString(err)).toStdString());
       } else {
         for (const auto& k : m_changes.addRegistryExclusions) {
-          if (const auto r = m_registry.addExclusion(*next, k); r.ok)
+          if (const auto r = progress.track(m_registry.addExclusion(*next, k)); r.ok)
             note(I18n::tr("✓ Added registry exclusion: %1").arg(QString::fromStdString(k)).toStdString());
           else
             note(I18n::tr("✘ Failed to add registry exclusion %1: %2").arg(QString::fromStdString(k), QString::fromStdString(r.detail)).toStdString());
         }
         for (const auto& k : m_changes.removeRegistryExclusions) {
-          if (const auto r = m_registry.removeExclusion(*next, k); r.ok)
+          if (const auto r = progress.track(m_registry.removeExclusion(*next, k)); r.ok)
             note(I18n::tr("✓ Removed registry exclusion: %1").arg(QString::fromStdString(k)).toStdString());
           else
             note(I18n::tr("✘ Failed to remove registry exclusion %1: %2").arg(QString::fromStdString(k), QString::fromStdString(r.detail)).toStdString());
@@ -618,7 +648,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
         if (m_changes.setPersistDomainSecretKey || m_changes.setPersistTSCAL) {
           const bool dsk = m_changes.setPersistDomainSecretKey.value_or(next->persistDomainSecretKey);
           const bool tscal = m_changes.setPersistTSCAL.value_or(next->persistTSCAL);
-          if (const auto r = m_registry.setPersistFlags(*next, dsk, tscal); r.ok) {
+          if (const auto r = progress.track(m_registry.setPersistFlags(*next, dsk, tscal)); r.ok) {
             if (m_changes.setPersistDomainSecretKey)
               note(I18n::tr("✓ %1 persistence: %2")
                        .arg(I18n::tr("Domain Secret Key (DomainSecretKey)"), *m_changes.setPersistDomainSecretKey ? I18n::tr("Enabled") : I18n::tr("Disabled"))
@@ -638,13 +668,18 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     const std::string body = formatBlockPlain(I18n::tr("Applied changes").toStdString(), m_changeCmds) + "\n:: ==== " + I18n::tr("Result").toStdString() +
                              " ====\n" + joinLines(outcome);
     pendingText->setPlainText(QString::fromStdString(body));
+    restartBtn->setVisible(progress.confirmed);
+    // 所有前置读取都失败或前置条件不满足时，系统没有收到任何写请求，可以
+    // 安全重试；只要写请求实际提交给 provider，或重新读取已确认目标状态本就
+    // 收敛，就交回宿主刷新并保持禁用，避免重放部分成功或已经过期的批次。
+    if (!progress.attempted && !progress.needsRefresh) commitBtn->setEnabled(true);
 
     // 写完要立刻重新读一次快照并刷新 UI：
     // - next-session 的排除列表、保护状态、overlay 配置可能都变了；
     // - 各 DiskTab 的 pending 状态要清零，否则看起来"还没提交"。
-    // 宿主用 QueuedConnection 接 applied()，等这波对话框里的事件循环回落
+    // 宿主用 QueuedConnection 接对账请求，等这波对话框里的事件循环回落
     // 再做，避免在回调里递归进 refresh 的弹窗 / WMI 读。
-    emit applied();
+    if (progress.needsRefresh) emit reconciliationRequired();
   });
   layout->addLayout(buttonRow);
 }

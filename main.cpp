@@ -25,6 +25,7 @@
 #include "src/util/Log.h"
 #include "src/util/PostGate.h"
 #include "src/uwf/SystemCheck.h"
+#include "src/uwf/wmi/WmiClient.h"
 
 namespace {
 
@@ -121,6 +122,9 @@ int main(int argc, char* argv[]) {
 
   initializeUserInterface(app);
   UWF_LOG_I("main") << "UWF manager started; pid=" << QCoreApplication::applicationPid();
+  // 尽早建立主线程 COM/WMI 运行时；失败原因由该边界记录一次，后续读取还会
+  // 通过 session readiness 返回同一错误供 UI 展示，无需在这里重复打日志。
+  uwf::initializeWmiRuntime();
   const auto check = checkRuntimeEnvironment();
   return runMainWindow(app, singleInstance, check);
 }

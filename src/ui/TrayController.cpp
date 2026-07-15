@@ -31,13 +31,8 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QWidgetAction>
-#include <algorithm>
 
 #include "../util/Log.h"
-#include "../uwf/api/UwfFilter.h"
-#include "../uwf/api/UwfOverlay.h"
-#include "../uwf/api/UwfOverlayConfig.h"
-#include "../uwf/wmi/WmiClient.h"
 #include "I18n.h"
 #include "OverlayUsageBar.h"
 
@@ -69,8 +64,7 @@ QIcon makeAlertIcon() {
 
 }  // namespace
 
-TrayController::TrayController(WmiSession& session, QWidget* ownerWindow)
-    : QObject(ownerWindow), m_session(session), m_iconNormal(QStringLiteral(":/icons/app.svg")), m_iconAlert(makeAlertIcon()) {
+TrayController::TrayController(QWidget* ownerWindow) : QObject(ownerWindow), m_iconNormal(QStringLiteral(":/icons/app.svg")), m_iconAlert(makeAlertIcon()) {
   if (!QSystemTrayIcon::isSystemTrayAvailable()) {
     UWF_LOG_W("ui") << "system tray unavailable; tray icon will not be created";
     return;
@@ -80,8 +74,8 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow)
   m_menu = new QMenu(ownerWindow);
 
   // 菜单项 1：UWF 启用状态。普通 QAction——自动获得菜单 hover 高亮；文本由
-  // refreshUsage 按当前状态刷新；点击 → 展开主窗口。
-  m_stateAction = m_menu->addAction(QString{});
+  // applyUsageState 按已提交状态刷新；点击 → 展开主窗口。
+  m_stateAction = m_menu->addAction(I18n::tr("UWF status unavailable"));
   connect(m_stateAction, &QAction::triggered, this, &TrayController::activateWindowRequested);
 
   // 状态项与下方菜单之间的分隔线——随占用条一起显隐，避免占用条隐藏后留下双分隔线。
@@ -109,6 +103,8 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow)
   usageAction->setDefaultWidget(m_usagePane);
   m_menu->addAction(usageAction);
   m_usageAction = usageAction;
+  m_usageAction->setVisible(false);
+  m_usageSeparator->setVisible(false);
 
   m_menu->addSeparator();
 
@@ -116,11 +112,13 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow)
   m_exitAction = m_menu->addAction(I18n::tr("Exit"));
   connect(m_exitAction, &QAction::triggered, this, &TrayController::exitApplicationRequested);
 
-  // 菜单弹出前即时刷新状态与占用。
-  connect(m_menu, &QMenu::aboutToShow, this, &TrayController::refreshUsage);
+  // 菜单弹出前请求唯一的数据拥有者刷新，同时立即重译不依赖 WMI 的文案。
+  connect(m_menu, &QMenu::aboutToShow, this, [this] {
+    renderCommittedState();
+    emit refreshRequested();
+  });
 
-  m_tray = new QSystemTrayIcon(m_iconNormal, this);
-  // tooltip 文案由构造末尾的 refreshUsage() 统一设置（它每轮刷新都会重译）。
+  m_tray = new QSystemTrayIcon(m_iconAlert, this);
   // 不用 setContextMenu——它在 Windows 上按托盘图标 geometry 定位菜单，而该
   // geometry 常不可靠，菜单会弹到奇怪位置。改为右键时自己按光标位置 popup：
   // QMenu::popup 会做屏幕边缘适配，靠近屏幕底部（任务栏在下）时自动向上弹。
@@ -131,16 +129,11 @@ TrayController::TrayController(WmiSession& session, QWidget* ownerWindow)
       m_menu->popup(QCursor::pos());  // 右键 → 在光标处弹出菜单
   });
   m_tray->show();
-
-  refreshUsage();  // 启动即按当前 UWF 状态摆正图标颜色与菜单
+  renderCommittedState();
 }
 
-void TrayController::refreshUsage() {
+void TrayController::renderCommittedState() {
   if (!m_tray) return;
-
-  // 退出项与图标 tooltip 是静态文案：切换语言时 MainWindow 只重建主窗口、
-  // 不重建托盘，故在这里随刷新一并重译——与状态项 / 占用条共用同一刷新周期，
-  // 不另设重译入口。
   m_exitAction->setText(I18n::tr("Exit"));
   m_tray->setToolTip(I18n::applicationTitle());
 
@@ -150,36 +143,40 @@ void TrayController::refreshUsage() {
     m_usageSeparator->setVisible(show);
   };
 
-  // UWF 当前会话的启用状态——决定托盘图标颜色与状态项文字。
-  const auto filter = api::UwfFilter{m_session}.read();
-  const bool enabled = filter && filter->currentEnabled;
-  m_tray->setIcon(enabled ? m_iconNormal : m_iconAlert);  // 禁用 / 读不到 → 红色图标
-
-  if (!filter) {
+  if (!m_hasCommittedState) {
+    m_tray->setIcon(m_iconAlert);
     m_stateAction->setText(I18n::tr("UWF status unavailable"));
     setUsageVisible(false);
     return;
   }
-  m_stateAction->setText(enabled ? I18n::tr("UWF: Enabled") : I18n::tr("UWF: Disabled"));
 
-  // 菜单项 2：占用条仅在 UWF 已启用时存在；禁用（或读不到 overlay 配置）时隐藏。
-  if (!enabled) {
-    setUsageVisible(false);
-    return;
-  }
-  const auto overlay = api::UwfOverlay{m_session}.read();
-  const auto cfg = api::UwfOverlayConfig{m_session}.read(/*currentSession=*/true);
-  if (!overlay || !cfg) {
+  m_tray->setIcon(m_filterEnabled ? m_iconNormal : m_iconAlert);
+  m_stateAction->setText(m_filterEnabled ? I18n::tr("UWF: Enabled") : I18n::tr("UWF: Disabled"));
+
+  // 菜单项 2：占用条仅在 UWF 已启用且完整运行时状态已提交时存在。
+  if (!m_filterEnabled) {
     setUsageVisible(false);
     return;
   }
   setUsageVisible(true);
-  const uint32_t used = overlay->overlayConsumption;
-  const uint32_t maxMb = static_cast<uint32_t>(std::max(0, cfg->maximumSize));
-  const bool isRam = cfg->type == api::OverlayType::RAM;
-  m_usageBar->setOverlayData(used, overlay->warningOverlayThreshold, overlay->criticalOverlayThreshold, maxMb, isRam);
+  const uint32_t used = m_runtime->currentConsumptionMb;
+  m_usageBar->setOverlayData(used, m_config.warningThresholdMb, m_config.criticalThresholdMb, m_config.maximumSizeMb,
+                             m_config.type == core::OverlayType::RAM);
   // "已用 / 总计"——总计 = 已用 + 可用，与主面板的 used 标签口径一致。
-  m_usageLabel->setText(I18n::tr("Used %1 MB / Total %2 MB").arg(used).arg(overlay->availableSpace + used));
+  m_usageLabel->setText(I18n::tr("Used %1 MB / Total %2 MB").arg(used).arg(m_runtime->availableSpaceMb + used));
+}
+
+void TrayController::applyUsageState(const bool filterEnabled, const std::optional<core::OverlayRuntime>& runtime, const core::OverlayConfig& config) {
+  if (!m_tray) return;
+  if (filterEnabled && !runtime) {
+    UWF_LOG_E("ui") << "tray rejected an incomplete enabled usage state";
+    return;
+  }
+  m_hasCommittedState = true;
+  m_filterEnabled = filterEnabled;
+  m_runtime = runtime;
+  m_config = config;
+  renderCommittedState();
 }
 
 bool TrayController::eventFilter(QObject* obj, QEvent* ev) {

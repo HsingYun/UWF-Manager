@@ -46,8 +46,9 @@ namespace uwf::ui {
 //   * NotFound 对 Deletion：目标不在物理盘 / 持久化 hive 上——只活在 overlay 里，
 //     重启就没；本来就不需要也无法用提交删除。
 QString explainCommitFailure(int32_t hresult, uint32_t returnValue, bool isDeletion) {
-  if (hresult != 0) {
-    switch (uwf::WmiError(hresult).code()) {
+  const int32_t errorCode = hresult != 0 ? hresult : static_cast<int32_t>(returnValue);
+  if (errorCode != 0) {
+    switch (uwf::WmiError(errorCode).code()) {
       // WBEM_E_FAILED（0x80041001）是一般性失败码，没有确定原因。实测最常见
       // 的一种诱因：目标被其他进程占着 handle（例如资源管理器正在浏览该目录、
       // 文本编辑器打开了文件、regedit 打开了键、AV 在扫描），UWF 看到非
@@ -67,10 +68,10 @@ QString explainCommitFailure(int32_t hresult, uint32_t returnValue, bool isDelet
       case uwf::WmiErrorCode::InvalidParameter:
         return I18n::tr("A parameter was rejected by the system (invalid path or argument).");
       default:
-        return I18n::tr("The operation failed (see log for details).");
+        return hresult != 0 ? I18n::tr("The operation failed (see log for details).")
+                            : I18n::tr("Operation rejected (code %1).").arg(returnValue);
     }
   }
-  if (returnValue != 0) return I18n::tr("Operation rejected (code %1).").arg(returnValue);
   return I18n::tr("Unknown cause.");
 }
 

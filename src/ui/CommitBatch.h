@@ -49,7 +49,7 @@ void runCommitBatch(QWidget* parent, const QString& progressTitle, const QList<T
 
   // 进度条只在多目标时弹；单目标一两次 WMI 调用，弹窗反因 show 计时 / autoClose
   // 的时序问题残留在屏上。setValue 内部 processEvents——必须 WindowModal，否则
-  // commit 半途用户点别处会嵌套触发同一份 m_writeSession（WMI 不可重入）。
+  // commit 半途用户点别处会嵌套触发同一个 thread-local session（WMI 不可重入）。
   std::unique_ptr<QProgressDialog> progress;
   if (total > 1) {
     progress = std::make_unique<QProgressDialog>(I18n::tr("Committing…"), I18n::tr("Cancel"), 0, total, parent);

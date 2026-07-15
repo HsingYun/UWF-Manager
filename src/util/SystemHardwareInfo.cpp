@@ -20,17 +20,32 @@
 #include <windows.h>
 
 #include <limits>
+#include <optional>
 #include <string>
 
-#include "../core/Config.h"
 #include "../uwf/wmi/WmiClient.h"
 #include "../uwf/wmi/WmiRowUtil.h"
+#include "Log.h"
 #include "RegistryKey.h"
 #include "StringUtil.h"
 
 namespace uwf {
 
 namespace {
+
+bool readNullableUInt(const WmiRow& row, const char* field, std::optional<std::uint32_t>& value, std::string* error) {
+  value.reset();
+  const auto it = row.find(field);
+  if (it == row.end()) {
+    if (error) *error = std::string("WMI field '") + field + "' is missing";
+    return false;
+  }
+  if (!it->second.isValid()) return true;
+  const auto decoded = rowutil::requireUInt(row, field, error);
+  if (!decoded) return false;
+  value = *decoded;
+  return true;
+}
 
 template <typename T>
 class ComPtr final {
@@ -126,26 +141,66 @@ std::uint64_t visibleMemoryBytes() {
 }
 
 void queryPhysicalMemory(SystemHardwareInfo& info) {
-  WmiSession session;
+  auto& session = cimv2WmiSession();
   std::string error;
-  if (!session.connect(config::kWmiNamespaceCimv2, &error)) return;
-
-  const auto modules = session.query("SELECT Capacity, ConfiguredClockSpeed, SMBIOSMemoryType FROM Win32_PhysicalMemory", &error);
-  info.memoryModules.reserve(modules.size());
-  for (const WmiRow& row : modules) {
-    PhysicalMemoryModuleInfo module;
-    module.capacityBytes = rowutil::getUInt64(row, "Capacity");
-    // WMI 沿用 ConfiguredClockSpeed 名称，但 SMBIOS 在现代 DDR 设备上返回的是
-    // 有效传输速率（例如 DDR5-6000 返回 6000），展示统一使用 MT/s。
-    module.configuredSpeedMtPerSecond = rowutil::getUInt(row, "ConfiguredClockSpeed");
-    module.memoryType = static_cast<SmbiosMemoryType>(rowutil::getUInt(row, "SMBIOSMemoryType"));
-    if (module.capacityBytes != 0) info.memoryModules.push_back(module);
+  if (!session.ensureConnected(&error)) {
+    UWF_LOG_W("hardware") << "physical memory WMI connection unavailable: " << error;
+    return;
   }
 
+  const auto modules = session.query("SELECT Capacity, ConfiguredClockSpeed, SMBIOSMemoryType FROM Win32_PhysicalMemory", &error);
+  if (!error.empty()) {
+    UWF_LOG_W("hardware") << "physical memory module query failed: " << error;
+    return;
+  }
+
+  std::vector<PhysicalMemoryModuleInfo> decodedModules;
+  decodedModules.reserve(modules.size());
+  for (const WmiRow& row : modules) {
+    const auto capacity = rowutil::requireUInt64(row, "Capacity", &error);
+    std::optional<std::uint32_t> speed;
+    std::optional<std::uint32_t> type;
+    if (!capacity || !readNullableUInt(row, "ConfiguredClockSpeed", speed, &error) || !readNullableUInt(row, "SMBIOSMemoryType", type, &error)) {
+      UWF_LOG_W("hardware") << "physical memory module response is incomplete: " << error;
+      return;
+    }
+    PhysicalMemoryModuleInfo module;
+    module.capacityBytes = *capacity;
+    // WMI 沿用 ConfiguredClockSpeed 名称，但 SMBIOS 在现代 DDR 设备上返回的是
+    // 有效传输速率（例如 DDR5-6000 返回 6000），展示统一使用 MT/s。
+    module.configuredSpeedMtPerSecond = speed.value_or(0);
+    module.memoryType = static_cast<SmbiosMemoryType>(type.value_or(0));
+    if (module.capacityBytes != 0) decodedModules.push_back(module);
+  }
+
+  // 模块信息与物理阵列的插槽数是独立的展示字段。后续插槽查询失败
+  // 不能把已经完整解码的模块信息一并丢掉。
+  info.memoryModules = std::move(decodedModules);
+
   const auto arrays = session.query("SELECT MemoryDevices FROM Win32_PhysicalMemoryArray WHERE Use = 3", &error);
+  if (!error.empty()) {
+    UWF_LOG_W("hardware") << "physical memory array query failed: " << error;
+    return;
+  }
   std::uint64_t totalSlots = 0;
-  for (const WmiRow& row : arrays) totalSlots += rowutil::getUInt(row, "MemoryDevices");
-  if (totalSlots <= std::numeric_limits<std::uint32_t>::max()) info.totalMemorySlots = static_cast<std::uint32_t>(totalSlots);
+  bool allSlotCountsKnown = true;
+  for (const WmiRow& row : arrays) {
+    std::optional<std::uint32_t> slots;
+    if (!readNullableUInt(row, "MemoryDevices", slots, &error)) {
+      UWF_LOG_W("hardware") << "physical memory array response is invalid: " << error;
+      return;
+    }
+    if (!slots) {
+      allSlotCountsKnown = false;
+      continue;
+    }
+    if (totalSlots > std::numeric_limits<std::uint32_t>::max() - *slots) {
+      UWF_LOG_W("hardware") << "physical memory array response is invalid: " << (error.empty() ? "slot count overflow" : error);
+      return;
+    }
+    totalSlots += *slots;
+  }
+  if (allSlotCountsKnown) info.totalMemorySlots = static_cast<std::uint32_t>(totalSlots);
 }
 
 SystemHardwareInfo querySystemHardwareInfo() {

@@ -25,6 +25,12 @@ namespace uwf::rowutil {
 
 namespace {
 
+void setFieldError(std::string* error, const std::string& key, const char* reason) {
+  if (error) *error = std::string("WMI field '") + key + "' " + reason;
+}
+
+bool isIntegerLike(const WmiValue::Kind kind) { return kind == WmiValue::Kind::Int || kind == WmiValue::Kind::UInt || kind == WmiValue::Kind::String; }
+
 std::string replaceAll(std::string s, const std::string& from, const std::string& to) {
   if (from.empty()) return s;
   size_t pos = 0;
@@ -37,40 +43,72 @@ std::string replaceAll(std::string s, const std::string& from, const std::string
 
 }  // namespace
 
-bool getBool(const WmiRow& r, const std::string& key, bool def) {
-  auto it = r.find(key);
-  if (it == r.end() || !it->second.isValid()) return def;
-  return it->second.toBool(def);
+std::optional<bool> requireBool(const WmiRow& r, const std::string& key, std::string* error) {
+  const auto it = r.find(key);
+  if (it == r.end() || it->second.kind() != WmiValue::Kind::Bool) {
+    setFieldError(error, key, it == r.end() ? "is missing" : "has the wrong type");
+    return std::nullopt;
+  }
+  return it->second.toBool();
 }
 
-int32_t getInt(const WmiRow& r, const std::string& key, int32_t def) {
-  auto it = r.find(key);
-  if (it == r.end() || !it->second.isValid()) return def;
+std::optional<int32_t> requireInt(const WmiRow& r, const std::string& key, std::string* error) {
+  const auto it = r.find(key);
+  if (it == r.end() || !isIntegerLike(it->second.kind())) {
+    setFieldError(error, key, it == r.end() ? "is missing" : "has the wrong type");
+    return std::nullopt;
+  }
   bool ok = false;
-  const int32_t v = it->second.toInt(&ok, def);
-  return ok ? v : def;
+  const auto value = it->second.toInt(&ok);
+  if (!ok) {
+    setFieldError(error, key, "is not a valid Int32");
+    return std::nullopt;
+  }
+  return value;
 }
 
-uint32_t getUInt(const WmiRow& r, const std::string& key, uint32_t def) {
-  auto it = r.find(key);
-  if (it == r.end() || !it->second.isValid()) return def;
+std::optional<uint32_t> requireUInt(const WmiRow& r, const std::string& key, std::string* error) {
+  const auto it = r.find(key);
+  if (it == r.end() || !isIntegerLike(it->second.kind())) {
+    setFieldError(error, key, it == r.end() ? "is missing" : "has the wrong type");
+    return std::nullopt;
+  }
   bool ok = false;
-  const uint32_t v = it->second.toUInt(&ok, def);
-  return ok ? v : def;
+  const auto value = it->second.toUInt(&ok);
+  if (!ok) {
+    setFieldError(error, key, "is not a valid UInt32");
+    return std::nullopt;
+  }
+  return value;
 }
 
-uint64_t getUInt64(const WmiRow& r, const std::string& key, uint64_t def) {
-  auto it = r.find(key);
-  if (it == r.end() || !it->second.isValid()) return def;
+std::optional<uint64_t> requireUInt64(const WmiRow& r, const std::string& key, std::string* error) {
+  const auto it = r.find(key);
+  if (it == r.end() || !isIntegerLike(it->second.kind())) {
+    setFieldError(error, key, it == r.end() ? "is missing" : "has the wrong type");
+    return std::nullopt;
+  }
   bool ok = false;
-  const uint64_t v = it->second.toULongLong(&ok, def);
-  return ok ? v : def;
+  const auto value = it->second.toULongLong(&ok);
+  if (!ok) {
+    setFieldError(error, key, "is not a valid UInt64");
+    return std::nullopt;
+  }
+  return value;
 }
 
-std::string getString(const WmiRow& r, const std::string& key) {
-  auto it = r.find(key);
-  if (it == r.end()) return {};
-  return it->second.toString();
+std::optional<std::string> requireString(const WmiRow& r, const std::string& key, std::string* error, const bool allowEmpty) {
+  const auto it = r.find(key);
+  if (it == r.end() || it->second.kind() != WmiValue::Kind::String) {
+    setFieldError(error, key, it == r.end() ? "is missing" : "has the wrong type");
+    return std::nullopt;
+  }
+  auto value = it->second.toString();
+  if (!allowEmpty && value.empty()) {
+    setFieldError(error, key, "is empty");
+    return std::nullopt;
+  }
+  return value;
 }
 
 std::string extractFromMof(const std::string& mof, const std::string& propName) {
@@ -91,12 +129,19 @@ std::string extractFromMof(const std::string& mof, const std::string& propName) 
   return v;
 }
 
-std::string readExcludedKey(const WmiRow& r, const std::string& propName) {
-  std::string direct = r.value(propName).toString();
-  if (!direct.empty()) return direct;
-  const std::string mof = r.value("__MOF").toString();
-  if (!mof.empty()) return extractFromMof(mof, propName);
-  return {};
+std::optional<std::string> requireEmbeddedString(const WmiRow& r, const std::string& propName, std::string* error) {
+  if (const auto direct = r.find(propName); direct != r.end() && direct->second.isValid()) {
+    return requireString(r, propName, error, false);
+  }
+
+  const auto mof = requireString(r, "__MOF", error, false);
+  if (!mof) return std::nullopt;
+  auto value = extractFromMof(*mof, propName);
+  if (value.empty()) {
+    setFieldError(error, propName, "is missing from embedded MOF");
+    return std::nullopt;
+  }
+  return value;
 }
 
 void dumpRow(const char* tag, const WmiRow& r) {

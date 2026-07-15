@@ -21,7 +21,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ASan+UBSan
-option(UWF_SANITIZE "Build with AddressSanitizer + UBSan (Clang/GCC only)" OFF)
+option(UWF_SANITIZE "Build with AddressSanitizer + UBSan (Clang/GCC only)" ON)
 option(UWF_BUILD_TESTS "Build UWF lifecycle regression tests" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")

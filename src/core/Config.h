@@ -40,7 +40,7 @@
 namespace uwf::config {
 
 // ── WMI 命名空间 ────────────────────────────────────────────────────────────
-// 传给 WmiSession::connect()。
+// thread_local WMI 上下文中两个固定 session 使用的 namespace。
 
 // UWF 的 UWF_* 类所在命名空间。
 inline constexpr const char* kWmiNamespaceEmbedded = "root\\standardcimv2\\embedded";

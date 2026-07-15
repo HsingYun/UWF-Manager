@@ -54,7 +54,7 @@ using uwf::ui::dialogs::warning;
 
 // 在作用域内暂停一个 QTimer，离开作用域时恢复（仅当它原本就在运行）。给 commit
 // 这类内部会 processEvents 的操作用——防止占用刷新定时器在 WMI 写入半途触发、
-// 对同一个 m_writeSession 发起重入调用（窗口模态拦不住 QTimer 超时）。
+// 对同一个 thread-local session 发起重入调用（窗口模态拦不住 QTimer 超时）。
 class ScopedTimerPause {
  public:
   explicit ScopedTimerPause(QTimer* timer) : m_timer(timer), m_wasActive(timer && timer->isActive()) {
@@ -134,7 +134,7 @@ void CommitDispatcher::commitFilePath(const QString& path) {
   if (path.isEmpty()) return;
 
   // 多文件 commit 的 QProgressDialog::setValue 会 processEvents；占用刷新定时器
-  // 不受窗口模态约束，可能在 commit 半途触发、对同一个 m_writeSession 发起重入
+  // 不受窗口模态约束，可能在 commit 半途触发、对同一个 thread-local session 发起重入
   // WMI 调用。整段 commit 暂停该定时器，离开作用域自动恢复。
   const ScopedTimerPause usagePause(m_usageTimer);
 
@@ -214,7 +214,7 @@ void CommitDispatcher::commitFileDeletionPath(const QString& path) {
   if (path.isEmpty()) return;
 
   // 多目标删除会弹 QProgressDialog（setValue 内部 processEvents）——和 commitFilePath
-  // 同理，整段暂停占用刷新定时器，防止半途重入 m_writeSession。
+  // 同理，整段暂停占用刷新定时器，避免半途向同一个 thread-local session 发起重入请求。
   const ScopedTimerPause usagePause(m_usageTimer);
 
   // 标题 / heading 提前算（fi.isDir() 在路径不存在时返回 false，正好作为"按文件
@@ -301,7 +301,7 @@ void CommitDispatcher::commitRegistryKey(const QString& key, const QString& valu
   if (key.isEmpty()) return;
 
   // 多目标提交会弹 QProgressDialog（setValue 内部 processEvents）——暂停占用刷新
-  // 定时器，防止半途重入 m_writeSession。
+  // 定时器，避免半途向同一个 thread-local session 发起重入请求。
   const ScopedTimerPause usagePause(m_usageTimer);
 
   // 注册表键先归一成长写 hive（HKLM\… → HKEY_LOCAL_MACHINE\…）：UWF 覆盖层、排除

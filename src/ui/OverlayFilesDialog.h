@@ -20,7 +20,6 @@
 #include <QString>
 #include <QVector>
 #include <cstdint>
-#include <mutex>
 #include <thread>
 
 #include "Pager.h"
@@ -55,7 +54,7 @@ struct OverlayFileEntry {
 
 // 异步展示某个 NTFS 卷当前 overlay 中缓存的文件列表。底层走
 // UWF_Overlay.GetOverlayFiles——这调用很慢、按 overlay 用量近似指数级增长，
-// 所以在 worker 线程上跑（自己 CoInitializeEx + 独立 WmiSession），结果
+// 所以在 worker 线程上跑（使用该线程自己的 thread_local WMI session），结果
 // 投回 UI 线程渲染。加载期间显示忙碌进度条；用户可以提前关闭对话框，
 // worker 线程靠 QPointer 检查 dialog 是否还活着，活着再投递结果。
 //
@@ -114,11 +113,9 @@ class OverlayFilesDialog : public QDialog {
   // 避免再走一遍 list widget 还原。
   QVector<OverlayFileEntry> m_entries;
 
-  // 后台加载 worker。GetOverlayFiles 可能跑到小时级——worker 启用 COM 调用
-  // 取消，析构时对 m_workerThreadId 调 CoCancelCall 解阻塞，再 join（瞬间完成）。
-  std::thread m_worker;
-  std::mutex m_cancelMutex;            // 保护 m_workerThreadId
-  unsigned long m_workerThreadId = 0;  // worker 线程 ID（DWORD）；0 = 未运行 / 已结束
+  // std::jthread 的 stop_token 直接传入 WMI 原生异步调用；析构请求 stop 后，
+  // worker 在发起调用的同一线程执行 CancelAsyncCall，再由 jthread 收束生命周期。
+  std::jthread m_worker;
 };
 
 }  // namespace uwf::ui

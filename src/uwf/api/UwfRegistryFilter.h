@@ -52,7 +52,7 @@ class UwfRegistryFilter {
   // 返回 true/false；error 非空说明调用失败。
   std::optional<bool> findExclusion(const api::RegistryFilterRow& row, const std::string& registryKey, std::string* error = nullptr) const;
 
-  std::vector<api::ExcludedRegistryKey> getExclusions(const api::RegistryFilterRow& row, std::string* error = nullptr) const;
+  std::optional<std::vector<api::ExcludedRegistryKey>> getExclusions(const api::RegistryFilterRow& row, std::string* error = nullptr) const;
 
   // valueName 为空串 = 提交该键的「默认值」(Default)——CommitRegistry 只能逐个值
   // 提交，没有「提交整个键」的能力（实机验证见 knowledge/reference/11-uwf-api.html

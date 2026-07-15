@@ -42,7 +42,6 @@
 #include <optional>
 #include <utility>
 
-#include "../core/Config.h"
 #include "../util/DriveLetter.h"
 #include "../util/Log.h"
 #include "../util/PathMatch.h"
@@ -80,7 +79,7 @@ QString systemDriveLetter() { return QString::fromStdString(drive::systemLetter(
 }  // namespace
 
 MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, const QString& osEditionId, QWidget* parent)
-    : QMainWindow(parent), m_compatibilityMode(compatibilityMode), m_osProductName(osProductName), m_osEditionId(osEditionId) {
+    : QMainWindow(parent), m_session(embeddedWmiSession()), m_compatibilityMode(compatibilityMode), m_osProductName(osProductName), m_osEditionId(osEditionId) {
   // 构造期摆好窗口外壳（标题 / 图标 / 尺寸），并把窗口设为全透明：窗口会以
   // 透明状态 show 出来——showEvent 照常触发，首屏 rebuildUi() 在 shown 状态下
   // 建好全部内容、拉完数据后才把不透明度恢复成 1 一次性揭幕。整个 buildUi +
@@ -92,28 +91,25 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
   m_hoverHints = new HoverHintController(this, this);
   m_chrome = new WindowChromeController(this, this);
 
-  // 写会话提前连接一次；读快照时会另起一个独立会话。
-  std::string err;
-  m_writeSession.connect(config::kWmiNamespaceEmbedded, &err);
   // 内容控件与首屏数据统一交给 showEvent 调度的 rebuildUi()——它一次 buildUi()
   // + refresh() 建好。构造期不再 buildUi()/refresh()：那份产出会被 rebuildUi
   // 整个销毁重建，等于白建一遍 UI、白连一次 WMI、白读一份快照。
 
   // 系统托盘（图标 + 右键菜单）——独立组件，由本窗口编排：接它的"激活窗口"信号。
-  m_tray = new TrayController(m_writeSession, this);
+  m_tray = new TrayController(this);
   connect(m_tray, &TrayController::activateWindowRequested, this, &MainWindow::raiseToFront);
   connect(m_tray, &TrayController::exitApplicationRequested, this, &MainWindow::requestExit);
 
-  m_overlayPresentation = new OverlayPresentationController(m_writeSession, this, m_tray, this);
+  m_overlayPresentation = new OverlayPresentationController(m_session, this, m_tray, this);
   connect(m_overlayPresentation, &OverlayPresentationController::activateMainWindowRequested, this, &MainWindow::raiseToFront);
   connect(m_overlayPresentation, &OverlayPresentationController::exitApplicationRequested, this, &MainWindow::requestExit);
-  m_power = new PowerController(m_writeSession, this, this);
+  m_power = new PowerController(m_session, this, this);
   connect(m_overlayPresentation, &OverlayPresentationController::safeShutdownRequested, m_power, &PowerController::safeShutdown);
   connect(m_overlayPresentation, &OverlayPresentationController::safeRestartRequested, m_power, &PowerController::safeRestart);
 
   // 4 个 commit 槽的实际工作都在 CommitDispatcher 里跑；提交期间暂停 Overlay
   // 控制器的 usage timer，避免并发读取 WMI。
-  m_commit = std::make_unique<CommitDispatcher>(m_writeSession, m_snapshot, m_overlayPresentation->usageTimer(), this);
+  m_commit = std::make_unique<CommitDispatcher>(m_session, m_snapshot, m_overlayPresentation->usageTimer(), this);
 
   // 首屏 rebuildUi 不在 ctor 里同步触发——widget 此时还没 show，Qt 一些 polish
   // / 几何计算在 widget 真正进入 shown 状态前结果不稳定，会跟后续"切主题 /
@@ -122,9 +118,9 @@ MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, con
 }
 
 MainWindow::~MainWindow() {
-  // QObject 子对象默认要等 QMainWindow / QObject 基类析构时才删除，而
-  // m_writeSession 作为 C++ 成员会更早析构。显式按依赖逆序释放，保证所有
-  // 持有 session / timer 引用的对象都在其依赖仍存活时结束生命周期。
+  // QObject 子对象默认要等 QMainWindow / QObject 基类析构时才删除。这里按
+  // 依赖逆序释放，让持有 timer/widget 引用的控制器先于依赖对象结束生命周期；
+  // thread_local WMI session 本身会在 UI 线程退出时统一释放。
   m_commit.reset();
 
   delete m_power;
@@ -478,6 +474,9 @@ void MainWindow::rebuildUi() {
   m_diskTabs.clear();
 
   buildUi();
+  // rebuildUi 会销毁并重建控件，但已提交的数据仍然有效。先把旧的完整状态
+  // 还原到新控件，再尝试刷新；若刷新失败，UI 仍保持这份旧状态。
+  applyCommittedState();
   refresh();
 
   // 配对的 setUpdatesEnabled(true)。切主题 / 切语言两条入口在调度 rebuildUi
@@ -719,52 +718,93 @@ void MainWindow::refresh() {
   UWF_LOG_I("ui") << "refresh start";
   const auto t0 = std::chrono::steady_clock::now();
   std::string volumeErr;
-  auto disks = uwf::enumerateDisks(&volumeErr);
+  auto candidateDisks = uwf::enumerateDisks(&volumeErr);
   if (!volumeErr.empty()) {
-    UWF_LOG_W("ui") << "enumerateDisks error: " << volumeErr;
+    UWF_LOG_E("ui") << "refresh failed while enumerating disks; keeping committed UI state: " << volumeErr;
+    showInitialLoadFailure(volumeErr);
+    return;
   }
   std::string snapshotErr;
-  m_snapshot = uwf::readSnapshot(&snapshotErr);
-  if (!m_snapshot.uwfAvailable) {
-    // 不弹模态框——GlobalStatusPanel::setUnavailable 的横幅已常驻展示这条
-    // 错误，模态框只是重复打扰（且每点一次刷新就再弹一次）。
-    UWF_LOG_E("ui") << "readSnapshot failed: uwfAvailable=false err=" << snapshotErr;
+  auto candidateSnapshot = uwf::readSnapshot(&snapshotErr);
+  if (!candidateSnapshot.uwfAvailable) {
+    UWF_LOG_E("ui") << "refresh failed while reading UWF snapshot; keeping committed UI state: " << snapshotErr;
+    showInitialLoadFailure(snapshotErr);
+    return;
   }
 
-  // uwfAvailable（命名空间可读）与 elevated（进程已提权）外观相近但用途不同，
-  // 各处按需分别判断，不合并成单一标志。
-  const bool uwfAvailable = m_snapshot.uwfAvailable;
-  const bool elevated = m_snapshot.elevated;
+  // 两阶段提交：上面的磁盘枚举与完整 UWF 快照读取都成功后，才一次性替换
+  // 成员状态。任何失败路径都在此之前返回，旧数据和 UI 均不会被触碰。
+  m_disks = std::move(candidateDisks);
+  m_snapshot = std::move(candidateSnapshot);
+  m_hasCommittedState = true;
+  m_reconciliationRequired = false;
+  applyCommittedState();
+  const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
+  UWF_LOG_I("ui") << std::format("refresh done: disks={} uwfAvailable={} currentVolumes={} nextVolumes={} elapsedMs={}", m_disks.size(),
+                                 m_snapshot.uwfAvailable, m_snapshot.current.volumes.size(), m_snapshot.next.volumes.size(), elapsedMs);
+}
 
-  // 工具栏：UWF 不可用时除"日志 / 关于 / 主题 / 语言"外整体禁用。其中"刷新"
-  // 只是重新读取、不写入 UWF，故未提权也允许点——只要 UWF 可读就放开；
-  // 导入 / 预览并应用 / 安全关机 / 安全重启会写入，需同时已提权。
-  if (m_actRefresh) m_actRefresh->setEnabled(uwfAvailable);
-  for (QAction* a : {m_actImport, m_actPlan, m_actShutdown, m_actRestart})
-    if (a) a->setEnabled(uwfAvailable && elevated);
+void MainWindow::applyCommittedState() {
+  if (!m_hasCommittedState || !m_global || !m_tabs) return;
 
-  rebuildTabs(disks);
-  if (uwfAvailable) {
-    m_global->setData(m_snapshot.current, m_snapshot.next, m_snapshot.runtime);
-    // UWF 可读但未提权：补一条红色"需要管理员权限"横幅。UWF 不可用时不补——
-    // 那条不可用横幅优先级更高，已由下面的 setUnavailable 占据同一横幅。
-    if (!elevated) m_global->showElevationRequired();
-    if (!volumeErr.empty()) m_global->showVolumeInfoWarning(QString::fromStdString(volumeErr));
-  } else {
-    m_global->setUnavailable(snapshotErr.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(snapshotErr));
-  }
+  // 已提交状态必然来自一次完整成功的读取，因此此处不再保留“不可用快照”的
+  // 分支。刷新只读、始终可重试；其余动作会写系统，仍要求进程已提权。
+  rebuildTabs(m_disks);
+  m_global->setData(m_snapshot.current, m_snapshot.next, m_snapshot.runtime);
+  if (!m_snapshot.elevated) m_global->showElevationRequired();
   m_overlayPresentation->applySnapshot(m_snapshot);
-  // setData 会把滚动区控件全部恢复 enabled——未提权时随即再统一置灰一次。
-  m_global->setControlsEnabled(uwfAvailable && elevated);
   for (auto& t : m_diskTabs)
     if (t) t->applySnapshot(m_snapshot);
-  if (m_statusCtl) m_statusCtl->setBaseline(I18n::tr("Refreshed · %1 volumes").arg(disks.size()));
-  const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
-  UWF_LOG_I("ui") << std::format("refresh done: disks={} uwfAvailable={} currentVolumes={} nextVolumes={} elapsedMs={}", disks.size(), m_snapshot.uwfAvailable,
-                                 m_snapshot.current.volumes.size(), m_snapshot.next.volumes.size(), elapsedMs);
+  updateInteractionAvailability();
+  if (m_statusCtl) m_statusCtl->setBaseline(I18n::tr("Refreshed · %1 volumes").arg(m_disks.size()));
+}
+
+void MainWindow::updateInteractionAvailability() {
+  if (!m_hasCommittedState || !m_global) return;
+
+  const bool elevated = m_snapshot.elevated;
+  const bool editable = configurationWritesAllowed();
+  if (m_actRefresh) m_actRefresh->setEnabled(true);
+  for (QAction* action : {m_actImport, m_actPlan})
+    if (action) action->setEnabled(editable);
+  for (QAction* action : {m_actShutdown, m_actRestart})
+    if (action) action->setEnabled(elevated);
+
+  // setData / applySnapshot 会按快照恢复控件可写性；这里再叠加主窗口
+  // 所有的对账门禁。未提权时 DiskTab 自己只禁用编辑控件、保留正常
+  // 的只读展示；只有对账期才锁住整页，覆盖保护、排除项与即时
+  // commit 入口，不让任何子控件自行绕过该不变量。
+  m_global->setControlsEnabled(editable);
+  for (auto& tab : m_diskTabs)
+    if (tab) tab->setEnabled(!m_reconciliationRequired);
+}
+
+bool MainWindow::configurationWritesAllowed() const {
+  return m_hasCommittedState && m_snapshot.uwfAvailable && m_snapshot.elevated && !m_reconciliationRequired;
+}
+
+void MainWindow::reconcileAfterApply() {
+  m_reconciliationRequired = true;
+  updateInteractionAvailability();
+  refresh();
+}
+
+void MainWindow::showInitialLoadFailure(const std::string& error) {
+  if (m_hasCommittedState || !m_global) return;
+
+  // 首次读取失败没有旧数据可保留。只建立明确的不可用占位，并保留 Refresh
+  // 作为恢复入口；写操作保持禁用。后续一旦成功，正常的提交路径会整体替换它。
+  if (m_actRefresh) m_actRefresh->setEnabled(true);
+  for (QAction* action : {m_actImport, m_actPlan, m_actShutdown, m_actRestart})
+    if (action) action->setEnabled(false);
+  m_global->setUnavailable(error.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(error));
+  m_global->setControlsEnabled(false);
+  core::UwfSnapshot unavailable;
+  m_overlayPresentation->applySnapshot(unavailable);
 }
 
 void MainWindow::showPlan() {
+  if (!configurationWritesAllowed()) return;
   // 工具栏按钮 focusPolicy 是 Qt::NoFocus，点它不会让正在编辑的 spinbox 失焦；
   // 而阈值 / 最大尺寸等 spinbox 关了 keyboardTracking（见 GlobalStatusPanel），
   // 新输入的值要等 editingFinished（失焦或回车）才提交。不先逼当前编辑器提交，
@@ -776,15 +816,16 @@ void MainWindow::showPlan() {
 
   // 收集待应用变更、渲染命令预览、二次确认后写入 WMI 都在 ApplyPlanDialog
   // 里完成；这里只负责把变更来源（GlobalStatusPanel + 各 DiskTab）和写会话
-  // 交给它。applied() 用 QueuedConnection 接：等对话框这一轮事件循环回落
+  // 交给它。对账请求用 QueuedConnection 接：等对话框这一轮事件循环回落
   // 再 refresh，避免在回调里递归进 refresh 的弹窗 / WMI 读。
-  ApplyPlanDialog dlg(m_global, m_diskTabs, m_snapshot, m_writeSession, this);
-  connect(&dlg, &ApplyPlanDialog::applied, this, &MainWindow::refresh, Qt::QueuedConnection);
+  ApplyPlanDialog dlg(m_global, m_diskTabs, m_snapshot, m_session, this);
+  connect(&dlg, &ApplyPlanDialog::reconciliationRequired, this, &MainWindow::reconcileAfterApply, Qt::QueuedConnection);
   connect(&dlg, &ApplyPlanDialog::safeRestartRequested, m_power, &PowerController::safeRestart);
   dlg.exec();
 }
 
 void MainWindow::showImport() {
+  if (!configurationWritesAllowed()) return;
   ImportDialog dlg(this);
   dlg.setApplier([this](const QList<api::UwfmgrCommand>& cmds) { return applyImportCommands(cmds, m_global, m_diskTabs); });
   dlg.exec();
@@ -803,9 +844,17 @@ void MainWindow::showLogs() {
 // 4 个 commit 槽自身只是 dispatcher 的代理——拿到 DiskTab / ExclusionListWidget /
 // OverlayFilesDialog / 命令行的转发后，所有 batch 提交流程在 CommitDispatcher
 // 里跑（含目标枚举、排除冲突预校验、QProgressDialog、结果对话框）。
-void MainWindow::commitFilePath(const QString& path) { m_commit->commitFilePath(path); }
-void MainWindow::commitFileDeletionPath(const QString& path) { m_commit->commitFileDeletionPath(path); }
-void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) { m_commit->commitRegistryKey(key, valueName); }
-void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& valueName) { m_commit->commitRegistryDeletionKey(key, valueName); }
+void MainWindow::commitFilePath(const QString& path) {
+  if (configurationWritesAllowed()) m_commit->commitFilePath(path);
+}
+void MainWindow::commitFileDeletionPath(const QString& path) {
+  if (configurationWritesAllowed()) m_commit->commitFileDeletionPath(path);
+}
+void MainWindow::commitRegistryKey(const QString& key, const QString& valueName) {
+  if (configurationWritesAllowed()) m_commit->commitRegistryKey(key, valueName);
+}
+void MainWindow::commitRegistryDeletionKey(const QString& key, const QString& valueName) {
+  if (configurationWritesAllowed()) m_commit->commitRegistryDeletionKey(key, valueName);
+}
 
 }  // namespace uwf::ui

@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <format>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -34,17 +35,39 @@
 
 namespace uwf {
 
+enum class VerificationStatus { Matches, Mismatch, Unavailable };
+
+struct StateVerification {
+  VerificationStatus status = VerificationStatus::Unavailable;
+  std::string detail;
+
+  [[nodiscard]] static StateVerification matches() { return {VerificationStatus::Matches, {}}; }
+  [[nodiscard]] static StateVerification mismatch(std::string detail = {}) { return {VerificationStatus::Mismatch, std::move(detail)}; }
+  [[nodiscard]] static StateVerification unavailable(std::string detail) { return {VerificationStatus::Unavailable, std::move(detail)}; }
+};
+
+template <typename T, typename Predicate>
+[[nodiscard]] StateVerification verifyObservedState(const std::optional<T>& observed, Predicate matches, std::string readError,
+                                                    std::string missingDetail = "target state was not returned") {
+  if (!observed) return StateVerification::unavailable(readError.empty() ? std::move(missingDetail) : std::move(readError));
+  return matches(*observed) ? StateVerification::matches() : StateVerification::mismatch();
+}
+
 struct WmiResult {
-  bool ok = false;           // 业务上是否成功（hresult==0 && returnValue==0）
-  int32_t hresult = 0;       // ExecMethod 的 HRESULT；ok=true 时为 0
-  uint32_t returnValue = 0;  // 方法返回值（UInt32，UWF 约定 0=成功）；ok=true 时为 0
+  bool attempted = false;    // 写请求已提交给 WMI；本地校验/准备失败时为 false
+  bool ok = false;           // provider 接受且（需要时）写后状态已确认
+  bool outcomeUncertain = false;  // 调用可能已生效，但传输/返回包无法给出确定结论
+  int32_t hresult = 0;       // 原始调用 HRESULT；模糊传输失败经状态确认后仍保留
+  uint32_t returnValue = 0;  // 方法返回值（UInt32，UWF 约定 0=成功）
   std::string detail;        // 失败时的可读信息（来自 WmiMethodResult::error 或调用方自填）
 
   // 把 WmiMethodResult 折叠成 WmiResult 的常规收尾。所有 Uwf*::xxx 的 WMI
   // 调用都用这条路径，保证字段口径一致。
   [[nodiscard]] static WmiResult fromMethodResult(const WmiMethodResult& r) {
     WmiResult out;
+    out.attempted = r.attempted;
     out.ok = r.ok();
+    out.outcomeUncertain = r.attempted && ((!r.invoked && isWmiConnectionFailure(r.hresult)) || (r.invoked && !r.returnValuePresent));
     out.hresult = r.hresult;
     out.returnValue = r.returnValue;
     if (!out.ok) out.detail = r.error;
@@ -60,12 +83,52 @@ struct WmiResult {
   }
 };
 
+// 写方法绝不重放。调用完成后由领域 API 重新读取对应状态，并把“方法返回”与
+// “最终状态”合并成一个结果：
+// - 正常返回成功但无法确认/状态不符，不能报成功；
+// - 连接故障或不完整返回包使调用结果不确定，若重读状态已经符合预期，
+//   则可确认成功；
+// - provider 明确拒绝的写，即使状态此前就等于期望值，也不能把拒绝改报成功。
+[[nodiscard]] inline WmiResult confirmWriteState(WmiResult result, StateVerification verification, std::string_view operation) {
+  // 只有已经提交给 provider、且结果模型明确标记为不确定的调用，才允许由
+  // 写后状态确认裁决。连接、方法签名或本地参数准备阶段的失败没有发出写
+  // 请求，即使目标原本就处于期望状态，也不能改报成本次写成功。
+  const bool ambiguous = result.attempted && !result.ok && result.outcomeUncertain;
+  if (verification.status == VerificationStatus::Matches) {
+    if (result.ok || ambiguous) {
+      result.ok = true;
+      if (ambiguous) {
+        const std::string original = result.detail;
+        result.detail = std::format("{} state confirmed after an uncertain invocation result", operation);
+        if (!original.empty()) result.detail += std::format(": {}", original);
+      }
+    }
+    return result;
+  }
+
+  // provider 已明确拒绝、且不是可能已产生副作用的传输故障时，重新读取只用于
+  // 遵守“写后确认”的一致流程，不能把明确错误改写成“操作完成但状态不符”。
+  // 只有原调用成功或结果不确定时，验证失败才参与最终裁决与错误说明。
+  if (!result.ok && !ambiguous) return result;
+
+  const std::string verificationDetail =
+      verification.status == VerificationStatus::Unavailable
+          ? std::format("{} state verification unavailable{}{}", operation, verification.detail.empty() ? "" : ": ", verification.detail)
+          : std::format("{} completed but the reread state does not match{}{}", operation, verification.detail.empty() ? "" : ": ", verification.detail);
+  if (result.detail.empty())
+    result.detail = verificationDetail;
+  else
+    result.detail += std::format("; {}", verificationDetail);
+  result.ok = false;
+  return result;
+}
+
 // 读类方法（GetExclusions / FindExclusion / GetOverlayFiles 等）!ok() 时的统一
 // 错误文案：WMI 层失败（invoked=false）直接用 r.error；ExecMethod 成功但方法
 // 返回非 0 时给 "Class::Method returned N"。qualifiedMethod 形如
 // "UWF_Volume::GetExclusions"。各处失败分支共用，避免重复这段三元拼接。
 [[nodiscard]] inline std::string methodErrorDetail(const WmiMethodResult& r, std::string_view qualifiedMethod) {
-  return r.invoked ? std::format("{} returned {}", qualifiedMethod, r.returnValue) : r.error;
+  return r.invoked && r.returnValuePresent ? std::format("{} returned {}", qualifiedMethod, r.returnValue) : r.error;
 }
 
 // commit 类操作（CommitFile / CommitRegistry / Commit{File,Registry}Deletion）
@@ -84,7 +147,11 @@ enum class CommitOutcome { Ok, Skipped, Failed };
 
 [[nodiscard]] inline CommitOutcome commitOutcome(const WmiResult& r) {
   if (r.ok) return CommitOutcome::Ok;
-  return WmiError(r.hresult).code() == WmiErrorCode::NotFound ? CommitOutcome::Skipped : CommitOutcome::Failed;
+  // ExecMethod 本身失败时错误在 hresult；调用抵达 provider 后，UWF 方法的
+  // 业务错误则通过 UInt32 ReturnValue 返回。两条通道互斥，分类时必须取实际
+  // 失败通道，不能因为 ExecMethod 的 HRESULT 是 S_OK 就丢掉 ReturnValue。
+  const int32_t errorCode = r.hresult != 0 ? r.hresult : static_cast<int32_t>(r.returnValue);
+  return WmiError(errorCode).code() == WmiErrorCode::NotFound ? CommitOutcome::Skipped : CommitOutcome::Failed;
 }
 
 }  // namespace uwf

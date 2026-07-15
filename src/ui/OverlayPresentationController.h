@@ -22,6 +22,7 @@
 #include "../core/UwfModel.h"
 #include "../uwf/api/UwfFilter.h"
 #include "../uwf/api/UwfOverlay.h"
+#include "../uwf/api/UwfOverlayConfig.h"
 
 class QAction;
 class QMainWindow;
@@ -70,9 +71,11 @@ class OverlayPresentationController : public QObject {
   QTimer* m_usageTimer;
   QPointer<GlobalStatusPanel> m_global;
   QPointer<QAction> m_action;
+  bool m_hasCommittedSnapshot = false;
 
   api::UwfFilter m_filter;
   api::UwfOverlay m_overlay;
+  api::UwfOverlayConfig m_overlayConfig;
 };
 
 }  // namespace uwf::ui

@@ -21,8 +21,8 @@
 // 把 GlobalStatusPanel 与各个 DiskTab 上累积的待应用变更收集成
 // core::PendingChanges，以 uwfmgr 命令的形式展示（待应用变更段 + 当前会话
 // 配置段），允许导出命令脚本，并在用户二次确认后逐项写入 WMI。每一步单独
-// 收集错误，不因单点失败终止其它写入。应用完成后发 applied() 信号，让宿主
-// 窗口重新读取快照刷新 UI。
+// 收集错误，不因单点失败终止其它写入。只要有写请求被交给 provider，
+// 或重新读取已确认状态本就收敛，就请求宿主重新读取完整快照。
 
 #include <QDialog>
 #include <QPointer>
@@ -53,8 +53,9 @@ class ApplyPlanDialog : public QDialog {
                   QWidget* parent = nullptr);
 
  signals:
-  // 用户点击"应用"并完成写入后发出。宿主窗口应据此重新读取快照。
-  void applied();
+  // 当对话框内的基线可能已过期时发出。宿主必须在新快照完整读取
+  // 成功前阻止继续编辑或重放这批变更。
+  void reconciliationRequired();
   // 应用开始后出现的"安全重启"按钮只负责发出请求；宿主连接到与工具栏
   // 相同的重启入口，确保复用同一份确认与错误处理逻辑。
   void safeRestartRequested();

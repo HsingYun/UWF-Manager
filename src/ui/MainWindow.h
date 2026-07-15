@@ -20,6 +20,8 @@
 #include <QPointer>
 #include <QVector>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "../core/UwfModel.h"
 #include "../uwf/wmi/WmiClient.h"
@@ -85,6 +87,18 @@ class MainWindow : public QMainWindow {
   // 共用同一套机制，避免分两套各自的几何抖动。调用方在进入这里前会确认是否
   // 丢弃 widget 状态里的 pending changes。
   void rebuildUi();
+  // 把已经完整提交到 m_disks / m_snapshot 的状态渲染到当前这套控件。刷新先在
+  // 局部候选对象中完成全部读取，只有成功后才调用这里，避免残缺数据进入 UI。
+  void applyCommittedState();
+  // ApplyPlan 发生过写尝试或确认过收敛状态后，旧快照与 pending
+  // 都不再是可写基线。在下一次完整刷新成功前锁住配置交互，避免
+  // 部分成功的批次被重放。
+  void reconcileAfterApply();
+  void updateInteractionAvailability();
+  [[nodiscard]] bool configurationWritesAllowed() const;
+  // 首次启动尚无可保留的旧状态时，读取失败需要给出不可用占位；已有已提交
+  // 状态时刷新失败不会调用本函数，当前 UI 原样保留。
+  void showInitialLoadFailure(const std::string& error);
   void rebuildTabs(const std::vector<core::DiskInfo>& disks);
   void updatePendingSummary();
   bool confirmDiscardPendingChanges();
@@ -129,14 +143,18 @@ class MainWindow : public QMainWindow {
   OverlayPresentationController* m_overlayPresentation = nullptr;
   PowerController* m_power = nullptr;
 
-  // 所有"写"操作共享同一个 WmiSession。
-  WmiSession m_writeSession;
+  // 当前 UI 线程固定复用其 embedded namespace session；对象由线程级 WMI
+  // 上下文持有，内部代理断线时可重建。
+  WmiSession& m_session;
 
   QVector<QPointer<DiskTab>> m_diskTabs;
+  std::vector<core::DiskInfo> m_disks;
   core::UwfSnapshot m_snapshot;
+  bool m_hasCommittedState = false;
+  bool m_reconciliationRequired = false;
   // 4 个 commit{File,FileDeletion,Registry,RegistryDeletion}Path 槽实际工作都
   // 在这里头：CommitDispatcher 自己持有 UwfVolume / UwfRegistryFilter 包装，
-  // 共享 m_writeSession + 引用 m_snapshot + Overlay 控制器的 usage timer。
+  // 共享 m_session + 引用 m_snapshot + Overlay 控制器的 usage timer。
   std::unique_ptr<CommitDispatcher> m_commit;
 
   // 兼容模式标志与系统标识（系统版本未通过校验时为 true）。提示文案每次

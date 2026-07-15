@@ -21,6 +21,7 @@
 #include <QSignalBlocker>
 #include <QTimer>
 
+#include "../util/Log.h"
 #include "GlobalStatusPanel.h"
 #include "OverlayHub.h"
 #include "OverlayHubFactory.h"
@@ -36,16 +37,17 @@ OverlayPresentationController::OverlayPresentationController(WmiSession& session
       m_hub(createDefaultOverlayHub()),
       m_usageTimer(new QTimer(this)),
       m_filter(session),
-      m_overlay(session) {
+      m_overlay(session),
+      m_overlayConfig(session) {
   connect(m_hub, &OverlayHub::showMainWindowRequested, this, &OverlayPresentationController::activateMainWindowRequested);
   connect(m_hub, &OverlayHub::safeShutdownRequested, this, &OverlayPresentationController::safeShutdownRequested);
   connect(m_hub, &OverlayHub::safeRestartRequested, this, &OverlayPresentationController::safeRestartRequested);
   connect(m_hub, &OverlayHub::exitApplicationRequested, this, &OverlayPresentationController::exitApplicationRequested);
   connect(m_hub, &OverlayHub::stateChanged, this, &OverlayPresentationController::syncAvailability);
+  connect(m_tray, &TrayController::refreshRequested, this, &OverlayPresentationController::refreshUsage);
 
   m_usageTimer->setInterval(5000);
   connect(m_usageTimer, &QTimer::timeout, this, &OverlayPresentationController::refreshUsage);
-  m_usageTimer->start();
   syncAvailability();
 }
 
@@ -64,10 +66,16 @@ void OverlayPresentationController::unbindUi() {
 
 void OverlayPresentationController::applySnapshot(const core::UwfSnapshot& snapshot) {
   if (snapshot.uwfAvailable) {
+    m_hasCommittedSnapshot = true;
     m_hub->setFilterEnabled(snapshot.current.filter.enabled);
     m_hub->updateUsage(snapshot.runtime);
+    if (m_tray) {
+      const std::optional<core::OverlayRuntime> runtime = snapshot.current.filter.enabled ? std::optional(snapshot.runtime) : std::nullopt;
+      m_tray->applyUsageState(snapshot.current.filter.enabled, runtime, snapshot.current.overlay);
+    }
     m_usageTimer->start();
   } else {
+    m_hasCommittedSnapshot = false;
     m_hub->setUsageUnavailable();
     m_usageTimer->stop();
   }
@@ -91,26 +99,52 @@ void OverlayPresentationController::refreshActionIcon() {
 }
 
 void OverlayPresentationController::refreshUsage() {
-  const auto filter = m_filter.read();
-  if (!filter)
-    m_hub->setUsageUnavailable();
-  else
-    m_hub->setFilterEnabled(filter->currentEnabled);
+  // 增量刷新必须建立在一份完整快照上。构造期或首次读取失败时，禁止只凭
+  // Filter/Overlay 三个运行时字段提前改变 Hub/托盘，避免不同 UI 消费者对
+  // “是否已有可信状态”得出相反结论。
+  if (!m_hasCommittedSnapshot) return;
 
-  if (filter && filter->currentEnabled) {
-    const auto overlay = m_overlay.read();
-    if (overlay) {
-      core::OverlayRuntime runtime;
-      runtime.currentConsumptionMb = overlay->overlayConsumption;
-      runtime.availableSpaceMb = overlay->availableSpace;
-      if (m_ownerWindow->isVisible() && m_global) m_global->updateUsage(runtime);
-      m_hub->updateUsage(runtime);
-    } else {
-      m_hub->setUsageUnavailable();
-    }
+  std::string error;
+  const auto filter = m_filter.read(&error);
+  if (!filter) {
+    UWF_LOG_E("ui") << "usage refresh failed while reading UWF_Filter; keeping committed UI state: " << error;
+    return;
   }
+
+  std::optional<core::OverlayRuntime> runtime;
+  core::OverlayConfig presentationConfig;
+  if (filter->currentEnabled) {
+    error.clear();
+    const auto overlay = m_overlay.read(&error);
+    if (!overlay) {
+      UWF_LOG_E("ui") << "usage refresh failed while reading UWF_Overlay; keeping committed UI state: " << error;
+      return;
+    }
+    error.clear();
+    const auto config = m_overlayConfig.read(true, &error);
+    if (!config) {
+      UWF_LOG_E("ui") << "usage refresh failed while reading UWF_OverlayConfig; keeping committed UI state: " << error;
+      return;
+    }
+
+    runtime.emplace();
+    runtime->currentConsumptionMb = overlay->overlayConsumption;
+    runtime->availableSpaceMb = overlay->availableSpace;
+    presentationConfig.maximumSizeMb = config->maximumSize;
+    presentationConfig.type = config->type == api::OverlayType::RAM ? core::OverlayType::RAM : core::OverlayType::Disk;
+    presentationConfig.warningThresholdMb = overlay->warningOverlayThreshold;
+    presentationConfig.criticalThresholdMb = overlay->criticalOverlayThreshold;
+  }
+
+  // 候选读取全部成功后一次性提交到所有消费者，Hub、主面板与托盘不会看见
+  // 来自不同轮次的混合状态。
+  m_hub->setFilterEnabled(filter->currentEnabled);
+  if (runtime) {
+    if (m_ownerWindow->isVisible() && m_global) m_global->updateUsage(*runtime);
+    m_hub->updateUsage(*runtime);
+  }
+  if (m_tray) m_tray->applyUsageState(filter->currentEnabled, runtime, presentationConfig);
   syncAvailability();
-  if (m_tray) m_tray->refreshUsage();
 }
 
 void OverlayPresentationController::syncAvailability() {

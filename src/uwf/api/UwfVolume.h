@@ -34,6 +34,15 @@
 
 namespace uwf::api {
 
+// ensureNextSessionEntry 同时可能执行 PutInstance。把条目与写入进度作为一个
+// 领域结果返回，使批量应用流程能区分纯读取失败与“写请求已发出但确认失败”。
+struct EnsureVolumeResult {
+  std::optional<api::VolumeRow> entry;
+  bool writeAttempted = false;
+  bool writeConfirmed = false;
+  std::string error;
+};
+
 class UwfVolume {
  public:
   explicit UwfVolume(WmiSession& session) : m_session(session) {}
@@ -60,7 +69,7 @@ class UwfVolume {
 
   std::optional<bool> findExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error = nullptr) const;
 
-  std::vector<api::ExcludedFile> getExclusions(const api::VolumeRow& row, std::string* error = nullptr) const;
+  std::optional<std::vector<api::ExcludedFile>> getExclusions(const api::VolumeRow& row, std::string* error = nullptr) const;
 
   // 拿到指定卷的 next session 实例。如果 UWF_Volume 里没有 next session
   // 行（卷从未被 protect 过、没加过 exclusion），就从该卷的 current session
@@ -68,7 +77,7 @@ class UwfVolume {
   // 之所以从 current 复制：UWF 自己列出来的 current 实例 VolumeName 格式
   // 必定规范（"Volume{GUID}"，无 \\?\ 前缀、无尾斜杠），caller 不必再做
   // 跨命名空间查 Win32_Volume 然后归一化的脏活。
-  std::optional<api::VolumeRow> ensureNextSessionEntry(const std::string& driveLetter, std::string* error = nullptr) const;
+  [[nodiscard]] EnsureVolumeResult ensureNextSessionEntry(const std::string& driveLetter) const;
 
  private:
   // CommitFile / CommitFileDeletion 共享的实现——除方法名外两者完全一致。
