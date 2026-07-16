@@ -66,7 +66,7 @@ QIcon makeAlertIcon() {
 
 TrayController::TrayController(QWidget* ownerWindow) : QObject(ownerWindow), m_iconNormal(QStringLiteral(":/icons/app.svg")), m_iconAlert(makeAlertIcon()) {
   if (!QSystemTrayIcon::isSystemTrayAvailable()) {
-    UWF_LOG_W("ui") << "system tray unavailable; tray icon will not be created";
+    UWF_LOG_W("tray") << "system tray unavailable: action=tray-disabled";
     return;
   }
 
@@ -169,13 +169,22 @@ void TrayController::renderCommittedState() {
 void TrayController::applyUsageState(const bool filterEnabled, const std::optional<core::OverlayRuntime>& runtime, const core::OverlayConfig& config) {
   if (!m_tray) return;
   if (filterEnabled && !runtime) {
-    UWF_LOG_E("ui") << "tray rejected an incomplete enabled usage state";
+    UWF_LOG_E("tray") << "usage state rejected: reason=enabled-state-without-runtime-data";
     return;
   }
   m_hasCommittedState = true;
   m_filterEnabled = filterEnabled;
   m_runtime = runtime;
   m_config = config;
+  renderCommittedState();
+}
+
+void TrayController::setUsageUnavailable() {
+  if (!m_tray) return;
+  m_hasCommittedState = false;
+  m_filterEnabled = false;
+  m_runtime.reset();
+  m_config = {};
   renderCommittedState();
 }
 

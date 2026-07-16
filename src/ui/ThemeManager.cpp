@@ -18,6 +18,9 @@
 
 #include <windows.h>
 
+#include <exception>
+#include <string_view>
+
 #include <QAbstractEventDispatcher>
 #include <QApplication>
 #include <QByteArray>
@@ -29,11 +32,25 @@
 #include <QStyleHints>
 #include <QSvgRenderer>
 
+#include "../util/Log.h"
 #include "../util/RegistryKey.h"
 
 namespace uwf::ui {
 
 namespace {
+
+Theme readSystemTheme(std::string_view valueName) noexcept {
+  try {
+    return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", valueName).value_or(0) == 0
+               ? Theme::Dark
+               : Theme::Light;
+  } catch (const std::exception& error) {
+    UWF_LOG_W("theme") << "system theme unavailable: fallback=dark error=" << error.what();
+  } catch (...) {
+    UWF_LOG_W("theme") << "system theme unavailable: fallback=dark error=non-standard-exception";
+  }
+  return Theme::Dark;
+}
 
 // 直接吃染色后的 svg 字节流，每次 paint() / pixmap() 用 QSvgRenderer 按目标
 // 尺寸矢量渲染——HiDPI 下零位图缩放损失，比预先栅格化成 QPixmap 再交给
@@ -168,16 +185,11 @@ void ThemeManager::apply(Theme t) {
 void ThemeManager::toggle() { apply(m_theme == Theme::Dark ? Theme::Light : Theme::Dark); }
 
 Theme ThemeManager::detectSystemTheme() {
-  // AppsUseLightTheme：0 = 深色应用主题，非 0 = 浅色。读不到该值
-  // （注册表项不存在等）时 readDword 返回 0——与"未配置时回退深色"一致。
-  return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", "AppsUseLightTheme") == 0 ? Theme::Dark
-                                                                                                                                          : Theme::Light;
+  // AppsUseLightTheme：0 = 深色应用主题，非 0 = 浅色。未配置时回退深色。
+  return readSystemTheme("AppsUseLightTheme");
 }
 
-Theme ThemeManager::detectSystemShellTheme() {
-  return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", "SystemUsesLightTheme") == 0 ? Theme::Dark
-                                                                                                                                             : Theme::Light;
-}
+Theme ThemeManager::detectSystemShellTheme() { return readSystemTheme("SystemUsesLightTheme"); }
 
 bool ThemeManager::nativeEventFilter(const QByteArray& eventType, void* message, qintptr*) {
   if (eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG") return false;

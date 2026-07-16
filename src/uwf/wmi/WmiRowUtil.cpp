@@ -18,6 +18,7 @@
 
 #include <cstring>
 #include <regex>
+#include <string_view>
 
 #include "../../util/Log.h"
 
@@ -25,89 +26,69 @@ namespace uwf::rowutil {
 
 namespace {
 
-void setFieldError(std::string* error, const std::string& key, const char* reason) {
-  if (error) *error = std::string("WMI field '") + key + "' " + reason;
+[[noreturn]] void throwFieldError(const std::string& key, const char* reason) {
+  throw WmiDecodeError("decode WMI row", std::string("field '") + key + "' " + reason);
 }
 
 bool isIntegerLike(const WmiValue::Kind kind) { return kind == WmiValue::Kind::Int || kind == WmiValue::Kind::UInt || kind == WmiValue::Kind::String; }
 
-std::string replaceAll(std::string s, const std::string& from, const std::string& to) {
-  if (from.empty()) return s;
-  size_t pos = 0;
-  while ((pos = s.find(from, pos)) != std::string::npos) {
-    s.replace(pos, from.size(), to);
-    pos += to.size();
+std::string decodeMofString(std::string_view encoded) {
+  std::string decoded;
+  decoded.reserve(encoded.size());
+  for (std::size_t i = 0; i < encoded.size(); ++i) {
+    const char character = encoded[i];
+    if (character == '\\' && i + 1 < encoded.size() && (encoded[i + 1] == '\\' || encoded[i + 1] == '"')) {
+      decoded += encoded[++i];
+    } else {
+      decoded += character;
+    }
   }
-  return s;
+  return decoded;
 }
 
 }  // namespace
 
-std::optional<bool> requireBool(const WmiRow& r, const std::string& key, std::string* error) {
+bool requireBool(const WmiRow& r, const std::string& key) {
   const auto it = r.find(key);
-  if (it == r.end() || it->second.kind() != WmiValue::Kind::Bool) {
-    setFieldError(error, key, it == r.end() ? "is missing" : "has the wrong type");
-    return std::nullopt;
-  }
+  if (it == r.end() || it->second.kind() != WmiValue::Kind::Bool) throwFieldError(key, it == r.end() ? "is missing" : "has the wrong type");
   return it->second.toBool();
 }
 
-std::optional<int32_t> requireInt(const WmiRow& r, const std::string& key, std::string* error) {
+int32_t requireInt(const WmiRow& r, const std::string& key) {
   const auto it = r.find(key);
-  if (it == r.end() || !isIntegerLike(it->second.kind())) {
-    setFieldError(error, key, it == r.end() ? "is missing" : "has the wrong type");
-    return std::nullopt;
+  if (it == r.end() || !isIntegerLike(it->second.kind())) throwFieldError(key, it == r.end() ? "is missing" : "has the wrong type");
+  try {
+    return it->second.toInt();
+  } catch (const WmiValueConversionError&) {
+    throwFieldError(key, "is not a valid Int32");
   }
-  bool ok = false;
-  const auto value = it->second.toInt(&ok);
-  if (!ok) {
-    setFieldError(error, key, "is not a valid Int32");
-    return std::nullopt;
-  }
-  return value;
 }
 
-std::optional<uint32_t> requireUInt(const WmiRow& r, const std::string& key, std::string* error) {
+uint32_t requireUInt(const WmiRow& r, const std::string& key) {
   const auto it = r.find(key);
-  if (it == r.end() || !isIntegerLike(it->second.kind())) {
-    setFieldError(error, key, it == r.end() ? "is missing" : "has the wrong type");
-    return std::nullopt;
+  if (it == r.end() || !isIntegerLike(it->second.kind())) throwFieldError(key, it == r.end() ? "is missing" : "has the wrong type");
+  try {
+    return it->second.toUInt();
+  } catch (const WmiValueConversionError&) {
+    throwFieldError(key, "is not a valid UInt32");
   }
-  bool ok = false;
-  const auto value = it->second.toUInt(&ok);
-  if (!ok) {
-    setFieldError(error, key, "is not a valid UInt32");
-    return std::nullopt;
-  }
-  return value;
 }
 
-std::optional<uint64_t> requireUInt64(const WmiRow& r, const std::string& key, std::string* error) {
+uint64_t requireUInt64(const WmiRow& r, const std::string& key) {
   const auto it = r.find(key);
-  if (it == r.end() || !isIntegerLike(it->second.kind())) {
-    setFieldError(error, key, it == r.end() ? "is missing" : "has the wrong type");
-    return std::nullopt;
+  if (it == r.end() || !isIntegerLike(it->second.kind())) throwFieldError(key, it == r.end() ? "is missing" : "has the wrong type");
+  try {
+    return it->second.toULongLong();
+  } catch (const WmiValueConversionError&) {
+    throwFieldError(key, "is not a valid UInt64");
   }
-  bool ok = false;
-  const auto value = it->second.toULongLong(&ok);
-  if (!ok) {
-    setFieldError(error, key, "is not a valid UInt64");
-    return std::nullopt;
-  }
-  return value;
 }
 
-std::optional<std::string> requireString(const WmiRow& r, const std::string& key, std::string* error, const bool allowEmpty) {
+std::string requireString(const WmiRow& r, const std::string& key, const EmptyString empty) {
   const auto it = r.find(key);
-  if (it == r.end() || it->second.kind() != WmiValue::Kind::String) {
-    setFieldError(error, key, it == r.end() ? "is missing" : "has the wrong type");
-    return std::nullopt;
-  }
+  if (it == r.end() || it->second.kind() != WmiValue::Kind::String) throwFieldError(key, it == r.end() ? "is missing" : "has the wrong type");
   auto value = it->second.toString();
-  if (!allowEmpty && value.empty()) {
-    setFieldError(error, key, "is empty");
-    return std::nullopt;
-  }
+  if (empty == EmptyString::Reject && value.empty()) throwFieldError(key, "is empty");
   return value;
 }
 
@@ -123,38 +104,42 @@ std::string extractFromMof(const std::string& mof, const std::string& propName) 
   const std::regex re(escaped + R"RX(\s*=\s*"((?:\\.|[^"\\])*)")RX");
   std::smatch m;
   if (!std::regex_search(mof, m, re)) return {};
-  std::string v = m[1].str();
-  v = replaceAll(v, "\\\\", "\\");
-  v = replaceAll(v, "\\\"", "\"");
-  return v;
+  return decodeMofString(m[1].str());
 }
 
-std::optional<std::string> requireEmbeddedString(const WmiRow& r, const std::string& propName, std::string* error) {
+std::string requireEmbeddedString(const WmiRow& r, const std::string& propName) {
   if (const auto direct = r.find(propName); direct != r.end() && direct->second.isValid()) {
-    return requireString(r, propName, error, false);
+    return requireString(r, propName, EmptyString::Reject);
   }
 
-  const auto mof = requireString(r, "__MOF", error, false);
-  if (!mof) return std::nullopt;
-  auto value = extractFromMof(*mof, propName);
-  if (value.empty()) {
-    setFieldError(error, propName, "is missing from embedded MOF");
-    return std::nullopt;
-  }
+  const auto mof = requireString(r, "__MOF", EmptyString::Reject);
+  auto value = extractFromMof(mof, propName);
+  if (value.empty()) throwFieldError(propName, "is missing from embedded MOF");
   return value;
 }
 
-void dumpRow(const char* tag, const WmiRow& r) {
-  std::string kv;
-  bool first = true;
-  for (const auto& [k, v] : r) {
-    if (!first) kv += ", ";
-    first = false;
-    kv += k;
-    kv += '=';
-    kv += v.toString();
+void dumpRow(const char* tag, const WmiRow& r) noexcept {
+#if !defined(UWF_DEBUG_LOGGING)
+  (void)tag;
+  (void)r;
+#else
+  try {
+    std::string kv;
+    bool first = true;
+    for (const auto& [k, v] : r) {
+      if (!first) kv += ", ";
+      first = false;
+      kv += k;
+      kv += '=';
+      // NULL 是 WMI 行中的合法值（例如无盘符卷的 DriveLetter）。诊断渲染不能
+      // 复用严格业务转换并因此改变读取结果；只有业务字段解码才决定 NULL 是否可接受。
+      kv += v.isValid() ? v.toString() : "<null>";
+    }
+    logLine('D', "wmi", std::string(tag) + " { " + kv + " }");
+  } catch (...) {
+    // 诊断日志是旁路；内存或格式化失败不能把成功的 provider 响应变成业务失败。
   }
-  UWF_LOG_D("wmi") << tag << " { " << kv << " }";
+#endif
 }
 
 }  // namespace uwf::rowutil

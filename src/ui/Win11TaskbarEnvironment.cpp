@@ -45,13 +45,13 @@ int scaled(const int logicalPixels, const UINT dpi) { return MulDiv(logicalPixel
 EnvironmentProbe detail::classifyEnvironmentObservation(const EnvironmentObservation& observation) {
   if (!observation.taskbarAvailable || !observation.notifyAvailable || !observation.hierarchyValid || !observation.processIdentityValid ||
       !observation.geometryAvailable) {
-    UWF_LOG_D("taskbar") << "environment unavailable: taskbar=" << observation.taskbarAvailable << " notify=" << observation.notifyAvailable
+    UWF_LOG_D("taskbar") << "environment unavailable: taskbar=" << observation.taskbarAvailable << " notificationArea=" << observation.notifyAvailable
                          << " hierarchy=" << observation.hierarchyValid << " process=" << observation.processIdentityValid
                          << " geometry=" << observation.geometryAvailable;
     return {};
   }
   if (observation.verticalLayout) {
-    UWF_LOG_D("taskbar") << "environment incompatible: vertical taskbar";
+    UWF_LOG_D("taskbar") << "environment incompatible: reason=vertical-taskbar";
     return {RuntimeAvailability::IncompatibleLayout, std::nullopt};
   }
   return {RuntimeAvailability::Available, observation.environment};
@@ -131,13 +131,13 @@ bool sameEnvironment(const Environment& lhs, const Environment& rhs) {
 
 std::optional<Placement> calculatePlacement(const Environment& environment, const QSize& logicalSize) {
   if (logicalSize.width() <= 0 || logicalSize.height() <= 0) {
-    UWF_LOG_D("taskbar") << "placement unavailable: invalid logical size " << logicalSize.width() << 'x' << logicalSize.height();
+    UWF_LOG_D("taskbar") << "placement unavailable: reason=invalid-logical-size width=" << logicalSize.width() << " height=" << logicalSize.height();
     return std::nullopt;
   }
 
   POINT notifyTopLeft{environment.notifyRect.left, environment.notifyRect.top};
   if (!ScreenToClient(environment.taskbar, &notifyTopLeft)) {
-    UWF_LOG_D("taskbar") << "placement unavailable: ScreenToClient failed error=" << GetLastError();
+    UWF_LOG_D("taskbar") << "placement unavailable: reason=screen-to-client-failed win32Error=" << GetLastError();
     return std::nullopt;
   }
 
@@ -149,8 +149,9 @@ std::optional<Placement> calculatePlacement(const Environment& environment, cons
   const int x = static_cast<int>(notifyTopLeft.x) - width - inset;
   const int y = (clientHeight - height) / 2;
   if (width <= 0 || height <= 0 || x < inset || y < 0 || x + width > static_cast<int>(notifyTopLeft.x) || x + width > clientWidth) {
-    UWF_LOG_D("taskbar") << "placement unavailable: client=" << clientWidth << 'x' << clientHeight << " notifyX=" << notifyTopLeft.x << " desired=" << width
-                         << 'x' << height << " position=" << x << ',' << y << " inset=" << inset;
+    UWF_LOG_D("taskbar") << "placement unavailable: reason=insufficient-space clientWidth=" << clientWidth << " clientHeight=" << clientHeight
+                         << " notificationX=" << notifyTopLeft.x << " desiredWidth=" << width << " desiredHeight=" << height << " x=" << x << " y=" << y
+                         << " inset=" << inset;
     return std::nullopt;
   }
   return Placement{x, y, width, height};

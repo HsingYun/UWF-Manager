@@ -17,10 +17,14 @@
 #include "UwfOverlay.h"
 
 #include <format>
+#include <optional>
 #include <regex>
+#include <stdexcept>
 
 #include "../../util/Log.h"
+#include "../wmi/WmiException.h"
 #include "../wmi/WmiRowUtil.h"
+#include "WriteVerification.h"
 
 namespace uwf::api {
 
@@ -35,137 +39,84 @@ std::optional<uint64_t> parseFileSizeFromMof(const std::string& mof) {
   if (!std::regex_search(mof, m, re)) return std::nullopt;
   try {
     return std::stoull(m[1].matched ? m[1].str() : m[2].str());
-  } catch (...) {
+  } catch (const std::invalid_argument&) {
+    return std::nullopt;
+  } catch (const std::out_of_range&) {
     return std::nullopt;
   }
 }
 
-std::optional<uint64_t> requireOverlayFileSize(const WmiRow& row, std::string* error) {
+uint64_t requireOverlayFileSize(const WmiRow& row) {
   if (const auto direct = row.find("FileSize"); direct != row.end() && direct->second.isValid()) {
-    return rowutil::requireUInt64(row, "FileSize", error);
+    return rowutil::requireUInt64(row, "FileSize");
   }
-  const auto mof = rowutil::requireString(row, "__MOF", error, false);
-  if (!mof) return std::nullopt;
-  const auto size = parseFileSizeFromMof(*mof);
-  if (!size && error) *error = "WMI field 'FileSize' is missing or invalid in embedded MOF";
-  return size;
+  const auto mof = rowutil::requireString(row, "__MOF", rowutil::EmptyString::Reject);
+  const auto size = parseFileSizeFromMof(mof);
+  if (!size) throw WmiDecodeError("decode UWF_OverlayFile", "FileSize is missing or invalid in embedded MOF");
+  return *size;
 }
 
-std::optional<api::OverlayRow> decodeOverlay(const WmiRow& source, std::string* error) {
-  const auto path = rowutil::requireString(source, "__PATH", error, false);
-  const auto consumption = rowutil::requireUInt(source, "OverlayConsumption", error);
-  const auto available = rowutil::requireUInt(source, "AvailableSpace", error);
-  const auto critical = rowutil::requireUInt(source, "CriticalOverlayThreshold", error);
-  const auto warning = rowutil::requireUInt(source, "WarningOverlayThreshold", error);
-  if (!path || !consumption || !available || !critical || !warning) return std::nullopt;
-  return api::OverlayRow{*path, *consumption, *available, *critical, *warning};
+api::OverlayRow decodeOverlay(const WmiRow& source) {
+  return {rowutil::requireString(source, "__PATH", rowutil::EmptyString::Reject), rowutil::requireUInt(source, "OverlayConsumption"),
+          rowutil::requireUInt(source, "AvailableSpace"), rowutil::requireUInt(source, "CriticalOverlayThreshold"),
+          rowutil::requireUInt(source, "WarningOverlayThreshold")};
 }
 
-std::optional<api::OverlayRow> rereadOverlay(WmiSession& session, const api::OverlayRow& target, std::string* error) {
-  const auto source = session.getObject(target.path, error);
-  return source ? decodeOverlay(*source, error) : std::nullopt;
+api::OverlayRow rereadOverlay(WmiSession& session, const api::OverlayRow& target) {
+  return decodeOverlay(session.getObject(target.path));
+}
+
+void requirePath(const api::OverlayRow& row, const char* operation) {
+  if (row.path.empty()) throw WmiProtocolError(operation, "UWF_Overlay row has no object path");
 }
 
 }  // namespace
 
-std::optional<api::OverlayRow> UwfOverlay::read(std::string* error) const {
-  if (error) error->clear();
-  std::string queryError;
-  const auto rows = m_session.queryInstances("SELECT * FROM UWF_Overlay", &queryError);
-  if (!queryError.empty()) {
-    if (error) *error = std::move(queryError);
-    return std::nullopt;
-  }
+api::OverlayRow UwfOverlay::read() const {
+  const auto rows = m_session.queryInstances("SELECT * FROM UWF_Overlay");
   if (rows.size() != 1) {
-    if (error) *error = std::format("UWF_Overlay expected one instance, received {}", rows.size());
-    UWF_LOG_W("UWF_Overlay") << "read: singleton cardinality mismatch; rows=" << rows.size();
-    return std::nullopt;
+    throw WmiProtocolError("read UWF_Overlay", std::format("expected one instance, received {}", rows.size()));
   }
 
   const auto& o = rows.front();
   rowutil::dumpRow("UWF_Overlay", o);
-  auto r = decodeOverlay(o, error);
-  if (!r) return std::nullopt;
-  UWF_LOG_D("UWF_Overlay") << std::format("read ok: consumption={}MB available={}MB warning={}MB critical={}MB", r->overlayConsumption, r->availableSpace,
-                                          r->warningOverlayThreshold, r->criticalOverlayThreshold);
+  auto r = decodeOverlay(o);
+  UWF_LOG_D("uwf") << "overlay read completed: consumptionMb=" << r.overlayConsumption << " availableMb=" << r.availableSpace
+                    << " warningMb=" << r.warningOverlayThreshold << " criticalMb=" << r.criticalOverlayThreshold;
   return r;
 }
 
-std::vector<api::OverlayFileRow> UwfOverlay::getOverlayFiles(const api::OverlayRow& row, const std::string& volume, std::string* error, int32_t* errorCode,
+std::vector<api::OverlayFileRow> UwfOverlay::getOverlayFiles(const api::OverlayRow& row, const std::string& volume,
                                                              const std::stop_token stopToken) const {
-  std::vector<api::OverlayFileRow> out;
-  if (error) error->clear();
-  if (errorCode) *errorCode = 0;
-  if (row.path.empty()) {
-    if (error) *error = "UWF_Overlay row has empty __PATH; call read() first";
-    UWF_LOG_E("UWF_Overlay") << "GetOverlayFiles rejected: empty __PATH; volume=" << volume;
-    return out;
-  }
+  requirePath(row, "read UWF overlay files");
 
   WmiRow inputs;
   inputs.emplace("Volume", WmiValue::fromString(volume));
 
-  const auto r = stopToken.stop_possible() ? m_session.callMethodReadCancelable(row.path, "GetOverlayFiles", inputs, stopToken)
-                                           : m_session.callMethodRead(row.path, "GetOverlayFiles", inputs);
-  if (!r.ok()) {
-    const std::string detail = methodErrorDetail(r, "UWF_Overlay::GetOverlayFiles");
-    if (error) *error = detail;
-    if (errorCode) *errorCode = r.hresult != 0 ? r.hresult : static_cast<int32_t>(r.returnValue);
-    if (stopToken.stop_possible() && r.hresult != static_cast<int32_t>(WBEM_E_CALL_CANCELLED)) {
-      UWF_LOG_E("UWF_Overlay") << "GetOverlayFiles failed: volume=" << volume << "; " << detail;
-    }
-    return out;
-  }
+  const auto output = stopToken.stop_possible() ? m_session.callMethodReadCancelable(row.path, "GetOverlayFiles", inputs, stopToken)
+                                                : m_session.callMethodRead(row.path, "GetOverlayFiles", inputs);
 
-  auto decoded = rowutil::readArrayOutput<api::OverlayFileRow>(
-      r, "OverlayFiles",
-      [error](const WmiRow& item) -> std::optional<api::OverlayFileRow> {
-        const auto fileName = rowutil::requireEmbeddedString(item, "FileName", error);
-        const auto fileSize = requireOverlayFileSize(item, error);
-        if (!fileName || !fileSize) return std::nullopt;
-        return api::OverlayFileRow{*fileName, *fileSize};
-      },
-      error);
-  if (!decoded) {
-    UWF_LOG_E("UWF_Overlay") << "GetOverlayFiles returned an invalid response: " << (error ? *error : std::string{});
-    return out;
-  }
-
-  out = std::move(*decoded);
-  uint64_t totalBytes = 0;
-  for (const auto& item : out) totalBytes += item.fileSize;
-  UWF_LOG_I("UWF_Overlay") << std::format("GetOverlayFiles ok: volume={} files={} totalBytes={}", volume, out.size(), totalBytes);
+  auto out = rowutil::readArrayOutput<api::OverlayFileRow>(output, "OverlayFiles", [](const WmiRow& item) {
+    return api::OverlayFileRow{rowutil::requireEmbeddedString(item, "FileName"), requireOverlayFileSize(item)};
+  });
+  UWF_LOG_D("uwf") << "overlay files read completed: volume=" << volume << " files=" << out.size();
   return out;
 }
 
-namespace {
-
-// SetWarningThreshold / SetCriticalThreshold 共享前置校验 + WMI 调用骨架。
-WmiResult invokeSetThreshold(WmiSession& session, const api::OverlayRow& row, const char* method, uint32_t sizeMb, const bool warning) {
-  if (row.path.empty()) return WmiResult::failed("UWF_Overlay row has empty __PATH; call read() first");
+void UwfOverlay::setWarningThreshold(const api::OverlayRow& row, const uint32_t sizeMb) const {
+  requirePath(row, "set UWF warning threshold");
   WmiRow inputs;
   inputs.emplace("size", WmiValue::fromUInt(sizeMb));
-  auto out = WmiResult::fromMethodResult(session.callMethod(row.path, method, inputs));
-
-  std::string readError;
-  const auto observed = rereadOverlay(session, row, &readError);
-  auto verification = verifyObservedState(
-      observed,
-      [warning, sizeMb](const api::OverlayRow& state) { return (warning ? state.warningOverlayThreshold : state.criticalOverlayThreshold) == sizeMb; },
-      std::move(readError));
-  out = confirmWriteState(std::move(out), std::move(verification), std::format("UWF_Overlay::{}", method));
-  if (out.ok) UWF_LOG_I("UWF_Overlay") << method << " confirmed: size=" << sizeMb << "MB";
-  return out;
+  invokeAndConfirm("set UWF warning threshold", [&] { m_session.invokeMethod(row.path, "SetWarningThreshold", inputs); },
+                   [&] { return rereadOverlay(m_session, row).warningOverlayThreshold == sizeMb; });
 }
 
-}  // namespace
-
-WmiResult UwfOverlay::setWarningThreshold(const api::OverlayRow& row, const uint32_t sizeMb) const {
-  return invokeSetThreshold(m_session, row, "SetWarningThreshold", sizeMb, true);
-}
-
-WmiResult UwfOverlay::setCriticalThreshold(const api::OverlayRow& row, const uint32_t sizeMb) const {
-  return invokeSetThreshold(m_session, row, "SetCriticalThreshold", sizeMb, false);
+void UwfOverlay::setCriticalThreshold(const api::OverlayRow& row, const uint32_t sizeMb) const {
+  requirePath(row, "set UWF critical threshold");
+  WmiRow inputs;
+  inputs.emplace("size", WmiValue::fromUInt(sizeMb));
+  invokeAndConfirm("set UWF critical threshold", [&] { m_session.invokeMethod(row.path, "SetCriticalThreshold", inputs); },
+                   [&] { return rereadOverlay(m_session, row).criticalOverlayThreshold == sizeMb; });
 }
 
 }  // namespace uwf::api

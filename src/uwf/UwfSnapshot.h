@@ -23,19 +23,30 @@
 // 另外附带 enumerateDisks()：它不属于任何 UWF WMI 类（查的是 root\cimv2 的
 // Win32_LogicalDisk），但"快照一次系统当前状态"的入口天然需要它。
 
-#include <string>
 #include <vector>
 
 #include "../core/UwfModel.h"
 
 namespace uwf {
 
-// 读取完整 UWF 状态（filter / overlay / volumes / registry exclusions / overlay
-// files）。 如果 UWF 命名空间不可用，uwfAvailable=false，rawError
-// 中会有原始错误。
-core::UwfSnapshot readSnapshot(std::string* error = nullptr);
+// UWF 类是否已在当前系统注册。该能力在进程启动时探测一次，此后作为不可变
+// 的运行环境事实传给每次动态状态读取；WMI 代理重连不会重新定义它。
+enum class UwfCapability {
+  Available,
+  Unavailable,
+};
+
+// 启动期探测 UWF_Filter 是否注册。类不存在返回 Unavailable；连接、权限和
+// 协议失败抛出异常，不能把暂时的读取故障误判成系统不支持 UWF。
+[[nodiscard]] UwfCapability probeUwfCapability();
+
+// 读取完整的配置与运行时摘要（filter / overlay / volumes / exclusions）。
+// GetOverlayFiles 是昂贵的按需操作，不属于快照。capability 来自启动期探测，
+// 本函数只读取会变化的状态，不在刷新期间重新探测 UWF 能力。连接、协议和
+// 解码失败抛出异常。
+core::UwfSnapshot readSnapshot(UwfCapability capability);
 
 // 枚举本机所有可见的磁盘卷，并对每个卷计算 DiskSupport 判定。
-std::vector<core::DiskInfo> enumerateDisks(std::string* error = nullptr);
+std::vector<core::DiskInfo> enumerateDisks();
 
 }  // namespace uwf

@@ -43,10 +43,12 @@ namespace uwf {
 // Windows API 几乎都收 / 发 wchar_t，而项目内字符串一律以 UTF-8 std::string
 // 流转，转换在每个调用 Win32 的边界处反复需要。
 
-// UTF-8 → UTF-16。输入为空或转换失败返回空串。
+// UTF-8 → UTF-16。输入为空返回空串；非法编码、长度溢出或 Win32 转换失败抛
+// std::exception 的具体子类。
 [[nodiscard]] std::wstring utf8ToWide(std::string_view utf8);
 
-// UTF-16 → UTF-8。输入为空或转换失败返回空串。
+// UTF-16 → UTF-8。输入为空返回空串；非法编码、长度溢出或 Win32 转换失败抛
+// std::exception 的具体子类。
 [[nodiscard]] std::string wideToUtf8(std::wstring_view wide);
 
 // UTF-16 → UTF-8 的便捷重载：接受 NUL 结尾的宽串（BSTR / Win32 输出等），

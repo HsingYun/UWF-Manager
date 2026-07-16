@@ -19,8 +19,9 @@
 #include <QDialog>
 #include <QString>
 #include <QVector>
-#include <cstdint>
+#include <exception>
 #include <thread>
+#include <variant>
 
 #include "Pager.h"
 
@@ -38,8 +39,8 @@ namespace uwf::ui {
 //                       UI 列表、右键菜单、commit、导出统一用这个值。
 //   isDirectory      —— rawName 后缀为 ":$INDEX_ALLOCATION" 时为 true（NTFS 目录索引流）。
 //                       去重时只要任一条原始条目是目录索引，合并后即视为目录。
-//   isSystemMetadata —— absolutePath 的 basename 以 '$' 开头（NTFS 元数据文件 /
-//                       $RECYCLE.BIN 等）。这类条目右键菜单不显示 commit——
+//   isSystemMetadata —— absolutePath 的任一卷内路径段以 '$' 开头（NTFS 元数据
+//                       文件 / $RECYCLE.BIN 等）。这类条目右键菜单不显示 commit——
 //                       UWF_Volume.CommitFile 对元数据走不通，强行调用只会报
 //                       NOT_FOUND，没有意义。
 //   fileSize         —— 去重后是 raw 条目里所有同 absolutePath 的 size 求和（同一
@@ -78,10 +79,12 @@ class OverlayFilesDialog : public QDialog {
   void onExportClicked();
 
  private:
+  using LoadResult = std::variant<QVector<OverlayFileEntry>, std::exception_ptr>;
+
   void startLoading();
-  // hresult 0 表示成功；非 0 时按命名常量分支处理（RPC_E_SERVERFAULT
-  // / WBEM_E_OUT_OF_MEMORY / WBEM_E_NOT_SUPPORTED 等）。
-  void onLoadFinished(QVector<OverlayFileEntry> entries, const QString& error, int32_t hresult);
+  // 线程边界用 exception_ptr 保留原始异常类型，UI 线程在这里显式重抛并展示。
+  // 成功数据与失败互斥，不再用空字符串/HRESULT 哨兵值组合控制流。
+  void onLoadFinished(LoadResult result);
   // 把 m_pager.currentPage 指向的那一页条目渲染进 m_list，并刷新页码标签 / 导航按钮。
   void renderPage();
   // viewport 高度变化时按实测行高重算每页行数；行数变了才重渲染。

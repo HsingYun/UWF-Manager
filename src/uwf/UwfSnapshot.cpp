@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <format>
 #include <map>
+#include <set>
 #include <utility>
 
 #include "../core/Config.h"
@@ -31,6 +32,7 @@
 #include "api/UwfRegistryFilter.h"
 #include "api/UwfVolume.h"
 #include "wmi/WmiClient.h"
+#include "wmi/WmiException.h"
 #include "wmi/WmiRowUtil.h"
 
 namespace uwf {
@@ -65,104 +67,65 @@ std::string prefixDriveLetter(std::string path, const std::string& drive) {
   return path;
 }
 
-bool readNullableString(const WmiRow& row, const char* field, std::string& value, std::string* error) {
+std::string readNullableString(const WmiRow& row, const char* field) {
   const auto it = row.find(field);
-  if (it == row.end()) {
-    if (error) *error = std::format("WMI field '{}' is missing", field);
-    return false;
-  }
-  value.clear();
-  if (!it->second.isValid()) return true;
-  const auto decoded = rowutil::requireString(row, field, error);
-  if (!decoded) return false;
-  value = *decoded;
-  return true;
+  if (it == row.end()) throw WmiDecodeError("decode disk inventory", std::format("field '{}' is missing", field));
+  return it->second.isValid() ? rowutil::requireString(row, field) : std::string{};
 }
 
-bool readNullableUInt64(const WmiRow& row, const char* field, uint64_t& value, std::string* error) {
+uint64_t readNullableUInt64(const WmiRow& row, const char* field) {
   const auto it = row.find(field);
-  if (it == row.end()) {
-    if (error) *error = std::format("WMI field '{}' is missing", field);
-    return false;
-  }
-  value = 0;
-  if (!it->second.isValid()) return true;
-  const auto decoded = rowutil::requireUInt64(row, field, error);
-  if (!decoded) return false;
-  value = *decoded;
-  return true;
+  if (it == row.end()) throw WmiDecodeError("decode disk inventory", std::format("field '{}' is missing", field));
+  return it->second.isValid() ? rowutil::requireUInt64(row, field) : 0;
 }
 
 }  // namespace
 
-core::UwfSnapshot readSnapshot(std::string* error) {
+UwfCapability probeUwfCapability() {
+  auto& session = embeddedWmiSession();
+  session.ensureConnected();
+  return session.classStatus("UWF_Filter") == WmiClassStatus::Present ? UwfCapability::Available : UwfCapability::Unavailable;
+}
+
+core::UwfSnapshot readSnapshot(const UwfCapability capability) {
   core::UwfSnapshot snap;
-  if (error) error->clear();
-  const auto fail = [&](const char* component, std::string detail) {
-    if (detail.empty()) detail = "no data returned";
-    snap.uwfAvailable = false;
-    snap.rawError = std::format("{}: {}", component, detail);
-    if (error) *error = snap.rawError;
-    return snap;
-  };
-  // 提权状态和 uwfAvailable 一样是"本次会话固定"的事实，一并装进快照，
-  // 让拿到快照的 UI 各自按需判断（二者用途不同，不合并成单一标志）。
+  // 提权状态随快照交给所有 UI 消费者；UWF 能力则由启动期固定后注入，刷新
+  // 只读取动态状态，不能因一次 WMI 故障重新解释运行环境。
   snap.elevated = isElevated();
-  auto& s = embeddedWmiSession();
-  std::string err;
-  if (!s.ensureConnected(&err)) {
+  if (capability == UwfCapability::Unavailable) {
     snap.uwfAvailable = false;
-    snap.rawError = err;
-    if (error) *error = err;
+    snap.unavailableReason = "UWF is not registered";
     return snap;
   }
 
-  // root\standardcimv2\embedded 命名空间由多个 Windows 锁定功能共用（键盘
-  // 筛选器 WEKF_* / Shell Launcher 等），连得上不代表 UWF 已安装。探测
-  // UWF_Filter 类是否注册——UWF 的全部类由同一份 MOF 一次性注册，查一个
-  // 有代表性的类即可判定整体可用性。不存在和探测失败严格区分，后者保留
-  // 原始错误，不能用“假定存在”继续执行。
-  err.clear();
-  const auto filterClass = s.classStatus("UWF_Filter", &err);
-  if (filterClass == WmiClassStatus::Unknown) return fail("UWF_Filter class probe", std::move(err));
-  if (filterClass == WmiClassStatus::Missing) {
-    snap.uwfAvailable = false;
-    snap.rawError = "UWF is not registered";
-    if (error) *error = snap.rawError;
-    return snap;
-  }
+  auto& s = embeddedWmiSession();
+  s.ensureConnected();
 
   // ── UWF_Filter ───────────────────────────────────────────────
-  err.clear();
-  const auto filter = api::UwfFilter{s}.read(&err);
-  if (!filter) return fail("UWF_Filter", std::move(err));
-  snap.current.filter.enabled = filter->currentEnabled;
-  snap.next.filter.enabled = filter->nextEnabled;
+  const auto filter = api::UwfFilter{s}.read();
+  snap.current.filter.enabled = filter.currentEnabled;
+  snap.next.filter.enabled = filter.nextEnabled;
 
   // ── UWF_Overlay：runtime + 共享的阈值 ────────────────────────
   // 注意：GetOverlayFiles 很慢（会扫整卷），这里故意不调用；
   // snap.overlayFiles 保持为空，由调用方按需触发 UwfOverlay::getOverlayFiles()。
   uint32_t warningMb = 0;
   uint32_t criticalMb = 0;
-  err.clear();
-  const auto overlay = api::UwfOverlay{s}.read(&err);
-  if (!overlay) return fail("UWF_Overlay", std::move(err));
-  snap.runtime.currentConsumptionMb = overlay->overlayConsumption;
-  snap.runtime.availableSpaceMb = overlay->availableSpace;
-  warningMb = overlay->warningOverlayThreshold;
-  criticalMb = overlay->criticalOverlayThreshold;
+  const auto overlay = api::UwfOverlay{s}.read();
+  snap.runtime.currentConsumptionMb = overlay.overlayConsumption;
+  snap.runtime.availableSpaceMb = overlay.availableSpace;
+  warningMb = overlay.warningOverlayThreshold;
+  criticalMb = overlay.criticalOverlayThreshold;
 
   // ── UWF_OverlayConfig：current/next 拆开 ─────────────────────
-  err.clear();
-  const auto overlayConfigs = api::UwfOverlayConfig{s}.readAll(&err);
-  if (!err.empty()) return fail("UWF_OverlayConfig", std::move(err));
+  const auto overlayConfigs = api::UwfOverlayConfig{s}.readAll();
   bool hasCurrentOverlayConfig = false;
   bool hasNextOverlayConfig = false;
   for (const auto& c : overlayConfigs) {
     (c.currentSession ? hasCurrentOverlayConfig : hasNextOverlayConfig) = true;
     (c.currentSession ? snap.current.overlay : snap.next.overlay) = toOverlayConfig(c, warningMb, criticalMb);
   }
-  if (!hasCurrentOverlayConfig || !hasNextOverlayConfig) return fail("UWF_OverlayConfig", "required current/next rows are missing");
+  if (!hasCurrentOverlayConfig || !hasNextOverlayConfig) throw WmiProtocolError("read UWF_OverlayConfig", "required current/next rows are missing");
 
   // ── UWF_Volume：按 CurrentSession 归入 current/next ──────────
   // 注意：fileExclusions 的 key 必须用 volumeName（与 DiskTab::applySnapshot
@@ -173,9 +136,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
   // 会话* 行总是要读：用户完全可以在卷尚未受保护时就为下次会话预先添加
   // 排除项，这时 isProtected=false 但 GetExclusions 会有内容。
   const api::UwfVolume volumes{s};
-  err.clear();
-  const auto volumeRows = volumes.readAll(&err);
-  if (!err.empty()) return fail("UWF_Volume", std::move(err));
+  const auto volumeRows = volumes.readAll();
   for (const auto& v : volumeRows) {
     auto& session = v.currentSession ? snap.current : snap.next;
     session.volumes.push_back(toVolumeRecord(v));
@@ -184,10 +145,8 @@ core::UwfSnapshot readSnapshot(std::string* error) {
     if (v.currentSession && !v.isProtected) continue;
 
     auto& bucket = session.fileExclusions[v.volumeName];
-    err.clear();
-    const auto exclusions = volumes.getExclusions(v, &err);
-    if (!exclusions) return fail("UWF_Volume::GetExclusions", std::move(err));
-    for (const auto& e : *exclusions) {
+    const auto exclusions = volumes.getExclusions(v);
+    for (const auto& e : exclusions) {
       if (e.fileName.empty()) continue;
       bucket.push_back(prefixDriveLetter(e.fileName, v.driveLetter));
     }
@@ -195,9 +154,7 @@ core::UwfSnapshot readSnapshot(std::string* error) {
 
   // ── UWF_RegistryFilter：current/next 各自的排除列表 + 两个持久化开关 ──
   const api::UwfRegistryFilter rf{s};
-  err.clear();
-  const auto registryRows = rf.readAll(&err);
-  if (!err.empty()) return fail("UWF_RegistryFilter", std::move(err));
+  const auto registryRows = rf.readAll();
   bool hasCurrentRegistryFilter = false;
   bool hasNextRegistryFilter = false;
   for (const auto& r : registryRows) {
@@ -205,92 +162,71 @@ core::UwfSnapshot readSnapshot(std::string* error) {
     auto& session = r.currentSession ? snap.current : snap.next;
     session.persistDomainSecretKey = r.persistDomainSecretKey;
     session.persistTSCAL = r.persistTSCAL;
-    err.clear();
-    const auto exclusions = rf.getExclusions(r, &err);
-    if (!exclusions) return fail("UWF_RegistryFilter::GetExclusions", std::move(err));
-    for (const auto& [registryKey] : *exclusions) {
+    const auto exclusions = rf.getExclusions(r);
+    for (const auto& [registryKey] : exclusions) {
       if (!registryKey.empty()) session.registryExclusions.push_back(registryKey);
     }
   }
-  if (!hasCurrentRegistryFilter || !hasNextRegistryFilter) return fail("UWF_RegistryFilter", "required current/next rows are missing");
+  if (!hasCurrentRegistryFilter || !hasNextRegistryFilter) throw WmiProtocolError("read UWF_RegistryFilter", "required current/next rows are missing");
 
   snap.uwfAvailable = true;
   core::sortSnapshot(snap);
   return snap;
 }
 
-std::vector<core::DiskInfo> enumerateDisks(std::string* error) {
+std::vector<core::DiskInfo> enumerateDisks() {
   std::vector<core::DiskInfo> out;
-  if (error) error->clear();
   auto& cim = cimv2WmiSession();
-  if (!cim.ensureConnected(error)) return out;
+  cim.ensureConnected();
 
-  std::string err;
-  const auto rows =
-      cim.query("SELECT DeviceID, FileSystem, VolumeName, Size, FreeSpace, DriveType FROM Win32_LogicalDisk WHERE DriveType = 2 OR DriveType = 3", &err);
-  if (!err.empty()) {
-    if (error) *error = err;
-    return out;
-  }
+  const auto rows = cim.query("SELECT DeviceID, FileSystem, VolumeName, Size, FreeSpace, DriveType FROM Win32_LogicalDisk WHERE DriveType = 2 OR DriveType = 3");
 
   // Win32_Volume.DeviceID 形如 "\\?\Volume{GUID}\"，与 UWF_Volume 使用的
   // 裸 "Volume{GUID}" 格式不同。这里仅按 DriveLetter 给磁盘信息补充可显示的
   // GUID；UWF 的实例键和排除列表仍始终使用 provider 返回的裸 VolumeName。
-  std::string volErr;
-  const auto volRows = cim.query("SELECT DeviceID, DriveLetter FROM Win32_Volume", &volErr);
-  if (!volErr.empty()) {
-    if (error) *error = volErr;
-    return out;
-  }
+  const auto volRows = cim.query("SELECT DeviceID, DriveLetter FROM Win32_Volume");
   std::map<std::string, std::string> driveToGuid;
   for (const auto& v : volRows) {
     const auto driveIt = v.find("DriveLetter");
     if (driveIt == v.end()) {
-      if (error) *error = "Win32_Volume row is missing DriveLetter";
-      return {};
+      throw WmiDecodeError("decode Win32_Volume", "field 'DriveLetter' is missing");
     }
     if (!driveIt->second.isValid()) continue;  // 无盘符卷是合法对象，但不参与逻辑盘映射
-    const auto driveLetter = rowutil::requireString(v, "DriveLetter", error, false);
-    const auto deviceId = rowutil::requireString(v, "DeviceID", error, false);
-    if (!driveLetter || !deviceId) return {};
-    const auto normalizedDrive = drive::normalize(*driveLetter);
+    const auto driveLetter = rowutil::requireString(v, "DriveLetter", rowutil::EmptyString::Reject);
+    const auto deviceId = rowutil::requireString(v, "DeviceID", rowutil::EmptyString::Reject);
+    const auto normalizedDrive = drive::normalize(driveLetter);
     if (normalizedDrive.empty()) {
-      if (error) *error = std::format("Win32_Volume returned an invalid DriveLetter: {}", *driveLetter);
-      return {};
+      throw WmiDecodeError("decode Win32_Volume", std::format("invalid DriveLetter: {}", driveLetter));
     }
-    driveToGuid[normalizedDrive] = *deviceId;
+    if (!driveToGuid.emplace(normalizedDrive, deviceId).second) {
+      throw WmiProtocolError("decode Win32_Volume", std::format("duplicate volume mapping for {}", normalizedDrive));
+    }
   }
 
+  std::set<std::string> logicalDrives;
   for (const auto& r : rows) {
-    const auto deviceId = rowutil::requireString(r, "DeviceID", error, false);
-    const auto driveType = rowutil::requireInt(r, "DriveType", error);
-    if (!deviceId || !driveType) return {};
-
-    std::string fileSystem;
-    std::string label;
-    uint64_t totalBytes = 0;
-    uint64_t freeBytes = 0;
-    if (!readNullableString(r, "FileSystem", fileSystem, error) || !readNullableString(r, "VolumeName", label, error) ||
-        !readNullableUInt64(r, "Size", totalBytes, error) || !readNullableUInt64(r, "FreeSpace", freeBytes, error))
-      return {};
+    const auto deviceId = rowutil::requireString(r, "DeviceID", rowutil::EmptyString::Reject);
+    const auto driveType = rowutil::requireInt(r, "DriveType");
 
     core::DiskInfo d;
-    d.driveLetter = drive::normalize(*deviceId);
+    d.driveLetter = drive::normalize(deviceId);
     if (d.driveLetter.empty()) {
-      if (error) *error = std::format("Win32_LogicalDisk returned an invalid DeviceID: {}", *deviceId);
-      return {};
+      throw WmiDecodeError("decode Win32_LogicalDisk", std::format("invalid DeviceID: {}", deviceId));
     }
-    d.fileSystem = std::move(fileSystem);
-    d.label = std::move(label);
-    d.totalBytes = totalBytes;
-    d.freeBytes = freeBytes;
+    if (!logicalDrives.emplace(d.driveLetter).second) {
+      throw WmiProtocolError("decode Win32_LogicalDisk", std::format("duplicate logical disk row for {}", d.driveLetter));
+    }
+    d.fileSystem = readNullableString(r, "FileSystem");
+    d.label = readNullableString(r, "VolumeName");
+    d.totalBytes = readNullableUInt64(r, "Size");
+    d.freeBytes = readNullableUInt64(r, "FreeSpace");
     if (auto it = driveToGuid.find(d.driveLetter); it != driveToGuid.end()) {
       d.volumeName = it->second;
     }
 
     const std::string fs = toUpperAscii(d.fileSystem);
     const bool fullySupportedFs = std::ranges::find(config::kFullySupportedFileSystems, fs) != config::kFullySupportedFileSystems.end();
-    if (*driveType != config::kDriveTypeFixedLocalDisk) {
+    if (driveType != config::kDriveTypeFixedLocalDisk) {
       d.support = DiskSupport::NotFixedLocalDisk;
     } else if (d.totalBytes > config::kMaxProtectedVolumeBytes) {
       // 超过 16 TiB——UWF 直接拒整个卷，比 FS 限制更彻底；FS 改成 NTFS 也救不回

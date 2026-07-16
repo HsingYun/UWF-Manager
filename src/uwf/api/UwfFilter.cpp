@@ -19,76 +19,64 @@
 #include <format>
 
 #include "../../util/Log.h"
+#include "../wmi/WmiException.h"
 #include "../wmi/WmiRowUtil.h"
+#include "WriteVerification.h"
 
 namespace uwf::api {
 
 namespace {
 
-std::optional<api::FilterRow> decodeFilter(const WmiRow& source, std::string* error) {
-  const auto path = rowutil::requireString(source, "__PATH", error, false);
-  const auto currentEnabled = rowutil::requireBool(source, "CurrentEnabled", error);
-  const auto nextEnabled = rowutil::requireBool(source, "NextEnabled", error);
-  if (!path || !currentEnabled || !nextEnabled) return std::nullopt;
-  return api::FilterRow{*path, *currentEnabled, *nextEnabled};
+api::FilterRow decodeFilter(const WmiRow& source) {
+  return {rowutil::requireString(source, "__PATH", rowutil::EmptyString::Reject), rowutil::requireBool(source, "CurrentEnabled"),
+          rowutil::requireBool(source, "NextEnabled")};
 }
 
-std::optional<api::FilterRow> rereadFilter(WmiSession& session, const api::FilterRow& target, std::string* error) {
-  const auto source = session.getObject(target.path, error);
-  if (!source) return std::nullopt;
-  return decodeFilter(*source, error);
+api::FilterRow rereadFilter(WmiSession& session, const api::FilterRow& target) {
+  return decodeFilter(session.getObject(target.path));
 }
 
 }  // namespace
 
-std::optional<api::FilterRow> UwfFilter::read(std::string* error) const {
-  if (error) error->clear();
-  std::string queryError;
-  const auto rows = m_session.queryInstances("SELECT * FROM UWF_Filter", &queryError);
-  if (!queryError.empty()) {
-    if (error) *error = std::move(queryError);
-    return std::nullopt;
-  }
+api::FilterRow UwfFilter::read() const {
+  const auto rows = m_session.queryInstances("SELECT * FROM UWF_Filter");
   if (rows.size() != 1) {
-    if (error) *error = std::format("UWF_Filter expected one instance, received {}", rows.size());
-    UWF_LOG_W("UWF_Filter") << "read: singleton cardinality mismatch; rows=" << rows.size();
-    return std::nullopt;
+    throw WmiProtocolError("read UWF_Filter", std::format("expected one instance, received {}", rows.size()));
   }
 
   const auto& f = rows.front();
   rowutil::dumpRow("UWF_Filter", f);
-  auto r = decodeFilter(f, error);
-  if (!r) return std::nullopt;
-  UWF_LOG_D("UWF_Filter") << std::format("read ok: rows={} currentEnabled={} nextEnabled={}", rows.size(), r->currentEnabled, r->nextEnabled);
+  auto r = decodeFilter(f);
+  UWF_LOG_D("uwf") << "filter read completed: currentEnabled=" << r.currentEnabled << " nextEnabled=" << r.nextEnabled;
   return r;
 }
 
 namespace {
 
-WmiResult invokeCommand(WmiSession& session, const api::FilterRow& row, const char* methodName) {
-  auto out = WmiResult::fromMethodResult(session.callMethod(row.path, methodName));
-  if (out.ok) UWF_LOG_I("UWF_Filter") << methodName << " ok";
-  return out;
-}
-
-WmiResult setEnabled(WmiSession& session, const api::FilterRow& row, const bool enabled) {
-  const char* method = enabled ? "Enable" : "Disable";
-  auto out = WmiResult::fromMethodResult(session.callMethod(row.path, method));
-
-  std::string readError;
-  const auto observed = rereadFilter(session, row, &readError);
-  auto verification = verifyObservedState(observed, [enabled](const api::FilterRow& state) { return state.nextEnabled == enabled; }, std::move(readError));
-  out = confirmWriteState(std::move(out), std::move(verification), std::format("UWF_Filter::{}", method));
-  if (out.ok) UWF_LOG_I("UWF_Filter") << method << " confirmed";
-  return out;
+void requirePath(const api::FilterRow& row, const char* operation) {
+  if (row.path.empty()) throw WmiProtocolError(operation, "UWF_Filter row has no object path");
 }
 
 }  // namespace
 
-WmiResult UwfFilter::enable(const api::FilterRow& row) const { return setEnabled(m_session, row, true); }
-WmiResult UwfFilter::disable(const api::FilterRow& row) const { return setEnabled(m_session, row, false); }
-WmiResult UwfFilter::resetSettings(const api::FilterRow& row) const { return invokeCommand(m_session, row, "ResetSettings"); }
-WmiResult UwfFilter::shutdownSystem(const api::FilterRow& row) const { return invokeCommand(m_session, row, "ShutdownSystem"); }
-WmiResult UwfFilter::restartSystem(const api::FilterRow& row) const { return invokeCommand(m_session, row, "RestartSystem"); }
+void UwfFilter::enable(const api::FilterRow& row) const {
+  requirePath(row, "enable UWF");
+  invokeAndConfirm("enable UWF", [&] { m_session.invokeMethod(row.path, "Enable"); }, [&] { return rereadFilter(m_session, row).nextEnabled; });
+}
+
+void UwfFilter::disable(const api::FilterRow& row) const {
+  requirePath(row, "disable UWF");
+  invokeAndConfirm("disable UWF", [&] { m_session.invokeMethod(row.path, "Disable"); }, [&] { return !rereadFilter(m_session, row).nextEnabled; });
+}
+
+void UwfFilter::shutdownSystem(const api::FilterRow& row) const {
+  requirePath(row, "shut down UWF-protected system");
+  m_session.invokeMethod(row.path, "ShutdownSystem");
+}
+
+void UwfFilter::restartSystem(const api::FilterRow& row) const {
+  requirePath(row, "restart UWF-protected system");
+  m_session.invokeMethod(row.path, "RestartSystem");
+}
 
 }  // namespace uwf::api

@@ -23,7 +23,7 @@
 #include <string>
 #include <vector>
 
-#include "../core/UwfModel.h"
+#include "../uwf/UwfSnapshot.h"
 #include "../uwf/wmi/WmiClient.h"
 #include "CommitDispatcher.h"
 
@@ -52,7 +52,8 @@ class MainWindow : public QMainWindow {
   // 的信息框常驻显示兼容模式提示。提示文案在 buildUi 里按当前语言翻译，故这里
   // 只收原始数据（系统名 / 版本 ID），不收已翻译好的字符串——否则切语言后
   // 文案不会跟着变。
-  explicit MainWindow(bool compatibilityMode = false, const QString& osProductName = {}, const QString& osEditionId = {}, QWidget* parent = nullptr);
+  explicit MainWindow(UwfCapability uwfCapability, bool compatibilityMode = false, const QString& osProductName = {}, const QString& osEditionId = {},
+                      QWidget* parent = nullptr);
   ~MainWindow() override;
 
   // 由"单实例"机制调用：另一个实例被启动时，把本窗口从最小化恢复并带到前台。
@@ -98,7 +99,7 @@ class MainWindow : public QMainWindow {
   [[nodiscard]] bool configurationWritesAllowed() const;
   // 首次启动尚无可保留的旧状态时，读取失败需要给出不可用占位；已有已提交
   // 状态时刷新失败不会调用本函数，当前 UI 原样保留。
-  void showInitialLoadFailure(const std::string& error);
+  void showInitialRefreshFailure(const std::string& reason);
   void rebuildTabs(const std::vector<core::DiskInfo>& disks);
   void updatePendingSummary();
   bool confirmDiscardPendingChanges();
@@ -143,8 +144,9 @@ class MainWindow : public QMainWindow {
   OverlayPresentationController* m_overlayPresentation = nullptr;
   PowerController* m_power = nullptr;
 
-  // 当前 UI 线程固定复用其 embedded namespace session；对象由线程级 WMI
-  // 上下文持有，内部代理断线时可重建。
+  // UWF 能力在启动期探测一次并固定。当前 UI 线程随后只复用 embedded
+  // namespace session 读取动态状态；内部代理断线重建不会改变能力结论。
+  const UwfCapability m_uwfCapability;
   WmiSession& m_session;
 
   QVector<QPointer<DiskTab>> m_diskTabs;

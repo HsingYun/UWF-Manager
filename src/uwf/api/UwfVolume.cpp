@@ -16,361 +16,252 @@
  */
 #include "UwfVolume.h"
 
+#include <exception>
 #include <format>
 #include <optional>
+#include <set>
+#include <stdexcept>
+#include <utility>
 
 #include "../../util/DriveLetter.h"
 #include "../../util/Log.h"
+#include "../wmi/WmiError.h"
+#include "../wmi/WmiException.h"
 #include "../wmi/WmiRowUtil.h"
+#include "WriteVerification.h"
 
 namespace uwf::api {
 
 namespace {
 
-// UWF_Volume 的 AddExclusion / RemoveExclusion / FindExclusion / CommitFile /
-// CommitFileDeletion 的路径参数均不包含驱动器号或卷名（见
-// knowledge/reference/11-uwf-api.html 各方法的参数说明）。若用户传入
-// "C:\foo"，这里在确认与目标卷匹配后剥掉开头的 "<letter>:"。盘符不匹配直接
-// 返回空 optional 并写 *error。
-std::optional<std::string> stripVolumeDriveLetter(const std::string& path, const std::string& volumeDriveLetter, std::string* error) {
-  // UWF 的 AddExclusion / CommitFile 等方法收的是"卷内相对路径"（不含盘符）。
-  // 这里把用户给的完整路径按盘符拆开：拆分逻辑统一交给 drive::split。
-  const auto s = drive::split(path);
-  if (s.letter.empty()) return path;  // 无盘符前缀——已是卷内相对路径，原样返回
-  if (s.letter != volumeDriveLetter) {
-    if (error) *error = std::format("path \"{}\" drive letter does not match target volume {}", path, volumeDriveLetter);
-    return std::nullopt;
+std::string stripVolumeDriveLetter(const std::string& path, const std::string& volumeDriveLetter) {
+  const auto split = drive::split(path);
+  if (split.letter.empty()) return path;
+  if (split.letter != volumeDriveLetter) {
+    throw std::invalid_argument(std::format("path '{}' belongs to {}, not target volume {}", path, split.letter, volumeDriveLetter));
   }
-  return s.rest;
+  return split.rest;
 }
 
-// 把字符串转义后嵌入 WMI 对象路径的引号键值（DriveLetter="..." / VolumeName="..."）。
-// WMI 对象路径按 C/C++ 规则解析引号转义（见 MS 文档 "WMI Object Path
-// Requirements"："embedded quotation marks ... must delimit the quotation mark
-// with escape characters, as in a C or C++ application"），故 `"` 要写成 `\"`、
-// `\` 要写成 `\\`。
-//
-// 实测：UWF_Volume.VolumeName 是 "Volume{GUID}" 形式（不带 \\?\ 前缀、不带结尾
-// 反斜杠——详见 knowledge/reference/11-uwf-api.html 中 UWF_Volume 的备注），
-// DriveLetter 是 "C:" 形式；两者都不含 `\` 或 `"`，所以此处转义当前其实是空操作。
-// 保留它作为防御——若将来某个 key 值含特殊字符，合成出的 __PATH 仍 correct-
-// by-construction。
-// （注：readAll() 里 row.path 取自 __PATH，是 WMI 自己产出、已正确转义的路径，
-// 不经过这里；只有本文件 ensureNextSessionEntry 手工拼 __PATH 才用到本函数。）
-std::string escapeWmiPathValue(const std::string& s) {
-  std::string out;
-  out.reserve(s.size() + 8);
-  for (const char c : s) {
-    if (c == '\\' || c == '"') out += '\\';
-    out += c;
+std::string escapeWmiPathValue(const std::string& value) {
+  std::string escaped;
+  escaped.reserve(value.size() + 8);
+  for (const char character : value) {
+    if (character == '\\' || character == '"') escaped += '\\';
+    escaped += character;
   }
-  return out;
+  return escaped;
 }
 
-bool decodeManagedVolume(const WmiRow& source, std::optional<api::VolumeRow>& decoded, std::string* error) {
-  decoded.reset();
-  const auto path = rowutil::requireString(source, "__PATH", error, false);
-  const auto currentSession = rowutil::requireBool(source, "CurrentSession", error);
-  const auto volumeName = rowutil::requireString(source, "VolumeName", error, false);
-  if (!path || !currentSession || !volumeName) return false;
+std::optional<api::VolumeRow> decodeManagedVolume(const WmiRow& source) {
+  const std::string path = rowutil::requireString(source, "__PATH", rowutil::EmptyString::Reject);
+  const bool currentSession = rowutil::requireBool(source, "CurrentSession");
+  const std::string volumeName = rowutil::requireString(source, "VolumeName", rowutil::EmptyString::Reject);
 
-  // UWF 也暴露恢复分区等无盘符卷；其 DriveLetter/Protected 是 VT_NULL，属于
-  // provider 的合法对象，但本应用只管理可由 UI 映射的逻辑盘。字段缺失仍是
-  // schema 错误，明确的 NULL 则跳过整行。
-  const auto driveIt = source.find("DriveLetter");
-  if (driveIt == source.end()) {
-    if (error) *error = "WMI field 'DriveLetter' is missing";
-    return false;
-  }
-  if (!driveIt->second.isValid()) return true;
-  const auto driveLetter = rowutil::requireString(source, "DriveLetter", error);
-  if (!driveLetter) return false;
+  const auto drive = source.find("DriveLetter");
+  if (drive == source.end()) throw WmiDecodeError("decode UWF_Volume", "field 'DriveLetter' is missing");
+  if (!drive->second.isValid()) return std::nullopt;
+  const std::string driveLetter = rowutil::requireString(source, "DriveLetter");
+  if (driveLetter.empty()) return std::nullopt;
+  const std::string normalizedDrive = drive::normalize(driveLetter);
+  if (normalizedDrive.empty()) throw WmiDecodeError("decode UWF_Volume", std::format("invalid DriveLetter: {}", driveLetter));
 
-  const auto normalizedDrive = drive::normalize(*driveLetter);
-  if (normalizedDrive.empty()) return true;  // 合法但不属于本应用可管理的逻辑卷
-
-  const auto bindByDriveLetter = rowutil::requireBool(source, "BindByDriveLetter", error);
-  const auto commitPending = rowutil::requireBool(source, "CommitPending", error);
-  const auto isProtected = rowutil::requireBool(source, "Protected", error);
-  if (!bindByDriveLetter || !commitPending || !isProtected) return false;
-
-  api::VolumeRow row;
-  row.path = *path;
-  row.currentSession = *currentSession;
-  row.driveLetter = normalizedDrive;
-  row.volumeName = *volumeName;
-  row.bindByDriveLetter = *bindByDriveLetter;
-  row.commitPending = *commitPending;
-  row.isProtected = *isProtected;
-  decoded = std::move(row);
-  return true;
+  return api::VolumeRow{path,
+                        currentSession,
+                        normalizedDrive,
+                        volumeName,
+                        rowutil::requireBool(source, "BindByDriveLetter"),
+                        rowutil::requireBool(source, "CommitPending"),
+                        rowutil::requireBool(source, "Protected")};
 }
 
-}  // namespace
-
-std::vector<api::VolumeRow> UwfVolume::readAll(std::string* error) const {
-  if (error) error->clear();
-  std::vector<api::VolumeRow> out;
-  std::string queryError;
-  const auto rows = m_session.queryInstances("SELECT * FROM UWF_Volume", &queryError);
-  if (!queryError.empty()) {
-    if (error) *error = std::move(queryError);
-    return out;
-  }
-
-  size_t curCount = 0;
-  size_t nextCount = 0;
-  out.reserve(rows.size());
-  for (const auto& o : rows) {
-    rowutil::dumpRow("UWF_Volume", o);
-    std::optional<api::VolumeRow> decoded;
-    if (!decodeManagedVolume(o, decoded, error)) return {};
-    if (!decoded) continue;
-    if (decoded->currentSession)
-      ++curCount;
-    else
-      ++nextCount;
-    out.push_back(std::move(*decoded));
-  }
-  UWF_LOG_I("UWF_Volume") << std::format("readAll ok: rows={} (current={}, next={})", rows.size(), curCount, nextCount);
-  return out;
-}
-
-namespace {
-
-std::optional<api::VolumeRow> rereadVolume(WmiSession& session, const api::VolumeRow& target, std::string* error) {
-  const auto source = session.getObject(target.path, error);
-  if (!source) return std::nullopt;
-  std::optional<api::VolumeRow> observed;
-  if (!decodeManagedVolume(*source, observed, error)) return std::nullopt;
+api::VolumeRow rereadVolume(WmiSession& session, const api::VolumeRow& target) {
+  auto observed = decodeManagedVolume(session.getObject(target.path));
   if (!observed || observed->currentSession != target.currentSession || observed->driveLetter != target.driveLetter ||
       observed->volumeName != target.volumeName) {
-    if (error) *error = "UWF_Volume reread returned a different instance identity";
-    return std::nullopt;
+    throw WmiProtocolError("reread UWF_Volume", "provider returned a different volume instance");
   }
-  return observed;
+  return *observed;
+}
+
+void requirePath(const api::VolumeRow& row, const char* operation) {
+  if (row.path.empty()) throw WmiProtocolError(operation, "UWF_Volume row has no object path");
+}
+
+std::string normalizeVolumePath(const api::VolumeRow& row, const std::string& fileName) {
+  return stripVolumeDriveLetter(fileName, row.driveLetter);
+}
+
+WmiRow fileInput(const std::string& normalizedFileName) {
+  WmiRow inputs;
+  inputs.emplace("FileName", WmiValue::fromString(normalizedFileName));
+  return inputs;
+}
+
+bool isAlreadyExists(const WmiInfrastructureError& error) {
+  return WmiError(static_cast<int32_t>(error.code().value())) == WmiErrorCode::AlreadyExists;
 }
 
 }  // namespace
 
-WmiResult UwfVolume::protectVolume(const api::VolumeRow& row) const {
-  auto out = WmiResult::fromMethodResult(m_session.callMethod(row.path, "Protect"));
-  std::string readError;
-  const auto observed = rereadVolume(m_session, row, &readError);
-  auto verification = verifyObservedState(observed, [](const api::VolumeRow& state) { return state.isProtected; }, std::move(readError));
-  out = confirmWriteState(std::move(out), std::move(verification), "UWF_Volume::Protect");
-  if (out.ok) UWF_LOG_I("UWF_Volume") << "Protect confirmed: dl=" << row.driveLetter;
-  return out;
-}
-
-WmiResult UwfVolume::unprotect(const api::VolumeRow& row) const {
-  auto out = WmiResult::fromMethodResult(m_session.callMethod(row.path, "Unprotect"));
-  std::string readError;
-  const auto observed = rereadVolume(m_session, row, &readError);
-  auto verification = verifyObservedState(observed, [](const api::VolumeRow& state) { return !state.isProtected; }, std::move(readError));
-  out = confirmWriteState(std::move(out), std::move(verification), "UWF_Volume::Unprotect");
-  if (out.ok) UWF_LOG_I("UWF_Volume") << "Unprotect confirmed: dl=" << row.driveLetter;
-  return out;
-}
-
-WmiResult UwfVolume::removeAllExclusions(const api::VolumeRow& row) const {
-  auto out = WmiResult::fromMethodResult(m_session.callMethod(row.path, "RemoveAllExclusions"));
-  std::string readError;
-  const auto observed = getExclusions(row, &readError);
-  auto verification = verifyObservedState(observed, [](const std::vector<api::ExcludedFile>& exclusions) { return exclusions.empty(); }, std::move(readError));
-  out = confirmWriteState(std::move(out), std::move(verification), "UWF_Volume::RemoveAllExclusions");
-  if (out.ok) UWF_LOG_I("UWF_Volume") << "RemoveAllExclusions confirmed: dl=" << row.driveLetter;
-  return out;
-}
-
-// CommitFile / CommitFileDeletion 共享前置校验 + WMI 调用骨架——除方法名外完全
-// 一致（路径剥盘符 → 校验 __PATH → 用 FileName 参数发 ExecMethod → 归类）。
-// 仿 UwfRegistryFilter::invokeCommit 的写法抽到一处，两个 public 方法各 1 行
-// 委托。实机 WMI schema 的参数名是 FileName（见 11-uwf-api.html 附录 B.1）。
-WmiResult UwfVolume::invokeFileCommit(const api::VolumeRow& row, const std::string& fileFullPath, const char* method) const {
-  std::string stripErr;
-  const auto normalized = stripVolumeDriveLetter(fileFullPath, row.driveLetter, &stripErr);
-  if (!normalized) {
-    UWF_LOG_E("UWF_Volume") << method << " rejected: " << stripErr;
-    return WmiResult::failed(std::move(stripErr));
+std::vector<api::VolumeRow> UwfVolume::readAll() const {
+  const auto rows = m_session.queryInstances("SELECT * FROM UWF_Volume");
+  std::vector<api::VolumeRow> volumes;
+  std::set<std::pair<bool, std::string>> managedIdentities;
+  volumes.reserve(rows.size());
+  for (const auto& source : rows) {
+    rowutil::dumpRow("UWF_Volume", source);
+    auto decoded = decodeManagedVolume(source);
+    if (!decoded) continue;
+    if (!managedIdentities.emplace(decoded->currentSession, decoded->driveLetter).second) {
+      throw WmiProtocolError("read UWF_Volume",
+                             std::format("duplicate {} session instance for {}", decoded->currentSession ? "current" : "next", decoded->driveLetter));
+    }
+    volumes.push_back(std::move(*decoded));
   }
-  if (row.path.empty()) {
-    UWF_LOG_E("UWF_Volume") << method << " rejected: empty __PATH; file=" << fileFullPath;
-    return WmiResult::failed("UWF_Volume row has empty __PATH; call readAll() first");
-  }
-
-  WmiRow in;
-  in.emplace("FileName", WmiValue::fromString(*normalized));
-  auto out = WmiResult::fromMethodResult(m_session.callMethod(row.path, method, in));
-  if (out.ok) UWF_LOG_I("UWF_Volume") << std::format("{} ok: dl={} file={}", method, row.driveLetter, *normalized);
-  return out;
+  UWF_LOG_D("uwf") << "volume read completed: providerRows=" << rows.size() << " managedRows=" << volumes.size();
+  return volumes;
 }
 
-WmiResult UwfVolume::commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const { return invokeFileCommit(row, fileFullPath, "CommitFile"); }
-
-WmiResult UwfVolume::commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const {
-  return invokeFileCommit(row, fileName, "CommitFileDeletion");
+void UwfVolume::protectVolume(const api::VolumeRow& row) const {
+  requirePath(row, "protect UWF volume");
+  invokeAndConfirm("protect UWF volume", [&] { m_session.invokeMethod(row.path, "Protect"); }, [&] { return rereadVolume(m_session, row).isProtected; });
 }
 
-WmiResult UwfVolume::setBindByDriveLetter(const api::VolumeRow& row, bool bBindByDriveLetter) const {
-  WmiRow in;
-  in.emplace("bBindByDriveLetter", WmiValue::fromBool(bBindByDriveLetter));
-  auto out = WmiResult::fromMethodResult(m_session.callMethod(row.path, "SetBindByDriveLetter", in));
-  std::string readError;
-  const auto observed = rereadVolume(m_session, row, &readError);
-  auto verification = verifyObservedState(
-      observed, [bBindByDriveLetter](const api::VolumeRow& state) { return state.bindByDriveLetter == bBindByDriveLetter; }, std::move(readError));
-  out = confirmWriteState(std::move(out), std::move(verification), "UWF_Volume::SetBindByDriveLetter");
-  if (out.ok) UWF_LOG_I("UWF_Volume") << std::format("SetBindByDriveLetter confirmed: dl={} bindByDriveLetter={}", row.driveLetter, bBindByDriveLetter);
-  return out;
+void UwfVolume::unprotect(const api::VolumeRow& row) const {
+  requirePath(row, "unprotect UWF volume");
+  invokeAndConfirm("unprotect UWF volume", [&] { m_session.invokeMethod(row.path, "Unprotect"); }, [&] { return !rereadVolume(m_session, row).isProtected; });
 }
 
-namespace {
-
-// AddExclusion / RemoveExclusion 共用：路径剥盘符 + 单个 FileName 参数。
-WmiResult invokeFileExclusion(WmiSession& session, const api::VolumeRow& row, const char* method, const std::string& fileName, const bool expectedFound) {
-  std::string stripErr;
-  const auto normalized = stripVolumeDriveLetter(fileName, row.driveLetter, &stripErr);
-  if (!normalized) return WmiResult::failed(std::move(stripErr));
-  WmiRow in;
-  in.emplace("FileName", WmiValue::fromString(*normalized));
-  auto out = WmiResult::fromMethodResult(session.callMethod(row.path, method, in));
-  std::string readError;
-  const auto observed = UwfVolume(session).findExclusion(row, *normalized, &readError);
-  auto verification = verifyObservedState(observed, [expectedFound](const bool found) { return found == expectedFound; }, std::move(readError));
-  out = confirmWriteState(std::move(out), std::move(verification), std::format("UWF_Volume::{}", method));
-  if (out.ok) UWF_LOG_I("UWF_Volume") << std::format("{} confirmed: dl={} file={}", method, row.driveLetter, *normalized);
-  return out;
+void UwfVolume::commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const {
+  requirePath(row, "commit UWF file");
+  const WmiRow inputs = fileInput(normalizeVolumePath(row, fileFullPath));
+  m_session.invokeMethod(row.path, "CommitFile", inputs);
 }
 
-}  // namespace
-
-WmiResult UwfVolume::addExclusion(const api::VolumeRow& row, const std::string& fileName) const {
-  return invokeFileExclusion(m_session, row, "AddExclusion", fileName, true);
+void UwfVolume::commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const {
+  requirePath(row, "commit UWF file deletion");
+  const WmiRow inputs = fileInput(normalizeVolumePath(row, fileName));
+  m_session.invokeMethod(row.path, "CommitFileDeletion", inputs);
 }
 
-WmiResult UwfVolume::removeExclusion(const api::VolumeRow& row, const std::string& fileName) const {
-  return invokeFileExclusion(m_session, row, "RemoveExclusion", fileName, false);
+void UwfVolume::setBinding(const api::VolumeRow& row, const api::VolumeBinding binding) const {
+  requirePath(row, "set UWF volume binding");
+  const bool bindByDriveLetter = binding == api::VolumeBinding::DriveLetter;
+  WmiRow inputs;
+  inputs.emplace("bBindByDriveLetter", WmiValue::fromBool(bindByDriveLetter));
+  invokeAndConfirm("set UWF volume binding", [&] { m_session.invokeMethod(row.path, "SetBindByDriveLetter", inputs); },
+                   [&] { return rereadVolume(m_session, row).bindByDriveLetter == bindByDriveLetter; });
 }
 
-std::optional<bool> UwfVolume::findExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error) const {
-  if (error) error->clear();
-  if (row.path.empty()) {
-    if (error) *error = "UWF_Volume row has empty __PATH; call readAll() first";
-    return std::nullopt;
-  }
-  const auto normalized = stripVolumeDriveLetter(fileName, row.driveLetter, error);
-  if (!normalized) return std::nullopt;
-  WmiRow in;
-  in.emplace("FileName", WmiValue::fromString(*normalized));
-  const auto r = m_session.callMethodRead(row.path, "FindExclusion", in);
-  if (!r.ok()) {
-    if (error) *error = methodErrorDetail(r, "UWF_Volume::FindExclusion");
-    return std::nullopt;
-  }
-  return rowutil::requireBool(r.outParams, "bFound", error);
+void UwfVolume::addExclusion(const api::VolumeRow& row, const std::string& fileName) const {
+  requirePath(row, "add UWF file exclusion");
+  const std::string normalized = normalizeVolumePath(row, fileName);
+  const WmiRow inputs = fileInput(normalized);
+  invokeAndConfirm("add UWF file exclusion", [&] { m_session.invokeMethod(row.path, "AddExclusion", inputs); },
+                   [&] { return findExclusion(row, normalized); });
 }
 
-std::optional<std::vector<api::ExcludedFile>> UwfVolume::getExclusions(const api::VolumeRow& row, std::string* error) const {
-  if (error) error->clear();
-  if (row.path.empty()) {
-    if (error) *error = "UWF_Volume row has empty __PATH; call readAll() first";
-    return std::nullopt;
-  }
-  const auto r = m_session.callMethodRead(row.path, "GetExclusions");
-  if (!r.ok()) {
-    if (error) *error = methodErrorDetail(r, "UWF_Volume::GetExclusions");
-    return std::nullopt;
-  }
-  auto out = rowutil::readArrayOutput<api::ExcludedFile>(
-      r, "ExcludedFiles",
-      [error](const WmiRow& item) -> std::optional<api::ExcludedFile> {
-        api::ExcludedFile e;
-        const auto fileName = rowutil::requireEmbeddedString(item, "FileName", error);
-        if (!fileName) return std::nullopt;
-        e.fileName = *fileName;
-        return e;
-      },
-      error);
-  if (!out) return std::nullopt;
-  UWF_LOG_D("UWF_Volume") << std::format("GetExclusions ok: dl={} session={} count={}", row.driveLetter, row.currentSession ? "current" : "next", out->size());
-  return out;
+void UwfVolume::removeExclusion(const api::VolumeRow& row, const std::string& fileName) const {
+  requirePath(row, "remove UWF file exclusion");
+  const std::string normalized = normalizeVolumePath(row, fileName);
+  const WmiRow inputs = fileInput(normalized);
+  invokeAndConfirm("remove UWF file exclusion", [&] { m_session.invokeMethod(row.path, "RemoveExclusion", inputs); },
+                   [&] { return !findExclusion(row, normalized); });
 }
 
-EnsureVolumeResult UwfVolume::ensureNextSessionEntry(const std::string& driveLetter) const {
-  EnsureVolumeResult result;
+void UwfVolume::removeAllExclusions(const api::VolumeRow& row) const {
+  requirePath(row, "remove all UWF file exclusions");
+  invokeAndConfirm("remove all UWF file exclusions", [&] { m_session.invokeMethod(row.path, "RemoveAllExclusions"); },
+                   [&] { return getExclusions(row).empty(); });
+}
+
+bool UwfVolume::findExclusion(const api::VolumeRow& row, const std::string& fileName) const {
+  requirePath(row, "find UWF file exclusion");
+  const WmiRow inputs = fileInput(normalizeVolumePath(row, fileName));
+  const auto output = m_session.callMethodRead(row.path, "FindExclusion", inputs);
+  return rowutil::requireBool(output.values, "bFound");
+}
+
+std::vector<api::ExcludedFile> UwfVolume::getExclusions(const api::VolumeRow& row) const {
+  requirePath(row, "read UWF file exclusions");
+  const auto output = m_session.callMethodRead(row.path, "GetExclusions");
+  return rowutil::readArrayOutput<api::ExcludedFile>(output, "ExcludedFiles", [](const WmiRow& item) {
+    return api::ExcludedFile{rowutil::requireEmbeddedString(item, "FileName")};
+  });
+}
+
+VolumeRegistration UwfVolume::ensureNextSessionEntry(const std::string& driveLetter) const {
   const std::string normalizedDrive = drive::normalize(driveLetter);
-  if (normalizedDrive.empty()) {
-    result.error = std::format("ensureNextSessionEntry requires a valid drive letter: {}", driveLetter);
-    return result;
-  }
+  if (normalizedDrive.empty()) throw std::invalid_argument(std::format("invalid drive letter: {}", driveLetter));
 
-  std::string readError;
-  const auto rows = readAll(&readError);
-  if (!readError.empty()) {
-    result.error = std::move(readError);
-    return result;
+  const auto volumes = readAll();
+  if (const auto* existing = api::findBySession(volumes, api::Session::Next,
+                                                [&](const api::VolumeRow& volume) { return volume.driveLetter == normalizedDrive; })) {
+    return {*existing, VolumeRegistrationDisposition::AlreadyPresent};
   }
+  const auto* current = api::findBySession(volumes, api::Session::Current,
+                                           [&](const api::VolumeRow& volume) { return volume.driveLetter == normalizedDrive; });
+  if (!current) throw WmiProtocolError("register UWF volume", std::format("no current-session instance exists for {}", normalizedDrive));
 
-  // 1) 已有 next session 实例 → 直接复用，避免重复 PutInstance。
-  for (const auto& v : rows) {
-    if (!v.currentSession && v.driveLetter == normalizedDrive) {
-      result.entry = v;
-      return result;
+  WmiRow properties;
+  properties.emplace("CurrentSession", WmiValue::fromBool(false));
+  properties.emplace("DriveLetter", WmiValue::fromString(normalizedDrive));
+  properties.emplace("VolumeName", WmiValue::fromString(current->volumeName));
+
+  VolumeRegistrationDisposition outcome = VolumeRegistrationDisposition::Created;
+  std::string uncertainFailure;
+  try {
+    m_session.putInstance("UWF_Volume", properties, WmiPutMode::CreateOnly);
+  } catch (const WmiInfrastructureError& error) {
+    if (isAlreadyExists(error)) {
+      outcome = VolumeRegistrationDisposition::ConcurrentlyCreated;
+    } else {
+      throw;
     }
+  } catch (const WmiInvocationUncertain& error) {
+    uncertainFailure = error.what();
+    outcome = VolumeRegistrationDisposition::ConfirmedAfterUncertainWrite;
   }
 
-  // 2) 没有 next session 实例：从同卷的 current session 实例上拿 VolumeName。
-  //    UWF 自己写出的 current 实例 VolumeName 格式必然规范，避免再走
-  //    Win32_Volume 然后归一化的路。
-  std::string volumeName;
-  for (const auto& v : rows) {
-    if (v.currentSession && v.driveLetter == normalizedDrive) {
-      volumeName = v.volumeName;
-      break;
-    }
-  }
-  if (volumeName.empty()) {
-    result.error = std::format("no current-session UWF_Volume row found for {}; cannot register", normalizedDrive);
-    return result;
-  }
-
-  // 3) PutInstance 创建 next session 实例（key = CurrentSession=false +
-  //    DriveLetter + VolumeName）。
-  WmiRow props;
-  props.emplace("CurrentSession", WmiValue::fromBool(false));
-  props.emplace("DriveLetter", WmiValue::fromString(normalizedDrive));
-  props.emplace("VolumeName", WmiValue::fromString(volumeName));
-
-  const auto put = m_session.putInstance("UWF_Volume", props, WmiPutMode::CreateOnly);
-  result.writeAttempted = put.attempted;
-
-  // 4) 用 key 三元组构造精确 relative path，并通过只读实例方法确认 provider
-  //    已经能解析该对象。这里不依赖 ExecQuery 的可见性，也不使用 sleep/轮询。
-  const std::string relativePath =
-      std::format(R"(UWF_Volume.CurrentSession=FALSE,DriveLetter="{}",VolumeName="{}")", escapeWmiPathValue(normalizedDrive), escapeWmiPathValue(volumeName));
-
-  const bool convergentExisting = WmiError(put.hresult) == WmiErrorCode::AlreadyExists;
-  if (!put.ok && !convergentExisting && !put.outcomeUncertain) {
-    result.error = put.detail;
-    return result;
-  }
-
-  std::string verifyError;
-  const auto source = m_session.getObject(relativePath, &verifyError);
+  const std::string relativePath = std::format(R"(UWF_Volume.CurrentSession=FALSE,DriveLetter="{}",VolumeName="{}")",
+                                               escapeWmiPathValue(normalizedDrive), escapeWmiPathValue(current->volumeName));
   std::optional<api::VolumeRow> observed;
-  const bool decoded = source && decodeManagedVolume(*source, observed, &verifyError);
-  if (!decoded || !observed || observed->currentSession || observed->driveLetter != normalizedDrive || observed->volumeName != volumeName) {
-    result.error = verifyError.empty() ? "created UWF_Volume instance does not match its requested identity" : std::move(verifyError);
-    if (!put.detail.empty()) result.error += std::format("; original PutInstance result: {}", put.detail);
-    return result;
+  try {
+    observed = decodeManagedVolume(m_session.getObject(relativePath));
+  } catch (const std::exception& confirmationError) {
+    std::string detail;
+    if (outcome == VolumeRegistrationDisposition::ConfirmedAfterUncertainWrite) {
+      detail = "write outcome was uncertain and the created instance could not be confirmed; original failure: " + uncertainFailure;
+    } else if (outcome == VolumeRegistrationDisposition::ConcurrentlyCreated) {
+      detail = "the instance was concurrently created, but its state could not be confirmed";
+    } else {
+      detail = "provider accepted the registration, but the created instance could not be confirmed";
+    }
+    detail += "; reread failure: ";
+    detail += confirmationError.what();
+    std::throw_with_nested(WmiStateVerificationError("register UWF volume", detail));
+  } catch (...) {
+    const std::string detail = outcome == VolumeRegistrationDisposition::ConfirmedAfterUncertainWrite
+                                   ? "write outcome was uncertain and state confirmation failed with a non-standard exception; original failure: " +
+                                         uncertainFailure
+                                   : "registration state confirmation failed with a non-standard exception";
+    std::throw_with_nested(WmiStateVerificationError("register UWF volume", detail));
   }
-  // CreateOnly 成功，或传输结果不确定但目标实例已能精确读取，才能确认本次
-  // 创建。AlreadyExists 只表示并发状态已经收敛，不把别人的创建记成本次写成功。
-  result.writeConfirmed = put.ok || put.outcomeUncertain;
-  result.entry = std::move(observed);
-  UWF_LOG_I("UWF_Volume") << std::format("ensureNextSessionEntry confirmed from provider state: dl={} volumeName={}", normalizedDrive, volumeName);
-  return result;
+
+  if (!observed || observed->currentSession || observed->driveLetter != normalizedDrive || observed->volumeName != current->volumeName) {
+    std::string detail;
+    if (outcome == VolumeRegistrationDisposition::ConfirmedAfterUncertainWrite) {
+      detail = "write outcome was uncertain and the observed instance does not match the requested next-session identity; original failure: " +
+               uncertainFailure;
+    } else if (outcome == VolumeRegistrationDisposition::ConcurrentlyCreated) {
+      detail = "the concurrently created instance does not match the requested next-session identity";
+    } else {
+      detail = "provider accepted the registration, but the observed instance does not match the requested next-session identity";
+    }
+    throw WmiStateVerificationError("register UWF volume", detail);
+  }
+  return {std::move(*observed), outcome};
 }
 
 }  // namespace uwf::api

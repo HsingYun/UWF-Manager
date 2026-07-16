@@ -20,6 +20,7 @@
 #include <QMainWindow>
 #include <QSignalBlocker>
 #include <QTimer>
+#include <exception>
 
 #include "../util/Log.h"
 #include "GlobalStatusPanel.h"
@@ -65,6 +66,7 @@ void OverlayPresentationController::unbindUi() {
 }
 
 void OverlayPresentationController::applySnapshot(const core::UwfSnapshot& snapshot) {
+  m_usageRefreshFailed = false;
   if (snapshot.uwfAvailable) {
     m_hasCommittedSnapshot = true;
     m_hub->setFilterEnabled(snapshot.current.filter.enabled);
@@ -77,6 +79,7 @@ void OverlayPresentationController::applySnapshot(const core::UwfSnapshot& snaps
   } else {
     m_hasCommittedSnapshot = false;
     m_hub->setUsageUnavailable();
+    if (m_tray) m_tray->setUsageUnavailable();
     m_usageTimer->stop();
   }
   syncAvailability();
@@ -104,46 +107,44 @@ void OverlayPresentationController::refreshUsage() {
   // “是否已有可信状态”得出相反结论。
   if (!m_hasCommittedSnapshot) return;
 
-  std::string error;
-  const auto filter = m_filter.read(&error);
-  if (!filter) {
-    UWF_LOG_E("ui") << "usage refresh failed while reading UWF_Filter; keeping committed UI state: " << error;
+  api::FilterRow filter;
+  std::optional<core::OverlayRuntime> runtime;
+  core::OverlayConfig presentationConfig;
+  try {
+    filter = m_filter.read();
+    if (filter.currentEnabled) {
+      const auto overlay = m_overlay.read();
+      const auto config = m_overlayConfig.read(api::Session::Current);
+      runtime.emplace();
+      runtime->currentConsumptionMb = overlay.overlayConsumption;
+      runtime->availableSpaceMb = overlay.availableSpace;
+      presentationConfig.maximumSizeMb = config.maximumSize;
+      presentationConfig.type = config.type == api::OverlayType::RAM ? core::OverlayType::RAM : core::OverlayType::Disk;
+      presentationConfig.warningThresholdMb = overlay.warningOverlayThreshold;
+      presentationConfig.criticalThresholdMb = overlay.criticalOverlayThreshold;
+    }
+  } catch (const std::exception& error) {
+    // 周期刷新失败可能持续多个 tick；同一故障周期只发一条 Warning，后续重复
+    // 仅保留在 Debug，避免 Release 日志每五秒刷屏。
+    if (!m_usageRefreshFailed)
+      UWF_LOG_W("hub") << "usage refresh failed: committedState=retained error=" << error.what();
+    else
+      UWF_LOG_D("hub") << "usage refresh still failing: committedState=retained error=" << error.what();
+    m_usageRefreshFailed = true;
     return;
   }
 
-  std::optional<core::OverlayRuntime> runtime;
-  core::OverlayConfig presentationConfig;
-  if (filter->currentEnabled) {
-    error.clear();
-    const auto overlay = m_overlay.read(&error);
-    if (!overlay) {
-      UWF_LOG_E("ui") << "usage refresh failed while reading UWF_Overlay; keeping committed UI state: " << error;
-      return;
-    }
-    error.clear();
-    const auto config = m_overlayConfig.read(true, &error);
-    if (!config) {
-      UWF_LOG_E("ui") << "usage refresh failed while reading UWF_OverlayConfig; keeping committed UI state: " << error;
-      return;
-    }
-
-    runtime.emplace();
-    runtime->currentConsumptionMb = overlay->overlayConsumption;
-    runtime->availableSpaceMb = overlay->availableSpace;
-    presentationConfig.maximumSizeMb = config->maximumSize;
-    presentationConfig.type = config->type == api::OverlayType::RAM ? core::OverlayType::RAM : core::OverlayType::Disk;
-    presentationConfig.warningThresholdMb = overlay->warningOverlayThreshold;
-    presentationConfig.criticalThresholdMb = overlay->criticalOverlayThreshold;
-  }
+  if (m_usageRefreshFailed) UWF_LOG_I("hub") << "usage refresh recovered";
+  m_usageRefreshFailed = false;
 
   // 候选读取全部成功后一次性提交到所有消费者，Hub、主面板与托盘不会看见
   // 来自不同轮次的混合状态。
-  m_hub->setFilterEnabled(filter->currentEnabled);
+  m_hub->setFilterEnabled(filter.currentEnabled);
   if (runtime) {
     if (m_ownerWindow->isVisible() && m_global) m_global->updateUsage(*runtime);
     m_hub->updateUsage(*runtime);
   }
-  if (m_tray) m_tray->applyUsageState(filter->currentEnabled, runtime, presentationConfig);
+  if (m_tray) m_tray->applyUsageState(filter.currentEnabled, runtime, presentationConfig);
   syncAvailability();
 }
 

@@ -16,6 +16,9 @@
  */
 #include <QApplication>
 
+#include <cstdlib>
+#include <exception>
+
 #include "src/app/CrashHandler.h"
 #include "src/app/SecureSingleInstance.h"
 #include "src/ui/CenteredTextStyle.h"
@@ -23,8 +26,8 @@
 #include "src/ui/MainWindow.h"
 #include "src/ui/ThemeManager.h"
 #include "src/util/Log.h"
-#include "src/util/PostGate.h"
 #include "src/uwf/SystemCheck.h"
+#include "src/uwf/UwfSnapshot.h"
 #include "src/uwf/wmi/WmiClient.h"
 
 namespace {
@@ -34,11 +37,11 @@ bool handleSingleInstanceStartup(uwf::app::SecureSingleInstance& singleInstance)
   // 系统检查等重活之前；若只是把任务转交给已有实例，没必要白做这些。
   const auto acquireResult = singleInstance.acquire();
   if (acquireResult == uwf::app::SecureSingleInstance::AcquireResult::ActivatedExisting) {
-    UWF_LOG_I("main") << "another instance is already running; activated it and exiting";
+    UWF_LOG_I("main") << "existing instance activated; current process exiting";
     return false;
   }
   if (acquireResult == uwf::app::SecureSingleInstance::AcquireResult::Unprotected) {
-    UWF_LOG_W("main") << "single-instance server failed to listen: " << singleInstance.errorString().toStdString();
+    UWF_LOG_W("main") << "single-instance server unavailable: error=" << singleInstance.errorString().toStdString();
   }
   return true;
 }
@@ -76,55 +79,66 @@ uwf::SystemCheckResult checkRuntimeEnvironment() {
   const auto check = uwf::runSystemChecks();
   switch (check.status) {
     case uwf::CheckStatus::UnsupportedSystem:
-      UWF_LOG_W("main") << "unsupported Windows family or edition; running in compatibility mode; product=" << check.productName
+      UWF_LOG_W("main") << "unsupported Windows edition: mode=compatibility product=" << check.productName
                         << " edition=" << check.editionId;
       break;
     case uwf::CheckStatus::Ok:
-      UWF_LOG_I("main") << "system check ok: product=" << check.productName << " edition=" << check.editionId;
+      UWF_LOG_I("main") << "system check completed: product=" << check.productName << " edition=" << check.editionId;
       break;
   }
 
   // 未提权不再弹模态框拦截——GlobalStatusPanel 会常驻一条红色"需要管理员
   // 权限"横幅，程序照常启动，可读但不可改。
   if (!uwf::isElevated()) {
-    UWF_LOG_W("main") << "process is not elevated; UWF settings cannot be modified";
+    UWF_LOG_I("main") << "process is not elevated: mode=read-only";
   }
   return check;
 }
 
-int runMainWindow(QApplication& app, uwf::app::SecureSingleInstance& singleInstance, const uwf::SystemCheckResult& check) {
-  uwf::ui::MainWindow w(check.status == uwf::CheckStatus::UnsupportedSystem, QString::fromStdString(check.productName),
+int runMainWindow(QApplication& app, uwf::app::SecureSingleInstance& singleInstance, const uwf::SystemCheckResult& check,
+                  const uwf::UwfCapability uwfCapability) {
+  uwf::ui::MainWindow w(uwfCapability, check.status == uwf::CheckStatus::UnsupportedSystem, QString::fromStdString(check.productName),
                         QString::fromStdString(check.editionId));
 
   QObject::connect(&singleInstance, &uwf::app::SecureSingleInstance::activationRequested, &w, &uwf::ui::MainWindow::raiseToFront);
   singleInstance.enableActivationNotifications();
 
   w.show();
-  const int rc = app.exec();
-  // 事件循环已退出、QApplication 即将析构——关闭"可投递"门闸，让仍在跑的
-  // 后台 worker 不再向 qApp 投递结果（见 src/util/PostGate.h）。
-  uwf::postgate::close();
-  return rc;
+  return app.exec();
+}
+
+int runApplication(int argc, char* argv[]) {
+  QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+  QApplication app(argc, argv);
+  app.setApplicationName("UWF Manager");
+  app.setOrganizationName("UWF");
+  app.setWindowIcon(QIcon(":/icons/app.svg"));
+  uwf::app::SecureSingleInstance singleInstance;
+  if (!handleSingleInstanceStartup(singleInstance)) return 0;
+
+  initializeUserInterface(app);
+  UWF_LOG_I("main") << "application started: pid=" << QCoreApplication::applicationPid();
+  // 尽早建立主线程 COM apartment 与两个长生命周期 WMI session。初始化失败
+  // 直接交给 main 的最终异常边界记录并终止启动，不让半初始化 UI 继续运行。
+  uwf::initializeWmiRuntime();
+  const auto uwfCapability = uwf::probeUwfCapability();
+  if (uwfCapability == uwf::UwfCapability::Unavailable) {
+    UWF_LOG_W("main") << "UWF unavailable: reason=filter-class-not-registered";
+  }
+  const auto check = checkRuntimeEnvironment();
+  return runMainWindow(app, singleInstance, check, uwfCapability);
 }
 
 }  // namespace
 
 int main(int argc, char* argv[]) {
   uwf::app::CrashHandler::install();
-  QApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
-  QApplication app(argc, argv);
-  app.setApplicationName("UWF Manager");
-  app.setOrganizationName("UWF");
-  app.setWindowIcon(QIcon(":/icons/app.svg"));
-
-  uwf::app::SecureSingleInstance singleInstance;
-  if (!handleSingleInstanceStartup(singleInstance)) return 0;
-
-  initializeUserInterface(app);
-  UWF_LOG_I("main") << "UWF manager started; pid=" << QCoreApplication::applicationPid();
-  // 尽早建立主线程 COM/WMI 运行时；失败原因由该边界记录一次，后续读取还会
-  // 通过 session readiness 返回同一错误供 UI 展示，无需在这里重复打日志。
-  uwf::initializeWmiRuntime();
-  const auto check = checkRuntimeEnvironment();
-  return runMainWindow(app, singleInstance, check);
+  try {
+    return runApplication(argc, argv);
+  } catch (const std::exception& error) {
+    UWF_LOG_E("main") << "fatal application error: error=" << error.what();
+  } catch (...) {
+    UWF_LOG_E("main") << "fatal application error: error=non-standard-exception";
+  }
+  return EXIT_FAILURE;
 }

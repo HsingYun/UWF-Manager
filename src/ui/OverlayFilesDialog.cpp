@@ -36,14 +36,20 @@
 #include <QTextStream>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <exception>
 #include <functional>
+#include <limits>
+#include <optional>
+#include <stdexcept>
 #include <utility>
 
 #include "../util/ByteFormat.h"
 #include "../util/DriveLetter.h"
+#include "../util/Log.h"
 #include "../uwf/api/UwfOverlay.h"
 #include "../uwf/wmi/WmiClient.h"
 #include "../uwf/wmi/WmiError.h"
+#include "../uwf/wmi/WmiException.h"
 #include "Dialogs.h"
 #include "I18n.h"
 #include "ThemeManager.h"
@@ -245,75 +251,86 @@ void OverlayFilesDialog::startLoading() {
   QPointer<OverlayFilesDialog> self(this);
   std::string dl = m_driveLetter.toStdString();
 
-  m_worker = std::jthread([self, dl = std::move(dl)](const std::stop_token stopToken) {
-    auto& session = embeddedWmiSession();
-
-    QString errorOut;
-    int32_t errorHr = 0;
-    QVector<OverlayFileEntry> entries;
-
-    try {
-      do {
-        if (stopToken.stop_requested()) break;
-
-        std::string err;
-        if (!session.ensureConnected(&err)) {
-          errorOut = QString::fromStdString(err);
-          break;
-        }
+  try {
+    m_worker = std::jthread([self, dl = std::move(dl)](const std::stop_token stopToken) {
+      LoadResult result;
+      try {
+        if (stopToken.stop_requested()) return;
+        auto& session = embeddedWmiSession();
+        session.ensureConnected();
         api::UwfOverlay overlay(session);
-        auto row = overlay.read(&err);
-        if (!row) {
-          errorOut = QString::fromStdString(err);
-          break;
+        const auto row = overlay.read();
+        const auto files = overlay.getOverlayFiles(row, dl, stopToken);
+        if (stopToken.stop_requested()) return;
+
+        // 后续分页和 QListWidget 索引使用 int。不能把超出表示范围的 provider
+        // 结果静默截断成负数；在构造 Qt 容器之前明确拒绝这一不可表示的数据集。
+        if (files.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+          throw std::length_error("overlay file count exceeds the UI model capacity");
         }
-        int32_t hr = 0;
-        auto files = overlay.getOverlayFiles(*row, dl, &err, &hr, stopToken);
-        if (stopToken.stop_requested()) break;
-        if (!err.empty()) {
-          errorOut = QString::fromStdString(err);
-          errorHr = hr;
-          break;
-        }
+
+        QVector<OverlayFileEntry> entries;
         entries.reserve(static_cast<int>(files.size()));
         for (const auto& f : files) {
-          OverlayFileEntry e;
-          e.rawName = QString::fromStdString(f.fileName);
-          e.fileSize = static_cast<qulonglong>(f.fileSize);
-          entries.append(std::move(e));
+          OverlayFileEntry entry;
+          entry.rawName = QString::fromStdString(f.fileName);
+          entry.fileSize = static_cast<qulonglong>(f.fileSize);
+          entries.append(std::move(entry));
         }
-      } while (false);
-    } catch (...) {
-      // std::jthread 的入口不能让异常逃逸，否则进程会直接 std::terminate。
-      errorOut = QStringLiteral("Unexpected error while enumerating overlay files.");
-    }
+        result = std::move(entries);
+      } catch (const WmiCancelled&) {
+        return;
+      } catch (...) {
+        result = std::current_exception();
+      }
 
-    // self 是 QPointer——dialog 已被销毁则 lambda 内 self 为 null，直接 no-op。
-    if (!stopToken.stop_requested()) {
-      QMetaObject::invokeMethod(
-          qApp,
-          [self, entries = std::move(entries), errorOut, errorHr]() mutable {
-            if (!self) return;
-            self->onLoadFinished(std::move(entries), errorOut, errorHr);
-          },
-          Qt::QueuedConnection);
-    }
-  });
+      if (stopToken.stop_requested()) return;
+      try {
+        QMetaObject::invokeMethod(
+            qApp,
+            [self, result = std::move(result)]() mutable {
+              if (!self) return;
+              self->onLoadFinished(std::move(result));
+            },
+            Qt::QueuedConnection);
+      } catch (const std::exception& error) {
+        UWF_LOG_E("overlay-files") << "result delivery failed: error=" << error.what();
+      } catch (...) {
+        UWF_LOG_E("overlay-files") << "result delivery failed: error=non-standard-exception";
+      }
+    });
+  } catch (...) {
+    onLoadFinished(std::current_exception());
+  }
 }
 
-void OverlayFilesDialog::onLoadFinished(QVector<OverlayFileEntry> entries, const QString& error, int32_t hresult) {
+void OverlayFilesDialog::onLoadFinished(LoadResult result) {
   if (m_progress) m_progress->hide();
   if (m_loadingLabel) m_loadingLabel->hide();
 
-  if (!error.isEmpty()) {
+  if (const auto* failure = std::get_if<std::exception_ptr>(&result)) {
+    QString error;
+    std::optional<int32_t> wmiCode;
+    try {
+      std::rethrow_exception(*failure);
+    } catch (const WmiException& exception) {
+      error = QString::fromUtf8(exception.what());
+      if (exception.code().category() == wmiErrorCategory()) wmiCode = static_cast<int32_t>(exception.code().value());
+    } catch (const std::exception& exception) {
+      error = QString::fromUtf8(exception.what());
+    } catch (...) {
+      error = I18n::tr("Unexpected error while enumerating overlay files.");
+    }
+
+    UWF_LOG_E("overlay-files") << "enumeration failed: error=" << error.toStdString();
     const auto& tm = ThemeManager::instance();
     // GetOverlayFiles 是 UWF 文档承认不稳的方法——overlay 大、I/O 高负载或
     // NTFS 元数据复杂时 provider 会抛 RPC_E_SERVERFAULT，也可能 timeout
     // 或 OOM。按命名常量分支给用户一个可操作的中文提示，原始错误带在后面
     // 方便排查。
-    const WmiError wbem(hresult);
+    const WmiError wbem(wmiCode.value_or(0));
     QString hint;
-    if (hresult == static_cast<int32_t>(RPC_E_SERVERFAULT)) {
+    if (wmiCode == static_cast<int32_t>(RPC_E_SERVERFAULT)) {
       hint = I18n::tr(
           "The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay "
           "is large or under I/O pressure.");
@@ -331,6 +348,8 @@ void OverlayFilesDialog::onLoadFinished(QVector<OverlayFileEntry> entries, const
     m_summary->setStyleSheet(QString("color:%1").arg(tm.color(Sem::Danger).name()));
     return;
   }
+
+  auto entries = std::get<QVector<OverlayFileEntry>>(std::move(result));
 
   // 拼绝对路径 + 剥 NTFS 流后缀；列表 / 右键菜单 / 导出统一用 absolutePath。
   for (auto& e : entries) normalizeOverlayEntry(m_driveLetter, e);
@@ -389,7 +408,7 @@ void OverlayFilesDialog::onContextMenu(const QPoint& pos) {
   auto* openAct = menu.addAction(tm.icon(":/icons/folder.svg"), I18n::tr("Open containing folder"));
   connect(openAct, &QAction::triggered, this, [abs]() { openContainingFolder(abs); });
 
-  // 系统元数据（basename 以 '$' 起头：$Secure / $130 / $RECYCLE.BIN 之类）
+  // 系统元数据（任一路径段以 '$' 起头：$Secure / $Extend / $RECYCLE.BIN 之类）
   // 直接不出 commit 项——CommitFile 对它们必然返回 NOT_FOUND，菜单出来只是
   // 误导用户。条目本身依然显示在列表里供诊断。
   // 文件 / 目录走同一条 commitFileRequested 信号；MainWindow::commitFilePath

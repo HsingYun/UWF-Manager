@@ -548,7 +548,8 @@ void TaskbarLayoutCoordinator::advanceDetaching() {
   if (m_detaching->attempts == 1)
     publish(DetachEvent{DetachPhase::Blocked,
                         m_detaching->cause == DetachmentCause::HostInvalidated ? DetachReason::HostInvalidated : DetachReason::PresentationReleased});
-  if (m_detaching->attempts == kFastRetryAttempts) UWF_LOG_E("taskbar") << "taskbar detachment remains pending; strategies=" << m_detaching->strategies.size();
+  if (m_detaching->attempts == kFastRetryAttempts)
+    UWF_LOG_W("taskbar") << "taskbar detachment delayed: attempts=" << m_detaching->attempts << " strategies=" << m_detaching->strategies.size();
   m_asyncTimer->start(m_detaching->attempts < kFastRetryAttempts ? kFastRetryIntervalMs : kSlowRetryIntervalMs);
 }
 

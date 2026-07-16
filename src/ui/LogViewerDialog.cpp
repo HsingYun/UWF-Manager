@@ -37,14 +37,13 @@
 #include <algorithm>
 #include <array>
 #include <atomic>
+#include <exception>
 #include <functional>
 #include <memory>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include "../util/Log.h"
-#include "../util/PostGate.h"
 #include "I18n.h"
 #include "Pager.h"
 #include "PathElideDelegate.h"
@@ -218,38 +217,72 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
     if (pager->nav.setPageSize(viewH / rowH)) renderPage();
   };
 
-  auto reload = [pager, statusPtr, barPtr, parseLine, renderPage, totalPages]() {
-    const int gen = ++pager->generation;
-    if (statusPtr) statusPtr->setText(I18n::tr("Loading log entries…"));
-    if (barPtr) barPtr->show();
+  auto reload = [this, pager, statusPtr, barPtr, parseLine, renderPage, totalPages]() {
+    try {
+      const int gen = ++pager->generation;
+      if (m_loader.joinable()) {
+        m_loader.request_stop();
+        m_loader.join();
+      }
+      if (statusPtr) statusPtr->setText(I18n::tr("Loading log entries…"));
+      if (barPtr) barPtr->show();
 
-    std::thread([pager, gen, parseLine, statusPtr, barPtr, renderPage, totalPages]() {
-      auto raw = uwf::recentLogLines();
-      std::vector<LogRow> entries;
-      entries.reserve(raw.size());
-      for (auto& line : raw) entries.push_back(parseLine(line));
+      m_loader = std::jthread([pager, gen, parseLine, statusPtr, barPtr, renderPage, totalPages](const std::stop_token stopToken) {
+        try {
+          std::vector<LogRow> entries;
+          QString failure;
+          try {
+            auto raw = uwf::recentLogLines();
+            entries.reserve(raw.size());
+            for (auto& line : raw) {
+              if (stopToken.stop_requested()) return;
+              entries.push_back(parseLine(line));
+            }
+          } catch (const std::exception& error) {
+            failure = QString::fromUtf8(error.what());
+          } catch (...) {
+            failure = QStringLiteral("Non-standard exception while reading the log.");
+          }
 
-      // 经"可投递"门闸投回 UI 线程：app 已关停（main 调过 postgate::close）时
-      // runIfOpen 直接跳过，不会向已销毁的 qApp 投递。详见 src/util/PostGate.h。
-      uwf::postgate::runIfOpen([&]() {
-        QMetaObject::invokeMethod(
-            qApp,
-            [pager, gen, entries = std::move(entries), statusPtr, barPtr, renderPage, totalPages]() mutable {
-              if (pager->generation.load() != gen) return;
-              pager->entries = std::move(entries);
-              const int total = static_cast<int>(pager->entries.size());
-              const int pages = totalPages(total);
-              // 默认跳到最后一页（最新日志）。
-              pager->nav.currentPage = pages > 0 ? pages - 1 : 0;
-              renderPage();
-              if (statusPtr) {
-                statusPtr->setText(total == 0 ? I18n::tr("0 lines") : I18n::tr("%1 lines").arg(total));
-              }
-              if (barPtr) barPtr->hide();
-            },
-            Qt::QueuedConnection);
+          if (stopToken.stop_requested()) return;
+          QMetaObject::invokeMethod(
+              qApp,
+              [pager, gen, entries = std::move(entries), failure = std::move(failure), statusPtr, barPtr, renderPage, totalPages]() mutable {
+                if (pager->generation.load() != gen) return;
+                if (!failure.isEmpty()) {
+                  if (statusPtr) statusPtr->setText(I18n::tr("Failed to load logs: %1").arg(failure));
+                  if (barPtr) barPtr->hide();
+                  return;
+                }
+                pager->entries = std::move(entries);
+                const int total = static_cast<int>(pager->entries.size());
+                const int pages = totalPages(total);
+                // 默认跳到最后一页（最新日志）。
+                pager->nav.currentPage = pages > 0 ? pages - 1 : 0;
+                renderPage();
+                if (statusPtr) {
+                  statusPtr->setText(total == 0 ? I18n::tr("0 lines") : I18n::tr("%1 lines").arg(total));
+                }
+                if (barPtr) barPtr->hide();
+              },
+              Qt::QueuedConnection);
+        } catch (const std::exception& error) {
+          if (stopToken.stop_requested()) return;
+          UWF_LOG_E("log") << "log loading worker failed: error=" << error.what();
+        } catch (...) {
+          if (stopToken.stop_requested()) return;
+          UWF_LOG_E("log") << "log loading worker failed: error=non-standard-exception";
+        }
       });
-    }).detach();
+    } catch (const std::exception& error) {
+      UWF_LOG_E("log") << "log loading worker could not start: error=" << error.what();
+      if (statusPtr) statusPtr->setText(I18n::tr("Failed to load logs: %1").arg(QString::fromUtf8(error.what())));
+      if (barPtr) barPtr->hide();
+    } catch (...) {
+      UWF_LOG_E("log") << "log loading worker could not start: error=non-standard-exception";
+      if (statusPtr) statusPtr->setText(I18n::tr("Failed to load logs: unexpected error."));
+      if (barPtr) barPtr->hide();
+    }
   };
 
   // 分页按钮 → 改 currentPage 后重渲染当前页（不重新解析日志）。
@@ -324,7 +357,6 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   connect(copyAllBtn, &QPushButton::clicked, this, copyAllFromPager);
   connect(clearBtn, &QPushButton::clicked, this, [reload]() {
     uwf::clearLogLines();
-    UWF_LOG_I("ui") << "log buffer cleared by user";
     reload();
   });
   connect(btns, &QDialogButtonBox::accepted, this, &QDialog::accept);

@@ -19,38 +19,30 @@
 // 盘符工具：规范化盘符字符串、按盘符拆分路径、从路径解析盘符、取系统盘——
 // 相关逻辑全部集中在此一处，避免散落各层各写一份、且处理口径不一致。
 //
-// 关于"多字符盘符"：本文件的解析逻辑不写死"盘符只能是单个 A-Z 字母"，对任意
-// 长度的纯字母前缀一视同仁。这是刻意为之——把逻辑做成 Windows 规则的「超集」，
-// 不强行耦合 A-Z 这个约束，少一处易错的边界假设。
-//
-// 但要说清楚：现实里 Windows 受 DOS 传统所限，盘符就是单个 A-Z 字母，
-// "多字符盘符"并不是一种真实可用的形式——
-//   - DOS Device 命名空间技术上能塞进任意名字；
-//   - 但 Win32 没有任何官方接口承认"多字符盘符"是合法的路径形式；
-//   - 上层组件（资源管理器、各类 API）也都按单字符假设实现，所以多字符
-//     "盘符"做不出一个 functional 的 drive；
-//   - VHD / SUBST / ImDisk 都清楚这点，在各自 UI 里直接把可选范围限制在
-//     A–Z，不去制造"看着能用、其实不能用"的东西。
-// 故此处对多字符前缀的兼容只是为了"逻辑统一"，并非声称 Windows 支持它。
-//
 // 不依赖 Qt，core / uwf / ui 各层均可使用（UI 层在边界处做 QString 转换）。
 
+#include <stdexcept>
 #include <string>
 
 namespace uwf::drive {
 
+class DriveLetterResolutionError final : public std::runtime_error {
+ public:
+  using std::runtime_error::runtime_error;
+};
+
 // split() 的结果：把路径拆成"盘符 + 卷内剩余路径"。
 struct PathSplit {
-  std::string letter;  // 规范盘符（"C:" / "CC:"）；路径没有字面盘符前缀时为空。
+  std::string letter;  // 规范盘符（"C:"）；路径没有字面盘符前缀时为空。
   std::string rest;    // 盘符之后的部分（卷内路径，如 "\\Users\\foo"）；没有盘符
                        // 前缀时是去掉扩展长度前缀后的整条路径。
 };
 
 // 校验并规范化"盘符字符串"。接受：
-//   "" / "c" / "C:" / "cc:"          —— 裸盘符
+//   "" / "c" / "C:"                  —— 裸盘符
 //   "\\?\C:" / "\\.\C:"              —— 带扩展长度前缀的裸盘符
 //   "C:\\Windows" / "\\?\C:\\x"      —— 带路径残留（取盘符头，忽略其后）
-// 输出统一为大写加单个冒号（"C:" / "CC:"）。冒号前必须全部是字母。
+// 输出统一为单个 ASCII 大写字母加冒号（"C:"）。
 // 不含盘符的输入（卷 GUID 路径、UNC 路径、卷内相对路径、空串等）一律返回
 // 空串。纯字符串处理，不访问系统。
 std::string normalize(const std::string& raw);
@@ -68,13 +60,11 @@ PathSplit split(const std::string& path);
 //   "C:\\x" / "\\?\C:\\x"            —— 字面拆分即得 "C:"
 //   "\\?\Volume{GUID}\\x"            —— 字符串里没有盘符，经 Win32 API 反查
 //                                       该卷挂载的盘符
-// 返回规范盘符（"C:"）。两种"返回空串"要分清：
-//   - 路径本就没有盘符（UNC 路径、卷内相对路径）：返回空串，*error 不写——
-//     这不是错误，由调用方按"无盘符"处理。
-//   - 卷 GUID 路径，但该卷没有盘符挂载点 / 路径畸形 / API 失败：返回空串
-//     并把原因写入 *error。
-// error 可为 nullptr。
-std::string fromPath(const std::string& path, std::string* error = nullptr);
+// 返回规范盘符（"C:"）。路径本就没有盘符（UNC 路径、卷内相对路径）时
+// 返回空串，这是正常业务结果。字面上是卷 GUID 路径却畸形或无法解析时，
+// 抛出 DriveLetterResolutionError；底层 Win32 查询失败抛 std::system_error。
+// 不再用空串 + error out-parameter 表达失败。
+std::string fromPath(const std::string& path);
 
 // 当前系统盘（Windows 所在卷）的盘符，如 "C:"。
 // 取不到时返回空串——不臆测 "C:"，由调用方自行处理"系统盘未知"。

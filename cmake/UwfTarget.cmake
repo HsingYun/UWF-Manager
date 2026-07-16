@@ -6,7 +6,10 @@ function(uwf_configure_cpp_target target)
         set(_sanitize_enabled ON)
     endif ()
 
-    target_compile_definitions(${target} PRIVATE UNICODE _UNICODE _WIN32_DCOM NOMINMAX)
+    target_compile_definitions(${target} PRIVATE
+            UNICODE _UNICODE _WIN32_DCOM NOMINMAX
+            $<$<CONFIG:Debug>:UWF_DEBUG_LOGGING>
+    )
     if (_sanitize_enabled)
         target_compile_definitions(${target} PRIVATE UWF_SANITIZE)
     endif ()

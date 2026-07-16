@@ -24,7 +24,9 @@
 #include <string>
 
 #include "../uwf/wmi/WmiClient.h"
+#include "../uwf/wmi/WmiException.h"
 #include "../uwf/wmi/WmiRowUtil.h"
+#include "ComPtr.h"
 #include "Log.h"
 #include "RegistryKey.h"
 #include "StringUtil.h"
@@ -33,45 +35,21 @@ namespace uwf {
 
 namespace {
 
-bool readNullableUInt(const WmiRow& row, const char* field, std::optional<std::uint32_t>& value, std::string* error) {
-  value.reset();
+std::optional<std::uint32_t> readNullableUInt(const WmiRow& row, const char* field) {
   const auto it = row.find(field);
-  if (it == row.end()) {
-    if (error) *error = std::string("WMI field '") + field + "' is missing";
-    return false;
-  }
-  if (!it->second.isValid()) return true;
-  const auto decoded = rowutil::requireUInt(row, field, error);
-  if (!decoded) return false;
-  value = *decoded;
-  return true;
+  if (it == row.end()) throw WmiDecodeError("decode physical memory information", std::string("field '") + field + "' is missing");
+  if (!it->second.isValid()) return std::nullopt;
+  return rowutil::requireUInt(row, field);
 }
 
-template <typename T>
-class ComPtr final {
- public:
-  ComPtr() = default;
-  ~ComPtr() {
-    if (m_ptr) m_ptr->Release();
+std::string cpuModel() {
+  try {
+    return regkey::readString(R"(HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0)", "ProcessorNameString").value_or(std::string{});
+  } catch (const std::exception& error) {
+    UWF_LOG_D("hardware") << "CPU model unavailable: error=" << error.what();
+    return {};
   }
-  ComPtr(const ComPtr&) = delete;
-  ComPtr& operator=(const ComPtr&) = delete;
-
-  [[nodiscard]] T* get() const { return m_ptr; }
-  [[nodiscard]] T** put() {
-    if (m_ptr) {
-      m_ptr->Release();
-      m_ptr = nullptr;
-    }
-    return &m_ptr;
-  }
-  [[nodiscard]] T* operator->() const { return m_ptr; }
-
- private:
-  T* m_ptr = nullptr;
-};
-
-std::string cpuModel() { return regkey::readString(R"(HKEY_LOCAL_MACHINE\HARDWARE\DESCRIPTION\System\CentralProcessor\0)", "ProcessorNameString"); }
+}
 
 std::wstring primaryDisplayDeviceName() {
   const HMONITOR monitor = MonitorFromPoint(POINT{0, 0}, MONITOR_DEFAULTTOPRIMARY);
@@ -114,7 +92,7 @@ bool adapterDrivesDisplay(IDXGIAdapter1* adapter, const std::wstring& displayDev
 GraphicsAdapterInfo graphicsAdapter() {
   const std::wstring primaryDeviceName = primaryDisplayDeviceName();
   ComPtr<IDXGIFactory1> factory;
-  if (FAILED(CreateDXGIFactory1(IID_IDXGIFactory1, reinterpret_cast<void**>(factory.put())))) return fallbackGraphicsAdapter(primaryDeviceName);
+  if (FAILED(CreateDXGIFactory1(IID_IDXGIFactory1, factory.putVoid()))) return fallbackGraphicsAdapter(primaryDeviceName);
 
   for (UINT index = 0;; ++index) {
     ComPtr<IDXGIAdapter1> adapter;
@@ -142,81 +120,72 @@ std::uint64_t visibleMemoryBytes() {
 
 void queryPhysicalMemory(SystemHardwareInfo& info) {
   auto& session = cimv2WmiSession();
-  std::string error;
-  if (!session.ensureConnected(&error)) {
-    UWF_LOG_W("hardware") << "physical memory WMI connection unavailable: " << error;
-    return;
-  }
-
-  const auto modules = session.query("SELECT Capacity, ConfiguredClockSpeed, SMBIOSMemoryType FROM Win32_PhysicalMemory", &error);
-  if (!error.empty()) {
-    UWF_LOG_W("hardware") << "physical memory module query failed: " << error;
-    return;
-  }
-
   std::vector<PhysicalMemoryModuleInfo> decodedModules;
-  decodedModules.reserve(modules.size());
-  for (const WmiRow& row : modules) {
-    const auto capacity = rowutil::requireUInt64(row, "Capacity", &error);
-    std::optional<std::uint32_t> speed;
-    std::optional<std::uint32_t> type;
-    if (!capacity || !readNullableUInt(row, "ConfiguredClockSpeed", speed, &error) || !readNullableUInt(row, "SMBIOSMemoryType", type, &error)) {
-      UWF_LOG_W("hardware") << "physical memory module response is incomplete: " << error;
-      return;
+  try {
+    session.ensureConnected();
+    const auto modules = session.query("SELECT Capacity, ConfiguredClockSpeed, SMBIOSMemoryType FROM Win32_PhysicalMemory");
+    decodedModules.reserve(modules.size());
+    for (const WmiRow& row : modules) {
+      const auto capacity = rowutil::requireUInt64(row, "Capacity");
+      const auto speed = readNullableUInt(row, "ConfiguredClockSpeed");
+      const auto type = readNullableUInt(row, "SMBIOSMemoryType");
+      PhysicalMemoryModuleInfo module;
+      module.capacityBytes = capacity;
+      // WMI 沿用 ConfiguredClockSpeed 名称，但 SMBIOS 在现代 DDR 设备上返回的是
+      // 有效传输速率（例如 DDR5-6000 返回 6000），展示统一使用 MT/s。
+      module.configuredSpeedMtPerSecond = speed.value_or(0);
+      module.memoryType = static_cast<SmbiosMemoryType>(type.value_or(0));
+      if (module.capacityBytes != 0) decodedModules.push_back(module);
     }
-    PhysicalMemoryModuleInfo module;
-    module.capacityBytes = *capacity;
-    // WMI 沿用 ConfiguredClockSpeed 名称，但 SMBIOS 在现代 DDR 设备上返回的是
-    // 有效传输速率（例如 DDR5-6000 返回 6000），展示统一使用 MT/s。
-    module.configuredSpeedMtPerSecond = speed.value_or(0);
-    module.memoryType = static_cast<SmbiosMemoryType>(type.value_or(0));
-    if (module.capacityBytes != 0) decodedModules.push_back(module);
+  } catch (const std::exception& error) {
+    UWF_LOG_D("hardware") << "memory module information unavailable: error=" << error.what();
+    return;
   }
 
   // 模块信息与物理阵列的插槽数是独立的展示字段。后续插槽查询失败
   // 不能把已经完整解码的模块信息一并丢掉。
   info.memoryModules = std::move(decodedModules);
 
-  const auto arrays = session.query("SELECT MemoryDevices FROM Win32_PhysicalMemoryArray WHERE Use = 3", &error);
-  if (!error.empty()) {
-    UWF_LOG_W("hardware") << "physical memory array query failed: " << error;
-    return;
+  try {
+    const auto arrays = session.query("SELECT MemoryDevices FROM Win32_PhysicalMemoryArray WHERE Use = 3");
+    std::uint64_t totalSlots = 0;
+    bool allSlotCountsKnown = true;
+    for (const WmiRow& row : arrays) {
+      const auto slots = readNullableUInt(row, "MemoryDevices");
+      if (!slots) {
+        allSlotCountsKnown = false;
+        continue;
+      }
+      if (totalSlots > std::numeric_limits<std::uint32_t>::max() - *slots) {
+        throw WmiDecodeError("decode physical memory information", "slot count overflow");
+      }
+      totalSlots += *slots;
+    }
+    if (allSlotCountsKnown) info.totalMemorySlots = static_cast<std::uint32_t>(totalSlots);
+  } catch (const std::exception& error) {
+    UWF_LOG_D("hardware") << "memory slot information unavailable: error=" << error.what();
   }
-  std::uint64_t totalSlots = 0;
-  bool allSlotCountsKnown = true;
-  for (const WmiRow& row : arrays) {
-    std::optional<std::uint32_t> slots;
-    if (!readNullableUInt(row, "MemoryDevices", slots, &error)) {
-      UWF_LOG_W("hardware") << "physical memory array response is invalid: " << error;
-      return;
-    }
-    if (!slots) {
-      allSlotCountsKnown = false;
-      continue;
-    }
-    if (totalSlots > std::numeric_limits<std::uint32_t>::max() - *slots) {
-      UWF_LOG_W("hardware") << "physical memory array response is invalid: " << (error.empty() ? "slot count overflow" : error);
-      return;
-    }
-    totalSlots += *slots;
-  }
-  if (allSlotCountsKnown) info.totalMemorySlots = static_cast<std::uint32_t>(totalSlots);
 }
 
 SystemHardwareInfo querySystemHardwareInfo() {
   SystemHardwareInfo info;
   info.cpuModel = cpuModel();
-  info.graphicsAdapter = graphicsAdapter();
+  try {
+    info.graphicsAdapter = graphicsAdapter();
+  } catch (const std::exception& error) {
+    UWF_LOG_D("hardware") << "graphics adapter information unavailable: error=" << error.what();
+  }
   queryPhysicalMemory(info);
   std::uint64_t installedMemoryBytes = 0;
+  bool installedMemoryOverflow = false;
   for (const PhysicalMemoryModuleInfo& module : info.memoryModules) {
     if (module.capacityBytes > std::numeric_limits<std::uint64_t>::max() - installedMemoryBytes) {
-      installedMemoryBytes = 0;
+      installedMemoryOverflow = true;
       break;
     }
     installedMemoryBytes += module.capacityBytes;
   }
-  info.totalMemoryBytes = installedMemoryBytes != 0 ? installedMemoryBytes : visibleMemoryBytes();
+  info.totalMemoryBytes = !installedMemoryOverflow && installedMemoryBytes != 0 ? installedMemoryBytes : visibleMemoryBytes();
   return info;
 }
 

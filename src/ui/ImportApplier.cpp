@@ -20,6 +20,7 @@
 #include <QDir>
 #include <QSet>
 #include <QString>
+#include <exception>
 
 #include "../core/UwfModel.h"
 #include "../util/DriveLetter.h"
@@ -172,7 +173,14 @@ QList<ImportReportRow> applyImportCommands(const QList<api::UwfmgrCommand>& cmds
       case api::UwfmgrKind::FileRemoveExclusion: {
         const QString native = QDir::toNativeSeparators(a0);
         // 路径需要 "<盘符>:" 前缀来路由到对应 DiskTab；缺前缀 → 没办法定位。
-        const QString dl = extractDriveLetter(native);
+        QString dl;
+        try {
+          dl = extractDriveLetter(native);
+        } catch (const std::exception& error) {
+          r.status = ImportReportRow::Status::Failed;
+          r.detail = I18n::tr("Failed to resolve the volume for path %1: %2").arg(native, QString::fromUtf8(error.what()));
+          break;
+        }
         if (dl.isEmpty()) {
           r.status = ImportReportRow::Status::Failed;
           r.detail = I18n::tr("Path %1 has no drive letter; cannot route to a volume tab").arg(native);

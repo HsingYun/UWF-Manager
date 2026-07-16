@@ -125,9 +125,9 @@ struct UwfSnapshot {
   SessionSnapshot next;
   OverlayRuntime runtime;
   std::vector<OverlayFileInfo> overlayFiles;  // UWF_Overlay::GetOverlayFiles() 的结果
-  bool uwfAvailable = false;                  // UWF 命名空间是否可用
+  bool uwfAvailable = false;                  // UWF 能力已注册，且本快照完整可用
   bool elevated = false;                      // 当前进程是否以管理员身份运行
-  std::string rawError;                       // 读取过程中的错误描述（UTF-8）
+  std::string unavailableReason;              // UWF 能力不可用的业务原因（UTF-8）
 };
 
 // 一个磁盘卷是否"能被 UWF 保护"的判定结果。

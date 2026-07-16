@@ -28,6 +28,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -44,30 +45,35 @@ namespace uwf::regkey {
 std::string normalize(const std::string& key);
 
 // 判断一个注册表键本身是否存在。key 内部会先 normalize，简写或长写均可。
+// 只有 Win32 明确返回 not-found 才是 false；无效 hive、权限不足或其他探测
+// 失败抛 std::system_error，不得伪装成“不存在”。
 [[nodiscard]] bool keyExists(std::string_view key);
 
 // 判断该注册表键下名为 valueName 的值是否存在；valueName 为空表示键的默认值
-// (Default)。key 内部会先 normalize，简写或长写均可；无法识别 hive、键不存在、
-// 或该值不存在均返回 false。
+// (Default)。key 内部会先 normalize，简写或长写均可；键或值明确不存在
+// 返回 false，其他探测失败抛 std::system_error。
 [[nodiscard]] bool valueExists(std::string_view key, std::string_view valueName);
 
-// 读取注册表字符串值（REG_SZ / REG_EXPAND_SZ）；键 / 值不存在或类型不符返回空串。
-[[nodiscard]] std::string readString(std::string_view key, std::string_view valueName);
+// 读取注册表字符串值（REG_SZ / REG_EXPAND_SZ）。键 / 值不存在返回 nullopt；
+// 已存在的空字符串返回 engaged optional；类型不符或其他读取失败抛异常。
+[[nodiscard]] std::optional<std::string> readString(std::string_view key, std::string_view valueName);
 
-// 读取注册表 DWORD 值（REG_DWORD）；键 / 值不存在返回 0。
-[[nodiscard]] std::uint32_t readDword(std::string_view key, std::string_view valueName);
+// 读取注册表 DWORD 值（REG_DWORD）。键 / 值不存在返回 nullopt；合法的 0 返回
+// engaged optional；类型或长度不符以及其他读取失败抛异常。
+[[nodiscard]] std::optional<std::uint32_t> readDword(std::string_view key, std::string_view valueName);
 
-// 列出 key 的直接子键名（仅名字，不含完整路径）。无法识别 hive / 键不存在 → 空。
+// 列出 key 的直接子键名（仅名字，不含完整路径）。键不存在返回空；无效 hive、
+// 权限不足或枚举失败抛 std::system_error。
 [[nodiscard]] std::vector<std::string> subkeyNames(std::string_view key);
 
 // 仅判断 key 下是否有任何子键——比 subkeyNames(...).empty() 省一次完整枚举：
 // 走 RegQueryInfoKeyW 拿 cSubKeys 字段，对树形 picker"要不要画展开箭头"的判
 // 定足够快（每个新节点一次 Open + 一次 Query，毫秒级）。
-// 访问被拒 / 键不存在 → 返回 false（picker 视为叶子，符合直觉）。
+// 键不存在返回 false；其他读取失败抛 std::system_error。
 [[nodiscard]] bool hasSubkeys(std::string_view key);
 
 // 列出 key 上的全部值名；默认值 (Default) 存在时其名为空串 "" 也会列出。
-// 无法识别 hive / 键不存在 → 空。
+// 键不存在返回空；其他枚举失败抛 std::system_error。
 [[nodiscard]] std::vector<std::string> valueNames(std::string_view key);
 
 // 单个值的元信息：name + Win32 类型码（REG_SZ / REG_DWORD / REG_BINARY 等）+ 原始字节。

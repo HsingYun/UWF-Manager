@@ -81,11 +81,11 @@ WindowsVersionInfo queryWindowsVersion() {
   }
 
   constexpr std::string_view kCurrentVersion = config::kRegPathWindowsCurrentVersion;
-  result.revision = regkey::readDword(kCurrentVersion, "UBR");
-  result.editionId = regkey::readString(kCurrentVersion, "EditionID");
-  result.productName = correctedProductName(regkey::readString(kCurrentVersion, "ProductName"), result.family);
-  result.displayVersion = regkey::readString(kCurrentVersion, "DisplayVersion");
-  if (result.displayVersion.empty()) result.displayVersion = regkey::readString(kCurrentVersion, "ReleaseId");
+  result.revision = regkey::readDword(kCurrentVersion, "UBR").value_or(0);
+  result.editionId = regkey::readString(kCurrentVersion, "EditionID").value_or(std::string{});
+  result.productName = correctedProductName(regkey::readString(kCurrentVersion, "ProductName").value_or(std::string{}), result.family);
+  result.displayVersion = regkey::readString(kCurrentVersion, "DisplayVersion").value_or(std::string{});
+  if (result.displayVersion.empty()) result.displayVersion = regkey::readString(kCurrentVersion, "ReleaseId").value_or(std::string{});
   result.longTermServicing = isLtscEdition(result.editionId);
   return result;
 }

@@ -32,9 +32,9 @@ namespace uwf::ui {
 // ExclusionListWidget / OverlayFilesDialog 共用。
 void revealInExplorer(const QString& path);
 
-// QString 边界适配：从完整路径取归一化盘符（"C:"）；取不到（如卷 GUID 路径解析
-// 失败）返回空串并把原因写日志。CommitDispatcher / ImportApplier 共用（路由到
-// 对应 DiskTab）。盘符逻辑本身全在 uwf::drive。
+// QString 边界适配：从完整路径取归一化盘符（"C:"）。路径本来没有盘符时返回
+// 空串；卷 GUID 路径解析失败时保留 drive 层异常，由掌握 UI 语境的调用方展示。
+// CommitDispatcher / ImportApplier 共用（路由到对应 DiskTab）。
 [[nodiscard]] QString extractDriveLetter(const QString& path);
 
 // 把 combo 的当前项切到 itemData == value 的那项；找不到则不动。两个状态面板共用。

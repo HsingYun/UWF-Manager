@@ -24,52 +24,48 @@
 //       SetBindByDriveLetter / AddExclusion / RemoveExclusion /
 //       RemoveAllExclusions / FindExclusion / GetExclusions
 
-#include <optional>
 #include <string>
 #include <vector>
 
 #include "../wmi/WmiClient.h"
-#include "../wmi/WmiResult.h"
 #include "Types.h"
 
 namespace uwf::api {
 
-// ensureNextSessionEntry 同时可能执行 PutInstance。把条目与写入进度作为一个
-// 领域结果返回，使批量应用流程能区分纯读取失败与“写请求已发出但确认失败”。
-struct EnsureVolumeResult {
-  std::optional<api::VolumeRow> entry;
-  bool writeAttempted = false;
-  bool writeConfirmed = false;
-  std::string error;
+enum class VolumeRegistrationDisposition { AlreadyPresent, Created, ConcurrentlyCreated, ConfirmedAfterUncertainWrite };
+
+struct VolumeRegistration {
+  api::VolumeRow row;
+  VolumeRegistrationDisposition disposition;
 };
 
 class UwfVolume {
  public:
   explicit UwfVolume(WmiSession& session) : m_session(session) {}
 
-  std::vector<api::VolumeRow> readAll(std::string* error = nullptr) const;
+  std::vector<api::VolumeRow> readAll() const;
 
-  [[nodiscard]] WmiResult protectVolume(const api::VolumeRow& row) const;
-  [[nodiscard]] WmiResult unprotect(const api::VolumeRow& row) const;
+  void protectVolume(const api::VolumeRow& row) const;
+  void unprotect(const api::VolumeRow& row) const;
 
-  [[nodiscard]] WmiResult commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const;
+  void commitFile(const api::VolumeRow& row, const std::string& fileFullPath) const;
 
   // 语义：删除一个**当前仍存在**的受保护文件——CommitFileDeletion 由方法自身把
   // 该文件从覆盖层与物理卷一并删除，并非"提交一个已发生的删除"。因此调用方应先
   // 校验"该路径当前确实存在"（文件不存在时方法回 WBEM_E_NOT_FOUND，归 Skipped）。
-  [[nodiscard]] WmiResult commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const;
+  void commitFileDeletion(const api::VolumeRow& row, const std::string& fileName) const;
 
   // 对应 UWF_Volume.SetBindByDriveLetter(boolean bBindByDriveLetter) 官方签名：
   // bBindByDriveLetter=true 表示按盘符绑定（松绑定），false 表示按卷名绑定（紧绑定）。
-  [[nodiscard]] WmiResult setBindByDriveLetter(const api::VolumeRow& row, bool bBindByDriveLetter) const;
+  void setBinding(const api::VolumeRow& row, api::VolumeBinding binding) const;
 
-  [[nodiscard]] WmiResult addExclusion(const api::VolumeRow& row, const std::string& fileName) const;
-  [[nodiscard]] WmiResult removeExclusion(const api::VolumeRow& row, const std::string& fileName) const;
-  [[nodiscard]] WmiResult removeAllExclusions(const api::VolumeRow& row) const;
+  void addExclusion(const api::VolumeRow& row, const std::string& fileName) const;
+  void removeExclusion(const api::VolumeRow& row, const std::string& fileName) const;
+  void removeAllExclusions(const api::VolumeRow& row) const;
 
-  std::optional<bool> findExclusion(const api::VolumeRow& row, const std::string& fileName, std::string* error = nullptr) const;
+  bool findExclusion(const api::VolumeRow& row, const std::string& fileName) const;
 
-  std::optional<std::vector<api::ExcludedFile>> getExclusions(const api::VolumeRow& row, std::string* error = nullptr) const;
+  std::vector<api::ExcludedFile> getExclusions(const api::VolumeRow& row) const;
 
   // 拿到指定卷的 next session 实例。如果 UWF_Volume 里没有 next session
   // 行（卷从未被 protect 过、没加过 exclusion），就从该卷的 current session
@@ -77,12 +73,11 @@ class UwfVolume {
   // 之所以从 current 复制：UWF 自己列出来的 current 实例 VolumeName 格式
   // 必定规范（"Volume{GUID}"，无 \\?\ 前缀、无尾斜杠），caller 不必再做
   // 跨命名空间查 Win32_Volume 然后归一化的脏活。
-  [[nodiscard]] EnsureVolumeResult ensureNextSessionEntry(const std::string& driveLetter) const;
+  // 错误全部通过异常报告；返回值只保留调用方确实需要的成功领域事实，避免
+  // 把并发收敛误记成本进程写入。
+  [[nodiscard]] VolumeRegistration ensureNextSessionEntry(const std::string& driveLetter) const;
 
  private:
-  // CommitFile / CommitFileDeletion 共享的实现——除方法名外两者完全一致。
-  WmiResult invokeFileCommit(const api::VolumeRow& row, const std::string& fileFullPath, const char* method) const;
-
   WmiSession& m_session;
 };
 

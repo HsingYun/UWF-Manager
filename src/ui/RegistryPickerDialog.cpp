@@ -33,10 +33,13 @@
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <exception>
+#include <system_error>
 
 #include "../core/RegistryExclusionPolicy.h"
 #include "../util/RegistryKey.h"
 #include "I18n.h"
+#include "Dialogs.h"
 #include "PathElideDelegate.h"
 #include "ThemeManager.h"
 
@@ -85,6 +88,19 @@ QString truncatedAt(QString s, int max = kPreviewMaxChars) {
   }
   return s;
 }
+
+QString decodeUtf16Le(const std::vector<uint8_t>& data) {
+  QString text;
+  text.reserve(static_cast<qsizetype>((data.size() + 1) / 2));
+  for (size_t index = 0; index + 1 < data.size(); index += 2) {
+    const auto codeUnit = static_cast<char16_t>(static_cast<uint16_t>(data[index]) |
+                                                (static_cast<uint16_t>(data[index + 1]) << 8));
+    text.append(QChar(codeUnit));
+  }
+  if (data.size() % 2 != 0) text.append(QChar(QChar::ReplacementCharacter));
+  return text;
+}
+
 QString formatValuePreview(uint32_t type, const std::vector<uint8_t>& data) {
   // 空数据：REG_SZ 走 regedit 的"未设置默认值"口径，其他类型显示一般的"空"。
   if (data.empty()) return type == REG_SZ ? I18n::tr("(value not set)") : I18n::tr("(empty)");
@@ -94,14 +110,13 @@ QString formatValuePreview(uint32_t type, const std::vector<uint8_t>& data) {
     case REG_EXPAND_SZ:
     case REG_LINK: {
       // UTF-16 LE 字节流；末尾的 null terminator（一对 0x00 0x00）要去掉。
-      const auto chars = static_cast<qsizetype>(data.size() / 2);
-      QString s = QString::fromUtf16(reinterpret_cast<const char16_t*>(data.data()), chars);
+      QString s = decodeUtf16Le(data);
       while (s.endsWith(QChar(u'\0'))) s.chop(1);
       return truncatedAt(s);
     }
     case REG_MULTI_SZ: {
-      const auto chars = static_cast<qsizetype>(data.size() / 2);
-      const QStringView view(reinterpret_cast<const char16_t*>(data.data()), chars);
+      const QString decoded = decodeUtf16Le(data);
+      const QStringView view(decoded);
       QStringList parts;
       qsizetype begin = 0;
       for (qsizetype i = 0; i < view.size(); ++i) {
@@ -294,11 +309,11 @@ void RegistryPickerDialog::populateRootHives() {
     item->setIcon(0, iconForKey());
     item->setData(0, kPathRole, hivePath);
     item->setData(0, kLoadedRole, false);
-    // 顶层 hive 永远 hasRealSubkeys=true——5 个 hive 在装了系统的机器上都非空。
+    // 顶层 hive 在已安装系统上都是容器；具体读取仍在展开时进行。
     // 三种模式默认共用 standardAvailability：HKLM 会被判 ContainerOnly（子树里
     // 有合法 6-prefix），其余 hive（HKCU / HKCR / HKU / HKCC）一律 Pruned → 不加
     // 占位子节点，根本展不开。
-    applyAvailability(item, hivePath, /*hasRealSubkeys=*/true);
+    applyAvailability(item, hivePath, SubkeyState::Present);
     if (hive == "HKEY_LOCAL_MACHINE") hklmItem = item;
   }
   // HKLM 默认展开一层——picker 90% 用途（排除 / commit / delete）都是 HKLM 子树；
@@ -309,39 +324,61 @@ void RegistryPickerDialog::populateRootHives() {
 void RegistryPickerDialog::loadChildren(QTreeWidgetItem* item) {
   if (!item) return;
   if (item->data(0, kLoadedRole).toBool()) return;  // 已加载过——拒重复 enum
-  item->setData(0, kLoadedRole, true);
-
-  // 清掉占位 "…"——真实子键即将顶上。
-  while (item->childCount() > 0) {
-    auto* c = item->takeChild(0);
-    delete c;
-  }
 
   const QString path = item->data(0, kPathRole).toString();
   // Pruned 节点本不该走到这里（applyAvailability 没给它加占位子节点 → Qt 不画
   // 展开箭头）；但 navigateTo 会强制 loadChildren——这里再兜一层，Pruned 一律
   // 不下钻，避免地址栏拼一个无效路径就枚举出整棵 HKCU。
-  if (availabilityOf(path) == KeyAvailability::Pruned) return;
+  if (availabilityOf(path) == KeyAvailability::Pruned) {
+    item->setData(0, kLoadedRole, true);
+    return;
+  }
   // HKLM 根下的 PERSISTENT_SOFTWARE / PERSISTENT_SYSTEM 是 UWF 在内核侧挂的
   // 物理盘直通 hive（绕过 overlay，反映真实落盘内容）。它们由 UWF 自己使用，
   // 用户从不会想 commit / exclude；regedit GUI 也过滤掉了，picker 跟齐。
   // 命中条件够窄（仅 HKLM 一层 + 严格 PERSISTENT_ 前缀），不会误伤用户键。
   const bool atHklmRoot = path == QLatin1String("HKEY_LOCAL_MACHINE");
-  const auto children = regkey::subkeyNames(path.toStdString());
-  for (const auto& name : children) {
-    if (atHklmRoot && name.starts_with("PERSISTENT_")) continue;
+  struct ChildDescription {
+    std::string name;
+    SubkeyState subkeys;
+  };
+  std::vector<ChildDescription> children;
+  try {
+    for (const auto& name : regkey::subkeyNames(path.toStdString())) {
+      if (atHklmRoot && name.starts_with("PERSISTENT_")) continue;
+      const QString childPath = path + '\\' + QString::fromStdString(name);
+      SubkeyState subkeys = SubkeyState::Unknown;
+      try {
+        subkeys = regkey::hasSubkeys(childPath.toStdString()) ? SubkeyState::Present : SubkeyState::Absent;
+      } catch (const std::system_error&) {
+        // 父键枚举已经证明该子键存在；仅子键的可展开性尚不可知。
+        // 不能因为一个受限键就丢弃父键其余已完整枚举的兄弟节点。
+      }
+      children.push_back({name, subkeys});
+    }
+  } catch (const std::exception& error) {
+    item->setExpanded(false);
+    dialogs::warning(this, I18n::tr("Registry access failed"),
+                     I18n::tr("Failed to enumerate registry keys: %1").arg(QString::fromUtf8(error.what())));
+    return;
+  }
+
+  // 只有完整读取成功后才提交 UI 状态；失败时保留占位项和未加载标记，用户可以
+  // 在权限或瞬时故障恢复后直接重试。
+  item->setData(0, kLoadedRole, true);
+  while (item->childCount() > 0) delete item->takeChild(0);
+  for (const auto& childDescription : children) {
+    const auto& name = childDescription.name;
     auto* child = new QTreeWidgetItem(item, QStringList{QString::fromStdString(name)});
     child->setIcon(0, iconForKey());
     const QString childPath = path + '\\' + QString::fromStdString(name);
     child->setData(0, kPathRole, childPath);
     child->setData(0, kLoadedRole, false);
-    // 访问被拒（HKLM\SAM 等）hasSubkeys 返回 false，按叶子处理——和直观一致。
-    const bool real = regkey::hasSubkeys(childPath.toStdString());
-    applyAvailability(child, childPath, real);
+    applyAvailability(child, childPath, childDescription.subkeys);
   }
 }
 
-void RegistryPickerDialog::applyAvailability(QTreeWidgetItem* item, const QString& path, bool hasRealSubkeys) {
+void RegistryPickerDialog::applyAvailability(QTreeWidgetItem* item, const QString& path, const SubkeyState subkeys) {
   // 不依赖 QSS 的 disabled 选择器——某些主题下 disabled 行字色和正常色几乎
   // 看不出差异；FgMuted 是 ThemeManager 给"次文字"用的语义灰，明显比 Fg 暗，
   // 两种主题下都已校好。Pruned 和 ContainerOnly 都用同一灰——靠"有无展开箭头"
@@ -357,11 +394,11 @@ void RegistryPickerDialog::applyAvailability(QTreeWidgetItem* item, const QStrin
       // 可展开但不可选：用户能继续往下找合法 key，但点中本节点 OK 灰。
       item->setFlags(Qt::ItemIsEnabled);
       item->setForeground(0, mutedBrush);
-      if (hasRealSubkeys) item->addChild(makePlaceholderChild());
+      if (subkeys != SubkeyState::Absent) item->addChild(makePlaceholderChild());
       break;
     case KeyAvailability::Selectable:
       // 默认 flags（可选可展开），字色走 style 默认。
-      if (hasRealSubkeys) item->addChild(makePlaceholderChild());
+      if (subkeys != SubkeyState::Absent) item->addChild(makePlaceholderChild());
       break;
   }
 }
@@ -431,7 +468,14 @@ void RegistryPickerDialog::refreshValueTable(const QString& keyPath) {
   if (!m_valueTable) return;
   m_valueTable->setRowCount(0);
   if (keyPath.isEmpty()) return;
-  auto items = regkey::values(keyPath.toStdString());
+  std::vector<regkey::RegValueInfo> items;
+  try {
+    items = regkey::values(keyPath.toStdString());
+  } catch (const std::exception& error) {
+    dialogs::warning(this, I18n::tr("Registry access failed"),
+                     I18n::tr("Failed to read registry values: %1").arg(QString::fromUtf8(error.what())));
+    return;
+  }
   // (Default) 行恒列：枚举里若已有（name==""）则移到最前；没有就补一行
   // type=REG_SZ(1) 占位——regedit 同款口径，每个键都展示默认值，类型显示为
   // REG_SZ（即便实际未设值）。

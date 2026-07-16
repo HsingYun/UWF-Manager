@@ -16,6 +16,8 @@
  */
 #include "CommitDispatcher.h"
 
+#include <windows.h>
+
 #include <QDialog>
 #include <QDir>
 #include <QDirIterator>
@@ -28,18 +30,17 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
-#include <format>
+#include <exception>
 #include <optional>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <vector>
 
 #include "../util/DriveLetter.h"
-#include "../util/Log.h"
 #include "../util/PathMatch.h"
 #include "../util/RegistryKey.h"
 #include "../uwf/api/Types.h"
-#include "../uwf/wmi/WmiResult.h"
 #include "CommitBatch.h"
 #include "Dialogs.h"
 #include "I18n.h"
@@ -50,7 +51,29 @@ namespace uwf::ui {
 namespace {
 
 using uwf::ui::dialogs::confirmCommit;
+using uwf::ui::dialogs::showCommitBlocker;
 using uwf::ui::dialogs::warning;
+
+[[nodiscard]] bool fileExistsForVerification(const QString& path) {
+  const std::wstring nativePath = QDir::toNativeSeparators(path).toStdWString();
+  if (GetFileAttributesW(nativePath.c_str()) != INVALID_FILE_ATTRIBUTES) return true;
+
+  const DWORD error = GetLastError();
+  if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND) return false;
+  throw std::system_error(static_cast<int>(error), std::system_category(), "probe file existence");
+}
+
+template <typename Probe>
+[[nodiscard]] std::optional<bool> observeTargetForConfirmation(QWidget* parent, const QString& title, Probe&& probe) {
+  try {
+    return std::forward<Probe>(probe)();
+  } catch (const std::exception& error) {
+    warning(parent, title, I18n::tr("Failed to read the target state: %1").arg(QString::fromUtf8(error.what())));
+  } catch (...) {
+    warning(parent, title, I18n::tr("Failed to read the target state because of an unknown error."));
+  }
+  return std::nullopt;
+}
 
 // 在作用域内暂停一个 QTimer，离开作用域时恢复（仅当它原本就在运行）。给 commit
 // 这类内部会 processEvents 的操作用——防止占用刷新定时器在 WMI 写入半途触发、
@@ -84,6 +107,7 @@ std::optional<std::vector<std::string>> scanRegistryKeyTreeWithProgress(QWidget*
   std::atomic_bool done{false};
   std::atomic<std::uint64_t> scanned{0};
   std::vector<std::string> result;
+  std::exception_ptr workerFailure;
   const auto shownAt = std::chrono::steady_clock::now();
   bool closeQueued = false;
 
@@ -95,9 +119,13 @@ std::optional<std::vector<std::string>> scanRegistryKeyTreeWithProgress(QWidget*
   progress.setAutoReset(false);
   QObject::connect(&progress, &QProgressDialog::canceled, &progress, [&canceled] { canceled.store(true); });
 
-  std::thread worker([&] {
-    std::vector<std::string> local;
-    if (regkey::collectKeyTree(key, canceled, scanned, local)) result = std::move(local);
+  std::jthread worker([&] {
+    try {
+      std::vector<std::string> local;
+      if (regkey::collectKeyTree(key, canceled, scanned, local)) result = std::move(local);
+    } catch (...) {
+      workerFailure = std::current_exception();
+    }
     done.store(true);
   });
 
@@ -121,6 +149,7 @@ std::optional<std::vector<std::string>> scanRegistryKeyTreeWithProgress(QWidget*
   if (rc != QDialog::Accepted) canceled.store(true);
   if (worker.joinable()) worker.join();
 
+  if (workerFailure) std::rethrow_exception(workerFailure);
   if (canceled.load()) return std::nullopt;
   return result;
 }
@@ -139,28 +168,34 @@ void CommitDispatcher::commitFilePath(const QString& path) {
   const ScopedTimerPause usagePause(m_usageTimer);
 
   // 标题 / heading 提前算出来：用户面前的前置校验（排除列表、空目录等）失败时
-  // 复用同一个 confirmCommit 版式，"继续"置灰、原因塞进警示区——和成功路径走
-  // 一致的视觉语言，不再用一个单独的 warning() 弹窗打断。
+  // 用同一套 commit 版式展示阻断原因，但只提供关闭动作；成功路径才提供确认操作。
   const QFileInfo fi(path);
   const bool isDir = fi.isDir();
   const QString title = I18n::tr("Commit to disk");
   const QString heading = isDir ? I18n::tr("Commit this folder's overlay changes to disk") : I18n::tr("Commit this file's overlay changes to disk");
 
   // 从路径解析盘符，定位到对应的 next-session VolumeRow。
-  const QString dl = extractDriveLetter(path);
+  QString dl;
+  try {
+    dl = extractDriveLetter(path);
+  } catch (const std::exception& error) {
+    warning(m_parent, I18n::tr("Commit failed"), I18n::tr("Failed to resolve the target volume: %1").arg(QString::fromUtf8(error.what())));
+    return;
+  }
   if (dl.isEmpty()) {
     warning(m_parent, I18n::tr("Commit failed"), I18n::tr("The path has no drive letter; cannot identify the target volume."));
     return;
   }
 
-  std::string err;
-  auto volumes = m_volume.readAll(&err);
-  if (!err.empty()) {
-    warning(m_parent, I18n::tr("Commit failed"), I18n::tr("Failed to read volume information: %1").arg(QString::fromStdString(err)));
+  std::vector<api::VolumeRow> volumes;
+  try {
+    volumes = m_volume.readAll();
+  } catch (const std::exception& error) {
+    warning(m_parent, I18n::tr("Commit failed"), I18n::tr("Failed to read volume information: %1").arg(QString::fromUtf8(error.what())));
     return;
   }
   const auto dlStd = dl.toStdString();
-  const auto* row = api::findBySession(volumes, /*wantCurrent=*/true, [&](const api::VolumeRow& v) { return v.driveLetter == dlStd; });
+  const auto* row = api::findBySession(volumes, api::Session::Current, [&](const api::VolumeRow& v) { return v.driveLetter == dlStd; });
   if (!row) {
     warning(m_parent, I18n::tr("Commit failed"), I18n::tr("No current-session record found for volume %1.").arg(dl));
     return;
@@ -170,8 +205,8 @@ void CommitDispatcher::commitFilePath(const QString& path) {
   if (auto it = m_snapshot.current.fileExclusions.find(row->volumeName); it != m_snapshot.current.fileExclusions.end()) {
     const std::string hit = findCoveringExclusion(it->second, path.toStdString());
     if (!hit.empty()) {
-      confirmCommit(m_parent, title, heading, path, I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
-                    /*allowContinue=*/false);
+      showCommitBlocker(m_parent, title, heading, path,
+                        I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)));
       return;
     }
   }
@@ -190,7 +225,7 @@ void CommitDispatcher::commitFilePath(const QString& path) {
   }
 
   if (isDir && targets.isEmpty()) {
-    confirmCommit(m_parent, title, heading, path, I18n::tr("No files were found under %1.").arg(path), /*allowContinue=*/false);
+    showCommitBlocker(m_parent, title, heading, path, I18n::tr("No files were found under %1.").arg(path));
     return;
   }
 
@@ -199,15 +234,7 @@ void CommitDispatcher::commitFilePath(const QString& path) {
 
   runCommitBatch(
       m_parent, I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; },
-      [&](const QString& f) {
-        const auto res = m_volume.commitFile(*row, f.toStdString());
-        if (!res.detail.empty()) {
-          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
-          UWF_LOG_W("commit") << std::format("CommitFile {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(), static_cast<uint32_t>(res.hresult),
-                                             res.returnValue, res.detail);
-        }
-        return res;
-      });
+      [&](const QString& f) { m_volume.commitFile(*row, f.toStdString()); });
 }
 
 void CommitDispatcher::commitFileDeletionPath(const QString& path) {
@@ -218,14 +245,21 @@ void CommitDispatcher::commitFileDeletionPath(const QString& path) {
   const ScopedTimerPause usagePause(m_usageTimer);
 
   // 标题 / heading 提前算（fi.isDir() 在路径不存在时返回 false，正好作为"按文件
-  // 删除"的默认 heading）。用户面前的前置校验失败统一走 confirmCommit + 灰按钮。
+  // 删除"的默认 heading）。用户面前的前置校验失败统一走只读的 commit 阻断对话框。
   const QFileInfo fi(path);
   const bool isDir = fi.isDir();
   const QString title = I18n::tr("Delete and commit");
   const QString heading =
       isDir ? I18n::tr("Delete this folder and its contents, and commit the deletions to disk") : I18n::tr("Delete this file, and commit the deletion to disk");
 
-  const QString dl = extractDriveLetter(path);
+  QString dl;
+  try {
+    dl = extractDriveLetter(path);
+  } catch (const std::exception& error) {
+    warning(m_parent, I18n::tr("Commit file deletion failed"),
+            I18n::tr("Failed to resolve the target volume: %1").arg(QString::fromUtf8(error.what())));
+    return;
+  }
   if (dl.isEmpty()) {
     warning(m_parent, I18n::tr("Commit file deletion failed"), I18n::tr("The path has no drive letter; cannot identify the target volume."));
     return;
@@ -233,19 +267,22 @@ void CommitDispatcher::commitFileDeletionPath(const QString& path) {
 
   // 核心校验：CommitFileDeletion 由方法自身执行删除，目标（文件或目录）必须**仍
   // 存在**。不存在就没有可删的东西——走灰按钮对话框告知。
-  if (!fi.exists()) {
-    confirmCommit(m_parent, title, heading, path, I18n::tr("This path does not exist, so there is nothing to delete."), /*allowContinue=*/false);
+  const auto pathExists = observeTargetForConfirmation(m_parent, I18n::tr("Commit file deletion failed"), [&] { return fileExistsForVerification(path); });
+  if (!pathExists) return;
+  if (!*pathExists) {
+    showCommitBlocker(m_parent, title, heading, path, I18n::tr("This path does not exist, so there is nothing to delete."));
     return;
   }
 
-  std::string err;
-  const auto volumes = m_volume.readAll(&err);
-  if (!err.empty()) {
-    warning(m_parent, I18n::tr("Commit file deletion failed"), I18n::tr("Failed to read volume information: %1").arg(QString::fromStdString(err)));
+  std::vector<api::VolumeRow> volumes;
+  try {
+    volumes = m_volume.readAll();
+  } catch (const std::exception& error) {
+    warning(m_parent, I18n::tr("Commit file deletion failed"), I18n::tr("Failed to read volume information: %1").arg(QString::fromUtf8(error.what())));
     return;
   }
   const auto dlStd = dl.toStdString();
-  const auto* row = api::findBySession(volumes, /*wantCurrent=*/true, [&](const api::VolumeRow& v) { return v.driveLetter == dlStd; });
+  const auto* row = api::findBySession(volumes, api::Session::Current, [&](const api::VolumeRow& v) { return v.driveLetter == dlStd; });
   if (!row) {
     warning(m_parent, I18n::tr("Commit file deletion failed"), I18n::tr("No current-session record found for volume %1.").arg(dl));
     return;
@@ -255,8 +292,8 @@ void CommitDispatcher::commitFileDeletionPath(const QString& path) {
   if (auto it = m_snapshot.current.fileExclusions.find(row->volumeName); it != m_snapshot.current.fileExclusions.end()) {
     const std::string hit = findCoveringExclusion(it->second, path.toStdString());
     if (!hit.empty()) {
-      confirmCommit(m_parent, title, heading, path, I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
-                    /*allowContinue=*/false);
+      showCommitBlocker(m_parent, title, heading, path,
+                        I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)));
       return;
     }
   }
@@ -285,16 +322,8 @@ void CommitDispatcher::commitFileDeletionPath(const QString& path) {
 
   runCommitBatch(
       m_parent, title, targets, [](const QString& f) { return f; },
-      [&](const QString& f) {
-        const auto res = m_volume.commitFileDeletion(*row, f.toStdString());
-        if (!res.detail.empty()) {
-          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
-          UWF_LOG_W("commit") << std::format("CommitFileDeletion {}: file={} hr=0x{:08x} rv={} detail={}", kind, f.toStdString(),
-                                             static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-        }
-        return res;
-      },
-      [](const QString& f) { return QFileInfo::exists(f); });
+      [&](const QString& f) { m_volume.commitFileDeletion(*row, f.toStdString()); },
+      [](const QString& f) { return fileExistsForVerification(f); });
 }
 
 void CommitDispatcher::commitRegistryKey(const QString& key, const QString& valueName) {
@@ -321,8 +350,8 @@ void CommitDispatcher::commitRegistryKey(const QString& key, const QString& valu
   // 注册表排除是全局的，比对当前运行会话即可。覆盖 = 键相等或为其祖先。
   const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
   if (!hit.empty()) {
-    confirmCommit(m_parent, title, heading, target, I18n::tr("This key is in the registry exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
-                  /*allowContinue=*/false);
+    showCommitBlocker(m_parent, title, heading, target,
+                      I18n::tr("This key is in the registry exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)));
     return;
   }
 
@@ -330,14 +359,18 @@ void CommitDispatcher::commitRegistryKey(const QString& key, const QString& valu
   // CommitRegistry 只能逐值提交，"提交整键"由这里展开成逐值调用。
   QList<RegCommitTarget> targets;
   if (!wholeKey) {
-    if (!regkey::valueExists(normKey, valueName.toStdString())) {
-      confirmCommit(m_parent, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to commit."), /*allowContinue=*/false);
+    const auto targetExists = observeTargetForConfirmation(m_parent, I18n::tr("Commit failed"), [&] { return regkey::valueExists(normKey, valueName.toStdString()); });
+    if (!targetExists) return;
+    if (!*targetExists) {
+      showCommitBlocker(m_parent, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to commit."));
       return;
     }
     targets.append({normKey, valueName.toStdString(), target});
   } else {
-    if (!regkey::keyExists(normKey)) {
-      confirmCommit(m_parent, title, heading, target, I18n::tr("This registry key does not exist, so there is nothing to commit."), /*allowContinue=*/false);
+    const auto targetExists = observeTargetForConfirmation(m_parent, I18n::tr("Commit failed"), [&] { return regkey::keyExists(normKey); });
+    if (!targetExists) return;
+    if (!*targetExists) {
+      showCommitBlocker(m_parent, title, heading, target, I18n::tr("This registry key does not exist, so there is nothing to commit."));
       return;
     }
     // UWF 的 CommitRegistry 是逐值提交——ValueName="" 提交的是键的 (Default)
@@ -346,11 +379,16 @@ void CommitDispatcher::commitRegistryKey(const QString& key, const QString& valu
     // （键未设过默认值）就不再硬塞 (k, "")，省一次必然 NOT_FOUND 的 WMI 调用，
     // 也让结果表里不再出现一堆无意义的 Skipped 行。代价是没值的纯结构 key
     // 整个被跳过——CommitRegistry 本来对它就什么都做不了，跳过是对的。
-    for (const auto& k : regkey::collectKeyTree(normKey)) {
-      const QString kText = QString::fromStdString(k);
-      for (const auto& vn : regkey::valueNames(k)) {
-        targets.append({k, vn, vn.empty() ? (kText + " : (Default)") : (kText + " : " + QString::fromStdString(vn))});
+    try {
+      for (const auto& k : regkey::collectKeyTree(normKey)) {
+        const QString kText = QString::fromStdString(k);
+        for (const auto& vn : regkey::valueNames(k)) {
+          targets.append({k, vn, vn.empty() ? (kText + " : (Default)") : (kText + " : " + QString::fromStdString(vn))});
+        }
       }
+    } catch (const std::exception& error) {
+      warning(m_parent, I18n::tr("Commit failed"), I18n::tr("Failed to enumerate registry values: %1").arg(QString::fromUtf8(error.what())));
+      return;
     }
   }
   const int total = static_cast<int>(targets.size());
@@ -358,13 +396,14 @@ void CommitDispatcher::commitRegistryKey(const QString& key, const QString& valu
   const QString detail = wholeKey ? I18n::tr("%1 values in this key and all its subkeys will be committed.").arg(total) : QString();
   if (!confirmCommit(m_parent, title, heading, target, detail)) return;
 
-  std::string err;
-  auto filters = m_registry.readAll(&err);
-  if (!err.empty()) {
-    warning(m_parent, I18n::tr("Commit failed"), I18n::tr("Failed to read registry filter: %1").arg(QString::fromStdString(err)));
+  std::vector<api::RegistryFilterRow> filters;
+  try {
+    filters = m_registry.readAll();
+  } catch (const std::exception& error) {
+    warning(m_parent, I18n::tr("Commit failed"), I18n::tr("Failed to read registry filter: %1").arg(QString::fromUtf8(error.what())));
     return;
   }
-  const auto* row = api::findBySession(filters, /*wantCurrent=*/true);
+  const auto* row = api::findBySession(filters, api::Session::Current);
   if (!row) {
     warning(m_parent, I18n::tr("Commit failed"), I18n::tr("No current-session registry filter record found."));
     return;
@@ -372,15 +411,7 @@ void CommitDispatcher::commitRegistryKey(const QString& key, const QString& valu
 
   runCommitBatch(
       m_parent, I18n::tr("Commit to disk"), targets, [](const RegCommitTarget& t) { return t.display; },
-      [&](const RegCommitTarget& t) {
-        const auto res = m_registry.commitRegistry(*row, t.key, t.valueName);
-        if (!res.detail.empty()) {
-          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
-          UWF_LOG_W("commit") << std::format("CommitRegistry {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
-                                             static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-        }
-        return res;
-      });
+      [&](const RegCommitTarget& t) { m_registry.commitRegistry(*row, t.key, t.valueName); });
 }
 
 void CommitDispatcher::commitRegistryDeletionKey(const QString& key, const QString& valueName) {
@@ -402,8 +433,8 @@ void CommitDispatcher::commitRegistryDeletionKey(const QString& key, const QStri
 
   const std::string hit = findCoveringExclusion(m_snapshot.current.registryExclusions, normKey);
   if (!hit.empty()) {
-    confirmCommit(m_parent, title, heading, target, I18n::tr("This key is in the registry exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)),
-                  /*allowContinue=*/false);
+    showCommitBlocker(m_parent, title, heading, target,
+                      I18n::tr("This key is in the registry exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)));
     return;
   }
 
@@ -413,17 +444,28 @@ void CommitDispatcher::commitRegistryDeletionKey(const QString& key, const QStri
   QList<RegCommitTarget> targets;
   QStringList previewKeys;
   if (!wholeKey) {
-    if (!regkey::valueExists(normKey, valueName.toStdString())) {
-      confirmCommit(m_parent, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to delete."), /*allowContinue=*/false);
+    const auto targetExists =
+        observeTargetForConfirmation(m_parent, I18n::tr("Delete and commit failed"), [&] { return regkey::valueExists(normKey, valueName.toStdString()); });
+    if (!targetExists) return;
+    if (!*targetExists) {
+      showCommitBlocker(m_parent, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to delete."));
       return;
     }
     targets.append({normKey, valueName.toStdString(), target});
   } else {
-    if (!regkey::keyExists(normKey)) {
-      confirmCommit(m_parent, title, heading, target, I18n::tr("This registry key does not exist, so there is nothing to delete."), /*allowContinue=*/false);
+    const auto targetExists = observeTargetForConfirmation(m_parent, I18n::tr("Delete and commit failed"), [&] { return regkey::keyExists(normKey); });
+    if (!targetExists) return;
+    if (!*targetExists) {
+      showCommitBlocker(m_parent, title, heading, target, I18n::tr("This registry key does not exist, so there is nothing to delete."));
       return;
     }
-    auto keys = scanRegistryKeyTreeWithProgress(m_parent, title, normKey);
+    std::optional<std::vector<std::string>> keys;
+    try {
+      keys = scanRegistryKeyTreeWithProgress(m_parent, title, normKey);
+    } catch (const std::exception& error) {
+      warning(m_parent, I18n::tr("Delete and commit failed"), I18n::tr("Failed to enumerate registry keys: %1").arg(QString::fromUtf8(error.what())));
+      return;
+    }
     if (!keys) return;
     for (const auto& k : *keys) {
       const QString display = QString::fromStdString(k);
@@ -440,13 +482,14 @@ void CommitDispatcher::commitRegistryDeletionKey(const QString& key, const QStri
     return;
   }
 
-  std::string err;
-  auto filters = m_registry.readAll(&err);
-  if (!err.empty()) {
-    warning(m_parent, I18n::tr("Commit failed"), I18n::tr("Failed to read registry filter: %1").arg(QString::fromStdString(err)));
+  std::vector<api::RegistryFilterRow> filters;
+  try {
+    filters = m_registry.readAll();
+  } catch (const std::exception& error) {
+    warning(m_parent, I18n::tr("Commit failed"), I18n::tr("Failed to read registry filter: %1").arg(QString::fromUtf8(error.what())));
     return;
   }
-  const auto* row = api::findBySession(filters, /*wantCurrent=*/true);
+  const auto* row = api::findBySession(filters, api::Session::Current);
   if (!row) {
     warning(m_parent, I18n::tr("Commit failed"), I18n::tr("No current-session registry filter record found."));
     return;
@@ -454,15 +497,7 @@ void CommitDispatcher::commitRegistryDeletionKey(const QString& key, const QStri
 
   runCommitBatch(
       m_parent, I18n::tr("Delete and commit"), targets, [](const RegCommitTarget& t) { return t.display; },
-      [&](const RegCommitTarget& t) {
-        const auto res = m_registry.commitRegistryDeletion(*row, t.key, t.valueName);
-        if (!res.detail.empty()) {
-          const char* kind = commitOutcome(res) == CommitOutcome::Skipped ? "skipped" : "failed";
-          UWF_LOG_W("commit") << std::format("CommitRegistryDeletion {}: key={} value={} hr=0x{:08x} rv={} detail={}", kind, t.key, t.valueName,
-                                             static_cast<uint32_t>(res.hresult), res.returnValue, res.detail);
-        }
-        return res;
-      },
+      [&](const RegCommitTarget& t) { m_registry.commitRegistryDeletion(*row, t.key, t.valueName); },
       [](const RegCommitTarget& t) { return t.valueName.empty() ? regkey::keyExists(t.key) : regkey::valueExists(t.key, t.valueName); });
 }
 

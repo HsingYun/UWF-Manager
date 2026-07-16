@@ -32,6 +32,15 @@
 
 namespace uwf::api {
 
+enum class Session { Current, Next };
+
+enum class VolumeBinding { DriveLetter, VolumeName };
+
+struct RegistryPersistence {
+  bool domainSecretKey = false;
+  bool terminalServicesClientAccessLicense = false;
+};
+
 // UWF_OverlayConfig.Type / UWF_Overlay.SetType 的枚举。
 enum class OverlayType : uint32_t {
   RAM = 0,   // 基于 RAM 的覆盖层
@@ -92,20 +101,21 @@ struct RegistryFilterRow {
 struct VolumeRow {
   std::string path;
   bool currentSession = false;
-  std::string driveLetter;  // 可能为空（没有盘符的卷）
+  std::string driveLetter;  // 规范化的 "C:"；无盘符 provider 行不会进入应用模型
   std::string volumeName;   // UWF schema 的裸 "Volume{GUID}" 形式
   bool bindByDriveLetter = true;
   bool commitPending = false;  // 保留供 Microsoft 使用
   bool isProtected = false;    // WMI 上字段名为 "Protected"
 };
 
-// 按 CurrentSession 在 rows 里挑一行：wantCurrent=true → current 实例，
-// =false → next 实例。extra 是可选的额外条件（例如按 DriveLetter 进一步过滤）。
+// 按 CurrentSession 在 rows 里挑一行。extra 是可选的额外条件（例如按
+// DriveLetter 进一步过滤）。
 // 没传 extra（默认 lambda 永真）时，单实例类如 OverlayConfigRow / RegistryFilterRow
-// 直接靠 wantCurrent 唯一定位；按盘符的 VolumeRow 用 extra 二次过滤。
+// 直接靠 session 唯一定位；按盘符的 VolumeRow 用 extra 二次过滤。
 // 找不到返回 nullptr。
 template <typename Row, typename Pred>
-[[nodiscard]] const Row* findBySession(const std::vector<Row>& rows, bool wantCurrent, Pred extra) {
+[[nodiscard]] const Row* findBySession(const std::vector<Row>& rows, const Session session, Pred extra) {
+  const bool wantCurrent = session == Session::Current;
   for (const auto& r : rows) {
     if (r.currentSession == wantCurrent && extra(r)) return &r;
   }
@@ -113,8 +123,8 @@ template <typename Row, typename Pred>
 }
 
 template <typename Row>
-[[nodiscard]] const Row* findBySession(const std::vector<Row>& rows, bool wantCurrent) {
-  return findBySession(rows, wantCurrent, [](const Row&) { return true; });
+[[nodiscard]] const Row* findBySession(const std::vector<Row>& rows, const Session session) {
+  return findBySession(rows, session, [](const Row&) { return true; });
 }
 
 }  // namespace uwf::api

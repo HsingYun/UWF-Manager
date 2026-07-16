@@ -94,10 +94,12 @@ set(UWF_SOURCES
         src/uwf/wmi/WmiClient.cpp
         src/uwf/wmi/WmiError.h
         src/uwf/wmi/WmiError.cpp
+        src/uwf/wmi/WmiException.h
+        src/uwf/wmi/WmiException.cpp
         src/uwf/wmi/WmiRowUtil.h
         src/uwf/wmi/WmiRowUtil.cpp
-        src/uwf/wmi/WmiResult.h
         src/uwf/api/Types.h
+        src/uwf/api/WriteVerification.h
         src/uwf/api/UwfFilter.h
         src/uwf/api/UwfFilter.cpp
         src/uwf/api/UwfVolume.h

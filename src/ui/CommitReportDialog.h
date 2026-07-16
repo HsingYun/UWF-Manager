@@ -41,14 +41,16 @@ struct CommitReportRow {
   std::optional<bool> existsAfter;
 };
 
-// isDeletion 区分 Commit{File,Registry}（=false）vs Commit{File,Registry}Deletion
-// （=true）——同一个 HRESULT 在两类操作下含义不同，文案得分别写。
-[[nodiscard]] QString explainCommitFailure(int32_t hresult, uint32_t returnValue, bool isDeletion);
+enum class CommitOperation { Persist, DeleteAndPersist };
+
+// 同一个 HRESULT 在普通持久化与“删除并持久化”下含义不同，调用方必须用
+// 业务枚举明确操作语义，不能用难以辨认的布尔开关驱动文案分支。
+[[nodiscard]] QString explainCommitFailure(int32_t hresult, uint32_t returnValue, CommitOperation operation);
 
 [[nodiscard]] QString formatErrorCode(int32_t hresult, uint32_t returnValue);
 
 // canceledRemaining > 0 表示用户在批处理中途取消，未处理的条数会写进汇总行。
 // 模态执行（dlg.exec()），返回后释放所有 widget。
-void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int canceledRemaining = 0);
+void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, CommitOperation operation, int canceledRemaining = 0);
 
 }  // namespace uwf::ui

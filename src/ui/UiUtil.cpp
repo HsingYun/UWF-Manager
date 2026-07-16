@@ -31,7 +31,6 @@
 #include <string>
 
 #include "../util/DriveLetter.h"
-#include "../util/Log.h"
 #include "I18n.h"
 #include "ThemeManager.h"
 
@@ -89,12 +88,7 @@ void revealInExplorer(const QString& path) {
   }
 }
 
-QString extractDriveLetter(const QString& path) {
-  std::string err;
-  const std::string dl = drive::fromPath(path.toStdString(), &err);
-  if (dl.empty() && !err.empty()) UWF_LOG_W("ui") << "extractDriveLetter: " << err;
-  return QString::fromStdString(dl);
-}
+QString extractDriveLetter(const QString& path) { return QString::fromStdString(drive::fromPath(path.toStdString())); }
 
 void setComboValue(QComboBox* combo, const QVariant& value) {
   for (int i = 0; i < combo->count(); ++i) {

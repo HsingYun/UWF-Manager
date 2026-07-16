@@ -23,6 +23,7 @@
 // 完全自包含——构造即建好整套 UI 并在后台线程异步拉起首批日志。
 
 #include <QDialog>
+#include <thread>
 
 namespace uwf::ui {
 
@@ -30,6 +31,9 @@ class LogViewerDialog : public QDialog {
   Q_OBJECT
  public:
   explicit LogViewerDialog(QWidget* parent = nullptr);
+
+ private:
+  std::jthread m_loader;
 };
 
 }  // namespace uwf::ui

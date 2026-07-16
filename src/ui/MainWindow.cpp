@@ -38,16 +38,16 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <chrono>
-#include <format>
+#include <exception>
 #include <optional>
 #include <utility>
+#include <vector>
 
 #include "../util/DriveLetter.h"
 #include "../util/Log.h"
 #include "../util/PathMatch.h"
 #include "../uwf/UwfSnapshot.h"
 #include "../uwf/api/UwfmgrCli.h"
-#include "../uwf/wmi/WmiResult.h"
 #include "AboutDialog.h"
 #include "ApplyPlanDialog.h"
 #include "Dialogs.h"
@@ -78,8 +78,13 @@ QString systemDriveLetter() { return QString::fromStdString(drive::systemLetter(
 
 }  // namespace
 
-MainWindow::MainWindow(bool compatibilityMode, const QString& osProductName, const QString& osEditionId, QWidget* parent)
-    : QMainWindow(parent), m_session(embeddedWmiSession()), m_compatibilityMode(compatibilityMode), m_osProductName(osProductName), m_osEditionId(osEditionId) {
+MainWindow::MainWindow(const UwfCapability uwfCapability, bool compatibilityMode, const QString& osProductName, const QString& osEditionId, QWidget* parent)
+    : QMainWindow(parent),
+      m_uwfCapability(uwfCapability),
+      m_session(embeddedWmiSession()),
+      m_compatibilityMode(compatibilityMode),
+      m_osProductName(osProductName),
+      m_osEditionId(osEditionId) {
   // 构造期摆好窗口外壳（标题 / 图标 / 尺寸），并把窗口设为全透明：窗口会以
   // 透明状态 show 出来——showEvent 照常触发，首屏 rebuildUi() 在 shown 状态下
   // 建好全部内容、拉完数据后才把不透明度恢复成 1 一次性揭幕。整个 buildUi +
@@ -715,20 +720,16 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
 }
 
 void MainWindow::refresh() {
-  UWF_LOG_I("ui") << "refresh start";
+  UWF_LOG_D("ui") << "state refresh started";
   const auto t0 = std::chrono::steady_clock::now();
-  std::string volumeErr;
-  auto candidateDisks = uwf::enumerateDisks(&volumeErr);
-  if (!volumeErr.empty()) {
-    UWF_LOG_E("ui") << "refresh failed while enumerating disks; keeping committed UI state: " << volumeErr;
-    showInitialLoadFailure(volumeErr);
-    return;
-  }
-  std::string snapshotErr;
-  auto candidateSnapshot = uwf::readSnapshot(&snapshotErr);
-  if (!candidateSnapshot.uwfAvailable) {
-    UWF_LOG_E("ui") << "refresh failed while reading UWF snapshot; keeping committed UI state: " << snapshotErr;
-    showInitialLoadFailure(snapshotErr);
+  std::vector<core::DiskInfo> candidateDisks;
+  core::UwfSnapshot candidateSnapshot;
+  try {
+    candidateDisks = uwf::enumerateDisks();
+    candidateSnapshot = uwf::readSnapshot(m_uwfCapability);
+  } catch (const std::exception& error) {
+    UWF_LOG_W("ui") << "state refresh failed: committedState=retained error=" << error.what();
+    showInitialRefreshFailure(error.what());
     return;
   }
 
@@ -740,23 +741,31 @@ void MainWindow::refresh() {
   m_reconciliationRequired = false;
   applyCommittedState();
   const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
-  UWF_LOG_I("ui") << std::format("refresh done: disks={} uwfAvailable={} currentVolumes={} nextVolumes={} elapsedMs={}", m_disks.size(),
-                                 m_snapshot.uwfAvailable, m_snapshot.current.volumes.size(), m_snapshot.next.volumes.size(), elapsedMs);
+  UWF_LOG_I("ui") << "state refresh completed: disks=" << m_disks.size() << " uwfAvailable=" << m_snapshot.uwfAvailable
+                  << " currentVolumes=" << m_snapshot.current.volumes.size() << " nextVolumes=" << m_snapshot.next.volumes.size()
+                  << " elapsedMs=" << elapsedMs;
 }
 
 void MainWindow::applyCommittedState() {
   if (!m_hasCommittedState || !m_global || !m_tabs) return;
 
-  // 已提交状态必然来自一次完整成功的读取，因此此处不再保留“不可用快照”的
-  // 分支。刷新只读、始终可重试；其余动作会写系统，仍要求进程已提权。
+  // 启动期固定为 UWF 不可用时，这仍是一份可提交状态；动态读取异常才保留
+  // 旧 UI。磁盘清单仍可展示，但全部 UWF 操作必须禁用。
   rebuildTabs(m_disks);
-  m_global->setData(m_snapshot.current, m_snapshot.next, m_snapshot.runtime);
-  if (!m_snapshot.elevated) m_global->showElevationRequired();
+  if (m_snapshot.uwfAvailable) {
+    m_global->setData(m_snapshot.current, m_snapshot.next, m_snapshot.runtime);
+    if (!m_snapshot.elevated) m_global->showElevationRequired();
+  } else {
+    m_global->setUnavailable(m_snapshot.unavailableReason.empty() ? I18n::tr("UWF namespace is not available")
+                                                                  : QString::fromStdString(m_snapshot.unavailableReason));
+  }
   m_overlayPresentation->applySnapshot(m_snapshot);
-  for (auto& t : m_diskTabs)
-    if (t) t->applySnapshot(m_snapshot);
+  for (auto& tab : m_diskTabs)
+    if (tab) tab->applySnapshot(m_snapshot);
   updateInteractionAvailability();
-  if (m_statusCtl) m_statusCtl->setBaseline(I18n::tr("Refreshed · %1 volumes").arg(m_disks.size()));
+  if (m_statusCtl) {
+    m_statusCtl->setBaseline(m_snapshot.uwfAvailable ? I18n::tr("Refreshed · %1 volumes").arg(m_disks.size()) : I18n::tr("UWF is not available"));
+  }
 }
 
 void MainWindow::updateInteractionAvailability() {
@@ -768,7 +777,7 @@ void MainWindow::updateInteractionAvailability() {
   for (QAction* action : {m_actImport, m_actPlan})
     if (action) action->setEnabled(editable);
   for (QAction* action : {m_actShutdown, m_actRestart})
-    if (action) action->setEnabled(elevated);
+    if (action) action->setEnabled(elevated && m_snapshot.uwfAvailable);
 
   // setData / applySnapshot 会按快照恢复控件可写性；这里再叠加主窗口
   // 所有的对账门禁。未提权时 DiskTab 自己只禁用编辑控件、保留正常
@@ -789,7 +798,7 @@ void MainWindow::reconcileAfterApply() {
   refresh();
 }
 
-void MainWindow::showInitialLoadFailure(const std::string& error) {
+void MainWindow::showInitialRefreshFailure(const std::string& reason) {
   if (m_hasCommittedState || !m_global) return;
 
   // 首次读取失败没有旧数据可保留。只建立明确的不可用占位，并保留 Refresh
@@ -797,10 +806,11 @@ void MainWindow::showInitialLoadFailure(const std::string& error) {
   if (m_actRefresh) m_actRefresh->setEnabled(true);
   for (QAction* action : {m_actImport, m_actPlan, m_actShutdown, m_actRestart})
     if (action) action->setEnabled(false);
-  m_global->setUnavailable(error.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(error));
+  m_global->setUnavailable(reason.empty() ? I18n::tr("UWF namespace is not available") : QString::fromStdString(reason));
   m_global->setControlsEnabled(false);
-  core::UwfSnapshot unavailable;
-  m_overlayPresentation->applySnapshot(unavailable);
+  // Hub 与托盘尚无已提交快照，本来就保持未初始化状态。这里不能构造一个
+  // uwfAvailable=false 的伪快照，否则会把“首次动态读取失败”冒充成“启动期
+  // 已确认 UWF 未注册”。
 }
 
 void MainWindow::showPlan() {

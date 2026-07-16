@@ -45,7 +45,7 @@ namespace uwf::ui {
 //   * NotFound 对 Commit：overlay 里没有该目标的待提交改动。
 //   * NotFound 对 Deletion：目标不在物理盘 / 持久化 hive 上——只活在 overlay 里，
 //     重启就没；本来就不需要也无法用提交删除。
-QString explainCommitFailure(int32_t hresult, uint32_t returnValue, bool isDeletion) {
+QString explainCommitFailure(int32_t hresult, uint32_t returnValue, const CommitOperation operation) {
   const int32_t errorCode = hresult != 0 ? hresult : static_cast<int32_t>(returnValue);
   if (errorCode != 0) {
     switch (uwf::WmiError(errorCode).code()) {
@@ -59,7 +59,7 @@ QString explainCommitFailure(int32_t hresult, uint32_t returnValue, bool isDelet
             "The operation failed. The target may be in use by another process (e.g. an Explorer window browsing the folder, or the file is open). Close any "
             "program holding it and try again.");
       case uwf::WmiErrorCode::NotFound:
-        if (isDeletion) {
+        if (operation == CommitOperation::DeleteAndPersist) {
           return I18n::tr(
               "Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It "
               "will disappear on reboot; commit-delete is neither needed nor possible.");
@@ -85,12 +85,12 @@ QString formatErrorCode(int32_t hresult, uint32_t returnValue) {
 // 列：类别 / 路径 / [删除操作额外的"执行前存在""执行后存在"] / 错误码 / 原因。
 // 大批量（十万条级）分页展示，每页 kReportPageSize 行。用普通 QDialog 而非
 // QMessageBox，避免 Windows 提示音。
-void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int canceledRemaining) {
+void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, const CommitOperation operation, int canceledRemaining) {
   constexpr int kReportPageSize = 200;
 
-  // 删除操作才填了"执行前 / 后是否存在"；提交操作为 nullopt，那两列不出现。
-  // 提前算：决定要不要多两列、影响默认窗宽。下方表头处复用同一份判定。
-  const bool showExistence = !rows.isEmpty() && rows.front().existedBefore.has_value();
+  // 是否展示存在性列由操作类型决定，不能从第一行的 optional 反推：删除批次
+  // 第一项也可能恰好探测失败而为 nullopt，后续行仍有完整的前后状态。
+  const bool showExistence = operation == CommitOperation::DeleteAndPersist;
 
   QDialog dlg(parent);
   dlg.setWindowTitle(canceledRemaining > 0 ? I18n::tr("Commit canceled") : I18n::tr("Commit result"));
@@ -168,6 +168,11 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
 
   const QString yes = I18n::tr("Yes");
   const QString no = I18n::tr("No");
+  const QString unknown = I18n::tr("Unknown");
+  const auto existenceText = [&yes, &no, &unknown](const std::optional<bool> value) {
+    if (!value) return unknown;
+    return *value ? yes : no;
+  };
   // 分页算术统一走 ui::Pager（与 LogViewer / OverlayFiles 同一套），固定每页
   // kReportPageSize 行。displayPages 用 max(1,·) 让空列表也显示成 1 页（"第 1 / 1
   // 页 · 共 0 条"），保持原有体感。
@@ -191,8 +196,8 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
       pathItem->setToolTip(r.path);
       table->setItem(vr, c++, pathItem);
       if (showExistence) {
-        table->setItem(vr, c++, new QTableWidgetItem(r.existedBefore.value_or(false) ? yes : no));
-        table->setItem(vr, c++, new QTableWidgetItem(r.existsAfter.value_or(false) ? yes : no));
+        table->setItem(vr, c++, new QTableWidgetItem(existenceText(r.existedBefore)));
+        table->setItem(vr, c++, new QTableWidgetItem(existenceText(r.existsAfter)));
       }
       table->setItem(vr, c++, new QTableWidgetItem(r.errorCode));
       auto* reasonItem = new QTableWidgetItem(r.reason);
@@ -242,9 +247,9 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, int c
       out += '\n' + r.category + '\t' + r.path;
       if (showExistence) {
         out += '\t';
-        out += r.existedBefore.value_or(false) ? yes : no;
+        out += existenceText(r.existedBefore);
         out += '\t';
-        out += r.existsAfter.value_or(false) ? yes : no;
+        out += existenceText(r.existsAfter);
       }
       out += '\t' + r.errorCode + '\t' + r.reason;
     }

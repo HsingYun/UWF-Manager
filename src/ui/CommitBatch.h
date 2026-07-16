@@ -29,18 +29,42 @@
 #include <QList>
 #include <QProgressDialog>
 #include <QString>
+#include <cstdint>
+#include <exception>
 #include <memory>
 #include <optional>
 #include <type_traits>
 #include <utility>
 
-#include "../uwf/wmi/WmiResult.h"
+#include "../util/Log.h"
+#include "../uwf/wmi/WmiError.h"
+#include "../uwf/wmi/WmiException.h"
 #include "CommitReportDialog.h"
 #include "I18n.h"
 
 class QWidget;
 
 namespace uwf::ui {
+
+namespace detail {
+
+struct ExistenceObservation {
+  std::optional<bool> value;
+  QString failure;
+};
+
+template <typename ExistsFn, typename Target>
+[[nodiscard]] ExistenceObservation observeExistence(ExistsFn& existsFn, const Target& target) {
+  try {
+    return {.value = existsFn(target), .failure = {}};
+  } catch (const std::exception& error) {
+    return {.value = std::nullopt, .failure = QString::fromUtf8(error.what())};
+  } catch (...) {
+    return {.value = std::nullopt, .failure = I18n::tr("Unknown error while reading the target state.")};
+  }
+}
+
+}  // namespace detail
 
 template <typename Target, typename DisplayFn, typename CommitFn, typename ExistsFn = decltype(nullptr)>
 void runCommitBatch(QWidget* parent, const QString& progressTitle, const QList<Target>& targets, DisplayFn displayOf, CommitFn commitOne,
@@ -76,28 +100,98 @@ void runCommitBatch(QWidget* parent, const QString& progressTitle, const QList<T
       const QString d = displayOf(targets[i]);
       progress->setLabelText(QString("[%1/%2] %3").arg(i + 1).arg(total).arg(d.size() > 80 ? ("…" + d.right(79)) : d));
     }
-    std::optional<bool> existedBefore, existsAfter;
-    if constexpr (kHasExists) existedBefore = existsFn(targets[i]);
-    const auto res = commitOne(targets[i]);
-    if constexpr (kHasExists) existsAfter = existsFn(targets[i]);
+    const QString display = displayOf(targets[i]);
+    std::optional<bool> existedBefore;
+    std::optional<bool> existsAfter;
+    if constexpr (kHasExists) {
+      const auto observation = detail::observeExistence(existsFn, targets[i]);
+      existedBefore = observation.value;
+      if (!observation.value) {
+        CommitReportRow row;
+        row.path = display;
+        row.existedBefore = std::nullopt;
+        row.existsAfter = std::nullopt;
+        row.category = I18n::tr("Failed");
+        row.errorCode = QStringLiteral("-");
+        row.reason = I18n::tr("The target state could not be read before the operation: %1").arg(observation.failure);
+        UWF_LOG_W("commit") << "operation skipped: reason=target-state-unavailable target=" << display.toStdString()
+                            << " error=" << observation.failure.toStdString();
+        allRows.append(std::move(row));
+        continue;
+      }
+      if (!*observation.value) {
+        CommitReportRow row;
+        row.path = display;
+        row.existedBefore = false;
+        row.existsAfter = false;
+        row.category = I18n::tr("Skipped");
+        row.errorCode = QStringLiteral("-");
+        row.reason = I18n::tr("The target no longer exists, so there is nothing to delete.");
+        allRows.append(std::move(row));
+        continue;
+      }
+    }
+    int32_t hresult = 0;
+    uint32_t returnValue = 0;
+    QString failureDetail;
+    QString authoritativeFailure;
+    bool succeeded = false;
+    bool mayHaveTakenEffect = false;
+    try {
+      commitOne(targets[i]);
+      succeeded = true;
+    } catch (const WmiProviderError& error) {
+      returnValue = error.returnValue();
+      failureDetail = QString::fromUtf8(error.what());
+    } catch (const WmiWriteOutcomeError& error) {
+      if (error.code().category() == wmiErrorCategory()) hresult = static_cast<int32_t>(error.code().value());
+      mayHaveTakenEffect = true;
+      failureDetail = QString::fromUtf8(error.what());
+    } catch (const WmiException& error) {
+      if (error.code().category() == wmiErrorCategory()) hresult = static_cast<int32_t>(error.code().value());
+      failureDetail = QString::fromUtf8(error.what());
+    } catch (const std::exception& error) {
+      failureDetail = QString::fromUtf8(error.what());
+    } catch (...) {
+      failureDetail = I18n::tr("The operation failed with an unknown error.");
+    }
+    if constexpr (kHasExists) {
+      const auto observation = detail::observeExistence(existsFn, targets[i]);
+      existsAfter = observation.value;
+      if (!observation.value) {
+        if (succeeded || mayHaveTakenEffect) {
+          succeeded = false;
+          authoritativeFailure = I18n::tr("The operation result could not be confirmed because the target state reread failed: %1").arg(observation.failure);
+        }
+      } else if (mayHaveTakenEffect && !*observation.value) {
+        // 连接在调用过程中断开时，调用是否落地不可知；目标已不存在是删除
+        // 业务真正关心的权威终态，因此它可以确认“不确定”，但绝不覆盖
+        // provider 明确拒绝的结果。
+        succeeded = true;
+      } else if (succeeded && *observation.value) {
+        succeeded = false;
+        authoritativeFailure = I18n::tr("The provider accepted the deletion, but the target still exists after the authoritative reread.");
+      }
+    }
 
     CommitReportRow row;
-    row.path = displayOf(targets[i]);
+    row.path = display;
     row.existedBefore = existedBefore;
     row.existsAfter = existsAfter;
-    // res 是统一的 WmiResult；commit 类的 Skipped / Failed 三档由 commitOutcome
-    // 派生（WBEM_E_NOT_FOUND → Skipped；其它非 ok → Failed）。
-    const auto outcome = commitOutcome(res);
-    if (outcome == CommitOutcome::Ok) {
+    if (succeeded) {
       row.category = I18n::tr("Succeeded");
       row.errorCode = QStringLiteral("-");
       row.reason = QStringLiteral("-");
     } else {
-      row.category = outcome == CommitOutcome::Skipped ? I18n::tr("Skipped") : I18n::tr("Failed");
-      row.errorCode = formatErrorCode(res.hresult, res.returnValue);
-      // kHasExists（删除操作传了 existsFn）== 操作类型是 Deletion——HRESULT 含义
-      // 在 commit / deletion 间不同，文案要分。
-      row.reason = explainCommitFailure(res.hresult, res.returnValue, kHasExists);
+      const int32_t code = hresult != 0 ? hresult : static_cast<int32_t>(returnValue);
+      const bool skipped = WmiError(code).code() == WmiErrorCode::NotFound;
+      row.category = skipped ? I18n::tr("Skipped") : I18n::tr("Failed");
+      row.errorCode = code == 0 ? QStringLiteral("-") : formatErrorCode(hresult, returnValue);
+      constexpr CommitOperation kOperation = kHasExists ? CommitOperation::DeleteAndPersist : CommitOperation::Persist;
+      row.reason = !authoritativeFailure.isEmpty() ? authoritativeFailure
+                                                   : (code == 0 ? failureDetail : explainCommitFailure(hresult, returnValue, kOperation));
+      const QString diagnostic = !authoritativeFailure.isEmpty() ? authoritativeFailure : failureDetail;
+      UWF_LOG_W("commit") << "operation failed: target=" << row.path.toStdString() << " error=" << diagnostic.toStdString();
     }
     allRows.append(std::move(row));
   }
@@ -106,7 +200,8 @@ void runCommitBatch(QWidget* parent, const QString& progressTitle, const QList<T
     progress->close();
   }
   const int untouched = canceled ? (total - static_cast<int>(allRows.size())) : 0;
-  showCommitReport(parent, allRows, untouched);
+  constexpr CommitOperation kOperation = kHasExists ? CommitOperation::DeleteAndPersist : CommitOperation::Persist;
+  showCommitReport(parent, allRows, kOperation, untouched);
 }
 
 }  // namespace uwf::ui

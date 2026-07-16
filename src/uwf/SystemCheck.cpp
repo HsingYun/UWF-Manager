@@ -94,7 +94,7 @@ SystemCheckResult runSystemChecks() {
   // uwfmgr.exe 的存在性只作为参考记录一条日志——本程序经 WMI 操作 UWF，
   // 并不调用这个命令行工具，找不到它不影响功能，故不再拦截启动。
   if (uwfmgrPath().empty()) {
-    UWF_LOG_W("syscheck") << "uwfmgr.exe not found under System32; UWF feature may not be installed (continuing anyway)";
+    UWF_LOG_D("system") << "uwfmgr executable not found: capabilityProbe=wmi";
   }
   r.status = CheckStatus::Ok;
   return r;

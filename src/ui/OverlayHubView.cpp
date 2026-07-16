@@ -390,14 +390,14 @@ void OverlayHubView::execute(const Action action) {
     case Action::ScheduleRecoverRetry: {
       ++m_consecutiveFailures;
       if (m_consecutiveFailures > maxExclusiveRecoverAttempts()) {
-        UWF_LOG_D("hub") << "recover exhausted: view=" << metaObject()->className() << " failure=" << m_consecutiveFailures << " action=yield-fallback";
+        UWF_LOG_D("hub") << "recovery exhausted: view=" << metaObject()->className() << " failures=" << m_consecutiveFailures << " action=yield-fallback";
         postEvent(Event::plain(EventType::ReleaseBlocked));
         beginPresentationRelease(ReleaseReason::Recovery);
         return;
       }
       const int interval = retryIntervalMs(m_consecutiveFailures);
       if (interval > 0) {
-        UWF_LOG_D("hub") << "recover retry scheduled: view=" << metaObject()->className() << " failure=" << m_consecutiveFailures << " delayMs=" << interval;
+        UWF_LOG_D("hub") << "recovery retry scheduled: view=" << metaObject()->className() << " failures=" << m_consecutiveFailures << " delayMs=" << interval;
         m_retryTimer->setInterval(interval);
         m_retryTimer->start();
       } else {
@@ -440,7 +440,7 @@ void OverlayHubView::enterState(const DisplayState state) {
     ++m_consecutiveFailures;
     const int interval = retryIntervalMs(m_consecutiveFailures);
     if (interval > 0) {
-      UWF_LOG_D("hub") << "retry scheduled: view=" << metaObject()->className() << " failure=" << m_consecutiveFailures << " delayMs=" << interval;
+      UWF_LOG_D("hub") << "attach retry scheduled: view=" << metaObject()->className() << " failures=" << m_consecutiveFailures << " delayMs=" << interval;
       m_retryTimer->setInterval(interval);
       m_retryTimer->start();
     }
@@ -448,6 +448,12 @@ void OverlayHubView::enterState(const DisplayState state) {
 
   UWF_LOG_D("hub") << "display state: view=" << metaObject()->className() << " from=" << displayStateName(previous) << " to=" << displayStateName(state)
                    << " requested=" << presentationRequested();
+  if (state == DisplayState::Confirmed) {
+    UWF_LOG_I("hub") << "presentation confirmed: view=" << metaObject()->className();
+  } else if (previous == DisplayState::Confirmed) {
+    UWF_LOG_I("hub") << "presentation released: view=" << metaObject()->className() << " nextState=" << displayStateName(state)
+                     << " requested=" << presentationRequested();
+  }
   emit displayStateChanged();
 }
 

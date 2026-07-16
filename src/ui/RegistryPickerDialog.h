@@ -115,13 +115,16 @@ class RegistryPickerDialog : public QDialog {
                                                   const QString& preselectKey = {});
 
  private:
+  enum class SubkeyState { Absent, Present, Unknown };
+
   void buildUi();
   void populateRootHives();
   void loadChildren(QTreeWidgetItem* item);  // 把 item 下面的占位 "..." 换成真实子键
   // 给一个新建的树节点按 availability 设 flags + 决定是否带占位子节点。
-  // path 为完整长写键路径，hasRealSubkeys 为实机注册表枚举结果。
-  void applyAvailability(QTreeWidgetItem* item, const QString& path, bool hasRealSubkeys);
-  // 调一次 m_availability；未注入则默认 Selectable。
+  // path 为完整长写键路径；subkeys 区分已知空、已知非空和因权限/瞬时
+  // 错误尚不可知。不可知节点保留展开入口，真正展开时再读取并报告结果。
+  void applyAvailability(QTreeWidgetItem* item, const QString& path, SubkeyState subkeys);
+  // 调一次 m_availability；未注入则使用 standardAvailability。
   [[nodiscard]] KeyAvailability availabilityOf(const QString& key) const;
   void onItemExpanded(QTreeWidgetItem* item);
   void onTreeSelectionChanged();

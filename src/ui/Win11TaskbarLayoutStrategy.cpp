@@ -112,7 +112,7 @@ TaskbarLayoutStrategy::AttachResult classifyInjectedState(const InjectedStateObs
       return TaskbarLayoutStrategy::AttachResult::Attached;
     case InjectedStateObservation::Classification::LayeredChildUnsupported:
       if (capabilityConfirmed) return TaskbarLayoutStrategy::AttachResult::Invalid;
-      UWF_LOG_W("taskbar") << "taskbar endpoint incompatible: reason=layered-child-unsupported";
+      UWF_LOG_W("taskbar") << "taskbar presentation unavailable: reason=layered-child-unsupported";
       return TaskbarLayoutStrategy::AttachResult::Incompatible;
     case InjectedStateObservation::Classification::Invalid:
       return TaskbarLayoutStrategy::AttachResult::Invalid;
@@ -167,7 +167,7 @@ void Win11TaskbarLayoutStrategy::recordVerificationDiagnostic(const Verification
   if (m_impl->lastDiagnosticResult == result && m_impl->lastDiagnosticReason == currentReason) return;
   m_impl->lastDiagnosticResult = result;
   m_impl->lastDiagnosticReason = currentReason;
-  UWF_LOG_D("taskbar") << "verify result="
+  UWF_LOG_D("taskbar") << "verification observed: result="
                        << (result == VerificationResult::Retained          ? "retained"
                            : result == VerificationResult::RefreshRequired ? "refresh-required"
                                                                            : "invalid")
@@ -200,9 +200,9 @@ TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::AttachTransactio
   if (qtWindow) qtWindow->destroy();
   m_state = State::NativeWindowDestroyed;
   if (error == ERROR_SUCCESS)
-    UWF_LOG_W("taskbar") << "hard reset: reason=" << reason << " action=destroy-all-and-reinject";
+    UWF_LOG_I("taskbar") << "native window reset: reason=" << reason << " action=destroy-and-recreate";
   else
-    UWF_LOG_W("taskbar") << "hard reset: reason=" << reason << " error=" << error << " action=destroy-all-and-reinject";
+    UWF_LOG_I("taskbar") << "native window reset: reason=" << reason << " win32Error=" << error << " action=destroy-and-recreate";
   return AttachResult::Invalid;
 }
 
@@ -287,7 +287,8 @@ TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::AttachTransactio
   const AttachResult injectedState = classifyInjectedState(observation, m_owner->m_impl->layeredChildCapabilityConfirmed);
   if (injectedState == AttachResult::Incompatible) return injectedState;
   if (injectedState != AttachResult::Attached) {
-    UWF_LOG_W("taskbar") << "finalize invariant: parent=" << observation.parentMatches << " child=" << observation.child << " popup=" << observation.popup
+    UWF_LOG_D("taskbar") << "attachment finalization rejected: parent=" << observation.parentMatches << " child=" << observation.child
+                         << " popup=" << observation.popup
                          << " layered=" << observation.layered << " toolWindow=" << observation.toolWindow << " noActivate=" << observation.noActivate
                          << " appWindow=" << observation.appWindow;
     return hardReset("finalize-invariant");
@@ -389,7 +390,7 @@ TaskbarLayoutStrategy::DetachResult Win11TaskbarLayoutStrategy::detach() {
     m_impl->attachment.reset();
     m_impl->hardResetRequired = false;
     if (qtWindow) qtWindow->destroy();
-    UWF_LOG_W("taskbar") << "hard reset: reason=" << reason << " action=destroy-all-and-reinject";
+    UWF_LOG_I("taskbar") << "native window reset: reason=" << reason << " action=destroy-and-recreate";
     return DetachResult::NativeWindowDestroyed;
   };
   if (m_impl->hardResetRequired) return forceHardReset("verification-failure");
@@ -417,10 +418,10 @@ TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::abortIncompleteP
   // 重试；任一项失败由 detach() hard-reset 销毁窗口，绝不能留下半注入状态。
   const DetachResult detached = detach();
   if (detached == DetachResult::Detached) {
-    UWF_LOG_W("taskbar") << "parent transaction deferred: reason=qt-parent-mismatch action=atomic-rollback-retry";
+    UWF_LOG_D("taskbar") << "parent transaction deferred: reason=qt-parent-mismatch action=rollback-and-retry";
     return AttachResult::TemporarilyUnavailable;
   }
-  UWF_LOG_W("taskbar") << "parent transaction aborted: reason=qt-parent-mismatch action=destroy-all-and-reinject";
+  UWF_LOG_D("taskbar") << "parent transaction aborted: reason=qt-parent-mismatch action=destroy-and-recreate";
   return AttachResult::Invalid;
 }
 

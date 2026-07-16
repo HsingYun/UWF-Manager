@@ -29,17 +29,17 @@ namespace {
 // 从最旧的行开始丢弃。100B/行估算 → 大约 10 万行。
 constexpr size_t kCapBytes = 10 * 1024 * 1024;
 
-// 环形缓冲、已用字节数与其锁，打包成"故意泄漏、永不析构"的进程级单例。
-// 后台 worker 线程可能在静态析构期（main 返回后）仍调 logLine——若此时
-// 这些对象已被析构即 UB。泄漏一份让 logLine 在任何时刻都安全。
+// 环形缓冲、已用字节数与其锁集中在一个进程级状态对象中。后台任务都由
+// 所属 UI 对象以 jthread 管理并在析构前收敛，因此这里可以遵守正常 RAII，
+// 不需要用故意泄漏掩盖线程所有权问题。
 struct LogState {
   std::deque<std::string> buffer;
   size_t bufferBytes = 0;
   std::mutex mutex;
 };
 LogState& state() {
-  static LogState* const s = new LogState;
-  return *s;
+  static LogState s;
+  return s;
 }
 
 // 格式化为 "HH:MM:SS.mmm" 的时间戳。
@@ -55,7 +55,11 @@ std::string timestamp() {
 
 }  // namespace
 
-void logLine(char level, const std::string& category, const std::string& message) {
+void logLine(const char level, const std::string_view category, const std::string_view message) {
+#if !defined(UWF_DEBUG_LOGGING)
+  // 防住不经 UWF_LOG_D 宏的调试日志入口。
+  if (level == 'D') return;
+#endif
   // 锁纪律：缓冲锁仅在 deque 操作期间持有，且持锁期间不调用任何用户提供
   // 的回调或可能再次取该锁的代码（包括 UWF_LOG_*）。这条规则保证 logLine
   // 之间不会自死锁，也不会与外部锁形成循环。维护时如果将来要在持锁期间调

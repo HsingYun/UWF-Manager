@@ -22,7 +22,7 @@
 // 枚举值直接引用 <wbemcli.h> 的 WBEM_E_* 宏，避免与 SDK 漂移。
 //
 // 用法：
-//   WmiError err(r.hresult);
+//   WmiError err(hresult);
 //   if (err == WmiErrorCode::NotFound) { ... }
 //   logger << err.name() << ": " << err.description();
 

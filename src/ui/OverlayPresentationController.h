@@ -72,6 +72,7 @@ class OverlayPresentationController : public QObject {
   QPointer<GlobalStatusPanel> m_global;
   QPointer<QAction> m_action;
   bool m_hasCommittedSnapshot = false;
+  bool m_usageRefreshFailed = false;
 
   api::UwfFilter m_filter;
   api::UwfOverlay m_overlay;

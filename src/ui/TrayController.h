@@ -56,6 +56,9 @@ class TrayController : public QObject {
   // 只接收展示控制器已完整读取并提交的状态。filterEnabled=true 时 runtime
   // 必须有值；读取失败不会调用本函数，旧 UI 因而保持不动。
   void applyUsageState(bool filterEnabled, const std::optional<core::OverlayRuntime>& runtime, const core::OverlayConfig& config);
+  // 启动期已确认 UWF 未注册时展示“不可用”。动态读取异常不会调用本函数，
+  // 已提交的托盘状态因而保持不动。
+  void setUsageUnavailable();
  signals:
   // 菜单即将弹出时请求唯一的数据拥有者刷新；本类不自行访问 WMI。
   void refreshRequested();

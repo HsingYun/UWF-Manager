@@ -18,6 +18,9 @@
 
 #include <QWidget>
 
+#include <exception>
+
+#include "../util/Log.h"
 #include "Dialogs.h"
 #include "I18n.h"
 #include "PowerConfirmDialog.h"
@@ -31,29 +34,24 @@ PowerController::PowerController(WmiSession& session, QWidget* dialogParent, QOb
 
 void PowerController::safeShutdown() {
   if (!confirmPowerAction(m_dialogParent, PowerAction::Shutdown)) return;
-
-  std::string err;
-  const auto row = m_filter.read(&err);
-  if (!row) {
-    warning(m_dialogParent, I18n::tr("Safe shutdown failed"), I18n::tr("Failed to read filter state: %1").arg(QString::fromStdString(err)));
-    return;
-  }
-  if (const auto result = m_filter.shutdownSystem(*row); !result.ok) {
-    warning(m_dialogParent, I18n::tr("Safe shutdown failed"), I18n::tr("Shutdown failed: %1").arg(QString::fromStdString(result.detail)));
+  try {
+    const auto row = m_filter.read();
+    m_filter.shutdownSystem(row);
+  } catch (const std::exception& error) {
+    UWF_LOG_E("power") << "safe shutdown failed: error=" << error.what();
+    warning(m_dialogParent, I18n::tr("Safe shutdown failed"), I18n::tr("Shutdown failed: %1").arg(QString::fromUtf8(error.what())));
   }
 }
 
 void PowerController::safeRestart() {
   if (!confirmPowerAction(m_dialogParent, PowerAction::Restart)) return;
 
-  std::string err;
-  const auto row = m_filter.read(&err);
-  if (!row) {
-    warning(m_dialogParent, I18n::tr("Safe restart failed"), I18n::tr("Failed to read filter state: %1").arg(QString::fromStdString(err)));
-    return;
-  }
-  if (const auto result = m_filter.restartSystem(*row); !result.ok) {
-    warning(m_dialogParent, I18n::tr("Safe restart failed"), I18n::tr("Restart failed: %1").arg(QString::fromStdString(result.detail)));
+  try {
+    const auto row = m_filter.read();
+    m_filter.restartSystem(row);
+  } catch (const std::exception& error) {
+    UWF_LOG_E("power") << "safe restart failed: error=" << error.what();
+    warning(m_dialogParent, I18n::tr("Safe restart failed"), I18n::tr("Restart failed: %1").arg(QString::fromUtf8(error.what())));
   }
 }
 
