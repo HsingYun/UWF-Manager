@@ -1651,8 +1651,7 @@ void testReleaseAnnouncementPrecedesSyncCompletion() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY2(highView->presentationConfirmed() && !lowView->requested(), "high-priority view must own the initial presentation");
 
   highView->verificationResult = OverlayHubView::VerificationResult::Invalid;
@@ -1670,8 +1669,7 @@ void testDisableDuringFailedCleanupConvergesToWithdrawn() {
   viewPtr->detachReturnsPending = true;
   viewPtr->retryInterval = 0;
   hub.registerView(std::move(view));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY(viewPtr->presentationConfirmed());
 
   viewPtr->verificationResult = OverlayHubView::VerificationResult::Invalid;
@@ -1715,8 +1713,7 @@ void testFallbackRemainsStableAfterTaskbarRelease() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
 
   strategyState->verificationResult = TaskbarLayoutStrategy::VerificationResult::Invalid;
   highView->verifyNow();
@@ -1738,8 +1735,7 @@ void testExplicitReenableResumesWhenCleanupCompletes() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
 
   hub.setRequestedVisible(false);
   hub.setRequestedVisible(true);
@@ -1758,8 +1754,7 @@ void testBlockedReleaseHandsOwnershipToFallback() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
 
   strategyState->detachResults = {TaskbarLayoutStrategy::DetachResult::Failed, TaskbarLayoutStrategy::DetachResult::Detached};
   hub.setRequestedVisible(false);
@@ -1789,8 +1784,7 @@ void testHubUsesCommittedStateSnapshot() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
 
   QVERIFY2(lowView->presentationConfirmed() && hub.presented(), "confirmed lower priority view must remain the stable fallback");
   QVERIFY2(highView->requested() && lowView->requested(), "unavailable high priority view must remain eligible for recovery");
@@ -1829,7 +1823,7 @@ void testHubUsesCommittedStateSnapshot() {
   QVERIFY2(highView->presentationConfirmed() && !lowView->requested(), "high priority view must recover after a real invalidation");
 
   const int highVerifyCalls = highView->verifyCalls;
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY2(highView->verifyCalls == highVerifyCalls, "Hub reconciliation must not re-verify an already committed view");
 }
 
@@ -1843,8 +1837,7 @@ void testHigherPriorityViewAutomaticallyReplacesFallback() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY2(lowView->presentationConfirmed(), "fallback must cover a temporarily unavailable taskbar view");
 
   highView->attachResult = OverlayHubView::AttachResult::Attached;
@@ -1878,8 +1871,7 @@ void testToolbarToggleDuringTransientShellPresentation() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY2(highView->presentationConfirmed(), "taskbar view must initially own the Hub");
 
   highView->verificationResult = OverlayHubView::VerificationResult::Retained;
@@ -1904,8 +1896,7 @@ void testInterleavedToolbarAndHostTransitionsConverge() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY2(highView->presentationConfirmed(), "coordinator-backed taskbar must initially own the Hub");
 
   strategyState->verificationResult = TaskbarLayoutStrategy::VerificationResult::Retained;
@@ -1938,8 +1929,7 @@ void testRefreshOwnershipControlsFallbackEligibility() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY2(highView->presentationConfirmed() && !lowView->requested(), "taskbar must own the initial presentation");
 
   strategyState->verificationResult = TaskbarLayoutStrategy::VerificationResult::RefreshRequired;
@@ -1968,8 +1958,7 @@ void testStartMenuJitterThenToolbarToggleKeepsTaskbarExclusive() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY2(highView->presentationConfirmed() && !lowView->requested(), "taskbar must own the initial presentation");
 
   for (int cycle = 0; cycle < 3; ++cycle) {
@@ -2039,8 +2028,7 @@ void testFailingHostInvalidatedCompletionDoesNotDeadlock() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY(highView->presentationConfirmed());
 
   highView->verificationResult = OverlayHubView::VerificationResult::Invalid;
@@ -2063,8 +2051,7 @@ void testRecoveringSoftFailureExhaustionYieldsFallback() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY(highView->presentationConfirmed() && !lowView->requested());
 
   highView->attachResult = OverlayHubView::AttachResult::TemporarilyUnavailable;
@@ -2086,8 +2073,7 @@ void testHealthDueInvalidYieldsToFallback() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY2(highView->presentationConfirmed() && !lowView->requested(), "taskbar must own the initial presentation");
 
   highView->verificationResult = OverlayHubView::VerificationResult::Invalid;
@@ -2111,8 +2097,7 @@ void testConfirmationTimeoutExhaustionYieldsFallback() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
 
   QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Attaching && highView->presentationExclusive() && !lowView->requested() &&
                !lowView->presentationConfirmed(),
@@ -2136,8 +2121,7 @@ void testExternalRefreshDuringAttachingRepairsWithoutFallback() {
   FakeHubView* const lowView = low.get();
   hub.registerView(std::move(high));
   hub.registerView(std::move(low));
-  hub.setFilterEnabled(true);
-  hub.updateUsage(uwf::core::OverlayRuntime{});
+  hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
   QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Attaching && !lowView->requested(),
            "precondition: taskbar must be exclusive Attaching before ExternalRefresh");
 
@@ -2262,8 +2246,7 @@ class HubLifecycleTests final : public QObject {
     QSignalSpy lowStateChanges(lowView, &OverlayHubView::displayStateChanged);
     hub.registerView(std::move(high));
     hub.registerView(std::move(low));
-    hub.setFilterEnabled(true);
-    hub.updateUsage(uwf::core::OverlayRuntime{});
+    hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
 
     const auto highSuspend = std::ranges::find(*trace, "high:suspend");
     const auto lowAttach = std::ranges::find(*trace, "low:acquire");
@@ -2289,8 +2272,7 @@ class HubLifecycleTests final : public QObject {
     lowView->traceName = "low";
     hub.registerView(std::move(high));
     hub.registerView(std::move(low));
-    hub.setFilterEnabled(true);
-    hub.updateUsage(uwf::core::OverlayRuntime{});
+    hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
     QVERIFY(lowView->presentationConfirmed());
 
     trace->clear();
@@ -2316,8 +2298,7 @@ class HubLifecycleTests final : public QObject {
     lowView->traceName = "low";
     hub.registerView(std::move(high));
     hub.registerView(std::move(low));
-    hub.setFilterEnabled(true);
-    hub.updateUsage(uwf::core::OverlayRuntime{});
+    hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
     QVERIFY(lowView->presentationConfirmed());
 
     trace->clear();
@@ -2363,8 +2344,7 @@ class HubLifecycleTests final : public QObject {
     highView->activationHook = [lowView, &overlapped]() { overlapped = overlapped || lowView->isVisible(); };
     hub.registerView(std::move(high));
     hub.registerView(std::move(low));
-    hub.setFilterEnabled(true);
-    hub.updateUsage(uwf::core::OverlayRuntime{});
+    hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
     QVERIFY(lowView->isVisible());
 
     trace->clear();
@@ -2387,8 +2367,7 @@ class HubLifecycleTests final : public QObject {
     lowView->trace = trace;
     lowView->traceName = "low";
     hub.registerView(std::move(low));
-    hub.setFilterEnabled(true);
-    hub.updateUsage(uwf::core::OverlayRuntime{});
+    hub.applyUsageState(uwf::ui::OverlayUsageEnabled{uwf::core::OverlayRuntime{}, uwf::core::OverlayConfig{}});
     QVERIFY(lowView->isVisible());
 
     trace->clear();

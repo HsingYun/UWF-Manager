@@ -56,11 +56,7 @@ void OverlayHub::installView(std::unique_ptr<OverlayHubView> view) {
   m_views.push_back(std::move(view));
 
   rawView->setAttribute(Qt::WA_QuitOnClose, false);
-  rawView->setFilterEnabled(m_filterEnabled);
-  if (m_runtime)
-    rawView->updateUsage(*m_runtime);
-  else
-    rawView->setUsageUnavailable();
+  rawView->applyUsageState(m_usageState);
   rawView->setPresentationRequested(false);
 
   connect(rawView, &OverlayHubView::showMainWindowRequested, this, &OverlayHub::showMainWindowRequested);
@@ -108,28 +104,13 @@ void OverlayHub::flushPendingViews() {
   emit stateChanged();
 }
 
-void OverlayHub::updateUsage(const core::OverlayRuntime& runtime) {
-  const bool availabilityChanged = !m_runtime.has_value();
-  m_runtime = runtime;
-  for (const auto& view : m_views) view->updateUsage(runtime);
-  reconcilePresentation();
-  if (availabilityChanged) emit stateChanged();
-}
+void OverlayHub::applyUsageState(const OverlayUsageState& state) {
+  const bool wasAvailable = available();
+  m_usageState = state;
+  for (const auto& view : m_views) view->applyUsageState(m_usageState);
 
-void OverlayHub::setUsageUnavailable() {
-  if (!m_runtime) return;
-  m_runtime.reset();
-  for (const auto& view : m_views) view->setUsageUnavailable();
   reconcilePresentation();
-  emit stateChanged();
-}
-
-void OverlayHub::setFilterEnabled(const bool enabled) {
-  if (m_filterEnabled == enabled) return;
-  m_filterEnabled = enabled;
-  for (const auto& view : m_views) view->setFilterEnabled(enabled);
-  reconcilePresentation();
-  emit stateChanged();
+  if (wasAvailable != available()) emit stateChanged();
 }
 
 void OverlayHub::setRequestedVisible(const bool visible) {
@@ -149,7 +130,7 @@ void OverlayHub::restoreAfterTemporaryHide() {
   reconcilePresentation();
 }
 
-bool OverlayHub::available() const { return m_runtime.has_value() && m_filterEnabled; }
+bool OverlayHub::available() const { return std::holds_alternative<OverlayUsageEnabled>(m_usageState); }
 
 bool OverlayHub::enabled() const { return available() && m_requestedVisible && !m_views.empty(); }
 

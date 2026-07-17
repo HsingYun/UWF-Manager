@@ -263,19 +263,11 @@ void OverlayFloatingWidget::popupContextMenuAt(const QPoint& globalPos) {
   }
 }
 
-void OverlayFloatingWidget::updateUsage(const core::OverlayRuntime& runtime) {
-  m_runtime = runtime;
-  m_hasRuntime = true;
-  refreshText();
-}
-
-void OverlayFloatingWidget::setUsageUnavailable() {
-  m_hasRuntime = false;
-  refreshText();
-}
-
-void OverlayFloatingWidget::setFilterEnabled(const bool enabled) {
-  m_filterEnabled = enabled;
+void OverlayFloatingWidget::applyUsageState(const OverlayUsageState& state) {
+  const auto* const enabled = std::get_if<OverlayUsageEnabled>(&state);
+  m_filterEnabled = enabled != nullptr;
+  m_hasRuntime = enabled != nullptr;
+  if (enabled) m_runtime = enabled->runtime;
   refreshText();
 }
 

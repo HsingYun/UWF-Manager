@@ -22,7 +22,9 @@
 //
 // existsFn 可选——只有删除操作传它，在 commit 前后各探一次目标是否存在，结果
 // 会进 CommitReportRow.existedBefore / existsAfter，决定结果对话框是否多两列。
-// 不传时整段 constexpr 跳过，提交操作无开销。
+// 它只负责观察业务终态，不是调用 UWF provider 的前置权限检查：普通文件系统或
+// 注册表读取失败时，provider 仍可能有能力完成操作。不传时整段 constexpr 跳过，
+// 提交操作无开销。
 //
 // 模板定义留 header：4 个 slot 各自实例化一份，避免引入 type-erase 钩子。
 
@@ -107,19 +109,9 @@ void runCommitBatch(QWidget* parent, const QString& progressTitle, const QList<T
       const auto observation = detail::observeExistence(existsFn, targets[i]);
       existedBefore = observation.value;
       if (!observation.value) {
-        CommitReportRow row;
-        row.path = display;
-        row.existedBefore = std::nullopt;
-        row.existsAfter = std::nullopt;
-        row.category = I18n::tr("Failed");
-        row.errorCode = QStringLiteral("-");
-        row.reason = I18n::tr("The target state could not be read before the operation: %1").arg(observation.failure);
-        UWF_LOG_W("commit") << "operation skipped: reason=target-state-unavailable target=" << display.toStdString()
+        UWF_LOG_W("commit") << "target state unavailable before operation; continuing with provider call: target=" << display.toStdString()
                             << " error=" << observation.failure.toStdString();
-        allRows.append(std::move(row));
-        continue;
-      }
-      if (!*observation.value) {
+      } else if (!*observation.value) {
         CommitReportRow row;
         row.path = display;
         row.existedBefore = false;
@@ -159,6 +151,9 @@ void runCommitBatch(QWidget* parent, const QString& progressTitle, const QList<T
       const auto observation = detail::observeExistence(existsFn, targets[i]);
       existsAfter = observation.value;
       if (!observation.value) {
+        // 写操作的成功契约包括权威终态重读；provider 接受请求不等于
+        // 删除已被确认。重读失败时不重放写入，但必须如实报告“未能确认”；
+        // 这与调用过程本身不确定的处理使用同一个收敛规则。
         if (succeeded || mayHaveTakenEffect) {
           succeeded = false;
           authoritativeFailure = I18n::tr("The operation result could not be confirmed because the target state reread failed: %1").arg(observation.failure);

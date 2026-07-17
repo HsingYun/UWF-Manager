@@ -76,11 +76,13 @@ std::string normalize(const std::string& key);
 // 键不存在返回空；其他枚举失败抛 std::system_error。
 [[nodiscard]] std::vector<std::string> valueNames(std::string_view key);
 
-// 单个值的元信息：name + Win32 类型码（REG_SZ / REG_DWORD / REG_BINARY 等）+ 原始字节。
+// 单个值的元信息：name + Win32 类型码（REG_SZ / REG_DWORD / REG_BINARY 等）+
+// 可选的预览数据。nullopt 表示值存在，但原始数据超过选择器的安全预览上限；
+// 它不能被编码成空 vector，否则 UI 会把“未读取”错误显示成“空值”。
 struct RegValueInfo {
-  std::string name;           // 空串 = (Default) 值
-  uint32_t type;              // RRF_RT_REG_SZ / REG_DWORD 等 Win32 类型码
-  std::vector<uint8_t> data;  // 原始字节；REG_SZ 等是 UTF-16 LE 字节流（含 null）。调用方按 type 自行解码
+  std::string name;                          // 空串 = (Default) 值
+  uint32_t type;                             // RRF_RT_REG_SZ / REG_DWORD 等 Win32 类型码
+  std::optional<std::vector<uint8_t>> data;  // 原始预览字节；REG_SZ 等是 UTF-16 LE（含 null）
 };
 
 // 列出 key 上的全部值，带类型信息 + 原始数据。用于 picker 等需要展示 REG_SZ /

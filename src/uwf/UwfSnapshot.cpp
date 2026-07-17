@@ -17,6 +17,7 @@
 #include "UwfSnapshot.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <format>
 #include <map>
 #include <set>
@@ -32,6 +33,7 @@
 #include "api/UwfRegistryFilter.h"
 #include "api/UwfVolume.h"
 #include "wmi/WmiClient.h"
+#include "wmi/WmiError.h"
 #include "wmi/WmiException.h"
 #include "wmi/WmiRowUtil.h"
 
@@ -83,8 +85,18 @@ uint64_t readNullableUInt64(const WmiRow& row, const char* field) {
 
 UwfCapability probeUwfCapability() {
   auto& session = embeddedWmiSession();
-  session.ensureConnected();
-  return session.classStatus("UWF_Filter") == WmiClassStatus::Present ? UwfCapability::Available : UwfCapability::Unavailable;
+  try {
+    session.ensureConnected();
+    return session.classStatus("UWF_Filter") == WmiClassStatus::Present ? UwfCapability::Available : UwfCapability::Unavailable;
+  } catch (const WmiInfrastructureError& error) {
+    // 未安装任何 Embedded 功能时 namespace 本身也可能不存在；这是与类缺失
+    // 等价的、已被 provider 明确确认的能力缺失，不是可重试的连接故障。
+    if (error.code().category() == wmiErrorCategory() &&
+        WmiError(static_cast<std::int32_t>(error.code().value())).code() == WmiErrorCode::InvalidNamespace) {
+      return UwfCapability::Unavailable;
+    }
+    throw;
+  }
 }
 
 core::UwfSnapshot readSnapshot(const UwfCapability capability) {

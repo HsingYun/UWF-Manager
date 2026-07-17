@@ -483,7 +483,7 @@ void RegistryPickerDialog::refreshValueTable(const QString& keyPath) {
   if (def != items.end()) {
     std::rotate(items.begin(), def, def + 1);
   } else {
-    items.insert(items.begin(), {std::string{}, 1u, {}});  // 1 = REG_SZ + 空 data → 预览显示"(value not set)"
+    items.insert(items.begin(), {std::string{}, 1u, std::vector<uint8_t>{}});  // 1 = REG_SZ + 空 data → “未设置”
   }
   // Exclusion 模式整表都不让选；CommitValue / DeleteValue 模式让命名值可选，
   // 但 (Default) 永远禁选——见类注释里"三种模式下 (Default) 行恒禁用"。
@@ -513,7 +513,7 @@ void RegistryPickerDialog::refreshValueTable(const QString& keyPath) {
 
     // Data 列：单行预览（已 truncate 到 200 字符），tooltip 给同样的预览方便长串
     // 鼠标悬停查看——不显示完整数据，picker 不是查看器。
-    const QString preview = formatValuePreview(v.type, v.data);
+    const QString preview = v.data ? formatValuePreview(v.type, *v.data) : I18n::tr("Preview unavailable (value is too large)");
     auto* dataItem = new QTableWidgetItem(preview);
     dataItem->setToolTip(preview);
     if (!rowSelectable) dataItem->setFlags(Qt::NoItemFlags);

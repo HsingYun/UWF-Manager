@@ -118,11 +118,10 @@ std::uint64_t visibleMemoryBytes() {
   return GlobalMemoryStatusEx(&memory) ? memory.ullTotalPhys : 0;
 }
 
-void queryPhysicalMemory(SystemHardwareInfo& info) {
+void queryPhysicalMemoryModules(SystemHardwareInfo& info) {
   auto& session = cimv2WmiSession();
   std::vector<PhysicalMemoryModuleInfo> decodedModules;
   try {
-    session.ensureConnected();
     const auto modules = session.query("SELECT Capacity, ConfiguredClockSpeed, SMBIOSMemoryType FROM Win32_PhysicalMemory");
     decodedModules.reserve(modules.size());
     for (const WmiRow& row : modules) {
@@ -142,12 +141,13 @@ void queryPhysicalMemory(SystemHardwareInfo& info) {
     return;
   }
 
-  // 模块信息与物理阵列的插槽数是独立的展示字段。后续插槽查询失败
-  // 不能把已经完整解码的模块信息一并丢掉。
+  // 只有整份模块查询与解码成功后才提交，避免展示部分模块。
   info.memoryModules = std::move(decodedModules);
+}
 
+void queryPhysicalMemorySlots(SystemHardwareInfo& info) {
   try {
-    const auto arrays = session.query("SELECT MemoryDevices FROM Win32_PhysicalMemoryArray WHERE Use = 3");
+    const auto arrays = cimv2WmiSession().query("SELECT MemoryDevices FROM Win32_PhysicalMemoryArray WHERE Use = 3");
     std::uint64_t totalSlots = 0;
     bool allSlotCountsKnown = true;
     for (const WmiRow& row : arrays) {
@@ -175,7 +175,8 @@ SystemHardwareInfo querySystemHardwareInfo() {
   } catch (const std::exception& error) {
     UWF_LOG_D("hardware") << "graphics adapter information unavailable: error=" << error.what();
   }
-  queryPhysicalMemory(info);
+  queryPhysicalMemoryModules(info);
+  queryPhysicalMemorySlots(info);
   std::uint64_t installedMemoryBytes = 0;
   bool installedMemoryOverflow = false;
   for (const PhysicalMemoryModuleInfo& module : info.memoryModules) {

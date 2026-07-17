@@ -165,23 +165,11 @@ OverlayTaskbarWidget::~OverlayTaskbarWidget() {
 
 bool OverlayTaskbarWidget::isCompatible() const { return m_layoutCoordinator->isCompatible(); }
 
-void OverlayTaskbarWidget::updateUsage(const core::OverlayRuntime& runtime) {
-  m_runtime = runtime;
-  m_hasRuntime = true;
-  synchronizeContentGeometry();
-  update();
-  updateAnimationTimer();
-}
-
-void OverlayTaskbarWidget::setUsageUnavailable() {
-  m_hasRuntime = false;
-  synchronizeContentGeometry();
-  update();
-  updateAnimationTimer();
-}
-
-void OverlayTaskbarWidget::setFilterEnabled(const bool enabled) {
-  m_filterEnabled = enabled;
+void OverlayTaskbarWidget::applyUsageState(const OverlayUsageState& state) {
+  const auto* const enabled = std::get_if<OverlayUsageEnabled>(&state);
+  m_filterEnabled = enabled != nullptr;
+  m_hasRuntime = enabled != nullptr;
+  if (enabled) m_runtime = enabled->runtime;
   synchronizeContentGeometry();
   update();
   updateAnimationTimer();

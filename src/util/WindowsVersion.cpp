@@ -19,9 +19,13 @@
 #include <windows.h>
 
 #include <algorithm>
+#include <exception>
+#include <functional>
 #include <string_view>
+#include <utility>
 
 #include "../core/Config.h"
+#include "Log.h"
 #include "RegistryKey.h"
 #include "StringUtil.h"
 
@@ -65,6 +69,20 @@ std::string correctedProductName(std::string productName, const WindowsFamily fa
   return productName;
 }
 
+template <typename T, typename Read>
+T readVersionMetadata(const std::string_view valueName, T fallback, Read&& read) {
+  try {
+    auto value = std::invoke(std::forward<Read>(read));
+    return value ? std::move(*value) : fallback;
+  } catch (const std::exception& error) {
+    // CurrentVersion 下的这些字段只用于展示和官方支持清单判断。它们读取失败
+    // 不能阻止后续 Embedded namespace 能力探测，否则自行安装的 UWF provider
+    // 会被无关的系统元数据故障屏蔽。
+    UWF_LOG_W("system") << "Windows version metadata unavailable: value=" << valueName << " error=" << error.what();
+    return fallback;
+  }
+}
+
 WindowsVersionInfo queryWindowsVersion() {
   WindowsVersionInfo result;
 
@@ -81,11 +99,15 @@ WindowsVersionInfo queryWindowsVersion() {
   }
 
   constexpr std::string_view kCurrentVersion = config::kRegPathWindowsCurrentVersion;
-  result.revision = regkey::readDword(kCurrentVersion, "UBR").value_or(0);
-  result.editionId = regkey::readString(kCurrentVersion, "EditionID").value_or(std::string{});
-  result.productName = correctedProductName(regkey::readString(kCurrentVersion, "ProductName").value_or(std::string{}), result.family);
-  result.displayVersion = regkey::readString(kCurrentVersion, "DisplayVersion").value_or(std::string{});
-  if (result.displayVersion.empty()) result.displayVersion = regkey::readString(kCurrentVersion, "ReleaseId").value_or(std::string{});
+  result.revision = readVersionMetadata("UBR", std::uint32_t{0}, [=] { return regkey::readDword(kCurrentVersion, "UBR"); });
+  result.editionId = readVersionMetadata("EditionID", std::string{}, [=] { return regkey::readString(kCurrentVersion, "EditionID"); });
+  result.productName = correctedProductName(
+      readVersionMetadata("ProductName", std::string{}, [=] { return regkey::readString(kCurrentVersion, "ProductName"); }), result.family);
+  result.displayVersion =
+      readVersionMetadata("DisplayVersion", std::string{}, [=] { return regkey::readString(kCurrentVersion, "DisplayVersion"); });
+  if (result.displayVersion.empty()) {
+    result.displayVersion = readVersionMetadata("ReleaseId", std::string{}, [=] { return regkey::readString(kCurrentVersion, "ReleaseId"); });
+  }
   result.longTermServicing = isLtscEdition(result.editionId);
   return result;
 }

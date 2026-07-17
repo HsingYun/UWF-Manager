@@ -19,7 +19,7 @@
 #include <QWidget>
 #include <deque>
 
-#include "../core/UwfModel.h"
+#include "OverlayUsageState.h"
 
 class QMenu;
 class QTimer;
@@ -68,9 +68,7 @@ class OverlayHubView : public QWidget {
   [[nodiscard]] virtual bool isCompatible() const { return true; }
   [[nodiscard]] virtual int priority() const = 0;
 
-  virtual void updateUsage(const core::OverlayRuntime&) {}
-  virtual void setUsageUnavailable() {}
-  virtual void setFilterEnabled(bool) {}
+  virtual void applyUsageState(const OverlayUsageState&) {}
 
   void setPresentationRequested(bool requested);
   void authorizePresentationActivation();

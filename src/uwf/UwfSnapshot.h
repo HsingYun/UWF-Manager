@@ -36,8 +36,9 @@ enum class UwfCapability {
   Unavailable,
 };
 
-// 启动期探测 UWF_Filter 是否注册。类不存在返回 Unavailable；连接、权限和
-// 协议失败抛出异常，不能把暂时的读取故障误判成系统不支持 UWF。
+// 启动期探测 Embedded namespace 与 UWF_Filter 是否注册。namespace 或类被
+// provider 明确确认不存在时返回 Unavailable；连接、权限和协议失败抛出异常，
+// 不能把暂时的读取故障误判成系统不支持 UWF。
 [[nodiscard]] UwfCapability probeUwfCapability();
 
 // 读取完整的配置与运行时摘要（filter / overlay / volumes / exclusions）。

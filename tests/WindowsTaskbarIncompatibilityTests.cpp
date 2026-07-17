@@ -133,8 +133,7 @@ class WindowsTaskbarIncompatibilityTests final : public QObject {
 
       hub.registerView(std::move(taskbar));
       hub.registerView(std::move(floating));
-      hub.setFilterEnabled(true);
-      hub.updateUsage(core::OverlayRuntime{.availableSpaceMb = 4096, .currentConsumptionMb = 1024});
+      hub.applyUsageState(OverlayUsageEnabled{core::OverlayRuntime{.availableSpaceMb = 4096, .currentConsumptionMb = 1024}, core::OverlayConfig{}});
 
       QVERIFY2(waitUntil([&]() {
                  return taskbarView->displayState() == OverlayHubView::DisplayState::Incompatible && floatingView->presentationConfirmed() &&

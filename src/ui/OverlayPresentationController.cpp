@@ -31,7 +31,7 @@
 
 namespace uwf::ui {
 
-OverlayPresentationController::OverlayPresentationController(WmiSession& session, QMainWindow* ownerWindow, TrayController* tray, QObject* parent)
+OverlayPresentationController::OverlayPresentationController(WmiSession& session, QMainWindow& ownerWindow, TrayController& tray, QObject* parent)
     : QObject(parent),
       m_ownerWindow(ownerWindow),
       m_tray(tray),
@@ -40,19 +40,19 @@ OverlayPresentationController::OverlayPresentationController(WmiSession& session
       m_filter(session),
       m_overlay(session),
       m_overlayConfig(session) {
-  connect(m_hub, &OverlayHub::showMainWindowRequested, this, &OverlayPresentationController::activateMainWindowRequested);
-  connect(m_hub, &OverlayHub::safeShutdownRequested, this, &OverlayPresentationController::safeShutdownRequested);
-  connect(m_hub, &OverlayHub::safeRestartRequested, this, &OverlayPresentationController::safeRestartRequested);
-  connect(m_hub, &OverlayHub::exitApplicationRequested, this, &OverlayPresentationController::exitApplicationRequested);
-  connect(m_hub, &OverlayHub::stateChanged, this, &OverlayPresentationController::syncAvailability);
-  connect(m_tray, &TrayController::refreshRequested, this, &OverlayPresentationController::refreshUsage);
+  connect(m_hub.get(), &OverlayHub::showMainWindowRequested, this, &OverlayPresentationController::activateMainWindowRequested);
+  connect(m_hub.get(), &OverlayHub::safeShutdownRequested, this, &OverlayPresentationController::safeShutdownRequested);
+  connect(m_hub.get(), &OverlayHub::safeRestartRequested, this, &OverlayPresentationController::safeRestartRequested);
+  connect(m_hub.get(), &OverlayHub::exitApplicationRequested, this, &OverlayPresentationController::exitApplicationRequested);
+  connect(m_hub.get(), &OverlayHub::stateChanged, this, &OverlayPresentationController::syncAvailability);
+  connect(&m_tray, &TrayController::refreshRequested, this, &OverlayPresentationController::refreshUsage);
 
   m_usageTimer->setInterval(5000);
   connect(m_usageTimer, &QTimer::timeout, this, &OverlayPresentationController::refreshUsage);
   syncAvailability();
 }
 
-OverlayPresentationController::~OverlayPresentationController() { delete m_hub; }
+OverlayPresentationController::~OverlayPresentationController() = default;
 
 void OverlayPresentationController::bindUi(GlobalStatusPanel* global, QAction* displaysAction) {
   m_global = global;
@@ -69,17 +69,14 @@ void OverlayPresentationController::applySnapshot(const core::UwfSnapshot& snaps
   m_usageRefreshFailed = false;
   if (snapshot.uwfAvailable) {
     m_hasCommittedSnapshot = true;
-    m_hub->setFilterEnabled(snapshot.current.filter.enabled);
-    m_hub->updateUsage(snapshot.runtime);
-    if (m_tray) {
-      const std::optional<core::OverlayRuntime> runtime = snapshot.current.filter.enabled ? std::optional(snapshot.runtime) : std::nullopt;
-      m_tray->applyUsageState(snapshot.current.filter.enabled, runtime, snapshot.current.overlay);
-    }
+    if (snapshot.current.filter.enabled)
+      publishUsageState(OverlayUsageEnabled{snapshot.runtime, snapshot.current.overlay});
+    else
+      publishUsageState(OverlayUsageDisabled{});
     m_usageTimer->start();
   } else {
     m_hasCommittedSnapshot = false;
-    m_hub->setUsageUnavailable();
-    if (m_tray) m_tray->setUsageUnavailable();
+    publishUsageState(OverlayUsageUnavailable{});
     m_usageTimer->stop();
   }
   syncAvailability();
@@ -107,21 +104,21 @@ void OverlayPresentationController::refreshUsage() {
   // “是否已有可信状态”得出相反结论。
   if (!m_hasCommittedSnapshot) return;
 
-  api::FilterRow filter;
-  std::optional<core::OverlayRuntime> runtime;
-  core::OverlayConfig presentationConfig;
+  OverlayUsageState candidate{OverlayUsageDisabled{}};
   try {
-    filter = m_filter.read();
+    const api::FilterRow filter = m_filter.read();
     if (filter.currentEnabled) {
       const auto overlay = m_overlay.read();
       const auto config = m_overlayConfig.read(api::Session::Current);
-      runtime.emplace();
-      runtime->currentConsumptionMb = overlay.overlayConsumption;
-      runtime->availableSpaceMb = overlay.availableSpace;
+      core::OverlayRuntime runtime;
+      runtime.currentConsumptionMb = overlay.overlayConsumption;
+      runtime.availableSpaceMb = overlay.availableSpace;
+      core::OverlayConfig presentationConfig;
       presentationConfig.maximumSizeMb = config.maximumSize;
       presentationConfig.type = config.type == api::OverlayType::RAM ? core::OverlayType::RAM : core::OverlayType::Disk;
       presentationConfig.warningThresholdMb = overlay.warningOverlayThreshold;
       presentationConfig.criticalThresholdMb = overlay.criticalOverlayThreshold;
+      candidate = OverlayUsageEnabled{runtime, presentationConfig};
     }
   } catch (const std::exception& error) {
     // 周期刷新失败可能持续多个 tick；同一故障周期只发一条 Warning，后续重复
@@ -139,13 +136,15 @@ void OverlayPresentationController::refreshUsage() {
 
   // 候选读取全部成功后一次性提交到所有消费者，Hub、主面板与托盘不会看见
   // 来自不同轮次的混合状态。
-  m_hub->setFilterEnabled(filter.currentEnabled);
-  if (runtime) {
-    if (m_ownerWindow->isVisible() && m_global) m_global->updateUsage(*runtime);
-    m_hub->updateUsage(*runtime);
-  }
-  if (m_tray) m_tray->applyUsageState(filter.currentEnabled, runtime, presentationConfig);
+  if (const auto* const enabled = std::get_if<OverlayUsageEnabled>(&candidate); enabled && m_ownerWindow.isVisible() && m_global)
+    m_global->updateUsage(enabled->runtime);
+  publishUsageState(candidate);
   syncAvailability();
+}
+
+void OverlayPresentationController::publishUsageState(const OverlayUsageState& state) {
+  m_hub->applyUsageState(state);
+  m_tray.applyUsageState(state);
 }
 
 void OverlayPresentationController::syncAvailability() {

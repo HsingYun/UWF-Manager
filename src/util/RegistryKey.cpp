@@ -252,15 +252,19 @@ std::vector<RegValueInfo> values(std::string_view key) {
     LONG rc = RegEnumValueW(opened.get(), i, name.data(), &nameLen, nullptr, &type, data.data(), &dataLen);
     while (rc == ERROR_MORE_DATA) {
       // Picker 只展示最多 200 字符的预览，不应为异常或恶意注册表值分配任意
-      // 大小的内存。超限是无法完整履行“列出全部值”契约，必须显式失败，不能
-      // 静默漏掉该值。
-      if (dataLen > kMaxPreviewValueBytes) throw std::length_error("registry value exceeds the safe preview limit");
+      // 大小的内存。名称和类型已经由 RegEnumValueW 返回，超限时保留这一行，
+      // 只把预览标为不可用；不能因此丢掉该值或让整张表失败。
+      if (dataLen > kMaxPreviewValueBytes) {
+        out.push_back({wideToUtf8(std::wstring(name.data(), nameLen)), type, std::nullopt});
+        break;
+      }
       if (dataLen <= data.size()) throwRegistryProbeError(rc, "enumerate registry values");
       data.resize(dataLen);
       nameLen = static_cast<DWORD>(name.size());
       dataLen = static_cast<DWORD>(data.size());
       rc = RegEnumValueW(opened.get(), i, name.data(), &nameLen, nullptr, &type, data.data(), &dataLen);
     }
+    if (rc == ERROR_MORE_DATA) continue;  // 超过安全预览上限，元信息已保留
     if (rc == ERROR_NO_MORE_ITEMS) break;
     if (rc != ERROR_SUCCESS) throwRegistryProbeError(rc, "enumerate registry values");
     out.push_back({wideToUtf8(std::wstring(name.data(), nameLen)), type, std::vector<uint8_t>(data.begin(), data.begin() + dataLen)});

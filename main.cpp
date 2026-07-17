@@ -118,14 +118,17 @@ int runApplication(int argc, char* argv[]) {
 
   initializeUserInterface(app);
   UWF_LOG_I("main") << "application started: pid=" << QCoreApplication::applicationPid();
+  const auto check = checkRuntimeEnvironment();
   // 尽早建立主线程 COM apartment 与两个长生命周期 WMI session。初始化失败
   // 直接交给 main 的最终异常边界记录并终止启动，不让半初始化 UI 继续运行。
   uwf::initializeWmiRuntime();
+  // 兼容模式只表达“系统不在官方支持清单中”，不能替代实际能力探测。用户
+  // 仍可能自行安装 UWF 驱动与 provider，因此所有系统都以 Embedded namespace
+  // 和 UWF_Filter 的真实注册状态决定功能是否可用。
   const auto uwfCapability = uwf::probeUwfCapability();
   if (uwfCapability == uwf::UwfCapability::Unavailable) {
-    UWF_LOG_W("main") << "UWF unavailable: reason=filter-class-not-registered";
+    UWF_LOG_W("main") << "UWF unavailable: reason=filter-class-or-namespace-not-registered";
   }
-  const auto check = checkRuntimeEnvironment();
   return runMainWindow(app, singleInstance, check, uwfCapability);
 }
 

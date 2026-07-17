@@ -42,9 +42,7 @@ class OverlayFloatingWidget final : public OverlayHubView {
   explicit OverlayFloatingWidget(QWidget* parent = nullptr);
 
   [[nodiscard]] int priority() const override { return 100; }
-  void updateUsage(const core::OverlayRuntime& runtime) override;
-  void setUsageUnavailable() override;
-  void setFilterEnabled(bool enabled) override;
+  void applyUsageState(const OverlayUsageState& state) override;
 
  protected:
   void showEvent(QShowEvent* ev) override;

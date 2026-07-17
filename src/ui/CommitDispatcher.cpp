@@ -54,8 +54,16 @@ using uwf::ui::dialogs::confirmCommit;
 using uwf::ui::dialogs::showCommitBlocker;
 using uwf::ui::dialogs::warning;
 
+[[nodiscard]] std::wstring extendedLengthPath(const QString& path) {
+  std::wstring nativePath = QDir::toNativeSeparators(path).toStdWString();
+  if (nativePath.starts_with(LR"(\\?\)") || nativePath.starts_with(LR"(\\.\)")) return nativePath;
+  if (nativePath.starts_with(LR"(\\)")) return LR"(\\?\UNC\)" + nativePath.substr(2);
+  if (nativePath.size() >= 3 && nativePath[1] == L':' && nativePath[2] == L'\\') return LR"(\\?\)" + nativePath;
+  return nativePath;
+}
+
 [[nodiscard]] bool fileExistsForVerification(const QString& path) {
-  const std::wstring nativePath = QDir::toNativeSeparators(path).toStdWString();
+  const std::wstring nativePath = extendedLengthPath(path);
   if (GetFileAttributesW(nativePath.c_str()) != INVALID_FILE_ATTRIBUTES) return true;
 
   const DWORD error = GetLastError();

@@ -18,10 +18,9 @@
 
 #include <QObject>
 #include <memory>
-#include <optional>
 #include <vector>
 
-#include "../core/UwfModel.h"
+#include "OverlayUsageState.h"
 
 namespace uwf::ui {
 
@@ -36,9 +35,7 @@ class OverlayHub final : public QObject {
   ~OverlayHub() override;
 
   void registerView(std::unique_ptr<OverlayHubView> view);
-  void updateUsage(const core::OverlayRuntime& runtime);
-  void setUsageUnavailable();
-  void setFilterEnabled(bool enabled);
+  void applyUsageState(const OverlayUsageState& state);
   void setRequestedVisible(bool visible);
   void hideTemporarily();
   void restoreAfterTemporaryHide();
@@ -64,9 +61,8 @@ class OverlayHub final : public QObject {
 
   std::vector<std::unique_ptr<OverlayHubView>> m_views;
   std::vector<std::unique_ptr<OverlayHubView>> m_pendingViews;
-  std::optional<core::OverlayRuntime> m_runtime;
+  OverlayUsageState m_usageState{OverlayUsageUnavailable{}};
   OverlayHubView* m_presentedView = nullptr;
-  bool m_filterEnabled = false;
   bool m_requestedVisible = true;
   bool m_temporarilyHidden = false;
   bool m_reconciling = false;

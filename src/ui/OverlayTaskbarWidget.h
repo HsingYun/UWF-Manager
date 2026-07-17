@@ -46,9 +46,7 @@ class OverlayTaskbarWidget final : public OverlayHubView {
 
   [[nodiscard]] bool isCompatible() const override;
   [[nodiscard]] int priority() const override { return 200; }
-  void updateUsage(const core::OverlayRuntime& runtime) override;
-  void setUsageUnavailable() override;
-  void setFilterEnabled(bool enabled) override;
+  void applyUsageState(const OverlayUsageState& state) override;
 
  protected:
   void contextMenuEvent(QContextMenuEvent* ev) override;

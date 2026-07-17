@@ -37,6 +37,7 @@ set(UWF_OVERLAY_RUNTIME_SOURCES
         src/ui/OverlayHubView.cpp
         src/ui/OverlayHub.h
         src/ui/OverlayHub.cpp
+        src/ui/OverlayUsageState.h
         src/ui/OverlayTaskbarWidget.h
         src/ui/OverlayTaskbarWidget.cpp
         src/ui/TaskbarLayoutStrategy.h

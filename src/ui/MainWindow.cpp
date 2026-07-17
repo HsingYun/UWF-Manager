@@ -105,7 +105,7 @@ MainWindow::MainWindow(const UwfCapability uwfCapability, bool compatibilityMode
   connect(m_tray, &TrayController::activateWindowRequested, this, &MainWindow::raiseToFront);
   connect(m_tray, &TrayController::exitApplicationRequested, this, &MainWindow::requestExit);
 
-  m_overlayPresentation = new OverlayPresentationController(m_session, this, m_tray, this);
+  m_overlayPresentation = new OverlayPresentationController(m_session, *this, *m_tray, this);
   connect(m_overlayPresentation, &OverlayPresentationController::activateMainWindowRequested, this, &MainWindow::raiseToFront);
   connect(m_overlayPresentation, &OverlayPresentationController::exitApplicationRequested, this, &MainWindow::requestExit);
   m_power = new PowerController(m_session, this, this);

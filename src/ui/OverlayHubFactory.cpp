@@ -24,8 +24,8 @@
 
 namespace uwf::ui {
 
-OverlayHub* createDefaultOverlayHub(QObject* parent) {
-  auto* hub = new OverlayHub(parent);
+std::unique_ptr<OverlayHub> createDefaultOverlayHub() {
+  auto hub = std::make_unique<OverlayHub>();
   hub->registerView(std::make_unique<OverlayTaskbarWidget>());
   hub->registerView(std::make_unique<OverlayFloatingWidget>());
   return hub;

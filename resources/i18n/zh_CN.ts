@@ -240,6 +240,7 @@
     <message><source>(Default)</source><translation>（默认）</translation></message>
     <message><source>(value not set)</source><translation>（数值未设置）</translation></message>
     <message><source>(empty)</source><translation>（空）</translation></message>
+    <message><source>Preview unavailable (value is too large)</source><translation>无法预览（值过大）</translation></message>
     <message><source>(whole key recursive, including subkeys)</source><translation>（整键递归，递归包含子键）</translation></message>
 
     <!-- OverlayFilesDialog -->

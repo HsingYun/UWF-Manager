@@ -31,10 +31,8 @@
 
 #include <QIcon>
 #include <QObject>
-#include <cstdint>
-#include <optional>
 
-#include "../core/UwfModel.h"
+#include "OverlayUsageState.h"
 
 class QAction;
 class QEvent;
@@ -53,12 +51,9 @@ class TrayController : public QObject {
   // ownerWindow 同时作为本对象与右键菜单的父对象，生命周期须覆盖本对象。
   explicit TrayController(QWidget* ownerWindow);
 
-  // 只接收展示控制器已完整读取并提交的状态。filterEnabled=true 时 runtime
-  // 必须有值；读取失败不会调用本函数，旧 UI 因而保持不动。
-  void applyUsageState(bool filterEnabled, const std::optional<core::OverlayRuntime>& runtime, const core::OverlayConfig& config);
-  // 启动期已确认 UWF 未注册时展示“不可用”。动态读取异常不会调用本函数，
-  // 已提交的托盘状态因而保持不动。
-  void setUsageUnavailable();
+  // 只接收展示控制器已完整读取并提交的状态；读取失败不会调用本函数，旧 UI
+  // 因而保持不动。
+  void applyUsageState(OverlayUsageState state);
  signals:
   // 菜单即将弹出时请求唯一的数据拥有者刷新；本类不自行访问 WMI。
   void refreshRequested();
@@ -87,10 +82,7 @@ class TrayController : public QObject {
 
   // 托盘是纯展示端：缓存最后一次完整提交的展示模型，语言切换或菜单弹出时
   // 直接从同一模型重绘。WMI 刷新失败不会清空或拼接半份状态。
-  bool m_hasCommittedState = false;
-  bool m_filterEnabled = false;
-  std::optional<core::OverlayRuntime> m_runtime;
-  core::OverlayConfig m_config;
+  OverlayUsageState m_usageState{OverlayUsageUnavailable{}};
 };
 
 }  // namespace uwf::ui

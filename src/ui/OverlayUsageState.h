@@ -16,14 +16,25 @@
  */
 #pragma once
 
-#include <memory>
+#include <variant>
+
+#include "../core/UwfModel.h"
 
 namespace uwf::ui {
 
-class OverlayHub;
+struct OverlayUsageUnavailable {};
+struct OverlayUsageDisabled {};
 
-// 应用当前使用的 Hub 组合根。新增展示端点只需实现 OverlayHubView 并在这里
-// 注册；控制器和 Hub 的 fallback 算法都不需要认识具体实现类。
-[[nodiscard]] std::unique_ptr<OverlayHub> createDefaultOverlayHub();
+struct OverlayUsageEnabled {
+  constexpr OverlayUsageEnabled(const core::OverlayRuntime usageRuntime, const core::OverlayConfig overlayConfig) noexcept
+      : runtime(usageRuntime), config(overlayConfig) {}
+
+  core::OverlayRuntime runtime;
+  core::OverlayConfig config;
+};
+
+// 展示端只接收完整、可提交的状态。用互斥类型表达“不可用 / 已禁用 / 已启用”，
+// 从接口层排除 enabled=true 但缺少 runtime 等无效组合。
+using OverlayUsageState = std::variant<OverlayUsageUnavailable, OverlayUsageDisabled, OverlayUsageEnabled>;
 
 }  // namespace uwf::ui

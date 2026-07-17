@@ -18,11 +18,13 @@
 
 #include <QObject>
 #include <QPointer>
+#include <memory>
 
 #include "../core/UwfModel.h"
 #include "../uwf/api/UwfFilter.h"
 #include "../uwf/api/UwfOverlay.h"
 #include "../uwf/api/UwfOverlayConfig.h"
+#include "OverlayUsageState.h"
 
 class QAction;
 class QMainWindow;
@@ -39,7 +41,7 @@ class TrayController;
 class OverlayPresentationController : public QObject {
   Q_OBJECT
  public:
-  OverlayPresentationController(WmiSession& session, QMainWindow* ownerWindow, TrayController* tray, QObject* parent = nullptr);
+  OverlayPresentationController(WmiSession& session, QMainWindow& ownerWindow, TrayController& tray, QObject* parent = nullptr);
   ~OverlayPresentationController() override;
 
   void bindUi(GlobalStatusPanel* global, QAction* displaysAction);
@@ -63,11 +65,12 @@ class OverlayPresentationController : public QObject {
 
  private:
   void refreshUsage();
+  void publishUsageState(const OverlayUsageState& state);
   void syncAvailability();
 
-  QMainWindow* m_ownerWindow;
-  TrayController* m_tray;
-  OverlayHub* m_hub;
+  QMainWindow& m_ownerWindow;
+  TrayController& m_tray;
+  std::unique_ptr<OverlayHub> m_hub;
   QTimer* m_usageTimer;
   QPointer<GlobalStatusPanel> m_global;
   QPointer<QAction> m_action;

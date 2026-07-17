@@ -267,8 +267,7 @@ class ProductionUi final {
   void registerPreparedTaskbar() { hub.registerView(std::move(m_taskbar)); }
 
   void enable() {
-    hub.setFilterEnabled(true);
-    hub.updateUsage(runtime);
+    hub.applyUsageState(OverlayUsageEnabled{runtime, core::OverlayConfig{}});
   }
 
   [[nodiscard]] bool taskbarConfirmed() const {
@@ -644,14 +643,14 @@ class WindowsTaskbarIntegrationTests final : public QObject {
     ui.hub.restoreAfterTemporaryHide();
     QVERIFY(waitUntil([&ui]() { return ui.taskbarConfirmed(); }));
 
-    ui.hub.setUsageUnavailable();
+    ui.hub.applyUsageState(OverlayUsageUnavailable{});
     QVERIFY(waitUntil([&ui]() { return !nativeVisible(*ui.taskbarView) && !nativeVisible(*ui.floatingView); }));
-    ui.hub.updateUsage(ui.runtime);
+    ui.hub.applyUsageState(OverlayUsageEnabled{ui.runtime, core::OverlayConfig{}});
     QVERIFY(waitUntil([&ui]() { return ui.taskbarConfirmed(); }));
 
-    ui.hub.setFilterEnabled(false);
+    ui.hub.applyUsageState(OverlayUsageDisabled{});
     QVERIFY(waitUntil([&ui]() { return !nativeVisible(*ui.taskbarView) && !nativeVisible(*ui.floatingView); }));
-    ui.hub.setFilterEnabled(true);
+    ui.hub.applyUsageState(OverlayUsageEnabled{ui.runtime, core::OverlayConfig{}});
     QVERIFY(waitUntil([&ui]() { return ui.taskbarConfirmed(); }));
     QVERIFY(!ui.visibility->overlapObserved());
   }
@@ -837,7 +836,7 @@ class WindowsTaskbarIntegrationTests final : public QObject {
     ui.visibility->reset();
 
     const auto verifyRuntime = [&ui, originalWindow](const core::OverlayRuntime runtime) {
-      ui.hub.updateUsage(runtime);
+      ui.hub.applyUsageState(OverlayUsageEnabled{runtime, core::OverlayConfig{}});
       const QString text = overlayUsageText(runtime);
       QFont font = ui.taskbarView->font();
       font.setWeight(QFont::DemiBold);
@@ -966,23 +965,22 @@ class WindowsTaskbarIntegrationTests final : public QObject {
 
     const int initialWidth = ui.floatingView->width();
     const int initialRight = ui.floatingView->geometry().right();
-    ui.hub.updateUsage(core::OverlayRuntime{.availableSpaceMb = 49152, .currentConsumptionMb = 49151});
+    ui.hub.applyUsageState(
+        OverlayUsageEnabled{core::OverlayRuntime{.availableSpaceMb = 49152, .currentConsumptionMb = 49151}, core::OverlayConfig{}});
     QVERIFY(waitUntil(
         [&ui, initialWidth, initialRight]() { return ui.floatingView->width() >= initialWidth && ui.floatingView->geometry().right() == initialRight; }));
     const core::OverlayRuntime maximum{.availableSpaceMb = std::numeric_limits<uint32_t>::max(), .currentConsumptionMb = std::numeric_limits<uint32_t>::max()};
-    ui.hub.updateUsage(maximum);
+    ui.hub.applyUsageState(OverlayUsageEnabled{maximum, core::OverlayConfig{}});
     QCOMPARE(usage->text(), overlayUsageText(maximum));
     QVERIFY(ui.floatingView->width() > QFontMetrics(usage->font()).horizontalAdvance(usage->text()));
     const core::OverlayRuntime empty{};
-    ui.hub.updateUsage(empty);
+    ui.hub.applyUsageState(OverlayUsageEnabled{empty, core::OverlayConfig{}});
     QCOMPARE(usage->text(), overlayUsageText(empty));
-    ui.hub.setUsageUnavailable();
+    ui.hub.applyUsageState(OverlayUsageUnavailable{});
     QCOMPARE(usage->text(), QStringLiteral("—"));
-    ui.hub.updateUsage(ui.runtime);
-    ui.hub.setFilterEnabled(false);
+    ui.hub.applyUsageState(OverlayUsageDisabled{});
     QCOMPARE(usage->text(), QStringLiteral("—"));
-    ui.hub.setFilterEnabled(true);
-    ui.hub.updateUsage(ui.runtime);
+    ui.hub.applyUsageState(OverlayUsageEnabled{ui.runtime, core::OverlayConfig{}});
     QVERIFY(usage->text() != QStringLiteral("—"));
     QVERIFY(waitUntil([&ui]() { return ui.floatingConfirmed(); }));
     QVERIFY2(waitUntil([handle]() { return nativeVisible(*handle); }), "floating handle did not recover with its owner window");

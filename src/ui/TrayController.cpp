@@ -31,6 +31,7 @@
 #include <QVBoxLayout>
 #include <QWidget>
 #include <QWidgetAction>
+#include <cstdint>
 
 #include "../util/Log.h"
 #include "I18n.h"
@@ -143,48 +144,34 @@ void TrayController::renderCommittedState() {
     m_usageSeparator->setVisible(show);
   };
 
-  if (!m_hasCommittedState) {
+  if (std::holds_alternative<OverlayUsageUnavailable>(m_usageState)) {
     m_tray->setIcon(m_iconAlert);
     m_stateAction->setText(I18n::tr("UWF status unavailable"));
     setUsageVisible(false);
     return;
   }
 
-  m_tray->setIcon(m_filterEnabled ? m_iconNormal : m_iconAlert);
-  m_stateAction->setText(m_filterEnabled ? I18n::tr("UWF: Enabled") : I18n::tr("UWF: Disabled"));
-
-  // 菜单项 2：占用条仅在 UWF 已启用且完整运行时状态已提交时存在。
-  if (!m_filterEnabled) {
+  const auto* const enabled = std::get_if<OverlayUsageEnabled>(&m_usageState);
+  if (!enabled) {
+    m_tray->setIcon(m_iconAlert);
+    m_stateAction->setText(I18n::tr("UWF: Disabled"));
     setUsageVisible(false);
     return;
   }
+
+  m_tray->setIcon(m_iconNormal);
+  m_stateAction->setText(I18n::tr("UWF: Enabled"));
   setUsageVisible(true);
-  const uint32_t used = m_runtime->currentConsumptionMb;
-  m_usageBar->setOverlayData(used, m_config.warningThresholdMb, m_config.criticalThresholdMb, m_config.maximumSizeMb,
-                             m_config.type == core::OverlayType::RAM);
+  const std::uint32_t used = enabled->runtime.currentConsumptionMb;
+  m_usageBar->setOverlayData(used, enabled->config.warningThresholdMb, enabled->config.criticalThresholdMb, enabled->config.maximumSizeMb,
+                             enabled->config.type == core::OverlayType::RAM);
   // "已用 / 总计"——总计 = 已用 + 可用，与主面板的 used 标签口径一致。
-  m_usageLabel->setText(I18n::tr("Used %1 MB / Total %2 MB").arg(used).arg(m_runtime->availableSpaceMb + used));
+  m_usageLabel->setText(I18n::tr("Used %1 MB / Total %2 MB").arg(used).arg(enabled->runtime.availableSpaceMb + used));
 }
 
-void TrayController::applyUsageState(const bool filterEnabled, const std::optional<core::OverlayRuntime>& runtime, const core::OverlayConfig& config) {
+void TrayController::applyUsageState(OverlayUsageState state) {
   if (!m_tray) return;
-  if (filterEnabled && !runtime) {
-    UWF_LOG_E("tray") << "usage state rejected: reason=enabled-state-without-runtime-data";
-    return;
-  }
-  m_hasCommittedState = true;
-  m_filterEnabled = filterEnabled;
-  m_runtime = runtime;
-  m_config = config;
-  renderCommittedState();
-}
-
-void TrayController::setUsageUnavailable() {
-  if (!m_tray) return;
-  m_hasCommittedState = false;
-  m_filterEnabled = false;
-  m_runtime.reset();
-  m_config = {};
+  m_usageState = std::move(state);
   renderCommittedState();
 }
 
