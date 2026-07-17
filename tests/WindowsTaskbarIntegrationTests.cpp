@@ -572,7 +572,9 @@ class WindowsTaskbarIntegrationTests final : public QObject {
     const auto result = Win11TaskbarLayoutStrategyTestAccess::abortIncompleteParentCommit(strategy);
     QVERIFY2(result == TaskbarLayoutStrategy::AttachResult::TemporarilyUnavailable || result == TaskbarLayoutStrategy::AttachResult::Invalid,
              "parent-mismatch abort must resolve to soft retry or hard invalidate");
+#if defined(UWF_DEBUG_LOGGING)
     QVERIFY2(diagnosticLog().contains("qt-parent-mismatch"), diagnosticLog().constData());
+#endif
     QVERIFY(!Win11TaskbarLayoutStrategyTestAccess::hasLiveAttachment(strategy));
 
     if (result == TaskbarLayoutStrategy::AttachResult::TemporarilyUnavailable) {
@@ -581,11 +583,15 @@ class WindowsTaskbarIntegrationTests final : public QObject {
       QVERIFY2(GetParent(hwnd) == originalParent, "HWND parent must restore to the pre-commit parent");
       QVERIFY2(stylesMatch(hwnd, originalStyle, originalExStyle), partialInjectionDiagnostic(host, m_explorerTaskbar).constData());
       QVERIFY2(!hasPartialTaskbarInjection(hwnd, m_explorerTaskbar), partialInjectionDiagnostic(host, m_explorerTaskbar).constData());
-      QVERIFY2(diagnosticLog().contains("atomic-rollback-retry"), diagnosticLog().constData());
+#if defined(UWF_DEBUG_LOGGING)
+      QVERIFY2(diagnosticLog().contains("reason=qt-parent-mismatch action=rollback-and-retry"), diagnosticLog().constData());
+#endif
     } else {
       QVERIFY2(!IsWindow(hwnd) || !GetPropW(hwnd, kAttachmentCookieProperty), "hard abort must not leave a live cookie");
       QVERIFY2(attachmentWindows(m_explorerTaskbar).empty(), "hard abort must not leave explorer attachments");
-      QVERIFY2(diagnosticLog().contains("destroy-all-and-reinject"), diagnosticLog().constData());
+#if defined(UWF_DEBUG_LOGGING)
+      QVERIFY2(diagnosticLog().contains("reason=qt-parent-mismatch action=destroy-and-recreate"), diagnosticLog().constData());
+#endif
     }
   }
 

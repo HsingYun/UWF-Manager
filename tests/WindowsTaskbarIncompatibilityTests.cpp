@@ -144,7 +144,7 @@ class WindowsTaskbarIncompatibilityTests final : public QObject {
       QVERIFY2(!visibility.overlapObserved(), diagnosticLog().constData());
       QVERIFY2(!nativeVisible(*taskbarView), diagnosticLog().constData());
       QVERIFY2(attachmentWindows(m_explorerTaskbar).empty(), diagnosticLog().constData());
-      QCOMPARE(logCount("taskbar endpoint incompatible: reason=layered-child-unsupported"), 1);
+      QCOMPARE(logCount("taskbar presentation unavailable: reason=layered-child-unsupported"), 1);
 
       const HWND stableFloatingWindow = nativeWindow(*floatingView);
       const HWND stableTaskbarWindow = nativeWindow(*taskbarView);
@@ -152,7 +152,7 @@ class WindowsTaskbarIncompatibilityTests final : public QObject {
       QCOMPARE(taskbarView->displayState(), OverlayHubView::DisplayState::Incompatible);
       QCOMPARE(nativeWindow(*floatingView), stableFloatingWindow);
       QCOMPARE(nativeWindow(*taskbarView), stableTaskbarWindow);
-      QCOMPARE(logCount("taskbar endpoint incompatible: reason=layered-child-unsupported"), 1);
+      QCOMPARE(logCount("taskbar presentation unavailable: reason=layered-child-unsupported"), 1);
       QVERIFY2(attachmentWindows(m_explorerTaskbar).empty(), diagnosticLog().constData());
 
       hub.setRequestedVisible(false);
@@ -168,7 +168,7 @@ class WindowsTaskbarIncompatibilityTests final : public QObject {
       visibility.observe();
       QCOMPARE(taskbarView->displayState(), OverlayHubView::DisplayState::Incompatible);
       QCOMPARE(nativeWindow(*floatingView), stableFloatingWindow);
-      QCOMPARE(logCount("taskbar endpoint incompatible: reason=layered-child-unsupported"), 1);
+      QCOMPARE(logCount("taskbar presentation unavailable: reason=layered-child-unsupported"), 1);
       QVERIFY2(!visibility.overlapObserved(), diagnosticLog().constData());
       QVERIFY2(!nativeVisible(*taskbarView), diagnosticLog().constData());
       QVERIFY2(attachmentWindows(m_explorerTaskbar).empty(), diagnosticLog().constData());

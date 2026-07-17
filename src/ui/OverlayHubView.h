@@ -33,10 +33,12 @@ namespace uwf::ui {
 //   Disabled ──冷启动──► Probing → … → Confirmed
 //   Confirmed ──用户关──► Withdrawing ─┬─ 重开 ─► Recovering → 再挂载
 //                                      └─ 完成 ─► Withdrawn ──重开──► Recovering
-//   * ──身份失败──► Failing ──Release/HostReleaseCompleted──► Unavailable ──重试──► Probing
+//   * ──身份/操作失败──► Failing（正在清理）──完成──► Unavailable
+//                                  └─阻塞──► Blocked / BlockedWithdrawn
+//   Blocked ◄─用户开/关─► BlockedWithdrawn；清理完成后分别进入 Unavailable / Withdrawn
 //   Probing/Activating ──进程能力不兼容──► Incompatible（进程生命周期内终态）
 //   Recovering ──Shell 瞬时失败──► 有限次排他重试 ──耗尽──► Failing（让出 fallback）
-//   Withdrawing/Failing 忽略 HostReleaseStarted（不打断清理），但必须接受
+//   正在清理或已阻塞的状态忽略 HostReleaseStarted（不打断清理），但必须接受
 //   HostReleaseCompleted（cleanup 升级为 HostInvalidated 时只发 Host 完成事件）。
 class OverlayHubView : public QWidget {
   Q_OBJECT
@@ -52,6 +54,8 @@ class OverlayHubView : public QWidget {
     Refreshing,
     Withdrawing,
     Failing,
+    Blocked,
+    BlockedWithdrawn,
     Recovering,
     Confirmed
   };
@@ -205,7 +209,9 @@ class OverlayHubView : public QWidget {
   [[nodiscard]] static Transition handleActivationFinished(DisplayState state, const Event& event);
   [[nodiscard]] static Transition handleVerificationObserved(DisplayState state, const Event& event);
   [[nodiscard]] static Transition handleReleaseStarted(DisplayState state, const Event& event);
-  [[nodiscard]] static Transition enterFailing(DisplayState state, const Event& event);
+  [[nodiscard]] static Transition handleReleaseBlocked(DisplayState state, const Event& event);
+  [[nodiscard]] static Transition requestBlockedPresentation(DisplayState state, const Event& event);
+  [[nodiscard]] static Transition withdrawBlockedPresentation(DisplayState state, const Event& event);
   [[nodiscard]] static Transition handleReleaseCompleted(DisplayState state, const Event& event);
   [[nodiscard]] static Transition enterRecovering(DisplayState state, const Event& event);
   [[nodiscard]] static Transition recoverHost(DisplayState state, const Event& event);

@@ -136,6 +136,7 @@ class TaskbarLayoutCoordinatorTestAccess {
                                       "attached",
                                       "detaching",
                                       "recreating-after-detach"};
+    static_assert(names.size() == static_cast<std::size_t>(TestState::RecreatingAfterDetach) + 1);
     return names.at(static_cast<std::size_t>(value));
   }
   [[nodiscard]] static const char* eventName(const int value) {
@@ -160,6 +161,7 @@ class TaskbarLayoutCoordinatorTestAccess {
                                       "detach-due",
                                       "detach-blocked",
                                       "detach-completed"};
+    static_assert(names.size() == static_cast<std::size_t>(TestEvent::DetachCompleted) + 1);
     return names.at(static_cast<std::size_t>(value));
   }
   static void invalidateHost(TaskbarLayoutCoordinator& coordinator) {
@@ -336,6 +338,7 @@ class OverlayHubViewTestAccess {
                                       "verify-changed-retained",
                                       "verify-changed-refresh",
                                       "verify-changed-invalid"};
+    static_assert(names.size() == static_cast<std::size_t>(Variant::VerificationChangedInvalid) + 1);
     return names.at(static_cast<std::size_t>(variantIndex));
   }
 
@@ -351,6 +354,9 @@ class OverlayHubViewTestAccess {
 
   [[nodiscard]] static Result requestDisabled(const OverlayHubView::DisplayState state) {
     return reduce(state, OverlayHubView::Event::plain(OverlayHubView::EventType::RequestDisabled));
+  }
+  [[nodiscard]] static Result requestEnabled(const OverlayHubView::DisplayState state) {
+    return reduce(state, OverlayHubView::Event::plain(OverlayHubView::EventType::RequestEnabled));
   }
   [[nodiscard]] static Result retryDue(const OverlayHubView::DisplayState state) {
     return reduce(state, OverlayHubView::Event::plain(OverlayHubView::EventType::RetryDue));
@@ -512,9 +518,11 @@ TaskbarLayoutCoordinatorTestAccess::Result expectedCoordinatorTransition(const T
 
 ExpectedTransition expectedTransition(const FsmState state, const FsmVariant variant) {
   if (variant == FsmVariant::RequestDisabled) {
-    if (state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible || state == FsmState::Withdrawing) {
+    if (state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible || state == FsmState::Withdrawing ||
+        state == FsmState::BlockedWithdrawn) {
       return {state};
     }
+    if (state == FsmState::Blocked) return {FsmState::BlockedWithdrawn};
     if (state == FsmState::Failing) return {FsmState::Withdrawing};
     return {FsmState::Withdrawing, FsmAction::ReleaseRequest, true};
   }
@@ -522,6 +530,7 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
     if (state == FsmState::Disabled) return {FsmState::Probing, FsmAction::AttachAcquire};
     if (state == FsmState::Withdrawn) return {FsmState::Recovering, FsmAction::AttachAcquire};
     if (state == FsmState::Withdrawing) return {FsmState::Recovering};
+    if (state == FsmState::BlockedWithdrawn) return {FsmState::Blocked};
     return {state};
   }
   if (variant == FsmVariant::ExternalRefresh) {
@@ -543,25 +552,26 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
   }
   if (variant == FsmVariant::ActivationAuthorized)
     return state == FsmState::Activating ? ExpectedTransition{state, FsmAction::Activate} : ExpectedTransition{state};
-  if (variant == FsmVariant::ReleaseBlocked)
-    return state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible || state == FsmState::Withdrawing
-               ? ExpectedTransition{state}
-               : ExpectedTransition{FsmState::Failing};
+  if (variant == FsmVariant::ReleaseBlocked) {
+    if (state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible) return {state};
+    if (state == FsmState::Withdrawing || state == FsmState::BlockedWithdrawn) return {FsmState::BlockedWithdrawn};
+    return {FsmState::Blocked};
+  }
   if (variant == FsmVariant::ReleaseCompleted) {
     if (state == FsmState::Recovering) return {state, FsmAction::AttachAcquire};
-    if (state == FsmState::Withdrawing) return {FsmState::Withdrawn};
-    if (state == FsmState::Failing) return {FsmState::Unavailable};
+    if (state == FsmState::Withdrawing || state == FsmState::BlockedWithdrawn) return {FsmState::Withdrawn};
+    if (state == FsmState::Failing || state == FsmState::Blocked) return {FsmState::Unavailable};
     return {state};
   }
   if (variant == FsmVariant::HostReleaseStarted)
     return state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible || state == FsmState::Withdrawing ||
-                   state == FsmState::Failing
+                   state == FsmState::Failing || state == FsmState::Blocked || state == FsmState::BlockedWithdrawn
                ? ExpectedTransition{state}
                : ExpectedTransition{FsmState::Recovering};
   if (variant == FsmVariant::HostReleaseCompleted) {
     if (state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible) return {state};
-    if (state == FsmState::Withdrawing) return {FsmState::Withdrawn};
-    if (state == FsmState::Failing) return {FsmState::Unavailable};
+    if (state == FsmState::Withdrawing || state == FsmState::BlockedWithdrawn) return {FsmState::Withdrawn};
+    if (state == FsmState::Failing || state == FsmState::Blocked) return {FsmState::Unavailable};
     if (state == FsmState::Recovering) return {state, FsmAction::AttachAcquire};
     return {FsmState::Probing, FsmAction::AttachAcquire};
   }
@@ -587,7 +597,7 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
       case OverlayHubView::AttachResult::ReleasePending:
         return {FsmState::Recovering};
       case OverlayHubView::AttachResult::ReleaseBlocked:
-        return {FsmState::Failing};
+        return {FsmState::Blocked};
       case OverlayHubView::AttachResult::Failed:
         if (state == FsmState::Recovering) return {state, FsmAction::ScheduleRecoverRetry};
         return {FsmState::Failing, FsmAction::ReleaseRecovery, true};
@@ -611,7 +621,7 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
       case OverlayHubView::AttachResult::ReleasePending:
         return {FsmState::Recovering};
       case OverlayHubView::AttachResult::ReleaseBlocked:
-        return {FsmState::Failing};
+        return {FsmState::Blocked};
       case OverlayHubView::AttachResult::Prepared:
       case OverlayHubView::AttachResult::Failed:
         return {FsmState::Failing, FsmAction::ReleaseRecovery, true};
@@ -619,7 +629,7 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
   }
   if (variant == FsmVariant::ReleaseComplete || variant == FsmVariant::ReleasePending) {
     if (state == FsmState::Disabled || state == FsmState::Withdrawn || state == FsmState::Incompatible) return {state};
-    if (state == FsmState::Withdrawing || state == FsmState::Failing)
+    if (state == FsmState::Withdrawing || state == FsmState::Failing || state == FsmState::Blocked || state == FsmState::BlockedWithdrawn)
       return variant == FsmVariant::ReleasePending ? ExpectedTransition{state} : ExpectedTransition{FsmState::Unavailable};
     return variant == FsmVariant::ReleasePending ? ExpectedTransition{FsmState::Failing} : ExpectedTransition{FsmState::Unavailable};
   }
@@ -651,10 +661,12 @@ ExpectedTransition expectedTransition(const FsmState state, const FsmVariant var
   return {state};
 }
 
+#if defined(UWF_DEBUG_LOGGING)
 bool logContains(const std::string_view text) {
   const auto lines = uwf::recentLogLines();
   return std::ranges::any_of(lines, [text](const std::string& line) { return line.find(text) != std::string::npos; });
 }
+#endif
 
 struct StrategyState {
   bool compatible = true;
@@ -1455,8 +1467,10 @@ void testEnvironmentClassification() {
   observation.notifyAvailable = false;
   QVERIFY2(detail::classifyEnvironmentObservation(observation).availability == RuntimeAvailability::TemporarilyUnavailable,
            "missing Notify window must be temporary");
-  QVERIFY2(logContains("environment incompatible: vertical taskbar") && logContains("environment unavailable: taskbar=true notify=false"),
+#if defined(UWF_DEBUG_LOGGING)
+  QVERIFY2(logContains("environment incompatible: reason=vertical-taskbar") && logContains("environment unavailable: taskbar=true notificationArea=false"),
            "environment diagnostics must identify the exact incompatible and unavailable observations");
+#endif
 
   const EnvironmentProbe transient;
   const EnvironmentProbe current{RuntimeAvailability::Available, Environment{}};
@@ -1493,12 +1507,16 @@ void testHubLifecycleDiagnostics() {
   view.requestEnabled();
 
   QVERIFY2(view.displayState() == OverlayHubView::DisplayState::Unavailable, "diagnostic attach must preserve the unavailable state result");
+#if defined(UWF_DEBUG_LOGGING)
   QVERIFY2(logContains("display state: view=") && logContains("attach outcome: view=") && logContains("result=temporarily-unavailable") &&
                logContains("retry scheduled: view="),
            "Hub diagnostics must retain one failed outcome and its retry decision");
+#endif
 
   view.setPresentationRequested(false);
+#if defined(UWF_DEBUG_LOGGING)
   QVERIFY2(logContains("to=withdrawn requested=false"), "Hub diagnostics must include the committed presentation release state");
+#endif
 }
 
 void testOverlayViewStateMachineMatrix() {
@@ -1521,12 +1539,18 @@ void testOverlayViewStateMachineMatrix() {
   const auto recoveringComplete = OverlayHubViewTestAccess::releaseCompleted(State::Recovering);
   QVERIFY2(recoveringComplete.nextState == OverlayHubViewTestAccess::state(State::Recovering) && recoveringComplete.hasAction,
            "Recovering must reattach immediately on release completion");
-  QVERIFY2(OverlayHubViewTestAccess::releaseBlocked(State::Recovering).nextState == OverlayHubViewTestAccess::state(State::Failing),
+  QVERIFY2(OverlayHubViewTestAccess::releaseBlocked(State::Recovering).nextState == OverlayHubViewTestAccess::state(State::Blocked),
            "a concrete cleanup failure must leave exclusive recovery and expose fallback ownership");
   QVERIFY2(OverlayHubViewTestAccess::releaseCompleted(State::Withdrawing).nextState == OverlayHubViewTestAccess::state(State::Withdrawn),
            "user-revoked release completion must enter Withdrawn when presentation is not re-requested");
-  QVERIFY2(OverlayHubViewTestAccess::releaseBlocked(State::Withdrawing).nextState == OverlayHubViewTestAccess::state(State::Withdrawing),
-           "blocked cleanup must not erase an outstanding user withdrawal");
+  QVERIFY2(OverlayHubViewTestAccess::releaseBlocked(State::Withdrawing).nextState == OverlayHubViewTestAccess::state(State::BlockedWithdrawn),
+           "blocked cleanup must preserve both the cleanup failure and an outstanding user withdrawal");
+  QVERIFY2(OverlayHubViewTestAccess::requestEnabled(State::BlockedWithdrawn).nextState == OverlayHubViewTestAccess::state(State::Blocked),
+           "re-enable during blocked cleanup must update intent without entering an exclusive recovery state");
+  QVERIFY2(OverlayHubViewTestAccess::releaseCompleted(State::Blocked).nextState == OverlayHubViewTestAccess::state(State::Unavailable),
+           "blocked cleanup completion with an active request must return to retryable Unavailable");
+  QVERIFY2(OverlayHubViewTestAccess::releaseCompleted(State::BlockedWithdrawn).nextState == OverlayHubViewTestAccess::state(State::Withdrawn),
+           "blocked cleanup completion after withdrawal must remain withdrawn without scheduling a retry");
   QVERIFY2(OverlayHubViewTestAccess::releaseCompleted(State::Failing).nextState == OverlayHubViewTestAccess::state(State::Unavailable),
            "recovery release completion must yield Unavailable for fallback");
   QVERIFY2(OverlayHubViewTestAccess::hostReleaseCompleted(State::Failing).nextState == OverlayHubViewTestAccess::state(State::Unavailable),
@@ -1551,7 +1575,13 @@ void testOverlayViewStateMachineMatrix() {
       QVERIFY2(disabled.nextState == state, "RequestDisabled must be idempotent on idle/withdrawn/withdrawing");
     } else if (static_cast<State>(state) == State::Failing) {
       QVERIFY2(disabled.nextState == OverlayHubViewTestAccess::state(State::Withdrawing) && !disabled.hasAction,
-               "disabling during failed cleanup must retain the in-flight release and remember user withdrawal");
+               "disabling during in-flight failure cleanup must remember withdrawal without starting another detach");
+    } else if (static_cast<State>(state) == State::Blocked) {
+      QVERIFY2(disabled.nextState == OverlayHubViewTestAccess::state(State::BlockedWithdrawn) && !disabled.hasAction,
+               "disabling after a concrete cleanup failure must preserve both facts without starting another detach");
+    } else if (static_cast<State>(state) == State::BlockedWithdrawn) {
+      QVERIFY2(disabled.nextState == OverlayHubViewTestAccess::state(State::BlockedWithdrawn) && !disabled.hasAction,
+               "repeated disable must be idempotent while failed cleanup remains blocked");
     } else {
       QVERIFY2(disabled.nextState == OverlayHubViewTestAccess::state(State::Withdrawing),
                "RequestDisabled must enter Withdrawing so an explicit re-enable can resume via Recovering");
@@ -1577,7 +1607,7 @@ void testOverlayViewStateMachineMatrix() {
                OverlayHubViewTestAccess::state(State::Recovering),
            "attach during clean release must wait for its completion event");
   QVERIFY2(OverlayHubViewTestAccess::attachFinished(State::Probing, OverlayHubView::AttachResult::ReleaseBlocked).nextState ==
-               OverlayHubViewTestAccess::state(State::Failing),
+               OverlayHubViewTestAccess::state(State::Blocked),
            "attach after a known release failure must keep fallback eligible");
 
   const auto confirmationPending = OverlayHubViewTestAccess::verificationObserved(State::Attaching, OverlayHubView::VerificationResult::Pending, true);
@@ -1763,12 +1793,12 @@ void testBlockedReleaseHandsOwnershipToFallback() {
            "a normal pending release may remain exclusive until the first concrete cleanup result");
 
   highView->advanceDetaching();
-  QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Failing && lowView->presentationConfirmed(),
+  QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Blocked && lowView->presentationConfirmed(),
            "a failed cleanup attempt must hand visible ownership to fallback by event, not timeout");
 
   hub.setRequestedVisible(false);
   hub.setRequestedVisible(true);
-  QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Failing && lowView->presentationConfirmed(),
+  QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Blocked && lowView->presentationConfirmed(),
            "re-enable after a known cleanup failure must not return to an exclusive state that has no new Blocked event");
   highView->advanceDetaching();
   QVERIFY2(highView->displayState() == OverlayHubView::DisplayState::Unavailable && lowView->presentationConfirmed(),
@@ -2192,8 +2222,9 @@ class HubLifecycleTests final : public QObject {
     QTest::addColumn<int>("action");
     QTest::addColumn<bool>("actionBeforeStateChange");
 
-    static constexpr std::array stateNames{"disabled",  "withdrawn",  "unavailable", "incompatible", "probing",    "activating",
-                                           "attaching", "refreshing", "withdrawing", "failing",      "recovering", "confirmed"};
+    static constexpr std::array stateNames{"disabled",   "withdrawn",   "unavailable", "incompatible", "probing",           "activating", "attaching",
+                                           "refreshing", "withdrawing", "failing",     "blocked",      "blocked-withdrawn", "recovering", "confirmed"};
+    static_assert(stateNames.size() == static_cast<std::size_t>(OverlayHubView::DisplayState::Confirmed) + 1);
     for (int stateIndex = 0; stateIndex < OverlayHubViewTestAccess::stateCount(); ++stateIndex) {
       for (int variantIndex = 0; variantIndex < OverlayHubViewTestAccess::variantCount(); ++variantIndex) {
         const auto expected = expectedTransition(static_cast<FsmState>(stateIndex), static_cast<FsmVariant>(variantIndex));

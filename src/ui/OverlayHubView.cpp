@@ -50,6 +50,10 @@ const char* displayStateName(const OverlayHubView::DisplayState state) {
       return "withdrawing";
     case OverlayHubView::DisplayState::Failing:
       return "failing";
+    case OverlayHubView::DisplayState::Blocked:
+      return "blocked";
+    case OverlayHubView::DisplayState::BlockedWithdrawn:
+      return "blocked-withdrawn";
     case OverlayHubView::DisplayState::Recovering:
       return "recovering";
     case OverlayHubView::DisplayState::Confirmed:
@@ -165,21 +169,23 @@ OverlayHubView::Transition OverlayHubView::reduce(const DisplayState state, cons
       result[static_cast<std::size_t>(state)][static_cast<std::size_t>(event)] = handler;
     };
     const auto setPresenting = [&set](const EventType event, const TransitionHandler handler) {
-      for (const DisplayState current :
-           {DisplayState::Unavailable, DisplayState::Probing, DisplayState::Activating, DisplayState::Attaching, DisplayState::Refreshing,
-            DisplayState::Withdrawing, DisplayState::Failing, DisplayState::Recovering, DisplayState::Confirmed})
+      for (const DisplayState current : {DisplayState::Unavailable, DisplayState::Probing, DisplayState::Activating, DisplayState::Attaching,
+                                         DisplayState::Refreshing, DisplayState::Withdrawing, DisplayState::Failing, DisplayState::Blocked,
+                                         DisplayState::BlockedWithdrawn, DisplayState::Recovering, DisplayState::Confirmed})
         set(current, event, handler);
     };
 
     set(DisplayState::Disabled, EventType::RequestEnabled, &OverlayHubView::probePresentation);
     set(DisplayState::Withdrawn, EventType::RequestEnabled, &OverlayHubView::enableFromWithdrawn);
     set(DisplayState::Withdrawing, EventType::RequestEnabled, &OverlayHubView::enableDuringWithdraw);
-    // Failing 期间忽略 RequestEnabled：Hub reconcile 仍会请求展示，但不能拉回独占。
+    set(DisplayState::BlockedWithdrawn, EventType::RequestEnabled, &OverlayHubView::requestBlockedPresentation);
 
     setPresenting(EventType::RequestDisabled, &OverlayHubView::disablePresentation);
     set(DisplayState::Withdrawn, EventType::RequestDisabled, &OverlayHubView::disablePresentation);
     set(DisplayState::Withdrawing, EventType::RequestDisabled, &OverlayHubView::disablePresentation);
     set(DisplayState::Failing, EventType::RequestDisabled, &OverlayHubView::withdrawFailingPresentation);
+    set(DisplayState::Blocked, EventType::RequestDisabled, &OverlayHubView::withdrawBlockedPresentation);
+    set(DisplayState::BlockedWithdrawn, EventType::RequestDisabled, &OverlayHubView::ignoreEvent);
 
     set(DisplayState::Unavailable, EventType::ExternalRefresh, &OverlayHubView::probePresentation);
     set(DisplayState::Unavailable, EventType::RetryDue, &OverlayHubView::probePresentation);
@@ -200,13 +206,14 @@ OverlayHubView::Transition OverlayHubView::reduce(const DisplayState state, cons
     set(DisplayState::Refreshing, EventType::ActivationFinished, &OverlayHubView::handleActivationFinished);
 
     setPresenting(EventType::ReleaseStarted, &OverlayHubView::handleReleaseStarted);
-    setPresenting(EventType::ReleaseBlocked, &OverlayHubView::enterFailing);
-    set(DisplayState::Withdrawing, EventType::ReleaseBlocked, &OverlayHubView::ignoreEvent);
+    setPresenting(EventType::ReleaseBlocked, &OverlayHubView::handleReleaseBlocked);
     set(DisplayState::Recovering, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
     set(DisplayState::Withdrawing, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
     set(DisplayState::Failing, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::Blocked, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::BlockedWithdrawn, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
 
-    // HostReleaseStarted 不进入 Withdrawing/Failing：清理中途不能被拉回独占
+    // HostReleaseStarted 不进入正在清理或已阻塞的状态：清理中途不能被拉回独占
     // Recovering。但 HostReleaseCompleted 必须收敛清理——Coordinator 把普通
     // detach 升级为 HostInvalidated 后只发布 Host 完成事件。
     for (const DisplayState current : {DisplayState::Unavailable, DisplayState::Probing, DisplayState::Activating, DisplayState::Attaching,
@@ -217,6 +224,8 @@ OverlayHubView::Transition OverlayHubView::reduce(const DisplayState state, cons
     set(DisplayState::Recovering, EventType::HostReleaseCompleted, &OverlayHubView::recoverHost);
     set(DisplayState::Withdrawing, EventType::HostReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
     set(DisplayState::Failing, EventType::HostReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::Blocked, EventType::HostReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::BlockedWithdrawn, EventType::HostReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
     return result;
   }();
 
@@ -264,7 +273,7 @@ OverlayHubView::Transition OverlayHubView::handleAttachFinished(const DisplaySta
     case AttachResult::ReleasePending:
       return {DisplayState::Recovering};
     case AttachResult::ReleaseBlocked:
-      return {DisplayState::Failing};
+      return {DisplayState::Blocked};
     case AttachResult::Failed:
       if (state == DisplayState::Recovering) return {state, Action::ScheduleRecoverRetry};
       return {DisplayState::Failing, Action::ReleaseRecovery, true};
@@ -285,7 +294,7 @@ OverlayHubView::Transition OverlayHubView::handleActivationFinished(const Displa
     case AttachResult::ReleasePending:
       return {DisplayState::Recovering};
     case AttachResult::ReleaseBlocked:
-      return {DisplayState::Failing};
+      return {DisplayState::Blocked};
     case AttachResult::Prepared:
     case AttachResult::Failed:
       return {DisplayState::Failing, Action::ReleaseRecovery, true};
@@ -317,16 +326,23 @@ OverlayHubView::Transition OverlayHubView::handleReleaseStarted(const DisplaySta
   // 状态已由 RequestDisabled→Withdrawing 或 Failed→Failing 先行进入；此处只在
   // 旧路径漏进时兜底。Pending 保持当前清理态，Complete 视为失败让出。
   if (event.releaseResult == ReleaseResult::Complete) return {DisplayState::Unavailable};
-  if (state == DisplayState::Withdrawing || state == DisplayState::Failing) return {state};
+  if (state == DisplayState::Withdrawing || state == DisplayState::Failing || state == DisplayState::Blocked || state == DisplayState::BlockedWithdrawn)
+    return {state};
   return {DisplayState::Failing};
 }
 
-OverlayHubView::Transition OverlayHubView::enterFailing(DisplayState, const Event&) { return {DisplayState::Failing}; }
+OverlayHubView::Transition OverlayHubView::handleReleaseBlocked(const DisplayState state, const Event&) {
+  return {state == DisplayState::Withdrawing || state == DisplayState::BlockedWithdrawn ? DisplayState::BlockedWithdrawn : DisplayState::Blocked};
+}
+
+OverlayHubView::Transition OverlayHubView::requestBlockedPresentation(DisplayState, const Event&) { return {DisplayState::Blocked}; }
+
+OverlayHubView::Transition OverlayHubView::withdrawBlockedPresentation(DisplayState, const Event&) { return {DisplayState::BlockedWithdrawn}; }
 
 OverlayHubView::Transition OverlayHubView::handleReleaseCompleted(const DisplayState state, const Event&) {
   if (state == DisplayState::Recovering) return {state, Action::AttachAcquire};
-  if (state == DisplayState::Withdrawing) return {DisplayState::Withdrawn};
-  if (state == DisplayState::Failing) return {DisplayState::Unavailable};
+  if (state == DisplayState::Withdrawing || state == DisplayState::BlockedWithdrawn) return {DisplayState::Withdrawn};
+  if (state == DisplayState::Failing || state == DisplayState::Blocked) return {DisplayState::Unavailable};
   return {state};
 }
 
