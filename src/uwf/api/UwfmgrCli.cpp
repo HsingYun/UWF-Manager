@@ -16,7 +16,7 @@
  */
 #include "UwfmgrCli.h"
 
-#include <cctype>
+#include <algorithm>
 #include <cstdint>
 #include <format>
 #include <sstream>
@@ -29,8 +29,11 @@ namespace uwf::api {
 
 namespace {
 
-// uwfmgr CLI 引号规则：路径含空格就用双引号包整段；其它字面量原样。
-std::string quoteArg(const std::string& s) { return s.find(' ') != std::string::npos ? "\"" + s + "\"" : s; }
+bool isAsciiWhitespace(const char value) { return value == ' ' || value == '\t' || value == '\n' || value == '\r' || value == '\f' || value == '\v'; }
+
+// uwfmgr CLI 引号规则：参数含 ASCII 空白就用双引号包整段；其它字面量原样。
+// 渲染和解析共享同一组空白定义，不受进程 C locale 影响。
+std::string quoteArg(const std::string& value) { return std::ranges::any_of(value, isAsciiWhitespace) ? "\"" + value + "\"" : value; }
 
 // 尝试把 token 解析成非负整数（uint64）。成功返回 true，out 拿到值。
 bool parseUInt(const std::string& s, uint64_t& out) {
@@ -49,26 +52,36 @@ bool parseUInt(const std::string& s, uint64_t& out) {
 // shell 风格分词：双引号包起来的整段算一个 token，引号本身不进 token。
 // uwfmgr 命令本身和 Windows 路径里都不会用到单引号或反斜杠转义，所以这里
 // 只处理双引号；其它字符按字面量收进 token。
-std::vector<std::string> tokenize(const std::string& line) {
-  std::vector<std::string> out;
+struct TokenizedLine {
+  std::vector<std::string> tokens;
+  bool quotesBalanced = true;
+};
+
+TokenizedLine tokenize(const std::string& line) {
+  TokenizedLine result;
   std::string cur;
   bool inQuote = false;
+  bool tokenStarted = false;
   for (char c : line) {
     if (c == '"') {
       inQuote = !inQuote;
+      tokenStarted = true;
       continue;
     }
-    if (!inQuote && std::isspace(static_cast<unsigned char>(c))) {
-      if (!cur.empty()) {
-        out.push_back(std::move(cur));
+    if (!inQuote && isAsciiWhitespace(c)) {
+      if (tokenStarted) {
+        result.tokens.push_back(std::move(cur));
         cur.clear();
+        tokenStarted = false;
       }
       continue;
     }
     cur.push_back(c);
+    tokenStarted = true;
   }
-  if (!cur.empty()) out.push_back(std::move(cur));
-  return out;
+  if (tokenStarted) result.tokens.push_back(std::move(cur));
+  result.quotesBalanced = !inQuote;
+  return result;
 }
 
 UwfmgrCommand makeCmd(UwfmgrKind k, std::vector<std::string> args = {}) {
@@ -90,7 +103,12 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
     return out;
   }
 
-  auto tokens = tokenize(line);
+  auto tokenized = tokenize(line);
+  auto& tokens = tokenized.tokens;
+  if (!tokenized.quotesBalanced) {
+    out.parseError = ParseError::MalformedQuoting;
+    return out;
+  }
   if (tokens.empty()) {
     out.parseError = ParseError::Comment;
     return out;
@@ -110,16 +128,24 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
 
   const std::string cat = toLowerAscii(tokens[0]);
   const std::string verb = toLowerAscii(tokens[1]);
+  const auto rejectUnexpectedArgument = [&](const std::size_t expectedCount) {
+    if (tokens.size() <= expectedCount) return false;
+    out.parseError = ParseError::UnexpectedArgument;
+    out.parseErrorContext = tokens[expectedCount];
+    return true;
+  };
 
   // 一旦下面任何分支识别出 cat/verb 组合，就先把 out.kind 设到对应枚举；
   // 后续只要 parseError 非 None 就一律按"识别但参数非法"报告，而非 Unsupported。
   if (cat == "filter") {
     if (verb == "enable") {
       out.kind = UwfmgrKind::FilterEnable;
+      rejectUnexpectedArgument(2);
       return out;
     }
     if (verb == "disable") {
       out.kind = UwfmgrKind::FilterDisable;
+      rejectUnexpectedArgument(2);
       return out;
     }
   } else if (cat == "overlay") {
@@ -134,6 +160,7 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
         out.parseError = ParseError::InvalidSize;
         return;
       }
+      if (rejectUnexpectedArgument(3)) return;
       out.args.push_back(std::to_string(v));
     };
     if (verb == "set-type") {
@@ -142,6 +169,7 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
         out.parseError = ParseError::MissingTypeArg;
         return out;
       }
+      if (rejectUnexpectedArgument(3)) return out;
       const auto t = toLowerAscii(tokens[2]);
       if (t == "ram") {
         out.args.emplace_back("RAM");
@@ -172,6 +200,7 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
         out.parseError = ParseError::MissingVolumeArg;
         return out;
       }
+      if (rejectUnexpectedArgument(3)) return out;
       // 文档里 protect/unprotect 接受 "all"（一次作用于所有卷），但本项目按
       // 单卷映射到 UI，不支持批量形式；归为 Unsupported，而不是按"盘符非法"
       // 误报。kind 复位成 Unknown，与其它 Unsupported 命令保持一致。
@@ -198,6 +227,11 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
         out.parseError = ParseError::MissingPathArg;
         return out;
       }
+      if (rejectUnexpectedArgument(3)) return out;
+      if (tokens[2].empty()) {
+        out.parseError = ParseError::MissingPathArg;
+        return out;
+      }
       out.args.push_back(tokens[2]);
       return out;
     }
@@ -205,6 +239,11 @@ UwfmgrCommand parseLine(const std::string& rawLine, int lineNo) {
     if (verb == "add-exclusion" || verb == "remove-exclusion") {
       out.kind = (verb == "add-exclusion") ? UwfmgrKind::RegistryAddExclusion : UwfmgrKind::RegistryRemoveExclusion;
       if (tokens.size() < 3) {
+        out.parseError = ParseError::MissingRegistryKeyArg;
+        return out;
+      }
+      if (rejectUnexpectedArgument(3)) return out;
+      if (tokens[2].empty()) {
         out.parseError = ParseError::MissingRegistryKeyArg;
         return out;
       }

@@ -29,6 +29,8 @@
 
 namespace uwf {
 
+class WmiOperations;
+
 // UWF 类是否已在当前系统注册。该能力在进程启动时探测一次，此后作为不可变
 // 的运行环境事实传给每次动态状态读取；WMI 代理重连不会重新定义它。
 enum class UwfCapability {
@@ -40,14 +42,17 @@ enum class UwfCapability {
 // provider 明确确认不存在时返回 Unavailable；连接、权限和协议失败抛出异常，
 // 不能把暂时的读取故障误判成系统不支持 UWF。
 [[nodiscard]] UwfCapability probeUwfCapability();
+[[nodiscard]] UwfCapability probeUwfCapability(WmiOperations& embeddedSession);
 
 // 读取完整的配置与运行时摘要（filter / overlay / volumes / exclusions）。
 // GetOverlayFiles 是昂贵的按需操作，不属于快照。capability 来自启动期探测，
 // 本函数只读取会变化的状态，不在刷新期间重新探测 UWF 能力。连接、协议和
 // 解码失败抛出异常。
 core::UwfSnapshot readSnapshot(UwfCapability capability);
+core::UwfSnapshot readSnapshot(WmiOperations& embeddedSession, UwfCapability capability, bool elevated);
 
 // 枚举本机所有可见的磁盘卷，并对每个卷计算 DiskSupport 判定。
 std::vector<core::DiskInfo> enumerateDisks();
+std::vector<core::DiskInfo> enumerateDisks(WmiOperations& cimv2Session);
 
 }  // namespace uwf

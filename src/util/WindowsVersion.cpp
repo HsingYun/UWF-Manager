@@ -103,8 +103,7 @@ WindowsVersionInfo queryWindowsVersion() {
   result.editionId = readVersionMetadata("EditionID", std::string{}, [=] { return regkey::readString(kCurrentVersion, "EditionID"); });
   result.productName = correctedProductName(
       readVersionMetadata("ProductName", std::string{}, [=] { return regkey::readString(kCurrentVersion, "ProductName"); }), result.family);
-  result.displayVersion =
-      readVersionMetadata("DisplayVersion", std::string{}, [=] { return regkey::readString(kCurrentVersion, "DisplayVersion"); });
+  result.displayVersion = readVersionMetadata("DisplayVersion", std::string{}, [=] { return regkey::readString(kCurrentVersion, "DisplayVersion"); });
   if (result.displayVersion.empty()) {
     result.displayVersion = readVersionMetadata("ReleaseId", std::string{}, [=] { return regkey::readString(kCurrentVersion, "ReleaseId"); });
   }

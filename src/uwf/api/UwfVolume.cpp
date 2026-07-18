@@ -75,7 +75,7 @@ std::optional<api::VolumeRow> decodeManagedVolume(const WmiRow& source) {
                         rowutil::requireBool(source, "Protected")};
 }
 
-api::VolumeRow rereadVolume(WmiSession& session, const api::VolumeRow& target) {
+api::VolumeRow rereadVolume(WmiOperations& session, const api::VolumeRow& target) {
   auto observed = decodeManagedVolume(session.getObject(target.path));
   if (!observed || observed->currentSession != target.currentSession || observed->driveLetter != target.driveLetter ||
       observed->volumeName != target.volumeName) {
@@ -88,9 +88,7 @@ void requirePath(const api::VolumeRow& row, const char* operation) {
   if (row.path.empty()) throw WmiProtocolError(operation, "UWF_Volume row has no object path");
 }
 
-std::string normalizeVolumePath(const api::VolumeRow& row, const std::string& fileName) {
-  return stripVolumeDriveLetter(fileName, row.driveLetter);
-}
+std::string normalizeVolumePath(const api::VolumeRow& row, const std::string& fileName) { return stripVolumeDriveLetter(fileName, row.driveLetter); }
 
 WmiRow fileInput(const std::string& normalizedFileName) {
   WmiRow inputs;
@@ -98,9 +96,7 @@ WmiRow fileInput(const std::string& normalizedFileName) {
   return inputs;
 }
 
-bool isAlreadyExists(const WmiInfrastructureError& error) {
-  return WmiError(static_cast<int32_t>(error.code().value())) == WmiErrorCode::AlreadyExists;
-}
+bool isAlreadyExists(const WmiInfrastructureError& error) { return WmiError(static_cast<int32_t>(error.code().value())) == WmiErrorCode::AlreadyExists; }
 
 }  // namespace
 
@@ -150,30 +146,30 @@ void UwfVolume::setBinding(const api::VolumeRow& row, const api::VolumeBinding b
   const bool bindByDriveLetter = binding == api::VolumeBinding::DriveLetter;
   WmiRow inputs;
   inputs.emplace("bBindByDriveLetter", WmiValue::fromBool(bindByDriveLetter));
-  invokeAndConfirm("set UWF volume binding", [&] { m_session.invokeMethod(row.path, "SetBindByDriveLetter", inputs); },
-                   [&] { return rereadVolume(m_session, row).bindByDriveLetter == bindByDriveLetter; });
+  invokeAndConfirm(
+      "set UWF volume binding", [&] { m_session.invokeMethod(row.path, "SetBindByDriveLetter", inputs); },
+      [&] { return rereadVolume(m_session, row).bindByDriveLetter == bindByDriveLetter; });
 }
 
 void UwfVolume::addExclusion(const api::VolumeRow& row, const std::string& fileName) const {
   requirePath(row, "add UWF file exclusion");
   const std::string normalized = normalizeVolumePath(row, fileName);
   const WmiRow inputs = fileInput(normalized);
-  invokeAndConfirm("add UWF file exclusion", [&] { m_session.invokeMethod(row.path, "AddExclusion", inputs); },
-                   [&] { return findExclusion(row, normalized); });
+  invokeAndConfirm("add UWF file exclusion", [&] { m_session.invokeMethod(row.path, "AddExclusion", inputs); }, [&] { return findExclusion(row, normalized); });
 }
 
 void UwfVolume::removeExclusion(const api::VolumeRow& row, const std::string& fileName) const {
   requirePath(row, "remove UWF file exclusion");
   const std::string normalized = normalizeVolumePath(row, fileName);
   const WmiRow inputs = fileInput(normalized);
-  invokeAndConfirm("remove UWF file exclusion", [&] { m_session.invokeMethod(row.path, "RemoveExclusion", inputs); },
-                   [&] { return !findExclusion(row, normalized); });
+  invokeAndConfirm(
+      "remove UWF file exclusion", [&] { m_session.invokeMethod(row.path, "RemoveExclusion", inputs); }, [&] { return !findExclusion(row, normalized); });
 }
 
 void UwfVolume::removeAllExclusions(const api::VolumeRow& row) const {
   requirePath(row, "remove all UWF file exclusions");
-  invokeAndConfirm("remove all UWF file exclusions", [&] { m_session.invokeMethod(row.path, "RemoveAllExclusions"); },
-                   [&] { return getExclusions(row).empty(); });
+  invokeAndConfirm(
+      "remove all UWF file exclusions", [&] { m_session.invokeMethod(row.path, "RemoveAllExclusions"); }, [&] { return getExclusions(row).empty(); });
 }
 
 bool UwfVolume::findExclusion(const api::VolumeRow& row, const std::string& fileName) const {
@@ -186,9 +182,8 @@ bool UwfVolume::findExclusion(const api::VolumeRow& row, const std::string& file
 std::vector<api::ExcludedFile> UwfVolume::getExclusions(const api::VolumeRow& row) const {
   requirePath(row, "read UWF file exclusions");
   const auto output = m_session.callMethodRead(row.path, "GetExclusions");
-  return rowutil::readArrayOutput<api::ExcludedFile>(output, "ExcludedFiles", [](const WmiRow& item) {
-    return api::ExcludedFile{rowutil::requireEmbeddedString(item, "FileName")};
-  });
+  return rowutil::readArrayOutput<api::ExcludedFile>(output, "ExcludedFiles",
+                                                     [](const WmiRow& item) { return api::ExcludedFile{rowutil::requireEmbeddedString(item, "FileName")}; });
 }
 
 VolumeRegistration UwfVolume::ensureNextSessionEntry(const std::string& driveLetter) const {
@@ -196,12 +191,11 @@ VolumeRegistration UwfVolume::ensureNextSessionEntry(const std::string& driveLet
   if (normalizedDrive.empty()) throw std::invalid_argument(std::format("invalid drive letter: {}", driveLetter));
 
   const auto volumes = readAll();
-  if (const auto* existing = api::findBySession(volumes, api::Session::Next,
-                                                [&](const api::VolumeRow& volume) { return volume.driveLetter == normalizedDrive; })) {
+  if (const auto* existing =
+          api::findBySession(volumes, api::Session::Next, [&](const api::VolumeRow& volume) { return volume.driveLetter == normalizedDrive; })) {
     return {*existing, VolumeRegistrationDisposition::AlreadyPresent};
   }
-  const auto* current = api::findBySession(volumes, api::Session::Current,
-                                           [&](const api::VolumeRow& volume) { return volume.driveLetter == normalizedDrive; });
+  const auto* current = api::findBySession(volumes, api::Session::Current, [&](const api::VolumeRow& volume) { return volume.driveLetter == normalizedDrive; });
   if (!current) throw WmiProtocolError("register UWF volume", std::format("no current-session instance exists for {}", normalizedDrive));
 
   WmiRow properties;
@@ -224,8 +218,8 @@ VolumeRegistration UwfVolume::ensureNextSessionEntry(const std::string& driveLet
     outcome = VolumeRegistrationDisposition::ConfirmedAfterUncertainWrite;
   }
 
-  const std::string relativePath = std::format(R"(UWF_Volume.CurrentSession=FALSE,DriveLetter="{}",VolumeName="{}")",
-                                               escapeWmiPathValue(normalizedDrive), escapeWmiPathValue(current->volumeName));
+  const std::string relativePath = std::format(R"(UWF_Volume.CurrentSession=FALSE,DriveLetter="{}",VolumeName="{}")", escapeWmiPathValue(normalizedDrive),
+                                               escapeWmiPathValue(current->volumeName));
   std::optional<api::VolumeRow> observed;
   try {
     observed = decodeManagedVolume(m_session.getObject(relativePath));
@@ -242,18 +236,18 @@ VolumeRegistration UwfVolume::ensureNextSessionEntry(const std::string& driveLet
     detail += confirmationError.what();
     std::throw_with_nested(WmiStateVerificationError("register UWF volume", detail));
   } catch (...) {
-    const std::string detail = outcome == VolumeRegistrationDisposition::ConfirmedAfterUncertainWrite
-                                   ? "write outcome was uncertain and state confirmation failed with a non-standard exception; original failure: " +
-                                         uncertainFailure
-                                   : "registration state confirmation failed with a non-standard exception";
+    const std::string detail =
+        outcome == VolumeRegistrationDisposition::ConfirmedAfterUncertainWrite
+            ? "write outcome was uncertain and state confirmation failed with a non-standard exception; original failure: " + uncertainFailure
+            : "registration state confirmation failed with a non-standard exception";
     std::throw_with_nested(WmiStateVerificationError("register UWF volume", detail));
   }
 
   if (!observed || observed->currentSession || observed->driveLetter != normalizedDrive || observed->volumeName != current->volumeName) {
     std::string detail;
     if (outcome == VolumeRegistrationDisposition::ConfirmedAfterUncertainWrite) {
-      detail = "write outcome was uncertain and the observed instance does not match the requested next-session identity; original failure: " +
-               uncertainFailure;
+      detail =
+          "write outcome was uncertain and the observed instance does not match the requested next-session identity; original failure: " + uncertainFailure;
     } else if (outcome == VolumeRegistrationDisposition::ConcurrentlyCreated) {
       detail = "the concurrently created instance does not match the requested next-session identity";
     } else {

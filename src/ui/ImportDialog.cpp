@@ -21,7 +21,6 @@
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QHeaderView>
@@ -64,6 +63,10 @@ QString parseErrorMessage(api::ParseError e, const QString& errorContext) {
       return I18n::tr("Missing path argument");
     case api::ParseError::MissingRegistryKeyArg:
       return I18n::tr("Missing registry key argument");
+    case api::ParseError::MalformedQuoting:
+      return I18n::tr("Unclosed double quote in command");
+    case api::ParseError::UnexpectedArgument:
+      return I18n::tr("Unexpected extra argument: %1").arg(errorContext);
     case api::ParseError::Unsupported:
       return I18n::tr("Unsupported uwfmgr command (cannot be mapped to a UI action)");
   }
@@ -78,7 +81,7 @@ namespace {
 // 5 MB 上限：一般日志/脚本足够；再大的多半是误拖的二进制，硬读会把 UI 卡很久。
 void appendUwfmgrLinesFromFile(QPlainTextEdit* target, const QString& path) {
   QFile f(path);
-  constexpr qint64 kMaxBytes = 5 * 1024 * 1024;
+  constexpr qint64 kMaxBytes = qint64{5} * 1024 * 1024;
   if (!f.open(QIODevice::ReadOnly | QIODevice::Text)) {
     dialogs::warning(target, I18n::tr("Cannot read file"), I18n::tr("Could not open file %1: %2").arg(QFileInfo(path).fileName(), f.errorString()));
     return;
@@ -307,7 +310,9 @@ void appendDefaultRules(QWidget* parent, QPlainTextEdit* target) {
 
 }  // namespace
 
-ImportDialog::ImportDialog(QWidget* parent) : QDialog(parent) {
+ImportDialog::ImportDialog(QWidget* parent) : ImportDialog(dialogs::systemFileDialogs(), parent) {}
+
+ImportDialog::ImportDialog(dialogs::FileDialogProvider& fileDialogs, QWidget* parent) : QDialog(parent), m_fileDialogs(fileDialogs) {
   setWindowTitle(I18n::tr("Import uwfmgr commands"));
   resize(820, 600);
 
@@ -392,8 +397,8 @@ ImportDialog::ImportDialog(QWidget* parent) : QDialog(parent) {
   connect(loadBtn, &QPushButton::clicked, this, [this]() {
     // 不限文件后缀（.txt / .bat / .ps1 / .log / 配置 dump 都可能含 uwfmgr 命令）。
     // 多选支持：用户可以一次拉一批日志进来。
-    const QStringList paths = QFileDialog::getOpenFileNames(this, I18n::tr("Choose files containing uwfmgr commands"), QDir::homePath(),
-                                                            I18n::tr("All files (*);;Text files (*.txt *.bat *.ps1 *.log *.cmd)"));
+    const QStringList paths = m_fileDialogs.openFiles(
+        this, {I18n::tr("Choose files containing uwfmgr commands"), QDir::homePath(), I18n::tr("All files (*);;Text files (*.txt *.bat *.ps1 *.log *.cmd)")});
     for (const auto& p : paths) appendUwfmgrLinesFromFile(m_text, p);
   });
   connect(closeBtn, &QPushButton::clicked, this, &QDialog::reject);

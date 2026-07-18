@@ -183,8 +183,8 @@ void runCommitBatch(QWidget* parent, const QString& progressTitle, const QList<T
       row.category = skipped ? I18n::tr("Skipped") : I18n::tr("Failed");
       row.errorCode = code == 0 ? QStringLiteral("-") : formatErrorCode(hresult, returnValue);
       constexpr CommitOperation kOperation = kHasExists ? CommitOperation::DeleteAndPersist : CommitOperation::Persist;
-      row.reason = !authoritativeFailure.isEmpty() ? authoritativeFailure
-                                                   : (code == 0 ? failureDetail : explainCommitFailure(hresult, returnValue, kOperation));
+      row.reason =
+          !authoritativeFailure.isEmpty() ? authoritativeFailure : (code == 0 ? failureDetail : explainCommitFailure(hresult, returnValue, kOperation));
       const QString diagnostic = !authoritativeFailure.isEmpty() ? authoritativeFailure : failureDetail;
       UWF_LOG_W("commit") << "operation failed: target=" << row.path.toStdString() << " error=" << diagnostic.toStdString();
     }

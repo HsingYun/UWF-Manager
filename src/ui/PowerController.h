@@ -29,7 +29,7 @@ namespace uwf::ui {
 class PowerController : public QObject {
   Q_OBJECT
  public:
-  PowerController(WmiSession& session, QWidget* dialogParent, QObject* parent = nullptr);
+  PowerController(WmiOperations& session, QWidget* dialogParent, QObject* parent = nullptr);
 
  public slots:
   void safeShutdown();

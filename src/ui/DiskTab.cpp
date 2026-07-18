@@ -17,7 +17,6 @@
 #include "DiskTab.h"
 
 #include <QAction>
-#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QLabel>
@@ -118,7 +117,10 @@ QString renderDiskHeading(const core::DiskInfo& d) {
 
 }  // namespace
 
-DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, QWidget* parent) : QWidget(parent), m_disk(disk) {
+DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, QWidget* parent) : DiskTab(disk, showRegistry, dialogs::systemFileDialogs(), parent) {}
+
+DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, dialogs::FileDialogProvider& fileDialogs, QWidget* parent)
+    : QWidget(parent), m_disk(disk), m_fileDialogs(fileDialogs) {
   auto* layout = new QVBoxLayout(this);
   // 顶部留白走 QTabWidget#innerTabs::pane 的 padding 即可，这里再叠 16px
   // 会造成盘符和 TAB 之间出现一大块空白。底部 4px 是为了让文件列表的下边界
@@ -160,7 +162,7 @@ DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, QWidget* parent)
   // 按 NTFS / 全局开关 / 当前卷保护状态共同决定。
   m_overlayBtn->setEnabled(false);
   connect(m_overlayBtn, &QPushButton::clicked, this, [this]() {
-    auto* dlg = new OverlayFilesDialog(driveLetter(), this);
+    auto* dlg = new OverlayFilesDialog(driveLetter(), m_fileDialogs, this);
     dlg->setAttribute(Qt::WA_DeleteOnClose);
     // 转发给 DiskTab 自己的 commitFileRequested 信号 → 最终到
     // MainWindow::commitFilePath，走和右键文件列表一样的提交流程。
@@ -207,7 +209,7 @@ DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, QWidget* parent)
   m_infoTabs->setObjectName("innerTabs");
   m_infoTabs->setDocumentMode(true);
   m_infoTabs->setMinimumHeight(120);
-  m_files = new ExclusionListWidget(ExclusionListWidget::Kind::File, this);
+  m_files = new ExclusionListWidget(ExclusionListWidget::Kind::File, m_fileDialogs, this);
   m_files->setDriveLetter(QString::fromStdString(disk.driveLetter));
   const int fileIdx = m_infoTabs->addTab(m_files, tm.icon(":/icons/file.svg"), I18n::tr("File exclusions"));
   m_infoTabs->setTabToolTip(fileIdx, I18n::tr("Files and folders on this volume excluded from UWF protection. Double-click an entry to copy its path."));
@@ -215,7 +217,7 @@ DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, QWidget* parent)
   // 注册表排除在 UWF 里是全局的，和卷无关；只在一个 TAB 上展示，避免其它盘
   // 看到一份完全相同的"注册表排除"列表而误解。
   if (m_showRegistry) {
-    m_regs = new ExclusionListWidget(ExclusionListWidget::Kind::Registry, this);
+    m_regs = new ExclusionListWidget(ExclusionListWidget::Kind::Registry, m_fileDialogs, this);
     const int regIdx = m_infoTabs->addTab(m_regs, tm.icon(":/icons/registry.svg"), I18n::tr("Registry exclusions"));
     m_infoTabs->setTabToolTip(
         regIdx,
@@ -288,14 +290,14 @@ void DiskTab::refreshThemedIcons() {
 
 void DiskTab::onCommitFile() {
   if (!supported()) return;
-  const QString path = QFileDialog::getOpenFileName(this, I18n::tr("Select a file to commit to disk"), dialogs::dialogBasePath(driveLetter()));
+  const QString path = m_fileDialogs.openFile(this, {I18n::tr("Select a file to commit to disk"), dialogs::dialogBasePath(driveLetter()), {}});
   if (path.isEmpty()) return;
   emit commitFileRequested(QDir::toNativeSeparators(path));
 }
 
 void DiskTab::onCommitDir() {
   if (!supported()) return;
-  const QString path = QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder to commit to disk"), dialogs::dialogBasePath(driveLetter()));
+  const QString path = m_fileDialogs.selectDirectory(this, {I18n::tr("Select a folder to commit to disk"), dialogs::dialogBasePath(driveLetter()), {}});
   if (path.isEmpty()) return;
   emit commitFileRequested(QDir::toNativeSeparators(path));
 }
@@ -304,7 +306,7 @@ void DiskTab::onCommitFileDelete() {
   if (!supported()) return;
   // CommitFileDeletion 删除的是一个**当前仍存在**的文件，所以直接用文件选择框
   // 挑现存文件即可。
-  const QString path = QFileDialog::getOpenFileName(this, I18n::tr("Select a file whose deletion you want to commit"), dialogs::dialogBasePath(driveLetter()));
+  const QString path = m_fileDialogs.openFile(this, {I18n::tr("Select a file whose deletion you want to commit"), dialogs::dialogBasePath(driveLetter()), {}});
   if (path.isEmpty()) return;
   emit commitFileDeletionRequested(QDir::toNativeSeparators(path));
 }
@@ -314,7 +316,7 @@ void DiskTab::onCommitFolderDelete() {
   // 文件夹删除同样作用于"当前存在"的目录——用文件夹选择器挑现存目录；递归删除
   // （子文件 / 子目录 / 目录本身）交给 MainWindow::commitFileDeletionPath。
   const QString path =
-      QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder whose deletion you want to commit"), dialogs::dialogBasePath(driveLetter()));
+      m_fileDialogs.selectDirectory(this, {I18n::tr("Select a folder whose deletion you want to commit"), dialogs::dialogBasePath(driveLetter()), {}});
   if (path.isEmpty()) return;
   emit commitFileDeletionRequested(QDir::toNativeSeparators(path));
 }

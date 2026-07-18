@@ -34,6 +34,9 @@ class QTabWidget;
 namespace uwf::ui {
 
 class StatusPanel;
+namespace dialogs {
+class FileDialogProvider;
+}
 
 // 把 DiskSupport 枚举翻译成中文原因（用于 tooltip / banner）。
 // 放在这里而不是 core/，因为只有 UI 才需要这段文字。
@@ -45,6 +48,8 @@ class DiskTab : public QWidget {
   // showRegistry：是否在本 tab 上挂"注册表排除"子 tab。注册表是全局的，由
   // MainWindow 选定唯一 host 盘——系统盘优先，否则第一块受支持的盘。
   explicit DiskTab(const core::DiskInfo& disk, bool showRegistry, QWidget* parent = nullptr);
+  // 注入对象不转移所有权，生命周期必须覆盖本页及其子对话框。
+  DiskTab(const core::DiskInfo& disk, bool showRegistry, dialogs::FileDialogProvider& fileDialogs, QWidget* parent = nullptr);
 
   // UWF 不可读或进程未提权时，保护开关 / 绑定方式 / 排除列表的增删 / 提交
   // 按钮一律置灰；列表内容仍可查看、可滚动、可切换 TAB。
@@ -134,6 +139,7 @@ class DiskTab : public QWidget {
   ExclusionListWidget* m_regs = nullptr;
   QTabWidget* m_infoTabs = nullptr;  // 内层 TAB（文件排除 / 注册表排除）
   bool m_showRegistry = false;
+  dialogs::FileDialogProvider& m_fileDialogs;
   // 最近一次 applySnapshot 算出的"可写"（UWF 可读 + 已提权），供
   // updateCommitEnablement 读取。构造期默认 false：彼时还没有快照，首帧持久化
   // 按钮一律按"不可写"出。

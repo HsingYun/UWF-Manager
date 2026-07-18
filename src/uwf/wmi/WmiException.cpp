@@ -66,8 +66,7 @@ WmiInfrastructureError::WmiInfrastructureError(const int32_t hresult, std::strin
     : WmiException(makeWmiErrorCode(hresult), std::move(operation), std::move(detail)) {}
 
 WmiProviderError::WmiProviderError(const uint32_t returnValue, std::string operation, std::string detail)
-    : WmiException(makeWmiErrorCode(std::bit_cast<int32_t>(returnValue)), std::move(operation), std::move(detail)),
-      m_returnValue(returnValue) {}
+    : WmiException(makeWmiErrorCode(std::bit_cast<int32_t>(returnValue)), std::move(operation), std::move(detail)), m_returnValue(returnValue) {}
 
 WmiProtocolError::WmiProtocolError(std::string operation, std::string detail)
     : WmiException(std::make_error_code(std::errc::protocol_error), std::move(operation), std::move(detail)) {}

@@ -62,9 +62,7 @@ api::OverlayRow decodeOverlay(const WmiRow& source) {
           rowutil::requireUInt(source, "WarningOverlayThreshold")};
 }
 
-api::OverlayRow rereadOverlay(WmiSession& session, const api::OverlayRow& target) {
-  return decodeOverlay(session.getObject(target.path));
-}
+api::OverlayRow rereadOverlay(WmiOperations& session, const api::OverlayRow& target) { return decodeOverlay(session.getObject(target.path)); }
 
 void requirePath(const api::OverlayRow& row, const char* operation) {
   if (row.path.empty()) throw WmiProtocolError(operation, "UWF_Overlay row has no object path");
@@ -82,12 +80,11 @@ api::OverlayRow UwfOverlay::read() const {
   rowutil::dumpRow("UWF_Overlay", o);
   auto r = decodeOverlay(o);
   UWF_LOG_D("uwf") << "overlay read completed: consumptionMb=" << r.overlayConsumption << " availableMb=" << r.availableSpace
-                    << " warningMb=" << r.warningOverlayThreshold << " criticalMb=" << r.criticalOverlayThreshold;
+                   << " warningMb=" << r.warningOverlayThreshold << " criticalMb=" << r.criticalOverlayThreshold;
   return r;
 }
 
-std::vector<api::OverlayFileRow> UwfOverlay::getOverlayFiles(const api::OverlayRow& row, const std::string& volume,
-                                                             const std::stop_token stopToken) const {
+std::vector<api::OverlayFileRow> UwfOverlay::getOverlayFiles(const api::OverlayRow& row, const std::string& volume, const std::stop_token stopToken) const {
   requirePath(row, "read UWF overlay files");
 
   WmiRow inputs;
@@ -107,16 +104,18 @@ void UwfOverlay::setWarningThreshold(const api::OverlayRow& row, const uint32_t 
   requirePath(row, "set UWF warning threshold");
   WmiRow inputs;
   inputs.emplace("size", WmiValue::fromUInt(sizeMb));
-  invokeAndConfirm("set UWF warning threshold", [&] { m_session.invokeMethod(row.path, "SetWarningThreshold", inputs); },
-                   [&] { return rereadOverlay(m_session, row).warningOverlayThreshold == sizeMb; });
+  invokeAndConfirm(
+      "set UWF warning threshold", [&] { m_session.invokeMethod(row.path, "SetWarningThreshold", inputs); },
+      [&] { return rereadOverlay(m_session, row).warningOverlayThreshold == sizeMb; });
 }
 
 void UwfOverlay::setCriticalThreshold(const api::OverlayRow& row, const uint32_t sizeMb) const {
   requirePath(row, "set UWF critical threshold");
   WmiRow inputs;
   inputs.emplace("size", WmiValue::fromUInt(sizeMb));
-  invokeAndConfirm("set UWF critical threshold", [&] { m_session.invokeMethod(row.path, "SetCriticalThreshold", inputs); },
-                   [&] { return rereadOverlay(m_session, row).criticalOverlayThreshold == sizeMb; });
+  invokeAndConfirm(
+      "set UWF critical threshold", [&] { m_session.invokeMethod(row.path, "SetCriticalThreshold", inputs); },
+      [&] { return rereadOverlay(m_session, row).criticalOverlayThreshold == sizeMb; });
 }
 
 }  // namespace uwf::api

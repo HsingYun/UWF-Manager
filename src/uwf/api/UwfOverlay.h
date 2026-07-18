@@ -36,7 +36,7 @@ namespace uwf::api {
 
 class UwfOverlay {
  public:
-  explicit UwfOverlay(WmiSession& session) : m_session(session) {}
+  explicit UwfOverlay(WmiOperations& session) : m_session(session) {}
 
   [[nodiscard]] api::OverlayRow read() const;
 
@@ -47,7 +47,7 @@ class UwfOverlay {
   void setCriticalThreshold(const api::OverlayRow& row, uint32_t sizeMb) const;
 
  private:
-  WmiSession& m_session;
+  WmiOperations& m_session;
 };
 
 }  // namespace uwf::api

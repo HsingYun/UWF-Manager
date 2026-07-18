@@ -68,8 +68,7 @@ QString explainCommitFailure(int32_t hresult, uint32_t returnValue, const Commit
       case uwf::WmiErrorCode::InvalidParameter:
         return I18n::tr("A parameter was rejected by the system (invalid path or argument).");
       default:
-        return hresult != 0 ? I18n::tr("The operation failed (see log for details).")
-                            : I18n::tr("Operation rejected (code %1).").arg(returnValue);
+        return hresult != 0 ? I18n::tr("The operation failed (see log for details).") : I18n::tr("Operation rejected (code %1).").arg(returnValue);
     }
   }
   return I18n::tr("Unknown cause.");

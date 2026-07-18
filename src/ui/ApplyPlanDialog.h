@@ -42,14 +42,25 @@ namespace uwf::ui {
 
 class GlobalStatusPanel;
 class DiskTab;
+namespace dialogs {
+class FileDialogProvider;
+}
+
+struct ApplyPlanServices {
+  WmiOperations& wmi;
+  dialogs::FileDialogProvider& fileDialogs;
+};
 
 class ApplyPlanDialog : public QDialog {
   Q_OBJECT
  public:
   // global / diskTabs 提供待应用变更的来源；snapshot 是当前 UWF 快照
-  // （写入时需要它判断 filter 是否已启用）；writeSession 是写操作共用的
-  // WMI 会话。三者的所有权都不转移——调用方需保证其生命周期覆盖本对话框。
-  ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPointer<DiskTab>>& diskTabs, const core::UwfSnapshot& snapshot, WmiSession& writeSession,
+  // （写入时需要它判断 filter 是否已启用）。便捷重载使用系统文件选择器；
+  // services 重载允许其它宿主同时提供 WMI 与文件选择边界。所有引用的所有权
+  // 都不转移，调用方需保证其生命周期覆盖本对话框。
+  ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPointer<DiskTab>>& diskTabs, const core::UwfSnapshot& snapshot, WmiOperations& writeSession,
+                  QWidget* parent = nullptr);
+  ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPointer<DiskTab>>& diskTabs, const core::UwfSnapshot& snapshot, ApplyPlanServices services,
                   QWidget* parent = nullptr);
 
  signals:
@@ -68,7 +79,8 @@ class ApplyPlanDialog : public QDialog {
     std::string cmd;
   };
 
-  WmiSession& m_session;
+  WmiOperations& m_session;
+  dialogs::FileDialogProvider& m_fileDialogs;
   const core::UwfSnapshot& m_snapshot;
   api::UwfFilter m_filter;
   api::UwfOverlay m_overlay;

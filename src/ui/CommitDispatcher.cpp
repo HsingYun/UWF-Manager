@@ -164,7 +164,7 @@ std::optional<std::vector<std::string>> scanRegistryKeyTreeWithProgress(QWidget*
 
 }  // namespace
 
-CommitDispatcher::CommitDispatcher(WmiSession& session, const core::UwfSnapshot& snapshot, QTimer* usageTimer, QWidget* parent)
+CommitDispatcher::CommitDispatcher(WmiOperations& session, const core::UwfSnapshot& snapshot, QTimer* usageTimer, QWidget* parent)
     : m_session(session), m_snapshot(snapshot), m_usageTimer(usageTimer), m_parent(parent), m_volume(m_session), m_registry(m_session) {}
 
 void CommitDispatcher::commitFilePath(const QString& path) {
@@ -213,8 +213,7 @@ void CommitDispatcher::commitFilePath(const QString& path) {
   if (auto it = m_snapshot.current.fileExclusions.find(row->volumeName); it != m_snapshot.current.fileExclusions.end()) {
     const std::string hit = findCoveringExclusion(it->second, path.toStdString());
     if (!hit.empty()) {
-      showCommitBlocker(m_parent, title, heading, path,
-                        I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)));
+      showCommitBlocker(m_parent, title, heading, path, I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)));
       return;
     }
   }
@@ -241,8 +240,7 @@ void CommitDispatcher::commitFilePath(const QString& path) {
   if (!confirmCommit(m_parent, title, heading, path, detail)) return;
 
   runCommitBatch(
-      m_parent, I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; },
-      [&](const QString& f) { m_volume.commitFile(*row, f.toStdString()); });
+      m_parent, I18n::tr("Commit to disk"), targets, [](const QString& f) { return f; }, [&](const QString& f) { m_volume.commitFile(*row, f.toStdString()); });
 }
 
 void CommitDispatcher::commitFileDeletionPath(const QString& path) {
@@ -264,8 +262,7 @@ void CommitDispatcher::commitFileDeletionPath(const QString& path) {
   try {
     dl = extractDriveLetter(path);
   } catch (const std::exception& error) {
-    warning(m_parent, I18n::tr("Commit file deletion failed"),
-            I18n::tr("Failed to resolve the target volume: %1").arg(QString::fromUtf8(error.what())));
+    warning(m_parent, I18n::tr("Commit file deletion failed"), I18n::tr("Failed to resolve the target volume: %1").arg(QString::fromUtf8(error.what())));
     return;
   }
   if (dl.isEmpty()) {
@@ -300,8 +297,7 @@ void CommitDispatcher::commitFileDeletionPath(const QString& path) {
   if (auto it = m_snapshot.current.fileExclusions.find(row->volumeName); it != m_snapshot.current.fileExclusions.end()) {
     const std::string hit = findCoveringExclusion(it->second, path.toStdString());
     if (!hit.empty()) {
-      showCommitBlocker(m_parent, title, heading, path,
-                        I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)));
+      showCommitBlocker(m_parent, title, heading, path, I18n::tr("This path is in the file exclusion list.\nExclusion: %1").arg(QString::fromStdString(hit)));
       return;
     }
   }
@@ -329,8 +325,7 @@ void CommitDispatcher::commitFileDeletionPath(const QString& path) {
   if (!confirmCommit(m_parent, title, heading, path, detail)) return;
 
   runCommitBatch(
-      m_parent, title, targets, [](const QString& f) { return f; },
-      [&](const QString& f) { m_volume.commitFileDeletion(*row, f.toStdString()); },
+      m_parent, title, targets, [](const QString& f) { return f; }, [&](const QString& f) { m_volume.commitFileDeletion(*row, f.toStdString()); },
       [](const QString& f) { return fileExistsForVerification(f); });
 }
 
@@ -367,7 +362,8 @@ void CommitDispatcher::commitRegistryKey(const QString& key, const QString& valu
   // CommitRegistry 只能逐值提交，"提交整键"由这里展开成逐值调用。
   QList<RegCommitTarget> targets;
   if (!wholeKey) {
-    const auto targetExists = observeTargetForConfirmation(m_parent, I18n::tr("Commit failed"), [&] { return regkey::valueExists(normKey, valueName.toStdString()); });
+    const auto targetExists =
+        observeTargetForConfirmation(m_parent, I18n::tr("Commit failed"), [&] { return regkey::valueExists(normKey, valueName.toStdString()); });
     if (!targetExists) return;
     if (!*targetExists) {
       showCommitBlocker(m_parent, title, heading, target, I18n::tr("This registry value does not exist, so there is nothing to commit."));

@@ -52,6 +52,11 @@
 #include <QString>
 #include <functional>
 #include <optional>
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include "../util/RegistryKey.h"
 
 class QCheckBox;
 class QLabel;
@@ -62,6 +67,19 @@ class QTreeWidget;
 class QTreeWidgetItem;
 
 namespace uwf::ui {
+
+// 注册表选择器所需的只读浏览能力。系统实现委托给 util/RegistryKey；将数据源
+// 与 QWidget 生命周期分离后，选择器可以浏览离线快照或受控视图，而无需改变
+// 路径校验、选择语义和结果协议。所有方法都在选择器所属的 GUI 线程同步调用；
+// 对话框只借用数据源，不接管所有权；调用方必须保证其生命周期覆盖对话框。
+class RegistryBrowser {
+ public:
+  virtual ~RegistryBrowser() = default;
+  [[nodiscard]] virtual std::vector<std::string> rootHiveLongNames() const = 0;
+  [[nodiscard]] virtual std::vector<std::string> subkeyNames(std::string_view key) const = 0;
+  [[nodiscard]] virtual bool hasSubkeys(std::string_view key) const = 0;
+  [[nodiscard]] virtual std::vector<regkey::RegValueInfo> values(std::string_view key) const = 0;
+};
 
 class RegistryPickerDialog : public QDialog {
   Q_OBJECT
@@ -92,6 +110,7 @@ class RegistryPickerDialog : public QDialog {
   using AvailabilityChecker = std::function<KeyAvailability(const QString& normalizedKey)>;
 
   RegistryPickerDialog(Mode mode, const QString& title, QWidget* parent = nullptr);
+  RegistryPickerDialog(Mode mode, const QString& title, const RegistryBrowser& browser, QWidget* parent = nullptr);
 
   // 覆盖默认的 standardAvailability。populateRootHives / loadChildren 每次新建
   // 节点时都会调一次（无注入时跑 standardAvailability），决定该节点的 flags +
@@ -108,7 +127,7 @@ class RegistryPickerDialog : public QDialog {
   void preselectKey(const QString& key);
 
   // 用户点 OK 后的结果。Cancel 或还没 exec 完返回 nullopt。
-  [[nodiscard]] std::optional<Result> result() const { return m_result; }
+  [[nodiscard]] std::optional<Result> selection() const { return m_result; }
 
   // 静态便捷：阻塞执行 + 取结果一步完成。checker 仅 Exclusion 用。
   [[nodiscard]] static std::optional<Result> pick(Mode mode, const QString& title, QWidget* parent = nullptr, AvailabilityChecker checker = {},
@@ -148,6 +167,7 @@ class RegistryPickerDialog : public QDialog {
 
  private:
   Mode m_mode;
+  const RegistryBrowser& m_browser;
   AvailabilityChecker m_availability;
   std::optional<Result> m_result;
 

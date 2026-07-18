@@ -18,28 +18,37 @@
 
 #include <windows.h>
 
-#include <cctype>
 #include <limits>
 #include <stdexcept>
 #include <system_error>
 
 namespace uwf {
 
+namespace {
+
+bool isAsciiWhitespace(const char value) { return value == ' ' || value == '\t' || value == '\n' || value == '\r' || value == '\f' || value == '\v'; }
+
+}  // namespace
+
 std::string toLowerAscii(std::string s) {
-  for (char& c : s) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+  for (char& c : s) {
+    if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+  }
   return s;
 }
 
 std::string toUpperAscii(std::string s) {
-  for (char& c : s) c = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+  for (char& c : s) {
+    if (c >= 'a' && c <= 'z') c = static_cast<char>(c - 'a' + 'A');
+  }
   return s;
 }
 
 std::string trim(std::string s) {
   size_t begin = 0;
   size_t end = s.size();
-  while (begin < end && std::isspace(static_cast<unsigned char>(s[begin]))) ++begin;
-  while (end > begin && std::isspace(static_cast<unsigned char>(s[end - 1]))) --end;
+  while (begin < end && isAsciiWhitespace(s[begin])) ++begin;
+  while (end > begin && isAsciiWhitespace(s[end - 1])) --end;
   return s.substr(begin, end - begin);
 }
 

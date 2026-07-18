@@ -45,6 +45,34 @@ class TransientLabel;
 class WindowChromeController;
 enum class Theme;
 
+struct ApplicationState {
+  std::vector<core::DiskInfo> disks;
+  core::UwfSnapshot snapshot;
+};
+
+// 主窗口只依赖“读取一份完整应用状态”的能力，不关心数据来自本机 WMI、远程
+// 代理还是离线快照。实现必须完整返回磁盘与 UWF 快照，或在失败时抛出异常；
+// read 在 GUI 线程同步执行，MainWindow 负责以两阶段提交保证旧界面不被部分
+// 结果污染。
+class ApplicationStateSource {
+ public:
+  virtual ~ApplicationStateSource() = default;
+  [[nodiscard]] virtual ApplicationState read(UwfCapability capability) = 0;
+};
+
+// 两个服务均由调用方拥有，生命周期必须覆盖 MainWindow。
+struct MainWindowServices {
+  WmiOperations& uwf;
+  ApplicationStateSource& state;
+};
+
+struct MainWindowStartup {
+  UwfCapability uwfCapability;
+  bool compatibilityMode = false;
+  QString osProductName;
+  QString osEditionId;
+};
+
 class MainWindow : public QMainWindow {
   Q_OBJECT
  public:
@@ -54,6 +82,7 @@ class MainWindow : public QMainWindow {
   // 文案不会跟着变。
   explicit MainWindow(UwfCapability uwfCapability, bool compatibilityMode = false, const QString& osProductName = {}, const QString& osEditionId = {},
                       QWidget* parent = nullptr);
+  MainWindow(MainWindowServices services, MainWindowStartup startup, QWidget* parent = nullptr);
   ~MainWindow() override;
 
   // 由"单实例"机制调用：另一个实例被启动时，把本窗口从最小化恢复并带到前台。
@@ -147,7 +176,8 @@ class MainWindow : public QMainWindow {
   // UWF 能力在启动期探测一次并固定。当前 UI 线程随后只复用 embedded
   // namespace session 读取动态状态；内部代理断线重建不会改变能力结论。
   const UwfCapability m_uwfCapability;
-  WmiSession& m_session;
+  WmiOperations& m_session;
+  ApplicationStateSource& m_stateSource;
 
   QVector<QPointer<DiskTab>> m_diskTabs;
   std::vector<core::DiskInfo> m_disks;

@@ -20,6 +20,7 @@
 #include <QString>
 #include <QVector>
 #include <exception>
+#include <functional>
 #include <thread>
 #include <variant>
 
@@ -32,6 +33,10 @@ class QPushButton;
 
 namespace uwf::ui {
 
+namespace dialogs {
+class FileDialogProvider;
+}
+
 // 单条覆盖层文件条目。
 //   rawName          —— WMI 直接返回的相对路径，可能带 ":$DATA" / ":$INDEX_ALLOCATION"
 //                       等 NTFS 流后缀；只用于诊断回查（去重后会丢失，仅保留一条）。
@@ -43,14 +48,22 @@ namespace uwf::ui {
 //                       文件 / $RECYCLE.BIN 等）。这类条目右键菜单不显示 commit——
 //                       UWF_Volume.CommitFile 对元数据走不通，强行调用只会报
 //                       NOT_FOUND，没有意义。
-//   fileSize         —— 去重后是 raw 条目里所有同 absolutePath 的 size 求和（同一
-//                       文件的多条 NTFS 流加起来才是它在 overlay 占的总字节）。
+//   fileSize         —— 去重后是 raw 条目里所有同 absolutePath 的 size 饱和求和
+//                       （同一文件的多条 NTFS 流加起来才是它在 overlay 占的总
+//                       字节；畸形 provider 数据也不会发生无符号回绕）。
 struct OverlayFileEntry {
   QString rawName;
   QString absolutePath;
   bool isDirectory = false;
   bool isSystemMetadata = false;
   qulonglong fileSize = 0;
+};
+
+using OverlayFileLoader = std::function<QVector<OverlayFileEntry>(const QString& driveLetter, std::stop_token stopToken)>;
+
+struct OverlayFilesServices {
+  OverlayFileLoader loader;
+  dialogs::FileDialogProvider& fileDialogs;
 };
 
 // 异步展示某个 NTFS 卷当前 overlay 中缓存的文件列表。底层走
@@ -64,7 +77,16 @@ struct OverlayFileEntry {
 class OverlayFilesDialog : public QDialog {
   Q_OBJECT
  public:
+  // 覆盖层枚举是本对话框唯一的外部数据依赖。调用方返回 WMI 的原始条目，
+  // 路径规范化、去重、排序、分页和交互仍由对话框负责。生产构造函数使用
+  // UWF_Overlay；此重载也允许其它只读数据源复用同一套 UI。loader 会被复制
+  // 到工作线程并调用一次，必须可并发安全且在阻塞等待时响应 stopToken；对话框
+  // 析构会请求停止并等待该调用退出。
   explicit OverlayFilesDialog(const QString& driveLetter, QWidget* parent = nullptr);
+  // 自定义文件选择器但仍使用生产 WMI 数据源，供嵌入式宿主复用。
+  OverlayFilesDialog(const QString& driveLetter, dialogs::FileDialogProvider& fileDialogs, QWidget* parent = nullptr);
+  // 服务引用不转移所有权，生命周期必须覆盖本对话框；loader 按上方线程契约复制。
+  OverlayFilesDialog(const QString& driveLetter, OverlayFilesServices services, QWidget* parent = nullptr);
   ~OverlayFilesDialog() override;
 
  signals:
@@ -95,6 +117,8 @@ class OverlayFilesDialog : public QDialog {
   static void openContainingFolder(const QString& absolutePath);
 
   QString m_driveLetter;  // 形如 "C:"
+  dialogs::FileDialogProvider& m_fileDialogs;
+  OverlayFileLoader m_loader;
   QListWidget* m_list = nullptr;
   QProgressBar* m_progress = nullptr;
   QLabel* m_loadingLabel = nullptr;

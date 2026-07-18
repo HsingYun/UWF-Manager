@@ -39,23 +39,22 @@ void invokeAndConfirm(const std::string_view operation, Invoke&& invoke, Observe
   try {
     if (observe()) return;
   } catch (const std::exception& observationError) {
-    const std::string detail = uncertainInvocation
-                                   ? "write outcome was uncertain and the authoritative state could not be reread; original failure: " +
-                                         *uncertainInvocation + "; reread failure: " + observationError.what()
-                                   : "write completed, but the authoritative state could not be reread; reread failure: " +
-                                         std::string(observationError.what());
+    const std::string detail =
+        uncertainInvocation ? "write outcome was uncertain and the authoritative state could not be reread; original failure: " + *uncertainInvocation +
+                                  "; reread failure: " + observationError.what()
+                            : "write completed, but the authoritative state could not be reread; reread failure: " + std::string(observationError.what());
     std::throw_with_nested(WmiStateVerificationError(std::string(operation), detail));
   } catch (...) {
-    const std::string detail = uncertainInvocation
-                                   ? "write outcome was uncertain and the authoritative state reread failed with a non-standard exception; original failure: " +
-                                         *uncertainInvocation
-                                   : "write completed, but the authoritative state reread failed with a non-standard exception";
+    const std::string detail =
+        uncertainInvocation
+            ? "write outcome was uncertain and the authoritative state reread failed with a non-standard exception; original failure: " + *uncertainInvocation
+            : "write completed, but the authoritative state reread failed with a non-standard exception";
     std::throw_with_nested(WmiStateVerificationError(std::string(operation), detail));
   }
 
-  const std::string detail = uncertainInvocation ? "write outcome was uncertain and the authoritative state does not match; original failure: " +
-                                                       *uncertainInvocation
-                                                 : "provider accepted the write, but the authoritative state does not match";
+  const std::string detail = uncertainInvocation
+                                 ? "write outcome was uncertain and the authoritative state does not match; original failure: " + *uncertainInvocation
+                                 : "provider accepted the write, but the authoritative state does not match";
   throw WmiStateVerificationError(std::string(operation), detail);
 }
 

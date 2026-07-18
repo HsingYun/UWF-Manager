@@ -19,7 +19,6 @@
 #include <QApplication>
 #include <QDateTime>
 #include <QDir>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QHash>
@@ -32,7 +31,6 @@
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QSaveFile>
-#include <QStringConverter>
 #include <QTextStream>
 #include <QVBoxLayout>
 #include <algorithm>
@@ -83,6 +81,11 @@ class PagedListWidget : public QListWidget {
 // 返回 QString 套一层以便 QString::arg 拼接，不再单独维护这里的实现。
 QString formatSize(qulonglong b) { return QString::fromStdString(formatBytes(b)); }
 
+qulonglong saturatingSizeSum(const qulonglong left, const qulonglong right) {
+  const auto maximum = std::numeric_limits<qulonglong>::max();
+  return right > maximum - left ? maximum : left + right;
+}
+
 // 把 WMI 返回的原始 fileName（如 "\Users\foo:$DATA"、
 // "\$Secure:$SII:$INDEX_ALLOCATION" 或 "\foo:customstream:$DATA"）拼成绝对路径，
 // 并把所有 NTFS 流后缀剥掉。
@@ -128,10 +131,43 @@ void normalizeOverlayEntry(const QString& driveLetter, OverlayFileEntry& e) {
   }
 }
 
+QVector<OverlayFileEntry> loadOverlayFilesFromSystem(const QString& driveLetter, const std::stop_token stopToken) {
+  if (stopToken.stop_requested()) return {};
+  auto& session = embeddedWmiSession();
+  session.ensureConnected();
+  api::UwfOverlay overlay(session);
+  const auto row = overlay.read();
+  const auto files = overlay.getOverlayFiles(row, driveLetter.toStdString(), stopToken);
+  if (stopToken.stop_requested()) return {};
+
+  // 后续分页和 QListWidget 索引使用 int。不能把超出表示范围的 provider
+  // 结果静默截断成负数；在构造 Qt 容器之前明确拒绝这一不可表示的数据集。
+  if (files.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
+    throw std::length_error("overlay file count exceeds the UI model capacity");
+  }
+
+  QVector<OverlayFileEntry> entries;
+  entries.reserve(static_cast<int>(files.size()));
+  for (const auto& file : files) {
+    entries.append({QString::fromStdString(file.fileName), {}, false, false, static_cast<qulonglong>(file.fileSize)});
+  }
+  return entries;
+}
+
 }  // namespace
 
 OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, QWidget* parent)
-    : QDialog(parent), m_driveLetter(QString::fromStdString(drive::normalize(driveLetter.toStdString()))) {
+    : OverlayFilesDialog(driveLetter, OverlayFilesServices{loadOverlayFilesFromSystem, dialogs::systemFileDialogs()}, parent) {}
+
+OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, dialogs::FileDialogProvider& fileDialogs, QWidget* parent)
+    : OverlayFilesDialog(driveLetter, OverlayFilesServices{loadOverlayFilesFromSystem, fileDialogs}, parent) {}
+
+OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, OverlayFilesServices services, QWidget* parent)
+    : QDialog(parent),
+      m_driveLetter(QString::fromStdString(drive::normalize(driveLetter.toStdString()))),
+      m_fileDialogs(services.fileDialogs),
+      m_loader(std::move(services.loader)) {
+  if (!m_loader) throw std::invalid_argument("overlay file loader must be callable");
   setWindowTitle(I18n::tr("Overlay files - %1").arg(m_driveLetter));
   resize(760, 540);
 
@@ -249,35 +285,16 @@ void OverlayFilesDialog::startLoading() {
   // worker 并在同一线程执行 CancelAsyncCall，不存在“取消发生在同步调用之前”
   // 的竞态。结果用 QMetaObject::invokeMethod 投回 UI 线程。
   QPointer<OverlayFilesDialog> self(this);
-  std::string dl = m_driveLetter.toStdString();
+  const QString driveLetter = m_driveLetter;
+  const OverlayFileLoader loader = m_loader;
 
   try {
-    m_worker = std::jthread([self, dl = std::move(dl)](const std::stop_token stopToken) {
+    m_worker = std::jthread([self, driveLetter, loader](const std::stop_token stopToken) {
       LoadResult result;
       try {
         if (stopToken.stop_requested()) return;
-        auto& session = embeddedWmiSession();
-        session.ensureConnected();
-        api::UwfOverlay overlay(session);
-        const auto row = overlay.read();
-        const auto files = overlay.getOverlayFiles(row, dl, stopToken);
+        result = loader(driveLetter, stopToken);
         if (stopToken.stop_requested()) return;
-
-        // 后续分页和 QListWidget 索引使用 int。不能把超出表示范围的 provider
-        // 结果静默截断成负数；在构造 Qt 容器之前明确拒绝这一不可表示的数据集。
-        if (files.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) {
-          throw std::length_error("overlay file count exceeds the UI model capacity");
-        }
-
-        QVector<OverlayFileEntry> entries;
-        entries.reserve(static_cast<int>(files.size()));
-        for (const auto& f : files) {
-          OverlayFileEntry entry;
-          entry.rawName = QString::fromStdString(f.fileName);
-          entry.fileSize = static_cast<qulonglong>(f.fileSize);
-          entries.append(std::move(entry));
-        }
-        result = std::move(entries);
       } catch (const WmiCancelled&) {
         return;
       } catch (...) {
@@ -368,7 +385,7 @@ void OverlayFilesDialog::onLoadFinished(LoadResult result) {
     const QString key = e.absolutePath.toLower();
     if (auto it = indexByKey.find(key); it != indexByKey.end()) {
       auto& dst = dedup[*it];
-      dst.fileSize += e.fileSize;
+      dst.fileSize = saturatingSizeSum(dst.fileSize, e.fileSize);
       if (e.isDirectory) dst.isDirectory = true;
       if (e.isSystemMetadata) dst.isSystemMetadata = true;
     } else {
@@ -440,7 +457,7 @@ void OverlayFilesDialog::onExportClicked() {
   const QString suggested = QString("overlay-files-%1-%2.txt").arg(letter, stamp);
 
   const QString path =
-      QFileDialog::getSaveFileName(this, I18n::tr("Export overlay file list"), QDir::home().filePath(suggested), I18n::tr("Text files (*.txt);;All files (*)"));
+      m_fileDialogs.saveFile(this, {I18n::tr("Export overlay file list"), QDir::home().filePath(suggested), I18n::tr("Text files (*.txt);;All files (*)")});
   if (path.isEmpty()) return;
 
   // 用 QSaveFile：先写到临时文件，commit 时原子改名替换目标，避免半截写入
@@ -452,22 +469,30 @@ void OverlayFilesDialog::onExportClicked() {
   }
 
   qulonglong total = 0;
-  for (const auto& e : std::as_const(m_entries)) total += e.fileSize;
+  for (const auto& e : std::as_const(m_entries)) total = saturatingSizeSum(total, e.fileSize);
 
-  QTextStream ts(&out);
-  ts.setEncoding(QStringConverter::Utf8);
-  // 头部信息以 '#' 开头，方便用 awk/grep 过滤；正文是 TSV，可以直接贴进
-  // Excel/sheets 处理。
-  ts << "# UWF overlay files for " << m_driveLetter << '\n';
-  ts << "# Generated " << QDateTime::currentDateTime().toString(Qt::ISODate) << '\n';
-  ts << "# " << m_entries.size() << " entries, total " << formatSize(total) << '\n';
-  ts << "# Note: list is approximate; files smaller than the disk cluster size (typically 4 KB) may be missing.\n";
-  ts << "#\n";
-  ts << "# type\tsize_bytes\tsize_human\tpath\n";
-  for (const auto& e : std::as_const(m_entries)) {
-    ts << (e.isDirectory ? "dir" : "file") << '\t' << e.fileSize << '\t' << formatSize(e.fileSize) << '\t' << e.absolutePath << '\n';
+  QString content;
+  {
+    QTextStream ts(&content);
+    // 头部信息以 '#' 开头，方便用 awk/grep 过滤；正文是 TSV，可以直接贴进
+    // Excel/sheets 处理。
+    ts << "# UWF overlay files for " << m_driveLetter << '\n';
+    ts << "# Generated " << QDateTime::currentDateTime().toString(Qt::ISODate) << '\n';
+    ts << "# " << m_entries.size() << " entries, total " << formatSize(total) << '\n';
+    ts << "# Note: list is approximate; files smaller than the disk cluster size (typically 4 KB) may be missing.\n";
+    ts << "#\n";
+    ts << "# type\tsize_bytes\tsize_human\tpath\n";
+    for (const auto& e : std::as_const(m_entries)) {
+      ts << (e.isDirectory ? "dir" : "file") << '\t' << e.fileSize << '\t' << formatSize(e.fileSize) << '\t' << e.absolutePath << '\n';
+    }
   }
-
+  const QByteArray encoded = content.toUtf8();
+  if (out.write(encoded) != encoded.size()) {
+    const QString error = out.errorString();
+    out.cancelWriting();
+    dialogs::warning(this, I18n::tr("Export failed"), I18n::tr("Could not write file: %1").arg(error));
+    return;
+  }
   if (!out.commit()) {
     dialogs::warning(this, I18n::tr("Export failed"), I18n::tr("Could not write file: %1").arg(out.errorString()));
     return;

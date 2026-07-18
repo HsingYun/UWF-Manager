@@ -19,15 +19,32 @@
 #include <algorithm>
 #include <ranges>
 
-#include "../util/StringUtil.h"
-
 namespace uwf::core {
 
+namespace {
+
+unsigned char foldAscii(const char value) {
+  const auto byte = static_cast<unsigned char>(value);
+  return byte >= 'A' && byte <= 'Z' ? static_cast<unsigned char>(byte - 'A' + 'a') : byte;
+}
+
+bool caseInsensitiveLess(const std::string& left, const std::string& right) {
+  return std::lexicographical_compare(left.begin(), left.end(), right.begin(), right.end(),
+                                      [](const char a, const char b) { return foldAscii(a) < foldAscii(b); });
+}
+
+bool caseInsensitiveEqual(const std::string& left, const std::string& right) {
+  return left.size() == right.size() &&
+         std::equal(left.begin(), left.end(), right.begin(), [](const char a, const char b) { return foldAscii(a) == foldAscii(b); });
+}
+
+}  // namespace
+
 void sortExclusions(std::vector<std::string>& items) {
-  std::ranges::sort(items, [](const std::string& a, const std::string& b) { return toLowerAscii(a) < toLowerAscii(b); });
+  std::stable_sort(items.begin(), items.end(), caseInsensitiveLess);
   // 必须传与排序一致的大小写不敏感谓词，否则 "C:\Foo" 与 "c:\foo"
   // 会排到一起但 std::ranges::unique 默认 operator== 判不等，留两份。
-  const auto dup = std::ranges::unique(items, [](const std::string& a, const std::string& b) { return toLowerAscii(a) == toLowerAscii(b); });
+  const auto dup = std::ranges::unique(items, caseInsensitiveEqual);
   items.erase(dup.begin(), dup.end());
 }
 
@@ -38,10 +55,7 @@ void sortSnapshot(UwfSnapshot& snapshot) {
   sortExclusions(snapshot.next.registryExclusions);
 }
 
-bool PendingChanges::empty() const {
-  return !setFilterEnabled && setOverlay.empty() && volumeProtect.empty() && volumeBindByVolumeName.empty() && addFileExclusions.empty() &&
-         removeFileExclusions.empty() && addRegistryExclusions.empty() && removeRegistryExclusions.empty() && !setPersistDomainSecretKey && !setPersistTSCAL;
-}
+bool PendingChanges::empty() const { return count() == 0; }
 
 std::size_t PendingChanges::count() const {
   std::size_t n = 0;

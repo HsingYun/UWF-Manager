@@ -43,7 +43,7 @@ class CommitDispatcher {
   // parent     给所有模态对话框（confirmCommit / warning / QProgressDialog）
   //            做 QWidget 父对象。
   // 所有引用 / 指针的生命周期须覆盖本对象——CommitDispatcher 只引用，不拥有。
-  CommitDispatcher(WmiSession& session, const core::UwfSnapshot& snapshot, QTimer* usageTimer, QWidget* parent);
+  CommitDispatcher(WmiOperations& session, const core::UwfSnapshot& snapshot, QTimer* usageTimer, QWidget* parent);
 
   // 与 MainWindow 同名槽语义保持一致——拆分前后行为按字节等价：
   void commitFilePath(const QString& path);
@@ -54,7 +54,7 @@ class CommitDispatcher {
   void commitRegistryDeletionKey(const QString& key, const QString& valueName);
 
  private:
-  WmiSession& m_session;
+  WmiOperations& m_session;
   const core::UwfSnapshot& m_snapshot;
   QTimer* m_usageTimer;
   QWidget* m_parent;

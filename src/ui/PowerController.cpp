@@ -17,7 +17,6 @@
 #include "PowerController.h"
 
 #include <QWidget>
-
 #include <exception>
 
 #include "../util/Log.h"
@@ -29,7 +28,7 @@ namespace uwf::ui {
 
 using dialogs::warning;
 
-PowerController::PowerController(WmiSession& session, QWidget* dialogParent, QObject* parent)
+PowerController::PowerController(WmiOperations& session, QWidget* dialogParent, QObject* parent)
     : QObject(parent), m_dialogParent(dialogParent), m_filter(session) {}
 
 void PowerController::safeShutdown() {

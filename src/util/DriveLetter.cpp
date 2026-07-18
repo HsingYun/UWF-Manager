@@ -35,9 +35,7 @@ bool isAsciiLetter(const char value) {
          (character >= static_cast<unsigned char>('a') && character <= static_cast<unsigned char>('z'));
 }
 
-std::string normalizedLetter(const char letter) {
-  return {static_cast<char>(std::toupper(static_cast<unsigned char>(letter))), ':'};
-}
+std::string normalizedLetter(const char letter) { return {static_cast<char>(std::toupper(static_cast<unsigned char>(letter))), ':'}; }
 
 // 去掉开头的扩展长度前缀 "\\?\" 或 "\\.\"（恰好这 4 个字符）；没有则原样返回。
 // 注意 "\\?\UNC\server\share" 去前缀后剩 "UNC\server\share"，后续按"无盘符"

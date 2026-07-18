@@ -41,7 +41,7 @@ class TrayController;
 class OverlayPresentationController : public QObject {
   Q_OBJECT
  public:
-  OverlayPresentationController(WmiSession& session, QMainWindow& ownerWindow, TrayController& tray, QObject* parent = nullptr);
+  OverlayPresentationController(WmiOperations& session, QMainWindow& ownerWindow, TrayController& tray, QObject* parent = nullptr);
   ~OverlayPresentationController() override;
 
   void bindUi(GlobalStatusPanel* global, QAction* displaysAction);

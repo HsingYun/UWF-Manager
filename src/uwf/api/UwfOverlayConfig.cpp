@@ -37,7 +37,7 @@ api::OverlayConfigRow decodeOverlayConfig(const WmiRow& source) {
           static_cast<api::OverlayType>(type), rowutil::requireUInt(source, "MaximumSize")};
 }
 
-api::OverlayConfigRow rereadOverlayConfig(WmiSession& session, const api::OverlayConfigRow& target) {
+api::OverlayConfigRow rereadOverlayConfig(WmiOperations& session, const api::OverlayConfigRow& target) {
   auto observed = decodeOverlayConfig(session.getObject(target.path));
   if (observed.currentSession != target.currentSession) throw WmiProtocolError("reread UWF_OverlayConfig", "provider returned a different session instance");
   return observed;
@@ -82,16 +82,17 @@ void UwfOverlayConfig::setType(const api::OverlayConfigRow& row, const api::Over
   requirePath(row, "set UWF overlay type");
   WmiRow inputs;
   inputs.emplace("type", WmiValue::fromUInt(static_cast<uint32_t>(type)));
-  invokeAndConfirm("set UWF overlay type", [&] { m_session.invokeMethod(row.path, "SetType", inputs); },
-                   [&] { return rereadOverlayConfig(m_session, row).type == type; });
+  invokeAndConfirm(
+      "set UWF overlay type", [&] { m_session.invokeMethod(row.path, "SetType", inputs); }, [&] { return rereadOverlayConfig(m_session, row).type == type; });
 }
 
 void UwfOverlayConfig::setMaximumSize(const api::OverlayConfigRow& row, const uint32_t sizeMb) const {
   requirePath(row, "set UWF overlay maximum size");
   WmiRow inputs;
   inputs.emplace("size", WmiValue::fromUInt(sizeMb));
-  invokeAndConfirm("set UWF overlay maximum size", [&] { m_session.invokeMethod(row.path, "SetMaximumSize", inputs); },
-                   [&] { return rereadOverlayConfig(m_session, row).maximumSize == sizeMb; });
+  invokeAndConfirm(
+      "set UWF overlay maximum size", [&] { m_session.invokeMethod(row.path, "SetMaximumSize", inputs); },
+      [&] { return rereadOverlayConfig(m_session, row).maximumSize == sizeMb; });
 }
 
 }  // namespace uwf::api

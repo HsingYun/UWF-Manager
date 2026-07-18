@@ -31,7 +31,7 @@ namespace uwf::api {
 
 class UwfOverlayConfig {
  public:
-  explicit UwfOverlayConfig(WmiSession& session) : m_session(session) {}
+  explicit UwfOverlayConfig(WmiOperations& session) : m_session(session) {}
 
   // 读取全部实例（通常 2 条）。
   std::vector<api::OverlayConfigRow> readAll() const;
@@ -42,7 +42,7 @@ class UwfOverlayConfig {
   void setMaximumSize(const api::OverlayConfigRow& row, uint32_t sizeMb) const;
 
  private:
-  WmiSession& m_session;
+  WmiOperations& m_session;
 };
 
 }  // namespace uwf::api

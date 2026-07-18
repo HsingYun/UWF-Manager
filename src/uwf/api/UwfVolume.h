@@ -41,7 +41,7 @@ struct VolumeRegistration {
 
 class UwfVolume {
  public:
-  explicit UwfVolume(WmiSession& session) : m_session(session) {}
+  explicit UwfVolume(WmiOperations& session) : m_session(session) {}
 
   std::vector<api::VolumeRow> readAll() const;
 
@@ -78,7 +78,7 @@ class UwfVolume {
   [[nodiscard]] VolumeRegistration ensureNextSessionEntry(const std::string& driveLetter) const;
 
  private:
-  WmiSession& m_session;
+  WmiOperations& m_session;
 };
 
 }  // namespace uwf::api

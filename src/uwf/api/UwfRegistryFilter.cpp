@@ -33,7 +33,7 @@ api::RegistryFilterRow decodeRegistryFilter(const WmiRow& source) {
           rowutil::requireBool(source, "PersistDomainSecretKey"), rowutil::requireBool(source, "PersistTSCAL")};
 }
 
-api::RegistryFilterRow rereadRegistryFilter(WmiSession& session, const api::RegistryFilterRow& target) {
+api::RegistryFilterRow rereadRegistryFilter(WmiOperations& session, const api::RegistryFilterRow& target) {
   auto observed = decodeRegistryFilter(session.getObject(target.path));
   if (observed.currentSession != target.currentSession) throw WmiProtocolError("reread UWF_RegistryFilter", "provider returned a different session instance");
   return observed;
@@ -78,16 +78,16 @@ void UwfRegistryFilter::addExclusion(const api::RegistryFilterRow& row, const st
   requirePath(row, "add UWF registry exclusion");
   WmiRow in;
   in.emplace("RegistryKey", WmiValue::fromString(registryKey));
-  invokeAndConfirm("add UWF registry exclusion", [&] { m_session.invokeMethod(row.path, "AddExclusion", in); },
-                   [&] { return findExclusion(row, registryKey); });
+  invokeAndConfirm(
+      "add UWF registry exclusion", [&] { m_session.invokeMethod(row.path, "AddExclusion", in); }, [&] { return findExclusion(row, registryKey); });
 }
 
 void UwfRegistryFilter::removeExclusion(const api::RegistryFilterRow& row, const std::string& registryKey) const {
   requirePath(row, "remove UWF registry exclusion");
   WmiRow in;
   in.emplace("RegistryKey", WmiValue::fromString(registryKey));
-  invokeAndConfirm("remove UWF registry exclusion", [&] { m_session.invokeMethod(row.path, "RemoveExclusion", in); },
-                   [&] { return !findExclusion(row, registryKey); });
+  invokeAndConfirm(
+      "remove UWF registry exclusion", [&] { m_session.invokeMethod(row.path, "RemoveExclusion", in); }, [&] { return !findExclusion(row, registryKey); });
 }
 
 void UwfRegistryFilter::setPersistence(const api::RegistryFilterRow& row, const api::RegistryPersistence persistence) const {
@@ -100,7 +100,8 @@ void UwfRegistryFilter::setPersistence(const api::RegistryFilterRow& row, const 
   props.emplace("PersistDomainSecretKey", WmiValue::fromBool(persistence.domainSecretKey));
   props.emplace("PersistTSCAL", WmiValue::fromBool(persistence.terminalServicesClientAccessLicense));
   invokeAndConfirm(
-      "set UWF registry persistence", [&] { m_session.putInstance("UWF_RegistryFilter", props, WmiPutMode::UpdateOnly); }, [&] {
+      "set UWF registry persistence", [&] { m_session.putInstance("UWF_RegistryFilter", props, WmiPutMode::UpdateOnly); },
+      [&] {
         const auto observed = rereadRegistryFilter(m_session, row);
         return observed.persistDomainSecretKey == persistence.domainSecretKey && observed.persistTSCAL == persistence.terminalServicesClientAccessLicense;
       });
@@ -117,9 +118,8 @@ bool UwfRegistryFilter::findExclusion(const api::RegistryFilterRow& row, const s
 std::vector<api::ExcludedRegistryKey> UwfRegistryFilter::getExclusions(const api::RegistryFilterRow& row) const {
   requirePath(row, "read UWF registry exclusions");
   const auto output = m_session.callMethodRead(row.path, "GetExclusions");
-  auto out = rowutil::readArrayOutput<api::ExcludedRegistryKey>(output, "ExcludedKeys", [](const WmiRow& item) {
-    return api::ExcludedRegistryKey{rowutil::requireEmbeddedString(item, "RegistryKey")};
-  });
+  auto out = rowutil::readArrayOutput<api::ExcludedRegistryKey>(
+      output, "ExcludedKeys", [](const WmiRow& item) { return api::ExcludedRegistryKey{rowutil::requireEmbeddedString(item, "RegistryKey")}; });
   UWF_LOG_D("uwf") << "registry exclusions read completed: session=" << (row.currentSession ? "current" : "next") << " count=" << out.size();
   return out;
 }

@@ -266,9 +266,7 @@ class ProductionUi final {
 
   void registerPreparedTaskbar() { hub.registerView(std::move(m_taskbar)); }
 
-  void enable() {
-    hub.applyUsageState(OverlayUsageEnabled{runtime, core::OverlayConfig{}});
-  }
+  void enable() { hub.applyUsageState(OverlayUsageEnabled{runtime, core::OverlayConfig{}}); }
 
   [[nodiscard]] bool taskbarConfirmed() const {
     return taskbarView->presentationConfirmed() && nativeVisible(*taskbarView) && !nativeVisible(*floatingView) && hub.presented();
@@ -971,8 +969,7 @@ class WindowsTaskbarIntegrationTests final : public QObject {
 
     const int initialWidth = ui.floatingView->width();
     const int initialRight = ui.floatingView->geometry().right();
-    ui.hub.applyUsageState(
-        OverlayUsageEnabled{core::OverlayRuntime{.availableSpaceMb = 49152, .currentConsumptionMb = 49151}, core::OverlayConfig{}});
+    ui.hub.applyUsageState(OverlayUsageEnabled{core::OverlayRuntime{.availableSpaceMb = 49152, .currentConsumptionMb = 49151}, core::OverlayConfig{}});
     QVERIFY(waitUntil(
         [&ui, initialWidth, initialRight]() { return ui.floatingView->width() >= initialWidth && ui.floatingView->geometry().right() == initialRight; }));
     const core::OverlayRuntime maximum{.availableSpaceMb = std::numeric_limits<uint32_t>::max(), .currentConsumptionMb = std::numeric_limits<uint32_t>::max()};

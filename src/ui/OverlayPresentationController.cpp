@@ -31,7 +31,7 @@
 
 namespace uwf::ui {
 
-OverlayPresentationController::OverlayPresentationController(WmiSession& session, QMainWindow& ownerWindow, TrayController& tray, QObject* parent)
+OverlayPresentationController::OverlayPresentationController(WmiOperations& session, QMainWindow& ownerWindow, TrayController& tray, QObject* parent)
     : QObject(parent),
       m_ownerWindow(ownerWindow),
       m_tray(tray),

@@ -21,7 +21,6 @@
 #include <QContextMenuEvent>
 #include <QDateTime>
 #include <QDir>
-#include <QFileDialog>
 #include <QGuiApplication>
 #include <QHBoxLayout>
 #include <QKeyEvent>
@@ -31,13 +30,12 @@
 #include <QPushButton>
 #include <QSaveFile>
 #include <QSplitter>
-#include <QStringConverter>
 #include <QTextDocumentFragment>
 #include <QTextEdit>
 #include <QTextStream>
 #include <QVBoxLayout>
-#include <format>
 #include <exception>
+#include <format>
 #include <optional>
 #include <set>
 #include <string>
@@ -169,8 +167,7 @@ class ApplyJournal final {
     // 来自本次写入还是并发创建，都必须重读；只有本进程创建或确认了不确定写，
     // 才算本批次确认成功并显示重启入口。
     m_reconciliationRequired = true;
-    if (disposition == api::VolumeRegistrationDisposition::Created ||
-        disposition == api::VolumeRegistrationDisposition::ConfirmedAfterUncertainWrite) {
+    if (disposition == api::VolumeRegistrationDisposition::Created || disposition == api::VolumeRegistrationDisposition::ConfirmedAfterUncertainWrite) {
       m_anyWriteConfirmed = true;
     }
   }
@@ -261,9 +258,14 @@ QString snapshotComment(const api::UwfmgrCommand& c) {
 }  // namespace
 
 ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPointer<DiskTab>>& diskTabs, const core::UwfSnapshot& snapshot,
-                                 WmiSession& writeSession, QWidget* parent)
+                                 WmiOperations& writeSession, QWidget* parent)
+    : ApplyPlanDialog(global, diskTabs, snapshot, ApplyPlanServices{writeSession, dialogs::systemFileDialogs()}, parent) {}
+
+ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPointer<DiskTab>>& diskTabs, const core::UwfSnapshot& snapshot,
+                                 ApplyPlanServices services, QWidget* parent)
     : QDialog(parent),
-      m_session(writeSession),
+      m_session(services.wmi),
+      m_fileDialogs(services.fileDialogs),
       m_snapshot(snapshot),
       m_filter(m_session),
       m_overlay(m_session),
@@ -443,8 +445,8 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   connect(exportBtn, &QPushButton::clicked, this, [this]() {
     const QString stamp = QDateTime::currentDateTime().toString("yyyyMMdd-HHmmss");
     const QString suggested = QString("uwfmgr-commands-%1.txt").arg(stamp);
-    const QString path = QFileDialog::getSaveFileName(this, I18n::tr("Export commands to file"), QDir::home().filePath(suggested),
-                                                      I18n::tr("Text files (*.txt);;All files (*)"));
+    const QString path =
+        m_fileDialogs.saveFile(this, {I18n::tr("Export commands to file"), QDir::home().filePath(suggested), I18n::tr("Text files (*.txt);;All files (*)")});
     if (path.isEmpty()) return;
 
     QSaveFile out(path);
@@ -452,27 +454,36 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       warning(this, I18n::tr("Export failed"), I18n::tr("Could not open file for writing: %1").arg(out.errorString()));
       return;
     }
-    QTextStream ts(&out);
-    ts.setEncoding(QStringConverter::Utf8);
-    // 走 src/uwf/api/UwfmgrCli 的集中渲染器，"PendingChanges / SessionSnapshot →
-    // uwfmgr 命令" 的映射只在那里维护。m_changeCmds / m_snapshotCmds 还要给 UI
-    // 展示交错塞中文 comment，导出纯命令时不再从它们抠 cmd 字段抄一遍同样的映射。
-    // 注：多盘 pending 改动时，导出按"命令类型"聚合（renderPendingChanges 遍历
-    // PendingChanges 的 std::map），与展示按 tab 聚合的顺序略不同；命令集合与
-    // 回放效果完全一致。
     const auto changeCmds = api::renderPendingChanges(m_changes);
     const auto snapshotCmds = api::renderSession(m_snapshot.current);
+    QString content;
     int written = 0;
-    for (const auto& c : changeCmds) {
-      ts << QString::fromStdString(api::renderCommand(c)) << '\n';
-      ++written;
+    {
+      QTextStream ts(&content);
+      // 走 src/uwf/api/UwfmgrCli 的集中渲染器，"PendingChanges / SessionSnapshot →
+      // uwfmgr 命令" 的映射只在那里维护。m_changeCmds / m_snapshotCmds 还要给 UI
+      // 展示交错塞中文 comment，导出纯命令时不再从它们抠 cmd 字段抄一遍同样的映射。
+      // 注：多盘 pending 改动时，导出按"命令类型"聚合（renderPendingChanges 遍历
+      // PendingChanges 的 std::map），与展示按 tab 聚合的顺序略不同；命令集合与
+      // 回放效果完全一致。
+      for (const auto& c : changeCmds) {
+        ts << QString::fromStdString(api::renderCommand(c)) << '\n';
+        ++written;
+      }
+      if (!changeCmds.empty() && !snapshotCmds.empty()) {
+        ts << '\n';
+      }
+      for (const auto& c : snapshotCmds) {
+        ts << QString::fromStdString(api::renderCommand(c)) << '\n';
+        ++written;
+      }
     }
-    if (!changeCmds.empty() && !snapshotCmds.empty()) {
-      ts << '\n';
-    }
-    for (const auto& c : snapshotCmds) {
-      ts << QString::fromStdString(api::renderCommand(c)) << '\n';
-      ++written;
+    const QByteArray encoded = content.toUtf8();
+    if (out.write(encoded) != encoded.size()) {
+      const QString error = out.errorString();
+      out.cancelWriting();
+      warning(this, I18n::tr("Export failed"), I18n::tr("Could not write file: %1").arg(error));
+      return;
     }
     if (!out.commit()) {
       warning(this, I18n::tr("Export failed"), I18n::tr("Could not write file: %1").arg(out.errorString()));
@@ -531,13 +542,11 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
       try {
         const auto overlay = m_overlay.read();
         if (const auto v = m_changes.setOverlay.warningThresholdMb) {
-          journal.apply({.success = I18n::tr("✓ Overlay warning threshold set to %1 MB").arg(*v),
-                         .failure = I18n::tr("✘ Failed to set warning threshold")},
+          journal.apply({.success = I18n::tr("✓ Overlay warning threshold set to %1 MB").arg(*v), .failure = I18n::tr("✘ Failed to set warning threshold")},
                         [&] { m_overlay.setWarningThreshold(overlay, *v); });
         }
         if (const auto v = m_changes.setOverlay.criticalThresholdMb) {
-          journal.apply({.success = I18n::tr("✓ Overlay critical threshold set to %1 MB").arg(*v),
-                         .failure = I18n::tr("✘ Failed to set critical threshold")},
+          journal.apply({.success = I18n::tr("✓ Overlay critical threshold set to %1 MB").arg(*v), .failure = I18n::tr("✘ Failed to set critical threshold")},
                         [&] { m_overlay.setCriticalThreshold(overlay, *v); });
         }
       } catch (const std::exception& error) {
@@ -555,8 +564,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
           const auto next = m_overlayConfig.read(api::Session::Next);
           if (const auto t = m_changes.setOverlay.type) {
             const char* tStr = *t == core::OverlayType::RAM ? "RAM" : "Disk";
-            journal.apply({.success = I18n::tr("✓ Overlay type set to %1").arg(tStr),
-                           .failure = I18n::tr("✘ Failed to set overlay type")},
+            journal.apply({.success = I18n::tr("✓ Overlay type set to %1").arg(tStr), .failure = I18n::tr("✘ Failed to set overlay type")},
                           [&] { m_overlayConfig.setType(next, coreTypeToApi(*t)); });
           }
           if (const auto v = m_changes.setOverlay.maximumSizeMb) {
@@ -564,11 +572,9 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
             // 改动时，沿用 next 会话的基线类型判断。
             const auto effType = m_changes.setOverlay.type.value_or(m_snapshot.next.overlay.type);
             if (effType == core::OverlayType::Disk && *v < config::kDiskOverlayMinSizeMb) {
-              journal.recordFailure(
-                  I18n::tr("✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.").arg(config::kDiskOverlayMinSizeMb));
+              journal.recordFailure(I18n::tr("✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.").arg(config::kDiskOverlayMinSizeMb));
             } else {
-              journal.apply({.success = I18n::tr("✓ Overlay maximum size set to %1 MB").arg(*v),
-                             .failure = I18n::tr("✘ Failed to set maximum size")},
+              journal.apply({.success = I18n::tr("✓ Overlay maximum size set to %1 MB").arg(*v), .failure = I18n::tr("✘ Failed to set maximum size")},
                             [&] { m_overlayConfig.setMaximumSize(next, *v); });
             }
           }
@@ -598,13 +604,13 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
           try {
             auto registration = m_volume.ensureNextSessionEntry(dl);
             journal.registrationObserved(registration.disposition);  // clazy:exclude=lambda-in-connect
-            volumes.push_back(registration.row);                       // clazy:exclude=lambda-in-connect
+            volumes.push_back(registration.row);                     // clazy:exclude=lambda-in-connect
             return registration.row;
           } catch (const WmiWriteOutcomeError& error) {
             // PutInstance 成功、不确定，或遇到并发 AlreadyExists 后，确认读取
             // 失败都意味着外层快照不再足以继续写；必须对账。
-            journal.requireReconciliation();      // clazy:exclude=lambda-in-connect
-            registrationFailures.insert(dl);     // clazy:exclude=lambda-in-connect
+            journal.requireReconciliation();  // clazy:exclude=lambda-in-connect
+            registrationFailures.insert(dl);  // clazy:exclude=lambda-in-connect
             journal.recordError(I18n::tr("✘ Volume %1: failed to register with UWF").arg(QString::fromStdString(dl)),
                                 error);  // clazy:exclude=lambda-in-connect
           } catch (const std::exception& error) {
@@ -619,10 +625,9 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
           auto v = getOrCreateNextVolume(dl);
           if (!v) continue;
           journal.apply(
-              {.success = I18n::tr("✓ Volume %1 protection: %2")
-                              .arg(QString::fromStdString(dl), wantProtect ? I18n::tr("Enabled") : I18n::tr("Disabled")),
-               .failure = I18n::tr("✘ Failed to %1 protection on volume %2")
-                              .arg(wantProtect ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(dl))},
+              {.success = I18n::tr("✓ Volume %1 protection: %2").arg(QString::fromStdString(dl), wantProtect ? I18n::tr("Enabled") : I18n::tr("Disabled")),
+               .failure =
+                   I18n::tr("✘ Failed to %1 protection on volume %2").arg(wantProtect ? I18n::tr("enable") : I18n::tr("disable"), QString::fromStdString(dl))},
               [&] {
                 if (wantProtect)
                   m_volume.protectVolume(*v);
@@ -636,8 +641,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
           if (!v) continue;
           const auto binding = byVolumeName ? api::VolumeBinding::VolumeName : api::VolumeBinding::DriveLetter;
           journal.apply(
-              {.success = I18n::tr("✓ Volume %1 bind by: %2")
-                              .arg(QString::fromStdString(dl), byVolumeName ? I18n::tr("volume ID") : I18n::tr("drive letter")),
+              {.success = I18n::tr("✓ Volume %1 bind by: %2").arg(QString::fromStdString(dl), byVolumeName ? I18n::tr("volume ID") : I18n::tr("drive letter")),
                .failure = I18n::tr("✘ Failed to set binding for volume %1").arg(QString::fromStdString(dl))},
               [&] { m_volume.setBinding(*v, binding); });
         }
@@ -647,11 +651,9 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
           auto v = getOrCreateNextVolume(dl);
           if (!v) continue;
           for (const auto& path : paths) {
-            journal.apply(
-                {.success = I18n::tr("✓ Volume %1 added file exclusion: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)),
-                 .failure = I18n::tr("✘ Volume %1 failed to add file exclusion %2")
-                                .arg(QString::fromStdString(dl), QString::fromStdString(path))},
-                [&] { m_volume.addExclusion(*v, path); });
+            journal.apply({.success = I18n::tr("✓ Volume %1 added file exclusion: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)),
+                           .failure = I18n::tr("✘ Volume %1 failed to add file exclusion %2").arg(QString::fromStdString(dl), QString::fromStdString(path))},
+                          [&] { m_volume.addExclusion(*v, path); });
           }
         }
         for (const auto& [dl, paths] : m_changes.removeFileExclusions) {
@@ -667,17 +669,14 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
             // 否则旧 pending 会一直留在 UI 中。
             journal.requireReconciliation();
             for (const auto& path : paths) {
-              journal.recordSuccess(
-                  I18n::tr("✓ Volume %1 file exclusion already absent: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)));
+              journal.recordSuccess(I18n::tr("✓ Volume %1 file exclusion already absent: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)));
             }
             continue;
           }
           for (const auto& path : paths) {
-            journal.apply(
-                {.success = I18n::tr("✓ Volume %1 removed file exclusion: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)),
-                 .failure = I18n::tr("✘ Volume %1 failed to remove file exclusion %2")
-                                .arg(QString::fromStdString(dl), QString::fromStdString(path))},
-                [&] { m_volume.removeExclusion(*v, path); });
+            journal.apply({.success = I18n::tr("✓ Volume %1 removed file exclusion: %2").arg(QString::fromStdString(dl), QString::fromStdString(path)),
+                           .failure = I18n::tr("✘ Volume %1 failed to remove file exclusion %2").arg(QString::fromStdString(dl), QString::fromStdString(path))},
+                          [&] { m_volume.removeExclusion(*v, path); });
           }
         }
       } catch (const std::exception& error) {
@@ -702,21 +701,18 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
         }
         // 两个持久化开关整实例 PutInstance：未改动的那个用 next 行现值兜底。
         if (m_changes.setPersistDomainSecretKey || m_changes.setPersistTSCAL) {
-          const api::RegistryPersistence persistence{
-              .domainSecretKey = m_changes.setPersistDomainSecretKey.value_or(next.persistDomainSecretKey),
-              .terminalServicesClientAccessLicense = m_changes.setPersistTSCAL.value_or(next.persistTSCAL)};
-          if (journal.execute(I18n::tr("✘ Failed to update registry persistence switches"),
-                              [&] { m_registry.setPersistence(next, persistence); }) == ApplyJournal::StepResult::Confirmed) {
+          const api::RegistryPersistence persistence{.domainSecretKey = m_changes.setPersistDomainSecretKey.value_or(next.persistDomainSecretKey),
+                                                     .terminalServicesClientAccessLicense = m_changes.setPersistTSCAL.value_or(next.persistTSCAL)};
+          if (journal.execute(I18n::tr("✘ Failed to update registry persistence switches"), [&] { m_registry.setPersistence(next, persistence); }) ==
+              ApplyJournal::StepResult::Confirmed) {
             if (m_changes.setPersistDomainSecretKey)
               journal.recordSuccess(
                   I18n::tr("✓ %1 persistence: %2")
-                      .arg(I18n::tr("Domain Secret Key (DomainSecretKey)"),
-                           *m_changes.setPersistDomainSecretKey ? I18n::tr("Enabled") : I18n::tr("Disabled")));
+                      .arg(I18n::tr("Domain Secret Key (DomainSecretKey)"), *m_changes.setPersistDomainSecretKey ? I18n::tr("Enabled") : I18n::tr("Disabled")));
             if (m_changes.setPersistTSCAL)
-              journal.recordSuccess(
-                  I18n::tr("✓ %1 persistence: %2")
-                      .arg(I18n::tr("Terminal Services Client Access License (TSCAL)"),
-                           *m_changes.setPersistTSCAL ? I18n::tr("Enabled") : I18n::tr("Disabled")));
+              journal.recordSuccess(I18n::tr("✓ %1 persistence: %2")
+                                        .arg(I18n::tr("Terminal Services Client Access License (TSCAL)"),
+                                             *m_changes.setPersistTSCAL ? I18n::tr("Enabled") : I18n::tr("Disabled")));
           }
         }
       } catch (const std::exception& error) {

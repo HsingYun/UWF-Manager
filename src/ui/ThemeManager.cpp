@@ -18,9 +18,6 @@
 
 #include <windows.h>
 
-#include <exception>
-#include <string_view>
-
 #include <QAbstractEventDispatcher>
 #include <QApplication>
 #include <QByteArray>
@@ -31,6 +28,8 @@
 #include <QPixmap>
 #include <QStyleHints>
 #include <QSvgRenderer>
+#include <exception>
+#include <string_view>
 
 #include "../util/Log.h"
 #include "../util/RegistryKey.h"
@@ -41,9 +40,8 @@ namespace {
 
 Theme readSystemTheme(std::string_view valueName) noexcept {
   try {
-    return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", valueName).value_or(0) == 0
-               ? Theme::Dark
-               : Theme::Light;
+    return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", valueName).value_or(0) == 0 ? Theme::Dark
+                                                                                                                                              : Theme::Light;
   } catch (const std::exception& error) {
     UWF_LOG_W("theme") << "system theme unavailable: fallback=dark error=" << error.what();
   } catch (...) {

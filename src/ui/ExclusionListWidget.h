@@ -32,12 +32,17 @@ class QAction;
 namespace uwf::ui {
 
 class RoundedCornerOverlay;
+namespace dialogs {
+class FileDialogProvider;
+}
 
 class ExclusionListWidget : public QWidget {
   Q_OBJECT
  public:
   enum class Kind { File, Registry };
   explicit ExclusionListWidget(Kind kind, QWidget* parent = nullptr);
+  // 注入对象不转移所有权，生命周期必须覆盖本控件。
+  ExclusionListWidget(Kind kind, dialogs::FileDialogProvider& fileDialogs, QWidget* parent = nullptr);
 
   void setDriveLetter(const QString& dl);
   void setBaseline(const QStringList& currentSession, const QStringList& nextSession);
@@ -124,6 +129,7 @@ class ExclusionListWidget : public QWidget {
   void updateAddMenuState();
 
   Kind m_kind;
+  dialogs::FileDialogProvider& m_fileDialogs;
   QString m_driveLetter;
   QStringList m_current;
   QStringList m_next;

@@ -27,6 +27,12 @@ namespace uwf::app {
 class SecureSingleInstance final : public QObject {
   Q_OBJECT
  public:
+  struct Scope {
+    // 空值表示生产默认作用域。非空值用于同一可执行文件中彼此独立的逻辑实例，
+    // 会先哈希再进入管道名，不能注入路径或改变对端身份认证规则。
+    QString discriminator;
+  };
+
   enum class AcquireResult {
     Primary,
     ActivatedExisting,
@@ -34,6 +40,7 @@ class SecureSingleInstance final : public QObject {
   };
 
   explicit SecureSingleInstance(QObject* parent = nullptr);
+  explicit SecureSingleInstance(const Scope& scope, QObject* parent = nullptr);
   ~SecureSingleInstance() override;
 
   SecureSingleInstance(const SecureSingleInstance&) = delete;

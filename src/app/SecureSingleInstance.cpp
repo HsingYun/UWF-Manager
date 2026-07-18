@@ -25,6 +25,7 @@
 #include <QLocalSocket>
 #include <QString>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace uwf::app {
@@ -108,11 +109,12 @@ bool sameFile(const std::wstring& lhs, const std::wstring& rhs) {
 }
 
 QByteArray fileSha256(const std::wstring& path) {
+  constexpr qint64 kHashChunkSize = qint64{64} * 1024;
   QFile file(QString::fromStdWString(path));
   if (!file.open(QIODevice::ReadOnly)) return {};
   QCryptographicHash hash(QCryptographicHash::Sha256);
   while (!file.atEnd()) {
-    const QByteArray chunk = file.read(64 * 1024);
+    const QByteArray chunk = file.read(kHashChunkSize);
     if (file.error() != QFileDevice::NoError) return {};
     hash.addData(chunk);
   }
@@ -156,11 +158,16 @@ QString currentUserSid() {
 }
 
 // SID + 会话号共同限定单实例范围；不依赖可伪造的环境变量 USERNAME。
-QString instanceServerName() {
+QString instanceServerName(const QString& discriminator) {
   DWORD sessionId = 0;
   ProcessIdToSessionId(GetCurrentProcessId(), &sessionId);
   const QString sid = currentUserSid();
-  return QStringLiteral("UWFManager.SingleInstance.%1.%2").arg(sid.isEmpty() ? QStringLiteral("UnknownSid") : sid).arg(sessionId);
+  QString name = QStringLiteral("UWFManager.SingleInstance.%1.%2").arg(sid.isEmpty() ? QStringLiteral("UnknownSid") : sid).arg(sessionId);
+  if (!discriminator.isEmpty()) {
+    const QByteArray digest = QCryptographicHash::hash(discriminator.toUtf8(), QCryptographicHash::Sha256).toHex();
+    name += QLatin1Char('.') + QString::fromLatin1(digest);
+  }
+  return name;
 }
 
 // 不能用 QLocalSocket 直接连接未知服务端：Windows 命名管道默认允许服务端
@@ -194,7 +201,10 @@ bool isTrustedLocalSocket(QLocalSocket* socket) {
 
 class SecureSingleInstance::Private final {
  public:
+  explicit Private(QString name) : serverName(std::move(name)) {}
+
   QLocalServer server;
+  QString serverName;
   QString error;
   bool acquired = false;
   AcquireResult result = AcquireResult::Unprotected;
@@ -202,7 +212,10 @@ class SecureSingleInstance::Private final {
   bool activationPending = false;
 };
 
-SecureSingleInstance::SecureSingleInstance(QObject* parent) : QObject(parent), d(std::make_unique<Private>()) {
+SecureSingleInstance::SecureSingleInstance(QObject* parent) : SecureSingleInstance(Scope{}, parent) {}
+
+SecureSingleInstance::SecureSingleInstance(const Scope& scope, QObject* parent)
+    : QObject(parent), d(std::make_unique<Private>(instanceServerName(scope.discriminator))) {
   connect(&d->server, &QLocalServer::newConnection, this, &SecureSingleInstance::processPendingConnections);
 }
 
@@ -211,7 +224,7 @@ SecureSingleInstance::~SecureSingleInstance() = default;
 SecureSingleInstance::AcquireResult SecureSingleInstance::acquire() {
   if (d->acquired) return d->result;
   d->acquired = true;
-  const QString serverName = instanceServerName();
+  const QString& serverName = d->serverName;
 
   if (forwardToRunningInstance(serverName)) {
     d->result = AcquireResult::ActivatedExisting;

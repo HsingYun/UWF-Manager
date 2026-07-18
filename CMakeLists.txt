@@ -22,7 +22,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ASan+UBSan
 option(UWF_SANITIZE "Build with AddressSanitizer + UBSan (Clang/GCC only)" ON)
-option(UWF_BUILD_TESTS "Build UWF lifecycle regression tests" ON)
+option(UWF_BUILD_TESTS "Build UWF test suites" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(tools)
@@ -190,10 +190,7 @@ set(UWF_SOURCES
 qt_add_executable(UWF WIN32 ${UWF_SOURCES})
 cc_git_rev(UWF)
 
-qt_add_resources(UWF "app_resources"
-        PREFIX "/"
-        BASE "${CMAKE_SOURCE_DIR}/resources"
-        FILES
+set(UWF_APP_RESOURCE_FILES
         resources/style_dark.qss
         resources/style_light.qss
         resources/icons/app.svg
@@ -226,6 +223,12 @@ qt_add_resources(UWF "app_resources"
         resources/icons/language.svg
         resources/icons/overlay_float_on.svg
         resources/icons/overlay_float_off.svg
+)
+
+qt_add_resources(UWF "app_resources"
+        PREFIX "/"
+        BASE "${CMAKE_SOURCE_DIR}/resources"
+        FILES ${UWF_APP_RESOURCE_FILES}
 )
 
 qt_add_translations(UWF

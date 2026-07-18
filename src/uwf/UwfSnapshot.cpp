@@ -83,34 +83,33 @@ uint64_t readNullableUInt64(const WmiRow& row, const char* field) {
 
 }  // namespace
 
-UwfCapability probeUwfCapability() {
-  auto& session = embeddedWmiSession();
+UwfCapability probeUwfCapability(WmiOperations& session) {
   try {
     session.ensureConnected();
     return session.classStatus("UWF_Filter") == WmiClassStatus::Present ? UwfCapability::Available : UwfCapability::Unavailable;
   } catch (const WmiInfrastructureError& error) {
     // 未安装任何 Embedded 功能时 namespace 本身也可能不存在；这是与类缺失
     // 等价的、已被 provider 明确确认的能力缺失，不是可重试的连接故障。
-    if (error.code().category() == wmiErrorCategory() &&
-        WmiError(static_cast<std::int32_t>(error.code().value())).code() == WmiErrorCode::InvalidNamespace) {
+    if (error.code().category() == wmiErrorCategory() && WmiError(static_cast<std::int32_t>(error.code().value())).code() == WmiErrorCode::InvalidNamespace) {
       return UwfCapability::Unavailable;
     }
     throw;
   }
 }
 
-core::UwfSnapshot readSnapshot(const UwfCapability capability) {
+UwfCapability probeUwfCapability() { return probeUwfCapability(embeddedWmiSession()); }
+
+core::UwfSnapshot readSnapshot(WmiOperations& s, const UwfCapability capability, const bool elevated) {
   core::UwfSnapshot snap;
   // 提权状态随快照交给所有 UI 消费者；UWF 能力则由启动期固定后注入，刷新
   // 只读取动态状态，不能因一次 WMI 故障重新解释运行环境。
-  snap.elevated = isElevated();
+  snap.elevated = elevated;
   if (capability == UwfCapability::Unavailable) {
     snap.uwfAvailable = false;
     snap.unavailableReason = "UWF is not registered";
     return snap;
   }
 
-  auto& s = embeddedWmiSession();
   s.ensureConnected();
 
   // ── UWF_Filter ───────────────────────────────────────────────
@@ -186,12 +185,14 @@ core::UwfSnapshot readSnapshot(const UwfCapability capability) {
   return snap;
 }
 
-std::vector<core::DiskInfo> enumerateDisks() {
+core::UwfSnapshot readSnapshot(const UwfCapability capability) { return readSnapshot(embeddedWmiSession(), capability, isElevated()); }
+
+std::vector<core::DiskInfo> enumerateDisks(WmiOperations& cim) {
   std::vector<core::DiskInfo> out;
-  auto& cim = cimv2WmiSession();
   cim.ensureConnected();
 
-  const auto rows = cim.query("SELECT DeviceID, FileSystem, VolumeName, Size, FreeSpace, DriveType FROM Win32_LogicalDisk WHERE DriveType = 2 OR DriveType = 3");
+  const auto rows =
+      cim.query("SELECT DeviceID, FileSystem, VolumeName, Size, FreeSpace, DriveType FROM Win32_LogicalDisk WHERE DriveType = 2 OR DriveType = 3");
 
   // Win32_Volume.DeviceID 形如 "\\?\Volume{GUID}\"，与 UWF_Volume 使用的
   // 裸 "Volume{GUID}" 格式不同。这里仅按 DriveLetter 给磁盘信息补充可显示的
@@ -256,5 +257,7 @@ std::vector<core::DiskInfo> enumerateDisks() {
   }
   return out;
 }
+
+std::vector<core::DiskInfo> enumerateDisks() { return enumerateDisks(cimv2WmiSession()); }
 
 }  // namespace uwf

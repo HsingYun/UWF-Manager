@@ -95,7 +95,8 @@ struct LogStream {
 #define UWF_LOG_D(cat) ::uwf::LogStream('D', (cat))
 #else
 // Release 中整个表达式均不执行，日志参数的查询、转换和字符串拼接也不会产生开销。
-#define UWF_LOG_D(cat) while (false) ::uwf::LogStream('D', (cat))
+#define UWF_LOG_D(cat) \
+  while (false) ::uwf::LogStream('D', (cat))
 #endif
 #define UWF_LOG_W(cat) ::uwf::LogStream('W', (cat))
 #define UWF_LOG_E(cat) ::uwf::LogStream('E', (cat))

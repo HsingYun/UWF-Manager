@@ -21,6 +21,7 @@
 #include <QClipboard>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QFileDialog>
 #include <QFont>
 #include <QFontMetrics>
 #include <QFrame>
@@ -42,6 +43,34 @@
 #include "ThemeManager.h"
 
 namespace uwf::ui::dialogs {
+
+namespace {
+
+class SystemFileDialogProvider final : public FileDialogProvider {
+ public:
+  QStringList openFiles(QWidget* parent, const FileDialogRequest& request) override {
+    return QFileDialog::getOpenFileNames(parent, request.title, request.initialPath, request.filter);
+  }
+
+  QString openFile(QWidget* parent, const FileDialogRequest& request) override {
+    return QFileDialog::getOpenFileName(parent, request.title, request.initialPath, request.filter);
+  }
+
+  QString selectDirectory(QWidget* parent, const FileDialogRequest& request) override {
+    return QFileDialog::getExistingDirectory(parent, request.title, request.initialPath);
+  }
+
+  QString saveFile(QWidget* parent, const FileDialogRequest& request) override {
+    return QFileDialog::getSaveFileName(parent, request.title, request.initialPath, request.filter);
+  }
+};
+
+}  // namespace
+
+FileDialogProvider& systemFileDialogs() {
+  static SystemFileDialogProvider provider;
+  return provider;
+}
 
 void warning(QWidget* parent, const QString& title, const QString& text) {
   QDialog dialog(parent);

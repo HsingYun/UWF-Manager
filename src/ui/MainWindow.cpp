@@ -76,15 +76,30 @@ namespace {
 // ↔ std::string 的边界适配，不含任何盘符逻辑。
 QString systemDriveLetter() { return QString::fromStdString(drive::systemLetter()); }
 
+class SystemApplicationStateSource final : public ApplicationStateSource {
+ public:
+  ApplicationState read(const UwfCapability capability) override { return {uwf::enumerateDisks(), uwf::readSnapshot(capability)}; }
+};
+
+ApplicationStateSource& systemApplicationStateSource() {
+  static SystemApplicationStateSource source;
+  return source;
+}
+
 }  // namespace
 
 MainWindow::MainWindow(const UwfCapability uwfCapability, bool compatibilityMode, const QString& osProductName, const QString& osEditionId, QWidget* parent)
+    : MainWindow(MainWindowServices{embeddedWmiSession(), systemApplicationStateSource()},
+                 MainWindowStartup{uwfCapability, compatibilityMode, osProductName, osEditionId}, parent) {}
+
+MainWindow::MainWindow(MainWindowServices services, MainWindowStartup startup, QWidget* parent)
     : QMainWindow(parent),
-      m_uwfCapability(uwfCapability),
-      m_session(embeddedWmiSession()),
-      m_compatibilityMode(compatibilityMode),
-      m_osProductName(osProductName),
-      m_osEditionId(osEditionId) {
+      m_uwfCapability(startup.uwfCapability),
+      m_session(services.uwf),
+      m_stateSource(services.state),
+      m_compatibilityMode(startup.compatibilityMode),
+      m_osProductName(std::move(startup.osProductName)),
+      m_osEditionId(std::move(startup.osEditionId)) {
   // 构造期摆好窗口外壳（标题 / 图标 / 尺寸），并把窗口设为全透明：窗口会以
   // 透明状态 show 出来——showEvent 照常触发，首屏 rebuildUi() 在 shown 状态下
   // 建好全部内容、拉完数据后才把不透明度恢复成 1 一次性揭幕。整个 buildUi +
@@ -722,11 +737,9 @@ void MainWindow::rebuildTabs(const std::vector<core::DiskInfo>& disks) {
 void MainWindow::refresh() {
   UWF_LOG_D("ui") << "state refresh started";
   const auto t0 = std::chrono::steady_clock::now();
-  std::vector<core::DiskInfo> candidateDisks;
-  core::UwfSnapshot candidateSnapshot;
+  ApplicationState candidate;
   try {
-    candidateDisks = uwf::enumerateDisks();
-    candidateSnapshot = uwf::readSnapshot(m_uwfCapability);
+    candidate = m_stateSource.read(m_uwfCapability);
   } catch (const std::exception& error) {
     UWF_LOG_W("ui") << "state refresh failed: committedState=retained error=" << error.what();
     showInitialRefreshFailure(error.what());
@@ -735,15 +748,14 @@ void MainWindow::refresh() {
 
   // 两阶段提交：上面的磁盘枚举与完整 UWF 快照读取都成功后，才一次性替换
   // 成员状态。任何失败路径都在此之前返回，旧数据和 UI 均不会被触碰。
-  m_disks = std::move(candidateDisks);
-  m_snapshot = std::move(candidateSnapshot);
+  m_disks = std::move(candidate.disks);
+  m_snapshot = std::move(candidate.snapshot);
   m_hasCommittedState = true;
   m_reconciliationRequired = false;
   applyCommittedState();
   const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
   UWF_LOG_I("ui") << "state refresh completed: disks=" << m_disks.size() << " uwfAvailable=" << m_snapshot.uwfAvailable
-                  << " currentVolumes=" << m_snapshot.current.volumes.size() << " nextVolumes=" << m_snapshot.next.volumes.size()
-                  << " elapsedMs=" << elapsedMs;
+                  << " currentVolumes=" << m_snapshot.current.volumes.size() << " nextVolumes=" << m_snapshot.next.volumes.size() << " elapsedMs=" << elapsedMs;
 }
 
 void MainWindow::applyCommittedState() {

@@ -25,7 +25,6 @@
 #include <QClipboard>
 #include <QColor>
 #include <QEvent>
-#include <QFileDialog>
 #include <QFileInfo>
 #include <QIcon>
 #include <QItemSelectionModel>
@@ -249,7 +248,10 @@ QIcon composeWithBadge(const QIcon& base, Badge badge) {
 }
 }  // namespace
 
-ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : QWidget(parent), m_kind(kind) {
+ExclusionListWidget::ExclusionListWidget(Kind kind, QWidget* parent) : ExclusionListWidget(kind, dialogs::systemFileDialogs(), parent) {}
+
+ExclusionListWidget::ExclusionListWidget(Kind kind, dialogs::FileDialogProvider& fileDialogs, QWidget* parent)
+    : QWidget(parent), m_kind(kind), m_fileDialogs(fileDialogs) {
   auto* layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(8);
@@ -539,8 +541,8 @@ void ExclusionListWidget::onFilterChanged(const QString& text) {
 
 void ExclusionListWidget::onAddFile() {
   if (m_readOnly) return;
-  const QStringList paths = QFileDialog::getOpenFileNames(this, I18n::tr("Select files to add to the exclusion list (multiple selection allowed)"),
-                                                          dialogs::dialogBasePath(m_driveLetter));
+  const QStringList paths = m_fileDialogs.openFiles(
+      this, {I18n::tr("Select files to add to the exclusion list (multiple selection allowed)"), dialogs::dialogBasePath(m_driveLetter), {}});
   for (const auto& p : paths) addPendingEntry(p);
 }
 
@@ -549,7 +551,7 @@ void ExclusionListWidget::onAddDir() {
   // Windows 原生目录选择框不支持多选，这里用原生框（好看），
   // 需要添加多个目录就多次点击"添加文件夹"。
   const QString path =
-      QFileDialog::getExistingDirectory(this, I18n::tr("Select a folder to add to the exclusion list"), dialogs::dialogBasePath(m_driveLetter));
+      m_fileDialogs.selectDirectory(this, {I18n::tr("Select a folder to add to the exclusion list"), dialogs::dialogBasePath(m_driveLetter), {}});
   if (path.isEmpty()) return;
   addPendingEntry(path);
 }

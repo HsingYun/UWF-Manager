@@ -64,6 +64,8 @@ enum class ParseError : uint8_t {
   InvalidVolume,          // volume protect/unprotect 的参数不是合法盘符；errorContext = 用户写的值
   MissingPathArg,         // file add/remove-exclusion 缺路径
   MissingRegistryKeyArg,  // registry add/remove-exclusion 缺键
+  MalformedQuoting,       // 双引号没有成对闭合
+  UnexpectedArgument,     // 已识别命令后还有多余参数；errorContext = 第一项多余参数
   Unsupported,            // 整体命令模式没识别（commit-* / get-config 这种 UI 不映射的命令）
 };
 

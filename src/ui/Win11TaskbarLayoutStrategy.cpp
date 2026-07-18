@@ -288,9 +288,8 @@ TaskbarLayoutStrategy::AttachResult Win11TaskbarLayoutStrategy::AttachTransactio
   if (injectedState == AttachResult::Incompatible) return injectedState;
   if (injectedState != AttachResult::Attached) {
     UWF_LOG_D("taskbar") << "attachment finalization rejected: parent=" << observation.parentMatches << " child=" << observation.child
-                         << " popup=" << observation.popup
-                         << " layered=" << observation.layered << " toolWindow=" << observation.toolWindow << " noActivate=" << observation.noActivate
-                         << " appWindow=" << observation.appWindow;
+                         << " popup=" << observation.popup << " layered=" << observation.layered << " toolWindow=" << observation.toolWindow
+                         << " noActivate=" << observation.noActivate << " appWindow=" << observation.appWindow;
     return hardReset("finalize-invariant");
   }
   if (!matchesPlacement(window, m_environment, m_placement) &&

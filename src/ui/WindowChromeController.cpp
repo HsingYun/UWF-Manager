@@ -141,8 +141,7 @@ bool WindowChromeController::eventFilter(QObject* obj, QEvent* ev) {
       // click on Windows.  Let the native caption loop own this interaction;
       // unlike a delayed startSystemMove(), it also preserves drag-to-move.
       ReleaseCapture();
-      SendMessageW(reinterpret_cast<HWND>(m_window->winId()), WM_NCLBUTTONDOWN, HTCAPTION,
-                   MAKELPARAM(globalPos.x(), globalPos.y()));
+      SendMessageW(reinterpret_cast<HWND>(m_window->winId()), WM_NCLBUTTONDOWN, HTCAPTION, MAKELPARAM(globalPos.x(), globalPos.y()));
       return true;
     }
   }

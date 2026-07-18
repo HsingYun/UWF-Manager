@@ -52,6 +52,10 @@ class QLabel;
 
 namespace uwf::ui {
 
+namespace dialogs {
+class FileDialogProvider;
+}
+
 // 单行结果——UI 把它渲染到结果表格里。
 struct ImportReportRow {
   enum class Status { Success, Duplicate, Failed, Unsupported };
@@ -71,6 +75,8 @@ class ImportDialog : public QDialog {
   Q_OBJECT
  public:
   explicit ImportDialog(QWidget* parent = nullptr);
+  // 注入对象不转移所有权，生命周期必须覆盖本对话框。
+  ImportDialog(dialogs::FileDialogProvider& fileDialogs, QWidget* parent = nullptr);
 
   // 由 MainWindow 注入：拿到一组解析出来的命令，按顺序应用到 UI（不写 WMI），
   // 返回每条命令的执行结果。dialog 把结果展示到表格里。
@@ -87,6 +93,7 @@ class ImportDialog : public QDialog {
   void appendReport(const QList<ImportReportRow>& rows);
 
   Applier m_applier;
+  dialogs::FileDialogProvider& m_fileDialogs;
   QPlainTextEdit* m_text = nullptr;
   QTableWidget* m_report = nullptr;
   QLabel* m_summary = nullptr;

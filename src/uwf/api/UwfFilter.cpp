@@ -32,9 +32,7 @@ api::FilterRow decodeFilter(const WmiRow& source) {
           rowutil::requireBool(source, "NextEnabled")};
 }
 
-api::FilterRow rereadFilter(WmiSession& session, const api::FilterRow& target) {
-  return decodeFilter(session.getObject(target.path));
-}
+api::FilterRow rereadFilter(WmiOperations& session, const api::FilterRow& target) { return decodeFilter(session.getObject(target.path)); }
 
 }  // namespace
 

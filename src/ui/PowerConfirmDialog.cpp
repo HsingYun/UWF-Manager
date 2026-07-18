@@ -36,8 +36,7 @@ bool confirmPowerAction(QWidget* parent, const PowerAction action) {
   const QString title = shutdown ? I18n::tr("Safe shutdown") : I18n::tr("Safe restart");
   const QString heading = shutdown ? I18n::tr("Confirm safe shutdown?") : I18n::tr("Confirm safe restart?");
   const QString actionText = shutdown ? I18n::tr("Shut down") : I18n::tr("Restart");
-  const QString summaryText =
-      shutdown ? I18n::tr("The system will shut down safely through UWF.") : I18n::tr("The system will restart safely through UWF.");
+  const QString summaryText = shutdown ? I18n::tr("The system will shut down safely through UWF.") : I18n::tr("The system will restart safely through UWF.");
   const QString iconPath = shutdown ? QStringLiteral(":/icons/shutdown.svg") : QStringLiteral(":/icons/restart.svg");
 
   auto* dlg = new QDialog(parent);
@@ -104,13 +103,12 @@ bool confirmPowerAction(QWidget* parent, const PowerAction action) {
   warningCard->setObjectName(QStringLiteral("powerWarningCard"));
   QColor warningBackground = theme.color(Sem::Danger);
   warningBackground.setAlpha(theme.isLight() ? 16 : 28);
-  warningCard->setStyleSheet(
-      QStringLiteral("QFrame#powerWarningCard { background: rgba(%1, %2, %3, %4); border: 1px solid %5; border-radius: 9px; }")
-          .arg(warningBackground.red())
-          .arg(warningBackground.green())
-          .arg(warningBackground.blue())
-          .arg(warningBackground.alpha())
-          .arg(theme.color(Sem::Danger).name()));
+  warningCard->setStyleSheet(QStringLiteral("QFrame#powerWarningCard { background: rgba(%1, %2, %3, %4); border: 1px solid %5; border-radius: 9px; }")
+                                 .arg(warningBackground.red())
+                                 .arg(warningBackground.green())
+                                 .arg(warningBackground.blue())
+                                 .arg(warningBackground.alpha())
+                                 .arg(theme.color(Sem::Danger).name()));
   auto* warningLayout = new QVBoxLayout(warningCard);
   warningLayout->setContentsMargins(14, 11, 14, 11);
   warningLayout->setSpacing(4);
@@ -131,9 +129,11 @@ bool confirmPowerAction(QWidget* parent, const PowerAction action) {
   auto* cancelButton = buttons->addButton(I18n::tr("Cancel"), QDialogButtonBox::RejectRole);
   QObject::connect(actionButton, &QPushButton::clicked, dlg, &QDialog::accept);
   QObject::connect(cancelButton, &QPushButton::clicked, dlg, &QDialog::reject);
-  cancelButton->setDefault(true);
-  cancelButton->setFocus();
   layout->addWidget(buttons);
+  actionButton->setAutoDefault(false);
+  cancelButton->setAutoDefault(true);
+  cancelButton->setDefault(true);
+  cancelButton->setFocus(Qt::OtherFocusReason);
 
   const bool accepted = dlg->exec() == QDialog::Accepted;
   delete dlg;

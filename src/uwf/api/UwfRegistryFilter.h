@@ -33,7 +33,7 @@ namespace uwf::api {
 
 class UwfRegistryFilter {
  public:
-  explicit UwfRegistryFilter(WmiSession& session) : m_session(session) {}
+  explicit UwfRegistryFilter(WmiOperations& session) : m_session(session) {}
 
   std::vector<api::RegistryFilterRow> readAll() const;
 
@@ -61,7 +61,7 @@ class UwfRegistryFilter {
   void commitRegistryDeletion(const api::RegistryFilterRow& row, const std::string& registryKey, const std::string& valueName) const;
 
  private:
-  WmiSession& m_session;
+  WmiOperations& m_session;
 };
 
 }  // namespace uwf::api

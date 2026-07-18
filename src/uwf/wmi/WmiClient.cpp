@@ -22,16 +22,16 @@
 #include <windows.h>
 
 #include <algorithm>
-#include <atomic>
 #include <array>
+#include <atomic>
 #include <bit>
 #include <charconv>
 #include <cmath>
 #include <exception>
 #include <format>
 #include <limits>
-#include <new>
 #include <mutex>
+#include <new>
 #include <stop_token>
 #include <string>
 #include <thread>
@@ -60,15 +60,12 @@ bool isExactlyRepresentableAsDouble(const uint64_t magnitude) noexcept {
   return (magnitude & discardedMask) == 0;
 }
 
-uint64_t magnitudeOf(const int64_t value) noexcept {
-  return value < 0 ? static_cast<uint64_t>(-(value + 1)) + 1 : static_cast<uint64_t>(value);
-}
+uint64_t magnitudeOf(const int64_t value) noexcept { return value < 0 ? static_cast<uint64_t>(-(value + 1)) + 1 : static_cast<uint64_t>(value); }
 
 class UniqueBstr final {
  public:
   UniqueBstr() = default;
-  explicit UniqueBstr(const std::wstring& value)
-      : m_value(SysAllocStringLen(value.data(), static_cast<UINT>(value.size()))) {
+  explicit UniqueBstr(const std::wstring& value) : m_value(SysAllocStringLen(value.data(), static_cast<UINT>(value.size()))) {
     if (!m_value) throw std::bad_alloc();
   }
   explicit UniqueBstr(const wchar_t* value) : m_value(SysAllocString(value)) {
@@ -181,6 +178,11 @@ WmiValue variantToValue(const VARIANT& v, const CIMTYPE cimType, const std::stri
       return {};
     case VT_BOOL:
       return WmiValue::fromBool(v.boolVal != VARIANT_FALSE);
+    case VT_I1:
+      if (cimType == CIM_UINT8) return WmiValue::fromUInt(static_cast<std::uint8_t>(v.cVal));
+      return WmiValue::fromInt(static_cast<std::int8_t>(v.cVal));
+    case VT_UI1:
+      return WmiValue::fromUInt(v.bVal);
     case VT_I2:
       if (cimType == CIM_UINT16) return WmiValue::fromUInt(static_cast<uint16_t>(v.iVal));
       return WmiValue::fromInt(v.iVal);
@@ -194,6 +196,11 @@ WmiValue variantToValue(const VARIANT& v, const CIMTYPE cimType, const std::stri
       return WmiValue::fromUInt(v.uiVal);
     case VT_UI4:
       return WmiValue::fromUInt(v.ulVal);
+    case VT_INT:
+      if (cimType == CIM_UINT32) return WmiValue::fromUInt(static_cast<std::uint32_t>(v.intVal));
+      return WmiValue::fromInt(v.intVal);
+    case VT_UINT:
+      return WmiValue::fromUInt(v.uintVal);
     case VT_I8:
       if (cimType == CIM_UINT64) return WmiValue::fromUInt(static_cast<uint64_t>(v.llVal));
       return WmiValue::fromInt(v.llVal);
@@ -301,8 +308,7 @@ WmiRow readObjectProps(IWbemClassObject& object, const PathRequirement pathRequi
       throw WmiDecodeError(operation, "property enumeration returned duplicate field '__PATH'");
     }
   } else if (pathRequirement == PathRequirement::Required) {
-    throw WmiDecodeError(operation,
-                         std::format("locatable object has no string __PATH (VARIANT type {})", static_cast<unsigned>(path.get().vt)));
+    throw WmiDecodeError(operation, std::format("locatable object has no string __PATH (VARIANT type {})", static_cast<unsigned>(path.get().vt)));
   }
   return row;
 }
@@ -338,8 +344,7 @@ std::vector<WmiRow> expandArrayVariant(const VARIANT& v, const std::string& oper
       if (!unknown) throw WmiDecodeError(operation, std::format("SafeArrayGetElement({}) returned a null IUnknown", i));
       ComPtr<IWbemClassObject> item;
       hr = unknown->QueryInterface(IID_IWbemClassObject, item.putVoid());
-      if (FAILED(hr) || !item)
-        throw WmiDecodeError(operation, std::format("array element is not an IWbemClassObject: {}", hrText(hr)));
+      if (FAILED(hr) || !item) throw WmiDecodeError(operation, std::format("array element is not an IWbemClassObject: {}", hrText(hr)));
       rows.push_back(readObjectProps(*item, PathRequirement::Optional, operation));
     } else if (vt == VT_BSTR) {
       BSTR raw = nullptr;
@@ -438,8 +443,7 @@ WmiMethodOutput decodeMethodOutput(IWbemClassObject& output, const std::string& 
   const UniqueBstr returnValueName(L"ReturnValue");
   const HRESULT returnValueHr = output.Get(returnValueName, 0, returnValueVariant.put(), &returnValueType, nullptr);
   if (isWmiConnectionFailure(static_cast<int32_t>(returnValueHr))) {
-    throw WmiTransportError(static_cast<int32_t>(returnValueHr), operation,
-                            std::format("reading ReturnValue failed: {}", hrText(returnValueHr)));
+    throw WmiTransportError(static_cast<int32_t>(returnValueHr), operation, std::format("reading ReturnValue failed: {}", hrText(returnValueHr)));
   }
   if (FAILED(returnValueHr)) {
     throw WmiDecodeError(operation, std::format("reading ReturnValue failed: {}", hrText(returnValueHr)));
@@ -474,8 +478,7 @@ WmiMethodOutput decodeMethodOutput(IWbemClassObject& output, const std::string& 
         throw WmiDecodeError(operation, "response returned duplicate output '" + key + "'");
       }
     } else {
-      if (decoded.arrays.contains(key) ||
-          !decoded.values.emplace(key, variantToValue(value.get(), type, operation)).second) {
+      if (decoded.arrays.contains(key) || !decoded.values.emplace(key, variantToValue(value.get(), type, operation)).second) {
         throw WmiDecodeError(operation, "response returned duplicate output '" + key + "'");
       }
     }
@@ -485,8 +488,7 @@ WmiMethodOutput decodeMethodOutput(IWbemClassObject& output, const std::string& 
   return decoded;
 }
 
-WmiMethodOutput decodeWriteMethodOutput(IWbemClassObject& output, const std::string& className, const std::string& methodName,
-                                        const std::string& operation) {
+WmiMethodOutput decodeWriteMethodOutput(IWbemClassObject& output, const std::string& className, const std::string& methodName, const std::string& operation) {
   try {
     return decodeMethodOutput(output, className, methodName);
   } catch (const WmiProviderError&) {
@@ -494,8 +496,8 @@ WmiMethodOutput decodeWriteMethodOutput(IWbemClassObject& output, const std::str
     throw;
   } catch (const WmiException& error) {
     if (error.code().category() == wmiErrorCategory()) {
-      std::throw_with_nested(WmiInvocationUncertain(static_cast<int32_t>(error.code().value()), operation,
-                                                     "provider outcome could not be decoded: " + std::string(error.what())));
+      std::throw_with_nested(
+          WmiInvocationUncertain(static_cast<int32_t>(error.code().value()), operation, "provider outcome could not be decoded: " + std::string(error.what())));
     }
     std::throw_with_nested(WmiInvocationUncertain(operation, "provider outcome could not be decoded: " + std::string(error.what())));
   } catch (const std::exception& error) {
@@ -627,8 +629,9 @@ bool WmiValue::toBool() const {
       if (!std::isfinite(m_double)) throw WmiValueConversionError("non-finite Double is not a boolean");
       return m_double != 0.0;
     case Kind::String: {
-      if (m_string == "true" || m_string == "TRUE" || m_string == "True" || m_string == "1") return true;
-      if (m_string == "false" || m_string == "FALSE" || m_string == "False" || m_string == "0") return false;
+      const std::string folded = toLowerAscii(m_string);
+      if (folded == "true" || folded == "1") return true;
+      if (folded == "false" || folded == "0") return false;
       throw WmiValueConversionError(std::format("'{}' is not a boolean", m_string));
     }
     default:
@@ -742,6 +745,7 @@ std::string WmiValue::toString() const {
     case Kind::UInt:
       return std::format("{}", m_uint);
     case Kind::Double:
+      if (!std::isfinite(m_double)) throw WmiValueConversionError("non-finite WMI value is not a String");
       return std::format("{}", m_double);
     case Kind::String:
       return m_string;
@@ -836,7 +840,8 @@ void WmiSession::reconnectWithinOperation() const {
     throwComFailure(failure, "connect WMI namespace " + d->namespacePath, hrText(failure));
   }
 
-  hr = CoSetProxyBlanket(d->services.get(), RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, nullptr, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, nullptr, EOAC_NONE);
+  hr = CoSetProxyBlanket(d->services.get(), RPC_C_AUTHN_WINNT, RPC_C_AUTHZ_NONE, nullptr, RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE, nullptr,
+                         EOAC_NONE);
   if (FAILED(hr)) {
     d->reset();
     throwComFailure(hr, "configure WMI proxy security", hrText(hr));
@@ -858,8 +863,7 @@ std::vector<WmiRow> WmiSession::executeQuery(const std::string& wql, const Query
       const UniqueBstr language(L"WQL");
       const UniqueBstr queryText(utf8ToWide(wql));
       ComPtr<IEnumWbemClassObject> enumerator;
-      const long flags = WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY |
-                         (mode == QueryMode::LocatableInstances ? WBEM_FLAG_ENSURE_LOCATABLE : 0);
+      const long flags = WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY | (mode == QueryMode::LocatableInstances ? WBEM_FLAG_ENSURE_LOCATABLE : 0);
       const HRESULT queryHr = d->services->ExecQuery(language, queryText, flags, nullptr, enumerator.put());
       if (FAILED(queryHr)) throwComFailure(queryHr, "execute WMI query", std::format("{}; WQL: {}", hrText(queryHr), wql));
       if (!enumerator) throw WmiProtocolError("execute WMI query", std::format("provider returned no enumerator; WQL: {}", wql));
@@ -900,7 +904,7 @@ WmiClassStatus WmiSession::classStatus(const std::string& className) const {
       const UniqueBstr classPath(utf8ToWide(className));
       ComPtr<IWbemClassObject> classObject;
       const HRESULT hr = d->services->GetObject(classPath, 0, nullptr, classObject.put(), nullptr);
-      if (hr == static_cast<HRESULT>(WBEM_E_INVALID_CLASS)) return WmiClassStatus::Missing;
+      if (hr == static_cast<HRESULT>(WBEM_E_INVALID_CLASS) || hr == static_cast<HRESULT>(WBEM_E_NOT_FOUND)) return WmiClassStatus::Missing;
       if (FAILED(hr)) throwComFailure(hr, "probe WMI class " + className, hrText(hr));
       if (!classObject) throw WmiProtocolError("probe WMI class " + className, "provider returned no class object");
       return WmiClassStatus::Present;
@@ -1003,8 +1007,7 @@ WmiMethodOutput WmiSession::callMethodReadCancelable(const std::string& objectPa
       auto state = std::make_shared<AsyncMethodState>();
       auto sink = ComPtr<AsyncMethodSink>::adopt(new AsyncMethodSink(state));
       const HRESULT startHr = d->services->ExecMethodAsync(prepared.objectPath, prepared.methodName, 0, nullptr, prepared.inputs.get(), sink.get());
-      if (FAILED(startHr))
-        throwComFailure(startHr, operationName, std::format("ExecMethodAsync failed: {}", hrText(startHr)));
+      if (FAILED(startHr)) throwComFailure(startHr, operationName, std::format("ExecMethodAsync failed: {}", hrText(startHr)));
 
       std::stop_callback wakeOnStop(stopToken, [state = state.get()]() noexcept {
         // 修改等待谓词与唤醒使用同一把锁，避免 stop 恰好落在谓词检查和
@@ -1041,8 +1044,7 @@ WmiMethodOutput WmiSession::callMethodReadCancelable(const std::string& objectPa
       const HRESULT completionHr = state->status;
       auto output = ComPtr<IWbemClassObject>::retain(state->output.get());
       lock.unlock();
-      if (FAILED(completionHr))
-        throwComFailure(completionHr, operationName, std::format("asynchronous completion failed: {}", hrText(completionHr)));
+      if (FAILED(completionHr)) throwComFailure(completionHr, operationName, std::format("asynchronous completion failed: {}", hrText(completionHr)));
       if (!output) throw WmiProtocolError(operationName, "provider completed without output parameters");
       return decodeMethodOutput(*output, prepared.className, methodName);
     } catch (const WmiTransportError&) {

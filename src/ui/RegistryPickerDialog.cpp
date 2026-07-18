@@ -38,14 +38,27 @@
 
 #include "../core/RegistryExclusionPolicy.h"
 #include "../util/RegistryKey.h"
-#include "I18n.h"
 #include "Dialogs.h"
+#include "I18n.h"
 #include "PathElideDelegate.h"
 #include "ThemeManager.h"
 
 namespace uwf::ui {
 
 namespace {
+
+class SystemRegistryBrowser final : public RegistryBrowser {
+ public:
+  [[nodiscard]] std::vector<std::string> rootHiveLongNames() const override { return regkey::rootHiveLongNames(); }
+  [[nodiscard]] std::vector<std::string> subkeyNames(const std::string_view key) const override { return regkey::subkeyNames(key); }
+  [[nodiscard]] bool hasSubkeys(const std::string_view key) const override { return regkey::hasSubkeys(key); }
+  [[nodiscard]] std::vector<regkey::RegValueInfo> values(const std::string_view key) const override { return regkey::values(key); }
+};
+
+const RegistryBrowser& systemRegistryBrowser() {
+  static const SystemRegistryBrowser browser;
+  return browser;
+}
 
 // 树节点的 Qt::UserRole 存的是该节点对应的完整长写路径（HKEY_LOCAL_MACHINE\...）。
 constexpr int kPathRole = Qt::UserRole;
@@ -92,10 +105,25 @@ QString truncatedAt(QString s, int max = kPreviewMaxChars) {
 QString decodeUtf16Le(const std::vector<uint8_t>& data) {
   QString text;
   text.reserve(static_cast<qsizetype>((data.size() + 1) / 2));
-  for (size_t index = 0; index + 1 < data.size(); index += 2) {
-    const auto codeUnit = static_cast<char16_t>(static_cast<uint16_t>(data[index]) |
-                                                (static_cast<uint16_t>(data[index + 1]) << 8));
-    text.append(QChar(codeUnit));
+  for (size_t index = 0; index + 1 < data.size();) {
+    const auto codeUnit = static_cast<char16_t>(static_cast<uint16_t>(data[index]) | (static_cast<uint16_t>(data[index + 1]) << 8));
+    index += 2;
+    if (QChar::isHighSurrogate(codeUnit)) {
+      if (index + 1 < data.size()) {
+        const auto low = static_cast<char16_t>(static_cast<uint16_t>(data[index]) | (static_cast<uint16_t>(data[index + 1]) << 8));
+        if (QChar::isLowSurrogate(low)) {
+          text.append(QChar(codeUnit));
+          text.append(QChar(low));
+          index += 2;
+          continue;
+        }
+      }
+      text.append(QChar(QChar::ReplacementCharacter));
+    } else if (QChar::isLowSurrogate(codeUnit)) {
+      text.append(QChar(QChar::ReplacementCharacter));
+    } else {
+      text.append(QChar(codeUnit));
+    }
   }
   if (data.size() % 2 != 0) text.append(QChar(QChar::ReplacementCharacter));
   return text;
@@ -164,7 +192,11 @@ QString formatValuePreview(uint32_t type, const std::vector<uint8_t>& data) {
 
 }  // namespace
 
-RegistryPickerDialog::RegistryPickerDialog(Mode mode, const QString& title, QWidget* parent) : QDialog(parent), m_mode(mode) {
+RegistryPickerDialog::RegistryPickerDialog(Mode mode, const QString& title, QWidget* parent)
+    : RegistryPickerDialog(mode, title, systemRegistryBrowser(), parent) {}
+
+RegistryPickerDialog::RegistryPickerDialog(Mode mode, const QString& title, const RegistryBrowser& browser, QWidget* parent)
+    : QDialog(parent), m_mode(mode), m_browser(browser) {
   setWindowTitle(title);
   // 默认尺寸：三种模式都展示 "树 + 值表" 两栏，给 1000 宽够展开常见的注册表键名
   // （HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\... 类）+ 装下值表三列。
@@ -303,7 +335,7 @@ void RegistryPickerDialog::buildUi() {
 void RegistryPickerDialog::populateRootHives() {
   m_tree->clear();
   QTreeWidgetItem* hklmItem = nullptr;
-  for (const auto& hive : regkey::rootHiveLongNames()) {
+  for (const auto& hive : m_browser.rootHiveLongNames()) {
     const QString hivePath = QString::fromStdString(hive);
     auto* item = new QTreeWidgetItem(m_tree, QStringList{hivePath});
     item->setIcon(0, iconForKey());
@@ -344,22 +376,22 @@ void RegistryPickerDialog::loadChildren(QTreeWidgetItem* item) {
   };
   std::vector<ChildDescription> children;
   try {
-    for (const auto& name : regkey::subkeyNames(path.toStdString())) {
+    for (const auto& name : m_browser.subkeyNames(path.toStdString())) {
       if (atHklmRoot && name.starts_with("PERSISTENT_")) continue;
       const QString childPath = path + '\\' + QString::fromStdString(name);
       SubkeyState subkeys = SubkeyState::Unknown;
       try {
-        subkeys = regkey::hasSubkeys(childPath.toStdString()) ? SubkeyState::Present : SubkeyState::Absent;
+        subkeys = m_browser.hasSubkeys(childPath.toStdString()) ? SubkeyState::Present : SubkeyState::Absent;
       } catch (const std::system_error&) {
         // 父键枚举已经证明该子键存在；仅子键的可展开性尚不可知。
         // 不能因为一个受限键就丢弃父键其余已完整枚举的兄弟节点。
+        subkeys = SubkeyState::Unknown;
       }
       children.push_back({name, subkeys});
     }
   } catch (const std::exception& error) {
     item->setExpanded(false);
-    dialogs::warning(this, I18n::tr("Registry access failed"),
-                     I18n::tr("Failed to enumerate registry keys: %1").arg(QString::fromUtf8(error.what())));
+    dialogs::warning(this, I18n::tr("Registry access failed"), I18n::tr("Failed to enumerate registry keys: %1").arg(QString::fromUtf8(error.what())));
     return;
   }
 
@@ -470,10 +502,9 @@ void RegistryPickerDialog::refreshValueTable(const QString& keyPath) {
   if (keyPath.isEmpty()) return;
   std::vector<regkey::RegValueInfo> items;
   try {
-    items = regkey::values(keyPath.toStdString());
+    items = m_browser.values(keyPath.toStdString());
   } catch (const std::exception& error) {
-    dialogs::warning(this, I18n::tr("Registry access failed"),
-                     I18n::tr("Failed to read registry values: %1").arg(QString::fromUtf8(error.what())));
+    dialogs::warning(this, I18n::tr("Registry access failed"), I18n::tr("Failed to read registry values: %1").arg(QString::fromUtf8(error.what())));
     return;
   }
   // (Default) 行恒列：枚举里若已有（name==""）则移到最前；没有就补一行
@@ -644,7 +675,7 @@ std::optional<RegistryPickerDialog::Result> RegistryPickerDialog::pick(Mode mode
   if (checker) dlg.setAvailabilityChecker(std::move(checker));
   if (!preselectKey.isEmpty()) dlg.preselectKey(preselectKey);
   if (dlg.exec() != QDialog::Accepted) return std::nullopt;
-  return dlg.result();
+  return dlg.selection();
 }
 
 }  // namespace uwf::ui

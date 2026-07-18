@@ -27,7 +27,7 @@ namespace uwf::api {
 
 class UwfFilter {
  public:
-  explicit UwfFilter(WmiSession& session) : m_session(session) {}
+  explicit UwfFilter(WmiOperations& session) : m_session(session) {}
 
   [[nodiscard]] api::FilterRow read() const;
 
@@ -41,7 +41,7 @@ class UwfFilter {
   void restartSystem(const api::FilterRow& row) const;
 
  private:
-  WmiSession& m_session;
+  WmiOperations& m_session;
 };
 
 }  // namespace uwf::api

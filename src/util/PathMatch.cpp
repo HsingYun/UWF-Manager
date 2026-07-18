@@ -18,23 +18,32 @@
 
 namespace uwf {
 
+namespace {
+
+bool isPathSeparator(const unsigned char ch) { return ch == '\\' || ch == '/'; }
+
+unsigned char foldedPathCharacter(const unsigned char ch) {
+  if (isPathSeparator(ch)) return '\\';
+  if (ch >= 'A' && ch <= 'Z') return static_cast<unsigned char>(ch - 'A' + 'a');
+  return ch;
+}
+
+}  // namespace
+
 std::string stripTrailingSep(std::string s) {
-  while (!s.empty() && (s.back() == '\\' || s.back() == '/')) s.pop_back();
+  while (!s.empty() && isPathSeparator(static_cast<unsigned char>(s.back()))) s.pop_back();
   return s;
 }
 
 bool pathIsExcludedBy(const std::string& target, const std::string& prefix) {
   if (prefix.empty() || target.size() < prefix.size()) return false;
   for (size_t i = 0; i < prefix.size(); ++i) {
-    auto a = static_cast<unsigned char>(target[i]);
-    auto b = static_cast<unsigned char>(prefix[i]);
-    if (a >= 'A' && a <= 'Z') a = a - 'A' + 'a';
-    if (b >= 'A' && b <= 'Z') b = b - 'A' + 'a';
-    if (a != b) return false;
+    const auto targetCharacter = foldedPathCharacter(static_cast<unsigned char>(target[i]));
+    const auto prefixCharacter = foldedPathCharacter(static_cast<unsigned char>(prefix[i]));
+    if (targetCharacter != prefixCharacter) return false;
   }
   if (target.size() == prefix.size()) return true;
-  const char next = target[prefix.size()];
-  return next == '\\' || next == '/';
+  return isPathSeparator(static_cast<unsigned char>(target[prefix.size()]));
 }
 
 std::string findCoveringExclusion(const std::vector<std::string>& excls, const std::string& target) {
