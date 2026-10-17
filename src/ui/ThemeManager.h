@@ -21,6 +21,7 @@
 #include <QObject>
 #include <QSize>
 #include <QString>
+#include <optional>
 
 namespace uwf::ui {
 
@@ -46,7 +47,7 @@ enum class Sem {
 
 // 全局主题管理器：探测系统主题、加载对应 QSS、为 SVG 图标做按主题染色，
 // 并向自绘控件 / RichText 提供语义色。单例（按需懒加载）。
-// Qt-only 类型，仅供 src/ui 使用。
+// Qt-only 类型，在 GUI 线程使用。
 class ThemeManager : public QObject, private QAbstractNativeEventFilter {
   Q_OBJECT
  public:
@@ -58,6 +59,9 @@ class ThemeManager : public QObject, private QAbstractNativeEventFilter {
 
   // 加载并应用对应 QSS 到 qApp，发射 themeChanged 信号。
   void apply(Theme t);
+  // 启动偏好仅在初始化时使用；未指定时读取系统应用主题。后续手动切换不
+  // 改写启动偏好，也不影响独立跟随 Windows 外壳的任务栏主题。
+  void applyStartupTheme(std::optional<Theme> overrideTheme);
   void toggle();
 
   // 读取 Windows 注册表 AppsUseLightTheme；非 Windows 或读失败时返回 Dark。

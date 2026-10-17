@@ -19,21 +19,27 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QComboBox>
+#include <QDateTime>
 #include <QDialog>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
+#include <QFileInfo>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
+#include <QMenu>
 #include <QPainter>
 #include <QPlainTextEdit>
+#include <QPointer>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QScopeGuard>
 #include <QScrollBar>
 #include <QSignalSpy>
+#include <QStyleHints>
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QTemporaryDir>
@@ -41,6 +47,7 @@
 #include <QTest>
 #include <QTextEdit>
 #include <QTimer>
+#include <QToolButton>
 #include <QUuid>
 #include <algorithm>
 #include <array>
@@ -49,6 +56,7 @@
 #include <exception>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <stop_token>
 #include <string>
 #include <string_view>
@@ -57,6 +65,7 @@
 
 #include "app/FileStagingConflictPolicy.h"
 #include "app/FileStagingStore.h"
+#include "app/UserConfig.h"
 #include "core/UwfModel.h"
 #include "service/EnhancedModeAgent.h"
 #include "service/EnhancedModeService.h"
@@ -366,6 +375,8 @@ class ApplicationUiBehaviorTests final : public QObject {
   void initTestCase();
   void cleanupTestCase();
   void languageAndThemeChangesReachProductionWidgets();
+  void startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges_data();
+  void startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges();
   void aboutDialogExposesVersionLicenseAndSafeClose();
   void diagnosticReportDistinguishesMissingStateAndBoundsLogs();
   void commonDialogsPreserveSafeDefaultsAndPreviewPagination();
@@ -443,6 +454,156 @@ void ApplicationUiBehaviorTests::languageAndThemeChangesReachProductionWidgets()
   QVERIFY(lightHud.floatingSurface.alpha() < lightHud.taskbarSurface.alpha());
   theme.toggle();
   QCOMPARE(theme.current(), ui::Theme::Dark);
+}
+
+void ApplicationUiBehaviorTests::startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges_data() {
+  QTest::addColumn<QByteArray>("contents");
+  QTest::addColumn<std::optional<ui::Theme>>("expectedTheme");
+  QTest::addColumn<std::optional<ui::I18n::Lang>>("expectedLanguage");
+  struct Case {
+    const char* name;
+    QByteArray contents;
+    std::optional<ui::Theme> theme;
+    std::optional<ui::I18n::Lang> language;
+  };
+  const std::array cases{
+      Case{"dark-english", "[UI]\nTheme=dark\nLanguage=en\n", ui::Theme::Dark, ui::I18n::Lang::En},
+      Case{"light-chinese", "[UI]\nTheme=light\nLanguage=zh_CN\n", ui::Theme::Light, ui::I18n::Lang::Zh_CN},
+      Case{"dark-chinese", "[UI]\nTheme=dark\nLanguage=zh_CN\n", ui::Theme::Dark, ui::I18n::Lang::Zh_CN},
+      Case{"light-english", "[UI]\nTheme=light\nLanguage=en\n", ui::Theme::Light, ui::I18n::Lang::En},
+      Case{"system", "[UI]\nTheme=system\nLanguage=system\n", {}, {}},
+      Case{"empty", {}, {}, {}},
+      Case{"invalid", "[UI]\nTheme=unknown\nLanguage=unknown\n", {}, {}},
+      Case{"malformed", "[UI]\nTheme=dark\nLanguage=zh_CN\n[unterminated\n", {}, {}},
+      Case{"partly-valid", "[UI]\nTheme=bad-value\nLanguage=zh_CN\n", {}, ui::I18n::Lang::Zh_CN},
+  };
+  for (const auto& entry : cases) QTest::newRow(entry.name) << entry.contents << entry.theme << entry.language;
+}
+
+void ApplicationUiBehaviorTests::startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges() {
+  QFETCH(QByteArray, contents);
+  QFETCH(std::optional<ui::Theme>, expectedTheme);
+  QFETCH(std::optional<ui::I18n::Lang>, expectedLanguage);
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  QFile file(directory.filePath(QStringLiteral("UWF.ini")));
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  QCOMPARE(file.write(contents), contents.size());
+  file.close();
+  const auto modifiedBefore = QFileInfo(file).lastModified();
+
+  auto& theme = ui::ThemeManager::instance();
+  auto& language = ui::I18n::instance();
+  const ui::Theme originalTheme = theme.current();
+  const ui::I18n::Lang originalLanguage = language.lang();
+  const auto restorePreferences = qScopeGuard([&] {
+    theme.apply(originalTheme);
+    language.setLang(originalLanguage);
+  });
+  const auto config = app::readUserConfig(directory.path());
+  theme.applyStartupTheme(config.theme);
+  language.applyStartupLanguage(config.language);
+  const ui::Theme startupTheme = expectedTheme ? *expectedTheme : ui::ThemeManager::detectSystemTheme();
+  const ui::I18n::Lang startupLanguage = expectedLanguage ? *expectedLanguage : ui::I18n::detectSystemLang();
+  QCOMPARE(theme.current(), startupTheme);
+  QCOMPARE(language.lang(), startupLanguage);
+  QCOMPARE(QGuiApplication::styleHints()->colorScheme(), startupTheme == ui::Theme::Light ? Qt::ColorScheme::Light : Qt::ColorScheme::Dark);
+
+  {
+    RecordingWmiOperations wmi;
+    MemoryFileStagingStore staging;
+    MutableApplicationStateSource source;
+    MemoryEnhancedModeServiceControl serviceControl;
+    MemoryEnhancedModeAgent agent;
+    source.snapshot.uwfAvailable = false;
+    source.snapshot.unavailableReason = "provider unavailable in fixture";
+    // 所有系统能力均停留在既有内存边界，真实窗口不会触及 UWF、SCM 或代理管道。
+    ui::MainWindow window({wmi, source, staging, &serviceControl, &agent},
+                          {.uwfCapability = UwfCapability::Unavailable, .compatibilityMode = false, .osProductName = {}, .osEditionId = {}});
+    window.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&window));
+    QTRY_COMPARE_WITH_TIMEOUT(source.reads, 1, 2000);
+    QTRY_COMPARE_WITH_TIMEOUT(window.windowOpacity(), 1.0, 2000);
+    QCOMPARE(window.windowTitle(),
+             startupLanguage == ui::I18n::Lang::En ? QStringLiteral("Unified Write Filter (UWF) Manager") : QStringLiteral("统一写入筛选器 (UWF) 管理器"));
+    QVERIFY(actionWithText(&window, startupLanguage == ui::I18n::Lang::En ? QStringLiteral("Refresh") : QStringLiteral("刷新")));
+    QCOMPARE(window.palette().color(QPalette::Window), theme.color(ui::Sem::Bg));
+    QVERIFY(!QApplication::activeModalWidget());
+
+    QToolButton* themeButton = nullptr;
+    for (const auto buttons = window.findChildren<QToolButton*>(); auto* button : buttons) {
+      if (button->defaultAction() &&
+          button->defaultAction()->toolTip() == ui::I18n::tr("Toggle light / dark theme for this session. No preferences are saved.")) {
+        themeButton = button;
+      }
+    }
+    QVERIFY(themeButton && themeButton->isVisible() && themeButton->isEnabled());
+    QVERIFY(!themeButton->icon().isNull());
+    QSignalSpy themeChanges(&theme, &ui::ThemeManager::themeChanged);
+    QTest::mouseClick(themeButton, Qt::LeftButton);
+    const ui::Theme toggledTheme = startupTheme == ui::Theme::Dark ? ui::Theme::Light : ui::Theme::Dark;
+    QTRY_COMPARE_WITH_TIMEOUT(theme.current(), toggledTheme, 2000);
+    QTRY_COMPARE_WITH_TIMEOUT(source.reads, 2, 2000);
+    QCOMPARE(language.lang(), startupLanguage);
+    QVERIFY(window.updatesEnabled());
+    QCOMPARE(window.palette().color(QPalette::Window), theme.color(ui::Sem::Bg));
+
+    const ui::I18n::Lang toggledLanguage = startupLanguage == ui::I18n::Lang::En ? ui::I18n::Lang::Zh_CN : ui::I18n::Lang::En;
+    QToolButton* languageButton = nullptr;
+    for (const auto buttons = window.findChildren<QToolButton*>(); auto* button : buttons) {
+      if (button->defaultAction() && button->defaultAction()->toolTip() == ui::I18n::tr("Switch display language")) languageButton = button;
+    }
+    QVERIFY(languageButton && languageButton->isVisible() && languageButton->isEnabled() && languageButton->menu());
+    const QPointer<QMenu> menu = languageButton->menu();
+    QPointer<QAction> selectedLanguage;
+    for (const auto actions = menu->actions(); auto* action : actions) {
+      if (action->text() == (toggledLanguage == ui::I18n::Lang::En ? QStringLiteral("English") : QStringLiteral("简体中文"))) selectedLanguage = action;
+    }
+    QVERIFY(selectedLanguage && selectedLanguage->isEnabled() && !selectedLanguage->isChecked());
+    bool menuOpened = false;
+    QTimer menuDriver;
+    menuDriver.setInterval(1);
+    connect(&menuDriver, &QTimer::timeout, this, [&] {
+      if (!menu || !selectedLanguage || !menu->isVisible()) return;
+      menuDriver.stop();
+      menuOpened = true;
+      QTest::mouseClick(menu.data(), Qt::LeftButton, Qt::NoModifier, menu->actionGeometry(selectedLanguage.data()).center());
+    });
+    // InstantPopup 会进入嵌套事件循环。超时只关闭本进程的弹出菜单，让按钮
+    // 接线或选择行为错误表现为断言失败，而不是让整套测试永久等待。
+    QTimer menuTimeout;
+    menuTimeout.setSingleShot(true);
+    connect(&menuTimeout, &QTimer::timeout, this, [] {
+      if (auto* popup = QApplication::activePopupWidget()) popup->close();
+    });
+    menuDriver.start();
+    menuTimeout.start(2000);
+    // 重建会销毁工具栏按钮，窗口本身保持不变；窗口级事件入口可安全发送整次
+    // 点击的按下/释放事件，不会在弹出菜单返回后再访问已销毁的旧按钮。
+    const QPoint languageButtonPosition = window.mapFromGlobal(languageButton->mapToGlobal(languageButton->rect().center()));
+    QTest::mouseClick(window.windowHandle(), Qt::LeftButton, Qt::NoModifier, languageButtonPosition);
+    menuDriver.stop();
+    menuTimeout.stop();
+    QVERIFY(menuOpened);
+    QTRY_COMPARE_WITH_TIMEOUT(language.lang(), toggledLanguage, 2000);
+    QTRY_COMPARE_WITH_TIMEOUT(source.reads, 3, 2000);
+    QCOMPARE(window.windowTitle(),
+             toggledLanguage == ui::I18n::Lang::En ? QStringLiteral("Unified Write Filter (UWF) Manager") : QStringLiteral("统一写入筛选器 (UWF) 管理器"));
+    QVERIFY(actionWithText(&window, toggledLanguage == ui::I18n::Lang::En ? QStringLiteral("Refresh") : QStringLiteral("刷新")));
+    QCOMPARE(theme.current(), toggledTheme);
+    QCOMPARE(themeChanges.count(), 1);
+    QCOMPARE(window.palette().color(QPalette::Window), theme.color(ui::Sem::Bg));
+    QVERIFY(window.updatesEnabled());
+    QVERIFY(wmi.invocations.empty());
+    QCOMPARE(staging.writes, 0);
+    QCOMPARE(agent.starts, 0);
+  }
+
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  QCOMPARE(file.readAll(), contents);
+  file.close();
+  QCOMPARE(QFileInfo(file).lastModified(), modifiedBefore);
+  QCOMPARE(QDir(directory.path()).entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System), QStringList{QStringLiteral("UWF.ini")});
 }
 
 void ApplicationUiBehaviorTests::aboutDialogExposesVersionLicenseAndSafeClose() {

@@ -15,11 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <windows.h>
+
+#include <QDateTime>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
+#include <QScopeGuard>
+#include <QTemporaryDir>
 #include <QTest>
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -30,6 +39,7 @@
 #include "app/FileStagingConflictPolicy.h"
 #include "app/FileStagingStore.h"
 #include "app/StartupOptions.h"
+#include "app/UserConfig.h"
 #include "core/RegistryExclusionPolicy.h"
 #include "core/UwfModel.h"
 #include "service/EnhancedModeService.h"
@@ -62,6 +72,13 @@ class CoreBehaviorTests final : public QObject {
 
  private slots:
   void startupOptionsClassifyEveryExclusiveMode();
+  void userConfigReadsOnlyRecognizedValues_data();
+  void userConfigReadsOnlyRecognizedValues();
+  void userConfigMissingFileDoesNotCreateStorage();
+  void userConfigIgnoresWorkingDirectoryAndRejectsRelativeLocations();
+  void userConfigMalformedFileFallsBackWithoutDiscardingTheUserFile();
+  void userConfigInvalidOptionsAreLoggedIndependently();
+  void userConfigReadFailuresFallBackWithoutChangingPermissions();
   void applicationCommandProtocolRejectsTruncationAndCorruption();
   void enhancedAgentControlProtocolCorrelatesAcknowledgements();
   void fileStagingRegistryCodecPreservesKindsAndRejectsCorruption();
@@ -124,6 +141,209 @@ void CoreBehaviorTests::startupOptionsClassifyEveryExclusiveMode() {
 
   // 首项是可执行文件名，不得被当作用户参数。
   QCOMPARE(uwf::app::parseStartupOptions({QStringLiteral("--quiet")}).mode, StartupMode::Interactive);
+}
+
+void CoreBehaviorTests::userConfigReadsOnlyRecognizedValues_data() {
+  using uwf::ui::I18n;
+  using uwf::ui::Theme;
+  QTest::addColumn<QByteArray>("contents");
+  QTest::addColumn<std::optional<Theme>>("expectedTheme");
+  QTest::addColumn<std::optional<I18n::Lang>>("expectedLanguage");
+
+  struct Case {
+    const char* name;
+    QByteArray contents;
+    std::optional<Theme> theme;
+    std::optional<I18n::Lang> language;
+  };
+  const std::array cases{
+      Case{"empty", {}, {}, {}},
+      Case{"comments", "; user preferences\n[UI]\n; startup override\nTheme=dark\n", Theme::Dark, {}},
+      Case{"empty-section", "[UI]\n", {}, {}},
+      Case{"system", "[UI]\nTheme=system\nLanguage=system\n", {}, {}},
+      Case{"dark", "[UI]\nTheme=dark\n", Theme::Dark, {}},
+      Case{"light", "[UI]\nTheme=light\n", Theme::Light, {}},
+      Case{"english", "[UI]\nLanguage=en\n", {}, I18n::Lang::En},
+      Case{"chinese", "[UI]\nLanguage=zh_CN\n", {}, I18n::Lang::Zh_CN},
+      Case{"independent-overrides", "[UI]\nTheme=light\nLanguage=zh_CN\n", Theme::Light, I18n::Lang::Zh_CN},
+      Case{"mixed-case", "[UI]\nTheme=dArK\nLanguage=ZH_cn\n", Theme::Dark, I18n::Lang::Zh_CN},
+      Case{"key-case", "[ui]\ntHeMe=light\nlAnGuAgE=en\n", Theme::Light, I18n::Lang::En},
+      Case{"spaces-crlf", "[UI]\r\nTheme = light  \r\nLanguage = en \r\n", Theme::Light, I18n::Lang::En},
+      Case{"quoted-values", "[UI]\nTheme=\" dark \"\nLanguage=\" zh_CN \"\n", Theme::Dark, I18n::Lang::Zh_CN},
+      Case{"utf8-bom", QByteArray::fromHex("efbbbf") + "[UI]\r\nTheme=dark\r\nLanguage=en\r\n", Theme::Dark, I18n::Lang::En},
+      Case{"empty-values", "[UI]\nTheme=\nLanguage=\n", {}, {}},
+      Case{"unknown-values", "[UI]\nTheme=automatic\nLanguage=fr\n", {}, {}},
+      Case{"no-substring-matching", "[UI]\nTheme=dark-mode\nLanguage=english\n", {}, {}},
+      Case{"invalid-theme-keeps-language", "[UI]\nTheme=invalid\nLanguage=en\n", {}, I18n::Lang::En},
+      Case{"invalid-language-keeps-theme", "[UI]\nTheme=dark\nLanguage=zh_TW\n", Theme::Dark, {}},
+      Case{"typed-theme-keeps-language", "[UI]\nTheme=dark,light\nLanguage=en\n", {}, I18n::Lang::En},
+      Case{"typed-language-keeps-theme", "[UI]\nTheme=dark\nLanguage=@ByteArray(en)\n", Theme::Dark, {}},
+      Case{"empty-theme-keeps-language", "[UI]\nTheme=\nLanguage=zh_CN\n", {}, I18n::Lang::Zh_CN},
+      Case{"whitespace-values", "[UI]\nTheme=\"   \"\nLanguage=\"   \"\n", {}, {}},
+      Case{"unknown-keys", "[UI]\nTheme=dark\nLanguage=en\nOther=yes\n[Network]\nEnabled=true\n", Theme::Dark, I18n::Lang::En},
+      Case{"wrong-section", "[Other]\nTheme=dark\nLanguage=en\n", {}, {}},
+      Case{"unscoped-keys", "Theme=dark\nLanguage=zh_CN\n", {}, {}},
+      Case{"invalid-variant", "[UI]\nTheme=@Invalid()\nLanguage=@Invalid()\n", {}, {}},
+      Case{"list-values", "[UI]\nTheme=dark,light\nLanguage=en,zh_CN\n", {}, {}},
+      Case{"byte-array-values", "[UI]\nTheme=@ByteArray(dark)\nLanguage=@ByteArray(en)\n", {}, {}},
+      Case{"numeric-values", "[UI]\nTheme=1\nLanguage=0\n", {}, {}},
+      Case{"non-ascii-values", "[UI]\nTheme=深色\nLanguage=简体中文\n", {}, {}},
+      Case{"malformed-utf8-values", QByteArray("[UI]\nTheme=") + char(0xFF) + "\nLanguage=en\n", {}, I18n::Lang::En},
+  };
+  for (const auto& entry : cases) QTest::newRow(entry.name) << entry.contents << entry.theme << entry.language;
+}
+
+void CoreBehaviorTests::userConfigReadsOnlyRecognizedValues() {
+  QFETCH(QByteArray, contents);
+  QFETCH(std::optional<uwf::ui::Theme>, expectedTheme);
+  QFETCH(std::optional<uwf::ui::I18n::Lang>, expectedLanguage);
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  QFile file(directory.filePath(QStringLiteral("UWF.ini")));
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  QCOMPARE(file.write(contents), contents.size());
+  file.close();
+  const auto modifiedBefore = QFileInfo(file).lastModified();
+
+  const auto config = uwf::app::readUserConfig(directory.path());
+  QCOMPARE(config.theme, expectedTheme);
+  QCOMPARE(config.language, expectedLanguage);
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  QCOMPARE(file.readAll(), contents);
+  file.close();
+  QCOMPARE(QFileInfo(file).lastModified(), modifiedBefore);
+  QCOMPARE(QDir(directory.path()).entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System), QStringList{QStringLiteral("UWF.ini")});
+}
+
+void CoreBehaviorTests::userConfigMissingFileDoesNotCreateStorage() {
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  uwf::clearLogLines();
+  const auto config = uwf::app::readUserConfig(directory.path());
+  QVERIFY(!config.theme && !config.language);
+  QVERIFY(QDir(directory.path()).isEmpty());
+  const QString missingDirectory = directory.filePath(QStringLiteral("absent/application"));
+  const auto missing = uwf::app::readUserConfig(missingDirectory);
+  QVERIFY(!missing.theme && !missing.language);
+  QVERIFY(!QFileInfo::exists(missingDirectory));
+  QVERIFY(uwf::recentLogLines().empty());
+
+  // 不扫描其它文件名，也不能把 Windows 隐藏扩展名造成的 UWF.ini.txt 当作配置。
+  for (const QString& name : {QStringLiteral("UWF.ini.txt"), QStringLiteral("UWF.1.0.18.ini")}) {
+    QFile decoy(directory.filePath(name));
+    QVERIFY(decoy.open(QIODevice::WriteOnly));
+    const QByteArray contents("[UI]\nTheme=dark\nLanguage=zh_CN\n");
+    QCOMPARE(decoy.write(contents), contents.size());
+  }
+  const auto withoutConfig = uwf::app::readUserConfig(directory.path());
+  QVERIFY(!withoutConfig.theme && !withoutConfig.language);
+  QVERIFY(!QFileInfo::exists(directory.filePath(QStringLiteral("UWF.ini"))));
+  QCOMPARE(QDir(directory.path()).entryList(QDir::Files | QDir::Hidden | QDir::System).size(), 2);
+}
+
+void CoreBehaviorTests::userConfigIgnoresWorkingDirectoryAndRejectsRelativeLocations() {
+  QTemporaryDir applicationDirectory;
+  QTemporaryDir workingDirectory;
+  QVERIFY(applicationDirectory.isValid() && workingDirectory.isValid());
+  QFile decoy(workingDirectory.filePath(QStringLiteral("UWF.ini")));
+  QVERIFY(decoy.open(QIODevice::WriteOnly));
+  const QByteArray contents("[UI]\nTheme=dark\nLanguage=zh_CN\n");
+  QCOMPARE(decoy.write(contents), contents.size());
+  decoy.close();
+
+  const QString originalDirectory = QDir::currentPath();
+  const auto restoreDirectory = qScopeGuard([&] { QDir::setCurrent(originalDirectory); });
+  QVERIFY(QDir::setCurrent(workingDirectory.path()));
+  const auto config = uwf::app::readUserConfig(applicationDirectory.path());
+  QVERIFY(!config.theme && !config.language);
+  QVERIFY(QDir(applicationDirectory.path()).isEmpty());
+  QVERIFY_THROWS_EXCEPTION(std::invalid_argument, static_cast<void>(uwf::app::readUserConfig({})));
+  QVERIFY_THROWS_EXCEPTION(std::invalid_argument, static_cast<void>(uwf::app::readUserConfig(QStringLiteral("."))));
+  QVERIFY_THROWS_EXCEPTION(std::invalid_argument, static_cast<void>(uwf::app::readUserConfig(QStringLiteral("relative/path"))));
+  QVERIFY(decoy.open(QIODevice::ReadOnly));
+  QCOMPARE(decoy.readAll(), contents);
+
+  // 应用路径含空格和非 ASCII 字符时仍按绝对目录读取，不能采用工作目录的同名文件。
+  const QString nestedDirectory = applicationDirectory.filePath(QStringLiteral("配置 目录"));
+  QVERIFY(QDir().mkpath(nestedDirectory));
+  QFile actual(QDir(nestedDirectory).filePath(QStringLiteral("UWF.ini")));
+  QVERIFY(actual.open(QIODevice::WriteOnly));
+  const QByteArray actualContents("[UI]\nTheme=light\nLanguage=en\n");
+  QCOMPARE(actual.write(actualContents), actualContents.size());
+  actual.close();
+  const auto actualConfig = uwf::app::readUserConfig(nestedDirectory);
+  QCOMPARE(actualConfig.theme, std::optional{uwf::ui::Theme::Light});
+  QCOMPARE(actualConfig.language, std::optional{uwf::ui::I18n::Lang::En});
+}
+
+void CoreBehaviorTests::userConfigMalformedFileFallsBackWithoutDiscardingTheUserFile() {
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  QFile file(directory.filePath(QStringLiteral("UWF.ini")));
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  // 即使有效选项位于前面，后续节语法损坏也不能把部分解析结果当成有效配置。
+  const QByteArray contents("[UI]\nTheme=dark\nLanguage=zh_CN\n[unterminated\n");
+  QCOMPARE(file.write(contents), contents.size());
+  file.close();
+  uwf::clearLogLines();
+  const auto config = uwf::app::readUserConfig(directory.path());
+  QVERIFY(!config.theme && !config.language);
+  const auto lines = uwf::recentLogLines();
+  QVERIFY(std::ranges::any_of(lines, [](const auto& line) { return line.find("invalid-ini") != std::string::npos; }));
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  QCOMPARE(file.readAll(), contents);
+}
+
+void CoreBehaviorTests::userConfigInvalidOptionsAreLoggedIndependently() {
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  QFile file(directory.filePath(QStringLiteral("UWF.ini")));
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  const QByteArray contents("[UI]\nTheme=night\nLanguage=zh_CN\nOther=ignored\n");
+  QCOMPARE(file.write(contents), contents.size());
+  file.close();
+  uwf::clearLogLines();
+  const auto config = uwf::app::readUserConfig(directory.path());
+  QVERIFY(!config.theme);
+  QCOMPARE(config.language, std::optional{uwf::ui::I18n::Lang::Zh_CN});
+  const auto lines = uwf::recentLogLines();
+  QVERIFY(std::ranges::any_of(lines, [](const auto& line) { return line.find("key=UI/Theme") != std::string::npos; }));
+  QVERIFY(std::ranges::any_of(lines, [](const auto& line) { return line.find("key=UI/Other") != std::string::npos; }));
+}
+
+void CoreBehaviorTests::userConfigReadFailuresFallBackWithoutChangingPermissions() {
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  const QString path = directory.filePath(QStringLiteral("UWF.ini"));
+  QFile file(path);
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  const QByteArray contents("[UI]\nTheme=dark\nLanguage=en\n");
+  QCOMPARE(file.write(contents), contents.size());
+  file.close();
+  const auto nativePath = path.toStdWString();
+
+  // 无共享读取的句柄模拟不可读文件；不修改真实用户配置或系统 ACL。
+  {
+    const HANDLE lock = CreateFileW(nativePath.c_str(), GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    QVERIFY(lock != INVALID_HANDLE_VALUE);
+    const auto closeLock = qScopeGuard([&] { CloseHandle(lock); });
+    uwf::clearLogLines();
+    const auto config = uwf::app::readUserConfig(directory.path());
+    QVERIFY(!config.theme && !config.language);
+    const auto lines = uwf::recentLogLines();
+    QVERIFY(std::ranges::any_of(lines, [](const auto& line) { return line.find("read-failed") != std::string::npos; }));
+  }
+
+  const DWORD attributes = GetFileAttributesW(nativePath.c_str());
+  QVERIFY(attributes != INVALID_FILE_ATTRIBUTES);
+  QVERIFY(SetFileAttributesW(nativePath.c_str(), attributes | FILE_ATTRIBUTE_READONLY));
+  const auto restoreAttributes = qScopeGuard([&] { SetFileAttributesW(nativePath.c_str(), attributes); });
+  const auto config = uwf::app::readUserConfig(directory.path());
+  QCOMPARE(config.theme, std::optional{uwf::ui::Theme::Dark});
+  QCOMPARE(config.language, std::optional{uwf::ui::I18n::Lang::En});
+  QVERIFY(GetFileAttributesW(nativePath.c_str()) & FILE_ATTRIBUTE_READONLY);
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  QCOMPARE(file.readAll(), contents);
 }
 
 void CoreBehaviorTests::applicationCommandProtocolRejectsTruncationAndCorruption() {

@@ -99,4 +99,8 @@ void I18n::setLang(const Lang l) {
   applyLang(l);
 }
 
+void I18n::applyStartupLanguage(const std::optional<Lang> overrideLanguage) {
+  setLang(overrideLanguage ? *overrideLanguage : detectSystemLang());
+}
+
 }  // namespace uwf::ui

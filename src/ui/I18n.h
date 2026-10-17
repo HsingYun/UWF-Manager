@@ -37,6 +37,7 @@
 
 #include <QCoreApplication>
 #include <QString>
+#include <optional>
 
 namespace uwf::ui {
 
@@ -56,6 +57,8 @@ class I18n {
   [[nodiscard]] static QString enhancedModeServiceDescription();
   [[nodiscard]] Lang lang() const { return m_lang; }
   void setLang(Lang l);
+  // 只用于启动初始化；未指定时跟随系统，不保存工具栏中的临时选择。
+  void applyStartupLanguage(std::optional<Lang> overrideLanguage);
 
   static Lang detectSystemLang();
 

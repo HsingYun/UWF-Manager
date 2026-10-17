@@ -415,7 +415,7 @@ void MainWindow::buildUi() {
   }
 
   m_actTheme = tb->addAction("");
-  m_actTheme->setToolTip(I18n::tr("Toggle light / dark theme. Follows the system setting on startup."));
+  m_actTheme->setToolTip(I18n::tr("Toggle light / dark theme for this session. No preferences are saved."));
   // 在 toggle() 之前禁 paint：toggle 内部会 setPalette + setStyleSheet("") +
   // setStyleSheet(sheet)，中间 unstyled 那一帧会闪。先压 paint 再切，再让
   // 后续 themeChanged → singleShot → rebuildUi → setUpdatesEnabled(true)

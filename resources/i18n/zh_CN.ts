@@ -535,8 +535,8 @@ Next session: %2</source>
     <message><source>About this program.</source><translation>关于本程序。</translation></message>
     <message><source>Switch display language</source><translation>切换显示语言</translation></message>
     <message>
-        <source>Toggle light / dark theme. Follows the system setting on startup.</source>
-        <translation>切换浅色 / 深色主题。启动时跟随系统设置。</translation>
+        <source>Toggle light / dark theme for this session. No preferences are saved.</source>
+        <translation>仅切换本次运行的浅色 / 深色主题，不保存偏好设置。</translation>
     </message>
     <message>
         <source>&lt;p&gt;A graphical front-end for managing the UWF filter state, overlay, and file / registry exclusions. Most changes take effect after the next reboot.&lt;/p&gt;&lt;p&gt;Source code: &lt;a href=&quot;%3&quot;&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href=&quot;mailto:%1&quot;&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;This program is released under the &lt;a href=&quot;%2&quot;&gt;GNU General Public License v3.0&lt;/a&gt;; the full license text is included in the LICENSE file shipped with this program.&lt;/p&gt;&lt;p&gt;This program is free software: you may redistribute it and / or modify it under the terms of the GPL v3. It is provided &quot;as is&quot;, without any warranty.&lt;/p&gt;</source>

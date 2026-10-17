@@ -183,6 +183,8 @@ void ThemeManager::apply(Theme t) {
   emit themeChanged(t);
 }
 
+void ThemeManager::applyStartupTheme(const std::optional<Theme> overrideTheme) { apply(overrideTheme ? *overrideTheme : detectSystemTheme()); }
+
 void ThemeManager::toggle() { apply(m_theme == Theme::Dark ? Theme::Light : Theme::Dark); }
 
 Theme ThemeManager::detectSystemTheme() {

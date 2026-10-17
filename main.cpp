@@ -30,6 +30,7 @@
 #include "src/app/FileStagingStore.h"
 #include "src/app/SecureSingleInstance.h"
 #include "src/app/StartupOptions.h"
+#include "src/app/UserConfig.h"
 #include "src/service/EnhancedModeService.h"
 #include "src/ui/CenteredTextStyle.h"
 #include "src/ui/I18n.h"
@@ -69,7 +70,7 @@ std::optional<int> handleSingleInstanceStartup(uwf::app::SecureSingleInstance& s
   return std::nullopt;
 }
 
-void initializeUserInterface(QApplication& app) {
+void initializeUserInterface(QApplication& app, const uwf::app::UserConfig& config) {
   // 用自定义 QProxyStyle 抵消 QToolButton / QTabBar 文字基线偏下的问题。
   app.setStyle(new uwf::ui::CenteredTextStyle());
 
@@ -86,12 +87,11 @@ void initializeUserInterface(QApplication& app) {
     app.setFont(f);
   }
 
-  (void)uwf::ui::I18n::instance();
+  uwf::ui::I18n::instance().applyStartupLanguage(config.language);
 
-  // 启动时跟随系统主题（读 HKCU\...\Personalize\AppsUseLightTheme），用户
-  // 之后可以通过工具栏右上角的按钮自由切换。不持久化偏好——每次启动重新探测。
-  auto& theme = uwf::ui::ThemeManager::instance();
-  theme.apply(uwf::ui::ThemeManager::detectSystemTheme());
+  // 在创建窗口前应用启动偏好，避免先显示默认语言或主题再切换。工具栏的
+  // 语言与主题选择只影响本次运行，不回写用户手工维护的配置。
+  uwf::ui::ThemeManager::instance().applyStartupTheme(config.theme);
 }
 
 uwf::SystemCheckResult checkRuntimeEnvironment() {
@@ -165,7 +165,7 @@ int runApplication(int argc, char* argv[], const uwf::app::StartupOptions& optio
   uwf::app::SecureSingleInstance singleInstance;
   if (const auto forwardedExitCode = handleSingleInstanceStartup(singleInstance, options)) return *forwardedExitCode;
 
-  initializeUserInterface(app);
+  initializeUserInterface(app, uwf::app::readUserConfig(QCoreApplication::applicationDirPath()));
   UWF_LOG_I("main") << "application started: pid=" << QCoreApplication::applicationPid();
   const auto check = checkRuntimeEnvironment();
   // WMI 运行时守卫覆盖完整 UI 事件循环。窗口及其控制器先销毁，随后守卫在

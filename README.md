@@ -48,6 +48,27 @@ UWF is the supported successor to the older Enhanced Write Filter (EWF) and File
 
 Note: the program still starts when these conditions are not met.
 
+## Custom configuration
+
+UWF Manager does not create or save preference files. To customize the startup theme or language, manually create a UTF-8 text file named **`UWF.ini`** in the same directory as the executable:
+
+```ini
+[UI]
+Theme=dark
+Language=en
+```
+
+| Option | Values | Default |
+| --- | --- | --- |
+| `[UI] Theme` | `system`, `light`, `dark` | `system` |
+| `[UI] Language` | `system`, `en`, `zh_CN` | `system` |
+
+`system` uses the Windows application theme or system language at startup. Languages are English (`en`) and Simplified Chinese (`zh_CN`); unsupported system languages fall back to English. Values are case-insensitive. Either option can be omitted. The file name stays `UWF.ini` even when the executable includes a version number; ensure that the file is not accidentally named `UWF.ini.txt`.
+
+Configuration is read once when a new UI instance starts, including tray-only startup. It is resolved relative to the executable, not the working directory. Restart the UI process to load edits; launching another copy while an instance is running does not reload its configuration. Toolbar theme and language changes only affect the current session and never write back to the file.
+
+A missing file or option keeps the default behavior. Invalid options are ignored with a warning in the in-app log, without affecting other valid options; unreadable or malformed files fall back to defaults without a dialog or blocking startup. The application never creates, updates, or repairs `UWF.ini`, and does not save these preferences in the registry or another directory. Remove the file to restore the defaults on the next startup. File staging and enhanced-mode service configuration remain separate features.
+
 ## Build
 
 - C++20

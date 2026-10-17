@@ -82,6 +82,8 @@ set(UWF_SOURCES
         src/app/SecureSingleInstance.cpp
         src/app/StartupOptions.h
         src/app/StartupOptions.cpp
+        src/app/UserConfig.h
+        src/app/UserConfig.cpp
         src/app/FileStagingStore.h
         src/app/FileStagingStore.cpp
         src/app/FileStagingCodec.h

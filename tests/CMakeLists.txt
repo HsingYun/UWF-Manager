@@ -33,6 +33,7 @@ qt_add_executable(UwfCoreBehaviorTests
         CoreBehaviorTests.cpp
         ../src/app/ApplicationCommand.cpp
         ../src/app/StartupOptions.cpp
+        ../src/app/UserConfig.cpp
         ../src/app/FileStagingCodec.cpp
         ../src/app/FileStagingConflictPolicy.cpp
         ../src/util/ByteFormat.cpp
@@ -119,6 +120,7 @@ endif ()
 # 不执行真实 commit、关机、重启或 Shell 写操作。
 qt_add_executable(UwfApplicationUiBehaviorTests
         ApplicationUiBehaviorTests.cpp
+        ../src/app/UserConfig.cpp
         ../src/app/ApplicationCommand.cpp
         ../src/app/FileStagingCodec.cpp
         ../src/app/FileStagingConflictPolicy.cpp
