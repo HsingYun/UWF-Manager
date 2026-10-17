@@ -35,9 +35,7 @@ std::optional<QString> readOption(const QSettings& settings, const QString& key)
                         << " reason=expected-single-string";
     return std::nullopt;
   }
-  const QString normalized = value.toString().trimmed().toLower();
-  if (normalized == QStringLiteral("system")) return std::nullopt;
-  return normalized;
+  return value.toString().trimmed().toLower();
 }
 
 }  // namespace
@@ -58,7 +56,8 @@ UserConfig readUserConfig(const QString& applicationDirectory) {
   }
 
   for (const auto& key : keys) {
-    if (key.compare(QStringLiteral("UI/Theme"), Qt::CaseInsensitive) != 0 && key.compare(QStringLiteral("UI/Language"), Qt::CaseInsensitive) != 0) {
+    if (key.compare(QStringLiteral("UI/Theme"), Qt::CaseInsensitive) != 0 && key.compare(QStringLiteral("UI/Language"), Qt::CaseInsensitive) != 0 &&
+        key.compare(QStringLiteral("UI/HubVisible"), Qt::CaseInsensitive) != 0) {
       UWF_LOG_W("config") << "unknown configuration key ignored: path=" << path.toStdString() << " key=" << key.toStdString();
     }
   }
@@ -68,7 +67,7 @@ UserConfig readUserConfig(const QString& applicationDirectory) {
       config.theme = ui::Theme::Dark;
     else if (*theme == QStringLiteral("light"))
       config.theme = ui::Theme::Light;
-    else
+    else if (*theme != QStringLiteral("system"))
       UWF_LOG_W("config") << "configuration option ignored: path=" << path.toStdString() << " key=UI/Theme value=" << theme->toStdString()
                           << " expected=system|light|dark";
   }
@@ -77,9 +76,18 @@ UserConfig readUserConfig(const QString& applicationDirectory) {
       config.language = ui::I18n::Lang::En;
     else if (*language == QStringLiteral("zh_cn"))
       config.language = ui::I18n::Lang::Zh_CN;
-    else
+    else if (*language != QStringLiteral("system"))
       UWF_LOG_W("config") << "configuration option ignored: path=" << path.toStdString() << " key=UI/Language value=" << language->toStdString()
                           << " expected=system|en|zh_CN";
+  }
+  if (const auto hubVisible = readOption(settings, QStringLiteral("UI/HubVisible"))) {
+    if (*hubVisible == QStringLiteral("true"))
+      config.hubVisible = true;
+    else if (*hubVisible == QStringLiteral("false"))
+      config.hubVisible = false;
+    else
+      UWF_LOG_W("config") << "configuration option ignored: path=" << path.toStdString() << " key=UI/HubVisible value=" << hubVisible->toStdString()
+                          << " expected=true|false";
   }
   return config;
 }

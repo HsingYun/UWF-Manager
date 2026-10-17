@@ -25,6 +25,7 @@
 #include <exception>
 #include <optional>
 #include <stdexcept>
+#include <utility>
 
 #include "src/app/CrashHandler.h"
 #include "src/app/FileStagingStore.h"
@@ -101,9 +102,8 @@ uwf::SystemCheckResult checkRuntimeEnvironment() {
 }
 
 int runMainWindow(QApplication& app, uwf::app::SecureSingleInstance& singleInstance, const uwf::app::StartupOptions& options,
-                  const uwf::SystemCheckResult& check, const uwf::UwfCapability uwfCapability) {
-  uwf::ui::MainWindow w(uwfCapability, check.status == uwf::CheckStatus::UnsupportedSystem, QString::fromStdString(check.productName),
-                        QString::fromStdString(check.editionId));
+                  uwf::ui::MainWindowStartup startup) {
+  uwf::ui::MainWindow w(std::move(startup));
 
   QObject::connect(&singleInstance, &uwf::app::SecureSingleInstance::activationRequested, &w, &uwf::ui::MainWindow::raiseToFront);
   QObject::connect(&singleInstance, &uwf::app::SecureSingleInstance::commitStageRequested, &w, [&](const std::uint64_t requestToken) {
@@ -148,7 +148,8 @@ int runApplication(int argc, char* argv[], const uwf::app::StartupOptions& optio
   uwf::app::SecureSingleInstance singleInstance;
   if (const auto forwardedExitCode = handleSingleInstanceStartup(singleInstance, options)) return *forwardedExitCode;
 
-  initializeUserInterface(uwf::app::readUserConfig(QCoreApplication::applicationDirPath()));
+  const auto config = uwf::app::readUserConfig(QCoreApplication::applicationDirPath());
+  initializeUserInterface(config);
   UWF_LOG_I("main") << "application started: pid=" << QCoreApplication::applicationPid();
   const auto check = checkRuntimeEnvironment();
   // WMI 运行时守卫覆盖完整 UI 事件循环。窗口及其控制器先销毁，随后守卫在
@@ -173,7 +174,12 @@ int runApplication(int argc, char* argv[], const uwf::app::StartupOptions& optio
       UWF_LOG_W("staging") << "file staging durability maintenance failed: error=non-standard-exception";
     }
   }
-  return runMainWindow(app, singleInstance, options, check, uwfCapability);
+  return runMainWindow(app, singleInstance, options,
+                       {.uwfCapability = uwfCapability,
+                        .compatibilityMode = check.status == uwf::CheckStatus::UnsupportedSystem,
+                        .osProductName = QString::fromStdString(check.productName),
+                        .osEditionId = QString::fromStdString(check.editionId),
+                        .hubVisible = config.hubVisible});
 }
 
 QStringList startupArguments(const int argc, char* argv[]) {

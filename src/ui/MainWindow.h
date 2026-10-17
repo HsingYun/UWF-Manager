@@ -89,6 +89,7 @@ struct MainWindowStartup {
   bool compatibilityMode = false;
   QString osProductName;
   QString osEditionId;
+  bool hubVisible = true;
 };
 
 class MainWindow : public QMainWindow {
@@ -98,8 +99,7 @@ class MainWindow : public QMainWindow {
   // 的信息框常驻显示兼容模式提示。提示文案在 buildUi 里按当前语言翻译，故这里
   // 只收原始数据（系统名 / 版本 ID），不收已翻译好的字符串——否则切语言后
   // 文案不会跟着变。
-  explicit MainWindow(UwfCapability uwfCapability, bool compatibilityMode = false, const QString& osProductName = {}, const QString& osEditionId = {},
-                      QWidget* parent = nullptr);
+  explicit MainWindow(MainWindowStartup startup, QWidget* parent = nullptr);
   MainWindow(MainWindowServices services, MainWindowStartup startup, QWidget* parent = nullptr);
   ~MainWindow() override;
 

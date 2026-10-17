@@ -100,6 +100,7 @@
 #include "ui/LogViewerDialog.h"
 #include "ui/MainWindow.h"
 #include "ui/OverlayHudPalette.h"
+#include "ui/OverlayHubView.h"
 #include "ui/OverlayUsageBar.h"
 #include "ui/PendingCollect.h"
 #include "ui/PowerController.h"
@@ -394,6 +395,8 @@ class ApplicationUiBehaviorTests final : public QObject {
   void languageAndThemeChangesReachProductionWidgets();
   void startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges_data();
   void startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges();
+  void startupHiddenHubRemainsHiddenAcrossRefreshAndUiRebuild_data();
+  void startupHiddenHubRemainsHiddenAcrossRefreshAndUiRebuild();
   void aboutDialogExposesVersionLicenseAndSafeClose();
   void diagnosticReportDistinguishesMissingStateAndBoundsLogs();
   void commonDialogsPreserveSafeDefaultsAndPreviewPagination();
@@ -544,7 +547,11 @@ void ApplicationUiBehaviorTests::startupPreferencesReachTheRealUiWithoutPersisti
     source.snapshot.unavailableReason = "provider unavailable in fixture";
     // 所有系统能力均停留在既有内存边界，真实窗口不会触及 UWF、SCM 或代理管道。
     ui::MainWindow window({wmi, source, staging, &serviceControl, &agent},
-                          {.uwfCapability = UwfCapability::Unavailable, .compatibilityMode = false, .osProductName = {}, .osEditionId = {}});
+                          {.uwfCapability = UwfCapability::Unavailable,
+                           .compatibilityMode = false,
+                           .osProductName = {},
+                           .osEditionId = {},
+                           .hubVisible = config.hubVisible});
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     QTRY_COMPARE_WITH_TIMEOUT(source.reads, 1, 2000);
@@ -558,7 +565,7 @@ void ApplicationUiBehaviorTests::startupPreferencesReachTheRealUiWithoutPersisti
     QToolButton* themeButton = nullptr;
     for (const auto buttons = window.findChildren<QToolButton*>(); auto* button : buttons) {
       if (button->defaultAction() &&
-          button->defaultAction()->toolTip() == ui::I18n::tr("Toggle light / dark theme for this session. No preferences are saved.")) {
+          button->defaultAction()->toolTip() == ui::I18n::tr("Toggle light / dark theme")) {
         themeButton = button;
       }
     }
@@ -627,6 +634,99 @@ void ApplicationUiBehaviorTests::startupPreferencesReachTheRealUiWithoutPersisti
   QVERIFY(file.open(QIODevice::ReadOnly));
   QCOMPARE(file.readAll(), contents);
   file.close();
+  QCOMPARE(QFileInfo(file).lastModified(), modifiedBefore);
+  QCOMPARE(QDir(directory.path()).entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System), QStringList{QStringLiteral("UWF.ini")});
+}
+
+void ApplicationUiBehaviorTests::startupHiddenHubRemainsHiddenAcrossRefreshAndUiRebuild_data() {
+  QTest::addColumn<bool>("quiet");
+  QTest::addColumn<bool>("filterEnabled");
+  QTest::newRow("interactive-filter-enabled") << false << true;
+  QTest::newRow("interactive-filter-disabled") << false << false;
+  QTest::newRow("quiet-filter-enabled") << true << true;
+  QTest::newRow("quiet-filter-disabled") << true << false;
+}
+
+void ApplicationUiBehaviorTests::startupHiddenHubRemainsHiddenAcrossRefreshAndUiRebuild() {
+  QFETCH(bool, quiet);
+  QFETCH(bool, filterEnabled);
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  QFile file(directory.filePath(QStringLiteral("UWF.ini")));
+  const QByteArray contents("[UI]\nHubVisible=false\n");
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  QCOMPARE(file.write(contents), contents.size());
+  file.close();
+  const auto modifiedBefore = QFileInfo(file).lastModified();
+  const auto config = app::readUserConfig(directory.path());
+
+  auto& theme = ui::ThemeManager::instance();
+  auto& language = ui::I18n::instance();
+  const auto originalTheme = theme.current();
+  const auto originalLanguage = language.lang();
+  const auto restorePreferences = qScopeGuard([&] {
+    theme.apply(originalTheme);
+    language.setLang(originalLanguage);
+  });
+  RecordingWmiOperations wmi;
+  MemoryFileStagingStore staging;
+  MutableApplicationStateSource source;
+  MemoryEnhancedModeServiceControl serviceControl;
+  MemoryEnhancedModeAgent agent;
+  source.snapshot = editableSnapshot();
+  source.snapshot.current.filter.enabled = filterEnabled;
+  ui::MainWindow window(
+      {wmi, source, staging, &serviceControl, &agent},
+      {.uwfCapability = UwfCapability::Available, .compatibilityMode = false, .osProductName = {}, .osEditionId = {}, .hubVisible = config.hubVisible});
+  QList<QPointer<ui::OverlayHubView>> views;
+  for (const auto widgets = QApplication::allWidgets(); auto* widget : widgets)
+    if (auto* view = qobject_cast<ui::OverlayHubView*>(widget)) views.append(view);
+  // 部分系统会静态过滤不兼容的任务栏端点；实际注册的端点均须保持未展示。
+  QVERIFY(!views.isEmpty());
+  const auto hubIsHidden = [&] {
+    auto* action = actionWithText(&window, QStringLiteral("HUB"));
+    return action && action->isVisible() == source.snapshot.current.filter.enabled && !action->isChecked() && std::ranges::all_of(views, [](const auto& view) {
+             return view && !view->isVisible() && view->displayState() == ui::OverlayHubView::DisplayState::Disabled;
+           });
+  };
+  if (quiet)
+    window.startInTray();
+  else
+    window.show();
+  QTRY_COMPARE_WITH_TIMEOUT(source.reads, 1, 2000);
+  QCOMPARE(window.isVisible(), !quiet);
+  QVERIFY(hubIsHidden());
+  if (quiet) {
+    window.raiseToFront();
+    QTRY_COMPARE_WITH_TIMEOUT(source.reads, 2, 2000);
+  }
+  QTRY_COMPARE_WITH_TIMEOUT(window.windowOpacity(), 1.0, 2000);
+
+  // 请求隐藏保存在展示模型中；UWF 保护状态变化和工具栏重建均不得将其覆盖。
+  for (const bool enabled : {false, true}) {
+    source.snapshot.current.filter.enabled = enabled;
+    const int before = source.reads;
+    window.refresh();
+    QCOMPARE(source.reads, before + 1);
+    QVERIFY(hubIsHidden());
+  }
+  int before = source.reads;
+  theme.toggle();
+  QTRY_COMPARE_WITH_TIMEOUT(source.reads, before + 1, 2000);
+  QVERIFY(hubIsHidden());
+  auto* languageAction = actionWithText(&window, ui::I18n::tr("Language"));
+  QVERIFY(languageAction && languageAction->menu());
+  auto* otherLanguage = actionWithText(languageAction->menu(), language.lang() == ui::I18n::Lang::En ? QStringLiteral("简体中文") : QStringLiteral("English"));
+  QVERIFY(otherLanguage);
+  before = source.reads;
+  otherLanguage->trigger();
+  QTRY_COMPARE_WITH_TIMEOUT(source.reads, before + 1, 2000);
+  QVERIFY(hubIsHidden());
+  QVERIFY(wmi.invocations.empty());
+  QCOMPARE(staging.writes, 0);
+  QCOMPARE(agent.starts, 0);
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  QCOMPARE(file.readAll(), contents);
   QCOMPARE(QFileInfo(file).lastModified(), modifiedBefore);
   QCOMPARE(QDir(directory.path()).entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System), QStringList{QStringLiteral("UWF.ini")});
 }

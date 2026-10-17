@@ -102,10 +102,10 @@ service::EnhancedModeServiceControl& systemEnhancedModeServiceControl() {
 
 }  // namespace
 
-MainWindow::MainWindow(const UwfCapability uwfCapability, bool compatibilityMode, const QString& osProductName, const QString& osEditionId, QWidget* parent)
-    : MainWindow(MainWindowServices{embeddedWmiSession(), systemApplicationStateSource(), app::registryFileStagingStore(embeddedWmiSession(), uwfCapability),
-                                    &systemEnhancedModeServiceControl()},
-                 MainWindowStartup{uwfCapability, compatibilityMode, osProductName, osEditionId}, parent) {}
+MainWindow::MainWindow(MainWindowStartup startup, QWidget* parent)
+    : MainWindow(MainWindowServices{embeddedWmiSession(), systemApplicationStateSource(),
+                                    app::registryFileStagingStore(embeddedWmiSession(), startup.uwfCapability), &systemEnhancedModeServiceControl()},
+                 std::move(startup), parent) {}
 
 MainWindow::MainWindow(MainWindowServices services, MainWindowStartup startup, QWidget* parent)
     : QMainWindow(parent),
@@ -137,6 +137,9 @@ MainWindow::MainWindow(MainWindowServices services, MainWindowStartup startup, Q
   connect(m_tray.get(), &TrayController::exitApplicationRequested, this, &MainWindow::requestExit);
 
   m_overlayPresentation = std::make_unique<OverlayPresentationController>(m_session, *this, *m_tray);
+  // 在首份快照发布前应用启动偏好，普通和静默启动都不会先显示再隐藏 HUB。
+  // 后续刷新、主题或语言重建继续使用控制器中的当前选择，不重新读取配置。
+  m_overlayPresentation->setHubEnabled(startup.hubVisible);
   connect(m_overlayPresentation.get(), &OverlayPresentationController::activateMainWindowRequested, this, &MainWindow::raiseToFront);
   connect(m_overlayPresentation.get(), &OverlayPresentationController::exitApplicationRequested, this, &MainWindow::requestExit);
   m_fileStagingCoordinator = std::make_unique<FileStagingCoordinator>(m_session, m_fileStaging, m_uwfCapability, this);
@@ -417,7 +420,7 @@ void MainWindow::buildUi() {
   }
 
   m_actTheme = tb->addAction(I18n::tr("Theme"));
-  m_actTheme->setToolTip(I18n::tr("Toggle light / dark theme for this session. No preferences are saved."));
+  m_actTheme->setToolTip(I18n::tr("Toggle light / dark theme"));
   // 在 toggle() 之前禁 paint：toggle 内部会 setPalette + setStyleSheet("") +
   // setStyleSheet(sheet)，中间 unstyled 那一帧会闪。先压 paint 再切，再让
   // 后续 themeChanged → singleShot → rebuildUi → setUpdatesEnabled(true)

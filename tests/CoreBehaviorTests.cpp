@@ -149,12 +149,14 @@ void CoreBehaviorTests::userConfigReadsOnlyRecognizedValues_data() {
   QTest::addColumn<QByteArray>("contents");
   QTest::addColumn<std::optional<Theme>>("expectedTheme");
   QTest::addColumn<std::optional<I18n::Lang>>("expectedLanguage");
+  QTest::addColumn<bool>("expectedHubVisible");
 
   struct Case {
     const char* name;
     QByteArray contents;
     std::optional<Theme> theme;
     std::optional<I18n::Lang> language;
+    bool hubVisible = true;
   };
   const std::array cases{
       Case{"empty", {}, {}, {}},
@@ -189,14 +191,34 @@ void CoreBehaviorTests::userConfigReadsOnlyRecognizedValues_data() {
       Case{"numeric-values", "[UI]\nTheme=1\nLanguage=0\n", {}, {}},
       Case{"non-ascii-values", "[UI]\nTheme=深色\nLanguage=简体中文\n", {}, {}},
       Case{"malformed-utf8-values", QByteArray("[UI]\nTheme=") + char(0xFF) + "\nLanguage=en\n", {}, I18n::Lang::En},
+      Case{"hub-hidden", "[UI]\nHubVisible=false\n", {}, {}, false},
+      Case{"hub-visible", "[UI]\nHubVisible=true\n", {}, {}, true},
+      Case{"hub-mixed-case", "[ui]\nhUbViSiBlE=FaLsE\n", {}, {}, false},
+      Case{"hub-spaces-crlf", "[UI]\r\nHubVisible = \" FALSE \"\r\n", {}, {}, false},
+      Case{"hub-with-preferences", "[UI]\nTheme=dark\nLanguage=en\nHubVisible=false\n", Theme::Dark, I18n::Lang::En, false},
+      Case{"hub-keeps-invalid-preferences-independent", "[UI]\nTheme=invalid\nLanguage=invalid\nHubVisible=false\n", {}, {}, false},
+      Case{"invalid-hub-keeps-preferences", "[UI]\nTheme=light\nLanguage=zh_CN\nHubVisible=off\n", Theme::Light, I18n::Lang::Zh_CN},
+      Case{"hub-empty", "[UI]\nHubVisible=\n", {}, {}},
+      Case{"hub-whitespace", "[UI]\nHubVisible=\"   \"\n", {}, {}},
+      Case{"hub-system-is-not-a-boolean", "[UI]\nHubVisible=system\n", {}, {}},
+      Case{"hub-zero-is-not-a-boolean", "[UI]\nHubVisible=0\n", {}, {}},
+      Case{"hub-one-is-not-a-boolean", "[UI]\nHubVisible=1\n", {}, {}},
+      Case{"hub-no-substring-matching", "[UI]\nHubVisible=false-value\n", {}, {}},
+      Case{"hub-list", "[UI]\nHubVisible=false,true\n", {}, {}},
+      Case{"hub-byte-array", "[UI]\nHubVisible=@ByteArray(false)\n", {}, {}},
+      Case{"hub-invalid-variant", "[UI]\nHubVisible=@Invalid()\n", {}, {}},
+      Case{"hub-wrong-section", "[Overlay]\nHubVisible=false\n", {}, {}},
+      Case{"hub-unscoped", "HubVisible=false\n", {}, {}},
+      Case{"hub-malformed-utf8", QByteArray("[UI]\nHubVisible=") + char(0xFF) + "\n", {}, {}},
   };
-  for (const auto& entry : cases) QTest::newRow(entry.name) << entry.contents << entry.theme << entry.language;
+  for (const auto& entry : cases) QTest::newRow(entry.name) << entry.contents << entry.theme << entry.language << entry.hubVisible;
 }
 
 void CoreBehaviorTests::userConfigReadsOnlyRecognizedValues() {
   QFETCH(QByteArray, contents);
   QFETCH(std::optional<uwf::ui::Theme>, expectedTheme);
   QFETCH(std::optional<uwf::ui::I18n::Lang>, expectedLanguage);
+  QFETCH(bool, expectedHubVisible);
   QTemporaryDir directory;
   QVERIFY(directory.isValid());
   QFile file(directory.filePath(QStringLiteral("UWF.ini")));
@@ -208,6 +230,7 @@ void CoreBehaviorTests::userConfigReadsOnlyRecognizedValues() {
   const auto config = uwf::app::readUserConfig(directory.path());
   QCOMPARE(config.theme, expectedTheme);
   QCOMPARE(config.language, expectedLanguage);
+  QCOMPARE(config.hubVisible, expectedHubVisible);
   QVERIFY(file.open(QIODevice::ReadOnly));
   QCOMPARE(file.readAll(), contents);
   file.close();
@@ -221,10 +244,12 @@ void CoreBehaviorTests::userConfigMissingFileDoesNotCreateStorage() {
   uwf::clearLogLines();
   const auto config = uwf::app::readUserConfig(directory.path());
   QVERIFY(!config.theme && !config.language);
+  QVERIFY(config.hubVisible);
   QVERIFY(QDir(directory.path()).isEmpty());
   const QString missingDirectory = directory.filePath(QStringLiteral("absent/application"));
   const auto missing = uwf::app::readUserConfig(missingDirectory);
   QVERIFY(!missing.theme && !missing.language);
+  QVERIFY(missing.hubVisible);
   QVERIFY(!QFileInfo::exists(missingDirectory));
   QVERIFY(uwf::recentLogLines().empty());
 
@@ -282,12 +307,13 @@ void CoreBehaviorTests::userConfigMalformedFileFallsBackWithoutDiscardingTheUser
   QFile file(directory.filePath(QStringLiteral("UWF.ini")));
   QVERIFY(file.open(QIODevice::WriteOnly));
   // 即使有效选项位于前面，后续节语法损坏也不能把部分解析结果当成有效配置。
-  const QByteArray contents("[UI]\nTheme=dark\nLanguage=zh_CN\n[unterminated\n");
+  const QByteArray contents("[UI]\nTheme=dark\nLanguage=zh_CN\nHubVisible=false\n[unterminated\n");
   QCOMPARE(file.write(contents), contents.size());
   file.close();
   uwf::clearLogLines();
   const auto config = uwf::app::readUserConfig(directory.path());
   QVERIFY(!config.theme && !config.language);
+  QVERIFY(config.hubVisible);
   const auto lines = uwf::recentLogLines();
   QVERIFY(std::ranges::any_of(lines, [](const auto& line) { return line.find("invalid-ini") != std::string::npos; }));
   QVERIFY(file.open(QIODevice::ReadOnly));
@@ -299,15 +325,17 @@ void CoreBehaviorTests::userConfigInvalidOptionsAreLoggedIndependently() {
   QVERIFY(directory.isValid());
   QFile file(directory.filePath(QStringLiteral("UWF.ini")));
   QVERIFY(file.open(QIODevice::WriteOnly));
-  const QByteArray contents("[UI]\nTheme=night\nLanguage=zh_CN\nOther=ignored\n");
+  const QByteArray contents("[UI]\nTheme=night\nLanguage=zh_CN\nHubVisible=system\nOther=ignored\n");
   QCOMPARE(file.write(contents), contents.size());
   file.close();
   uwf::clearLogLines();
   const auto config = uwf::app::readUserConfig(directory.path());
   QVERIFY(!config.theme);
   QCOMPARE(config.language, std::optional{uwf::ui::I18n::Lang::Zh_CN});
+  QVERIFY(config.hubVisible);
   const auto lines = uwf::recentLogLines();
   QVERIFY(std::ranges::any_of(lines, [](const auto& line) { return line.find("key=UI/Theme") != std::string::npos; }));
+  QVERIFY(std::ranges::any_of(lines, [](const auto& line) { return line.find("key=UI/HubVisible") != std::string::npos; }));
   QVERIFY(std::ranges::any_of(lines, [](const auto& line) { return line.find("key=UI/Other") != std::string::npos; }));
 }
 
@@ -317,7 +345,7 @@ void CoreBehaviorTests::userConfigReadFailuresFallBackWithoutChangingPermissions
   const QString path = directory.filePath(QStringLiteral("UWF.ini"));
   QFile file(path);
   QVERIFY(file.open(QIODevice::WriteOnly));
-  const QByteArray contents("[UI]\nTheme=dark\nLanguage=en\n");
+  const QByteArray contents("[UI]\nTheme=dark\nLanguage=en\nHubVisible=false\n");
   QCOMPARE(file.write(contents), contents.size());
   file.close();
   const auto nativePath = path.toStdWString();
@@ -330,6 +358,7 @@ void CoreBehaviorTests::userConfigReadFailuresFallBackWithoutChangingPermissions
     uwf::clearLogLines();
     const auto config = uwf::app::readUserConfig(directory.path());
     QVERIFY(!config.theme && !config.language);
+    QVERIFY(config.hubVisible);
     const auto lines = uwf::recentLogLines();
     QVERIFY(std::ranges::any_of(lines, [](const auto& line) { return line.find("read-failed") != std::string::npos; }));
   }
@@ -341,6 +370,7 @@ void CoreBehaviorTests::userConfigReadFailuresFallBackWithoutChangingPermissions
   const auto config = uwf::app::readUserConfig(directory.path());
   QCOMPARE(config.theme, std::optional{uwf::ui::Theme::Dark});
   QCOMPARE(config.language, std::optional{uwf::ui::I18n::Lang::En});
+  QVERIFY(!config.hubVisible);
   QVERIFY(GetFileAttributesW(nativePath.c_str()) & FILE_ATTRIBUTE_READONLY);
   QVERIFY(file.open(QIODevice::ReadOnly));
   QCOMPARE(file.readAll(), contents);

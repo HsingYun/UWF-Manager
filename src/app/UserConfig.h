@@ -28,6 +28,7 @@ struct UserConfig {
   // 未指定或 system 表示启动时跟随系统，不代表当前已解析出的实际值。
   std::optional<ui::Theme> theme;
   std::optional<ui::I18n::Lang> language;
+  bool hubVisible = true;
 };
 
 // 只读指定应用目录中的 UWF.ini，不创建、修改文件，也不读取注册表或其他
