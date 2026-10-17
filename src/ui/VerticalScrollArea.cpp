@@ -25,6 +25,9 @@ namespace uwf::ui {
 VerticalScrollArea::VerticalScrollArea(QWidget* parent) : QScrollArea(parent) {
   setFrameShape(QFrame::NoFrame);
   setWidgetResizable(true);
+  // 横向空间由 minimumSizeHint 传给父布局；类型切换的中间帧也不应
+  // 临时显示横向滚动条，进一步挤占纵向空间并触发重复重排。
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
   setStyleSheet("QScrollArea { background: transparent; border: none; }");
   viewport()->setAutoFillBackground(false);

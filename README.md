@@ -62,10 +62,10 @@ HubVisible=false
 | Option | Values | Default |
 | --- | --- | --- |
 | `[UI] Theme` | `system`, `light`, `dark` | `system` |
-| `[UI] Language` | `system`, `en`, `zh_CN` | `system` |
+| `[UI] Language` | `system`, standard language codes | `system` |
 | `[UI] HubVisible` | `true`, `false` | `true` |
 
-`system` uses the Windows application theme or system language at startup. Languages are English (`en`) and Simplified Chinese (`zh_CN`); unsupported system languages fall back to English. `HubVisible=false` starts with both the taskbar and floating HUB hidden; `true` allows the HUB to appear when UWF protection is active. Values are case-insensitive. All options are optional. The file name stays `UWF.ini` even when the executable includes a version number; ensure that the file is not accidentally named `UWF.ini.txt`.
+`system` uses the Windows application theme or system language at startup. An omitted language or `system` follows the system’s preferred UI languages, falling back to English when none are supported. An explicit supported language code takes precedence. `HubVisible=false` starts with both the taskbar and floating HUB hidden; `true` allows the HUB to appear when UWF protection is active. Values are case-insensitive. All options are optional. The file name stays `UWF.ini` even when the executable includes a version number; ensure that the file is not accidentally named `UWF.ini.txt`.
 
 Configuration is loaded at startup, including tray-only startup. Fully exit and restart the application after editing the file.
 

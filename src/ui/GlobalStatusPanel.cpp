@@ -358,6 +358,10 @@ void GlobalStatusPanel::reconfigureRanges() const {
   m_maxNext->setRange(maxFloor, maxCeiling);
   m_critNext->setRange(0, strictThresholdUpper(m_maxNext->value()));
   m_warnNext->setRange(0, strictThresholdUpper(m_critNext->value()));
+  for (auto* spin : {m_maxNext, m_warnNext, m_critNext}) {
+    spin->ensurePolished();
+    spin->setMinimumWidth(spin->minimumSizeHint().width());
+  }
 }
 
 void GlobalStatusPanel::refreshTypeDependentUi() {
@@ -369,6 +373,12 @@ void GlobalStatusPanel::refreshTypeDependentUi() {
     } else {
       m_maxLabel->setText(I18n::tr("Maximum size"));
     }
+  }
+  // 短标签保持单行。按实际继承的字体和样式测量，不能让 QSS 的通用
+  // min-width 把较长的译文压到文本所需宽度以下。
+  for (const auto labels = findChildren<QLabel*>(QStringLiteral("statusKey")); auto* label : labels) {
+    label->ensurePolished();
+    label->setMinimumWidth(label->sizeHint().width());
   }
 
   if (m_usageBar) {

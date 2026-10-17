@@ -153,10 +153,13 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, const
   // 固定宽度的两类列：Category（col 0）与存在性两列（col 2/3，仅删除操作出现）。
   // Path（col 1）和 Error code（col N-2）的宽度在 fillPage 末尾按当页内容测算；
   // Reason（末列）由 stretchLastSection 撑满。
-  hh->resizeSection(0, 70);  // Category：「成功」/「跳过」/「失败」
+  table->ensurePolished();
+  const auto textWidth = [&](const QString& value) { return table->fontMetrics().horizontalAdvance(value) + 24; };
+  hh->setMinimumSectionSize(textWidth(headers.back()));
+  hh->resizeSection(0, std::max({textWidth(headers[0]), textWidth(okLabel), textWidth(skipLabel), textWidth(I18n::tr("Failed"))}));
   if (showExistence) {
-    hh->resizeSection(2, 100);  // Existed before：「是」/「否」+ 表头宽度
-    hh->resizeSection(3, 100);  // Exists after
+    hh->resizeSection(2, std::max(100, textWidth(headers[2])));
+    hh->resizeSection(3, std::max(100, textWidth(headers[3])));
   }
   // Path / Reason 套 PathElideDelegate——绕开 Qt 默认 paint 路径在非 100% DPI 下
   // 把 elide 宽度算小、cell 明明够宽却显示成 "C:..." 的 bug（详见 PathElideDelegate.h）。

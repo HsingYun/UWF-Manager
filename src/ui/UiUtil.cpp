@@ -108,8 +108,11 @@ void markDirty(QWidget* w, bool dirty) {
 
 void configurePagerButtons(const std::array<QPushButton*, 4>& buttons) {
   const std::array captions{I18n::tr("First page"), I18n::tr("Previous page"), I18n::tr("Next page"), I18n::tr("Last page")};
+  const std::array leftToRight{QStringLiteral("«"), QStringLiteral("‹"), QStringLiteral("›"), QStringLiteral("»")};
+  const std::array rightToLeft{QStringLiteral("»"), QStringLiteral("›"), QStringLiteral("‹"), QStringLiteral("«")};
   for (size_t index = 0; index < buttons.size(); ++index) {
     auto* button = buttons[index];
+    button->setText((button->layoutDirection() == Qt::RightToLeft ? rightToLeft : leftToRight)[index]);
     button->setProperty("pagerNavigation", true);
     button->setMaximumWidth(36);
     button->setToolTip(captions[index]);

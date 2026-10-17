@@ -222,6 +222,7 @@ void RegistryPickerDialog::buildUi() {
   auto* addrRow = new QHBoxLayout();
   auto* addrLabel = new QLabel(I18n::tr("Key path:"), this);
   m_addressBar = new QLineEdit(this);
+  m_addressBar->setLayoutDirection(Qt::LeftToRight);
   m_addressBar->setPlaceholderText(I18n::tr("HKLM\\Software\\... — type or paste, press Enter to jump"));
   m_addressBar->setClearButtonEnabled(true);
   auto* refreshBtn = new QPushButton(this);

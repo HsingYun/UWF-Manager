@@ -221,6 +221,8 @@ DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, dialogs::FileDia
 
   // 排除列表 TAB —— 占满剩余空间，但不会被压到看不到内容。
   m_infoTabs = new QTabWidget(this);
+  m_infoTabs->setElideMode(Qt::ElideNone);
+  m_infoTabs->setUsesScrollButtons(true);
   m_infoTabs->setObjectName("innerTabs");
   m_infoTabs->setDocumentMode(true);
   m_infoTabs->setMinimumHeight(120);

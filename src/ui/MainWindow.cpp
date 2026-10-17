@@ -375,45 +375,30 @@ void MainWindow::buildUi() {
     btn->setStyleSheet("QToolButton::menu-indicator{image:none;width:0}");
     // 菜单属于 action，而不只是按钮：工具栏溢出菜单也能打开语言子菜单。
     auto* menu = new QMenu(tb);
-    // QActionGroup 让两个语言项互斥单选；语言名一律用各自语言的本地写法
-    // (English / 简体中文)，不参与翻译。
+    // 语言名使用本地写法，用户即使切错语言也能找到自己的语言。
     auto* langGroup = new QActionGroup(menu);
     langGroup->setExclusive(true);
-
-    // 切换语言后用 QTimer::singleShot(0, rebuildUi) 异步触发整体重建：
-    // 不能在 action 的 triggered 回调里直接 rebuildUi——rebuildUi 会删掉
-    // 当前 toolbar 及其上的 QAction，正在执行的回调随即变成悬空指针。
-    // 单次延迟到事件循环下一轮再做，让回调先安全返回。
-    auto switchTo = [this](const I18n::Lang target) {
-      if (I18n::instance().lang() == target) return true;
-      if (!confirmDiscardPendingChanges()) return false;
+    for (const auto& language : I18n::languages()) {
+      auto* action = menu->addAction(language.nativeName.toString());
+      action->setCheckable(true);
+      action->setActionGroup(langGroup);
+      action->setData(static_cast<int>(language.id));
+      action->setChecked(I18n::instance().lang() == language.id);
+    }
+    connect(langGroup, &QActionGroup::triggered, this, [this, langGroup](const QAction* action) {
+      const auto target = static_cast<I18n::Lang>(action->data().toInt());
+      const auto current = I18n::instance().lang();
+      if (target == current) return;
+      if (!confirmDiscardPendingChanges()) {
+        for (const auto actions = langGroup->actions(); auto* item : actions) item->setChecked(item->data().toInt() == static_cast<int>(current));
+        return;
+      }
       // 抑制 paint 直到 rebuildUi 结束，避免用户看到 tear-down 中间空白
       // 一帧。配对的 setUpdatesEnabled(true) 在 rebuildUi 末尾。
       setUpdatesEnabled(false);
       I18n::instance().setLang(target);
+      // 延迟重建，避免在 triggered 回调尚未返回时销毁当前菜单和 action。
       QTimer::singleShot(0, this, &MainWindow::rebuildUi);
-      return true;
-    };
-
-    auto* enAct = menu->addAction("English");
-    enAct->setCheckable(true);
-    enAct->setActionGroup(langGroup);
-    enAct->setChecked(I18n::instance().lang() == I18n::Lang::En);
-
-    auto* zhAct = menu->addAction("简体中文");
-    zhAct->setCheckable(true);
-    zhAct->setActionGroup(langGroup);
-    zhAct->setChecked(I18n::instance().lang() == I18n::Lang::Zh_CN);
-
-    auto restoreLangChecks = [enAct, zhAct]() {
-      enAct->setChecked(I18n::instance().lang() == I18n::Lang::En);
-      zhAct->setChecked(I18n::instance().lang() == I18n::Lang::Zh_CN);
-    };
-    connect(enAct, &QAction::triggered, this, [switchTo, restoreLangChecks]() {
-      if (!switchTo(I18n::Lang::En)) restoreLangChecks();
-    });
-    connect(zhAct, &QAction::triggered, this, [switchTo, restoreLangChecks]() {
-      if (!switchTo(I18n::Lang::Zh_CN)) restoreLangChecks();
     });
 
     m_actLang->setMenu(menu);
@@ -469,6 +454,8 @@ void MainWindow::buildUi() {
   m_tabs->setObjectName("mainTabs");
   m_tabs->setDocumentMode(true);
   m_tabs->setTabPosition(QTabWidget::North);
+  m_tabs->setElideMode(Qt::ElideNone);
+  m_tabs->setUsesScrollButtons(true);
   // 状态卡按控件组换行，最小宽度来自最宽的组，而不是整行操作之和。
   m_tabs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   mainRow->addWidget(m_tabs, 1);
@@ -548,6 +535,12 @@ void MainWindow::buildUi() {
   // 默认文案都按当前主题色生成（构造期间 connect 时 m_hoverCtl 还是 null，
   // 这里补一次初始化）。
   refreshThemedUi();
+  // 工具栏按完整按钮宽度决定溢出，不能先压缩按钮再把译文画成省略号。
+  for (const auto buttons = tb->findChildren<QToolButton*>(); auto* button : buttons) {
+    if (!button->defaultAction()) continue;
+    button->ensurePolished();
+    button->setMinimumWidth(button->sizeHint().width());
+  }
 }
 
 void MainWindow::rebuildUi() {

@@ -17,15 +17,45 @@
 #include "I18n.h"
 
 #include <QCoreApplication>
+#include <QGuiApplication>
 #include <QLocale>
 #include <QTranslator>
+#include <algorithm>
+#include <array>
+
+#include "../util/Log.h"
 
 namespace uwf::ui {
 
 namespace {
 
-// 单例 QTranslator，install 一次后由 QCoreApplication 持有引用；切换语言时
-// load 新的 .qm 即可，不需要 uninstall（load 会替换内部表）。
+using Lang = I18n::Lang;
+using namespace Qt::Literals::StringLiterals;
+
+// 菜单、配置与系统匹配共用同一语言表；显示名称使用各自语言的本地写法。
+constexpr std::array kLanguages{
+    I18n::Language{Lang::En, "en"_L1, u"English"},
+    I18n::Language{Lang::Zh_CN, "zh_CN"_L1, u"简体中文"},
+    I18n::Language{Lang::Zh_TW, "zh_TW"_L1, u"繁體中文"},
+    I18n::Language{Lang::Ja, "ja"_L1, u"日本語"},
+    I18n::Language{Lang::Ko, "ko"_L1, u"한국어"},
+    I18n::Language{Lang::De, "de"_L1, u"Deutsch"},
+    I18n::Language{Lang::Fr, "fr"_L1, u"Français"},
+    I18n::Language{Lang::Es, "es"_L1, u"Español"},
+    I18n::Language{Lang::It, "it"_L1, u"Italiano"},
+    I18n::Language{Lang::Pt_BR, "pt_BR"_L1, u"Português (Brasil)"},
+    I18n::Language{Lang::Pt_PT, "pt_PT"_L1, u"Português (Portugal)"},
+    I18n::Language{Lang::Ru, "ru"_L1, u"Русский"},
+    I18n::Language{Lang::Uk, "uk"_L1, u"Українська"},
+    I18n::Language{Lang::Pl, "pl"_L1, u"Polski"},
+    I18n::Language{Lang::Nl, "nl"_L1, u"Nederlands"},
+    I18n::Language{Lang::Tr, "tr"_L1, u"Türkçe"},
+    I18n::Language{Lang::Id, "id"_L1, u"Bahasa Indonesia"},
+    I18n::Language{Lang::Vi, "vi"_L1, u"Tiếng Việt"},
+    I18n::Language{Lang::Ar, "ar"_L1, u"العربية"},
+};
+
+// 翻译器由本模块拥有；QCoreApplication 仅在安装期间引用它们。
 QTranslator& translator() {
   static QTranslator t;
   return t;
@@ -38,32 +68,25 @@ QTranslator& qtBaseTranslator() {
   return t;
 }
 
-// 把 translator 切到目标语言：始终先 removeTranslator 让状态归零，再按
-// 目标语言决定要不要重新 install。
-//   - En：英文是源语言，不需要 .qm；remove 之后 tr() 直接返回 source。
-//   - Zh_CN：load .qm 成功后 install；失败也保持 remove 状态走 source。
-//
-// 不缓存 "已 install" 的状态：早期版本用 static bool 标记一次 install，但
-// remove 之后那个标记没复位，回切语言时就再也 install 不上了——表现为
-// "切到英文后切不回中文"。每次都 remove + install 简单可靠，install 同一
-// 个 translator 多次 Qt 自己会处理（先 remove 等价于幂等）。
-void applyLang(const I18n::Lang l) {
+Lang applyLang(const Lang requested) {
   auto& t = translator();
   auto& qt = qtBaseTranslator();
   QCoreApplication::removeTranslator(&t);
   QCoreApplication::removeTranslator(&qt);
-  switch (l) {
-    case I18n::Lang::En:
-      return;
-    case I18n::Lang::Zh_CN:
-      if (qt.load(":/i18n/qtbase_zh_CN.qm")) {
-        QCoreApplication::installTranslator(&qt);
-      }
-      if (t.load(":/i18n/zh_CN.qm")) {
-        QCoreApplication::installTranslator(&t);
-      }
-      return;
+  const auto language = std::ranges::find(kLanguages, requested, &I18n::Language::id);
+  Lang actual = Lang::En;
+  if (language != kLanguages.end() && requested != Lang::En) {
+    const QString code(language->code);
+    if (t.load(QStringLiteral(":/i18n/%1.qm").arg(code))) {
+      if (qt.load(QStringLiteral(":/i18n/qtbase_%1.qm").arg(code))) QCoreApplication::installTranslator(&qt);
+      QCoreApplication::installTranslator(&t);
+      actual = requested;
+    } else {
+      UWF_LOG_W("i18n") << "language catalog unavailable: language=" << code.toStdString();
+    }
   }
+  QGuiApplication::setLayoutDirection(actual == Lang::Ar ? Qt::RightToLeft : Qt::LeftToRight);
+  return actual;
 }
 
 }  // namespace
@@ -77,30 +100,43 @@ QString I18n::applicationTitle() { return tr("Unified Write Filter (UWF) Manager
 
 QString I18n::enhancedModeServiceDescription() { return tr("UWF Manager enhanced mode helper service"); }
 
-I18n::I18n() : m_lang(detectSystemLang()) { applyLang(m_lang); }
+I18n::I18n() : m_lang(applyLang(detectSystemLang())) {}
 
-I18n::Lang I18n::detectSystemLang() {
-  // 严格只对"中文 + 简体脚本"（zh_CN / zh_Hans_* / zh_SG）启用我们的中文翻译。
-  // 用 QLocale::script() 判断而不是 name().startsWith("zh")——后者会把繁体
-  // （zh_TW / zh_Hant_* / zh_HK / zh_MO）也匹配进来，给繁体用户套上简体词
-  // 语序对不上的翻译，反而比直接显示英文源语言更难用。
-  // QLocale 即便 name() 里没显式带 script tag 也能从 country code 推断出
-  // 默认 script（zh_CN → SimplifiedHan, zh_TW → TraditionalHan），所以这条
-  // 判断可靠。
-  const QLocale loc = QLocale::system();
-  if (loc.language() == QLocale::Chinese && loc.script() == QLocale::SimplifiedHanScript) {
-    return Lang::Zh_CN;
+std::span<const I18n::Language> I18n::languages() { return kLanguages; }
+
+std::optional<I18n::Lang> I18n::parseLanguageCode(const QStringView code) {
+  const QString normalized = code.trimmed().toString().replace(u'-', u'_');
+  const auto language = std::ranges::find_if(kLanguages, [&](const auto& candidate) { return normalized.compare(candidate.code, Qt::CaseInsensitive) == 0; });
+  if (language == kLanguages.end()) return std::nullopt;
+  return language->id;
+}
+
+I18n::Lang I18n::matchLanguage(const QStringList& preferredLanguages) {
+  for (const auto& tag : preferredLanguages) {
+    const QLocale locale(tag);
+    switch (locale.language()) {
+      case QLocale::Chinese:
+        return locale.script() == QLocale::TraditionalHanScript ? Lang::Zh_TW : Lang::Zh_CN;
+      case QLocale::Portuguese:
+        return locale.territory() == QLocale::Brazil ? Lang::Pt_BR : Lang::Pt_PT;
+      default:
+        for (const auto& candidate : kLanguages) {
+          if (candidate.id == Lang::Zh_CN || candidate.id == Lang::Zh_TW || candidate.id == Lang::Pt_BR || candidate.id == Lang::Pt_PT) continue;
+          if (QLocale(QString(candidate.code)).language() == locale.language()) return candidate.id;
+        }
+    }
   }
   return Lang::En;
 }
 
-void I18n::setLang(const Lang l) {
-  m_lang = l;
-  applyLang(l);
+I18n::Lang I18n::detectSystemLang() {
+  const auto locale = QLocale::system();
+  const auto preferred = locale.uiLanguages();
+  return matchLanguage(preferred.isEmpty() ? QStringList{locale.name()} : preferred);
 }
 
-void I18n::applyStartupLanguage(const std::optional<Lang> overrideLanguage) {
-  setLang(overrideLanguage ? *overrideLanguage : detectSystemLang());
-}
+void I18n::setLang(const Lang l) { m_lang = applyLang(l); }
+
+void I18n::applyStartupLanguage(const std::optional<Lang> overrideLanguage) { setLang(overrideLanguage ? *overrideLanguage : detectSystemLang()); }
 
 }  // namespace uwf::ui

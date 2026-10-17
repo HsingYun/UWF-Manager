@@ -85,12 +85,15 @@ QStringList statusIssues(const service::EnhancedModeStatus& status) {
       const char* message;
     };
     constexpr std::array rules{
-        ContractRule{&service::EnhancedModeStatus::ownProcess, "The service is not configured as an independent process."},
-        ContractRule{&service::EnhancedModeStatus::automaticStart, "The service is not configured for automatic startup."},
-        ContractRule{&service::EnhancedModeStatus::localSystemAccount, "The service is not configured to run as LocalSystem."},
-        ContractRule{&service::EnhancedModeStatus::executableMatches, "The service executable path or startup arguments do not match this executable."},
-        ContractRule{&service::EnhancedModeStatus::preshutdownTimeoutConfigured, "The service preshutdown timeout is not configured correctly."},
-        ContractRule{&service::EnhancedModeStatus::requiredPrivilegesConfigured, "The service does not declare the privileges required to start the UI agent."},
+        ContractRule{&service::EnhancedModeStatus::ownProcess, QT_TRANSLATE_NOOP("uwf", "The service is not configured as an independent process.")},
+        ContractRule{&service::EnhancedModeStatus::automaticStart, QT_TRANSLATE_NOOP("uwf", "The service is not configured for automatic startup.")},
+        ContractRule{&service::EnhancedModeStatus::localSystemAccount, QT_TRANSLATE_NOOP("uwf", "The service is not configured to run as LocalSystem.")},
+        ContractRule{&service::EnhancedModeStatus::executableMatches,
+                     QT_TRANSLATE_NOOP("uwf", "The service executable path or startup arguments do not match this executable.")},
+        ContractRule{&service::EnhancedModeStatus::preshutdownTimeoutConfigured,
+                     QT_TRANSLATE_NOOP("uwf", "The service preshutdown timeout is not configured correctly.")},
+        ContractRule{&service::EnhancedModeStatus::requiredPrivilegesConfigured,
+                     QT_TRANSLATE_NOOP("uwf", "The service does not declare the privileges required to start the UI agent.")},
     };
     for (const auto& rule : rules) {
       if (!(status.*(rule.satisfied))) issues.append(I18n::tr(rule.message));

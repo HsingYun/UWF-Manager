@@ -62,10 +62,10 @@ HubVisible=false
 | 选项 | 可选值 | 默认值 |
 | --- | --- | --- |
 | `[UI] Theme` | `system`、`light`、`dark` | `system` |
-| `[UI] Language` | `system`、`en`、`zh_CN` | `system` |
+| `[UI] Language` | `system`、标准语言代码 | `system` |
 | `[UI] HubVisible` | `true`、`false` | `true` |
 
-`system` 表示启动时使用 Windows 应用主题或系统语言。语言支持英文（`en`）和简体中文（`zh_CN`）；系统语言不在支持范围内时使用英文。`HubVisible=false` 表示启动时隐藏任务栏和浮窗两类 HUB；`true` 表示在 UWF 保护启用时允许显示 HUB。配置值不区分大小写，各选项均可省略。即使可执行文件名含版本号，配置文件名也始终为 `UWF.ini`；请确认没有误存为 `UWF.ini.txt`。
+`system` 表示启动时使用 Windows 应用主题或系统语言。未配置语言或设为 `system` 时，按系统首选语言匹配；均不支持时使用英文。指定有效的语言代码时优先使用配置。`HubVisible=false` 表示启动时隐藏任务栏和浮窗两类 HUB；`true` 表示在 UWF 保护启用时允许显示 HUB。配置值不区分大小写，各选项均可省略。即使可执行文件名含版本号，配置文件名也始终为 `UWF.ini`；请确认没有误存为 `UWF.ini.txt`。
 
 配置在程序启动时读取，静默启动到托盘时同样生效。编辑后需完全退出并重新启动程序。
 

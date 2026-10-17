@@ -30,6 +30,34 @@ include(tools)
 find_package(Qt6 COMPONENTS Widgets Svg Network LinguistTools REQUIRED)
 qt_standard_project_setup()
 
+set(UWF_I18N_LOCALES zh_CN zh_TW ja ko de fr es it pt_BR pt_PT ru uk pl nl tr id vi ar)
+set(UWF_APP_I18N_TS_FILES)
+foreach(locale IN LISTS UWF_I18N_LOCALES)
+    list(APPEND UWF_APP_I18N_TS_FILES
+            "${PROJECT_SOURCE_DIR}/resources/i18n/${locale}.ts"
+    )
+endforeach()
+
+set(UWF_QT_I18N_TS_FILES)
+set(UWF_QT_I18N_LOCALES zh_CN zh_TW ja ko de fr es it pt_BR pt_PT ru uk pl nl tr id vi ar)
+foreach(locale IN LISTS UWF_QT_I18N_LOCALES)
+    list(APPEND UWF_QT_I18N_TS_FILES "${PROJECT_SOURCE_DIR}/resources/i18n/qt/qtbase_${locale}.ts")
+endforeach()
+
+function(uwf_embed_translations target)
+    set(qm_directory "${CMAKE_CURRENT_BINARY_DIR}/${target}_translations")
+    qt_add_lrelease(${target}
+            TS_FILES ${UWF_APP_I18N_TS_FILES} ${UWF_QT_I18N_TS_FILES}
+            QM_OUTPUT_DIRECTORY "${qm_directory}"
+            QM_FILES_OUTPUT_VARIABLE qm_files
+    )
+    qt_add_resources(${target} "${target}_translations"
+            PREFIX "/i18n"
+            BASE "${qm_directory}"
+            FILES ${qm_files}
+    )
+endfunction()
+
 set(UWF_OVERLAY_RUNTIME_SOURCES
         src/ui/CenteredTextStyle.h
         src/ui/CenteredTextStyle.cpp
@@ -278,11 +306,12 @@ qt_add_resources(UWF "app_resources"
         FILES ${UWF_APP_RESOURCE_FILES}
 )
 
-qt_add_translations(UWF
-        TS_FILES
-        resources/i18n/zh_CN.ts
-        resources/i18n/qtbase_zh_CN.ts
+qt_add_lupdate(
+        SOURCE_TARGETS UWF UwfOverlayRuntime
+        TS_FILES ${UWF_APP_I18N_TS_FILES}
+        OPTIONS -no-obsolete -locations none
 )
+uwf_embed_translations(UWF)
 
 target_link_libraries(UWF PRIVATE UwfOverlayRuntime Qt6::Widgets Qt6::Svg Qt6::Network advapi32 shell32 userenv wtsapi32)
 uwf_configure_target(UWF)

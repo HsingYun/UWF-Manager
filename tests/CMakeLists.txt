@@ -1,3 +1,11 @@
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(Python3_Interpreter_FOUND)
+    add_test(NAME UwfTranslationCatalogChecks
+            COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/TranslationCatalogChecks.py"
+                    --lupdate "$<TARGET_FILE:Qt6::lupdate>"
+    )
+endif()
+
 function(uwf_add_test_resources target)
     set(resource_files)
     foreach (resource_file IN LISTS UWF_APP_RESOURCE_FILES)
@@ -106,10 +114,7 @@ target_include_directories(UwfUiBehaviorTests PRIVATE "${PROJECT_SOURCE_DIR}/src
 target_link_libraries(UwfUiBehaviorTests PRIVATE UwfOverlayRuntime Qt6::Widgets Qt6::Svg Qt6::Test advapi32 shell32 user32)
 uwf_configure_cpp_target(UwfUiBehaviorTests)
 uwf_add_test_resources(UwfUiBehaviorTests)
-qt_add_translations(UwfUiBehaviorTests
-        QM_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/UwfUiBehaviorTests_translations"
-        TS_FILES ../resources/i18n/zh_CN.ts ../resources/i18n/qtbase_zh_CN.ts
-)
+uwf_embed_translations(UwfUiBehaviorTests)
 
 add_test(NAME UwfUiBehaviorTests COMMAND UwfUiBehaviorTests)
 if (WIN32)
@@ -198,11 +203,7 @@ target_link_libraries(UwfApplicationUiBehaviorTests PRIVATE UwfOverlayRuntime Qt
         userenv wbemuuid wtsapi32)
 uwf_configure_cpp_target(UwfApplicationUiBehaviorTests)
 uwf_add_test_resources(UwfApplicationUiBehaviorTests)
-qt_add_translations(UwfApplicationUiBehaviorTests
-        TS_FILES
-        ../resources/i18n/zh_CN.ts
-        ../resources/i18n/qtbase_zh_CN.ts
-)
+uwf_embed_translations(UwfApplicationUiBehaviorTests)
 
 add_test(NAME UwfApplicationUiBehaviorTests COMMAND UwfApplicationUiBehaviorTests)
 if (WIN32)
@@ -236,10 +237,7 @@ target_include_directories(UwfDialogBehaviorTests PRIVATE "${PROJECT_SOURCE_DIR}
 target_link_libraries(UwfDialogBehaviorTests PRIVATE UwfOverlayRuntime Qt6::Widgets Qt6::Svg Qt6::Test advapi32 ole32 shell32 user32 wbemuuid)
 uwf_configure_cpp_target(UwfDialogBehaviorTests)
 uwf_add_test_resources(UwfDialogBehaviorTests)
-qt_add_translations(UwfDialogBehaviorTests
-        QM_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/UwfDialogBehaviorTests_translations"
-        TS_FILES ../resources/i18n/zh_CN.ts ../resources/i18n/qtbase_zh_CN.ts
-)
+uwf_embed_translations(UwfDialogBehaviorTests)
 
 add_test(NAME UwfDialogBehaviorTests COMMAND UwfDialogBehaviorTests)
 if (WIN32)

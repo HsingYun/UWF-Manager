@@ -113,6 +113,7 @@ class FileStagingCoordinator::Operation final : public QDialog {
     layout->addWidget(m_progress);
 
     m_path = new QLineEdit(this);
+    m_path->setLayoutDirection(Qt::LeftToRight);
     m_path->setObjectName(QStringLiteral("fileStagingCommandPath"));
     m_path->setReadOnly(true);
     m_path->setFrame(false);

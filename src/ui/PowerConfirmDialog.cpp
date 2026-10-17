@@ -258,6 +258,7 @@ PowerActionDialogOutcome runPowerActionDialog(QWidget* parent, PowerActionDialog
   safetyLayout->addWidget(progress);
 
   auto* currentPath = new QLineEdit(safetyCard);
+  currentPath->setLayoutDirection(Qt::LeftToRight);
   currentPath->setObjectName(QStringLiteral("powerStagingCurrentPath"));
   currentPath->setReadOnly(true);
   currentPath->setFrame(false);

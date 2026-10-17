@@ -22,6 +22,7 @@
 
 #include "../util/SystemHardwareInfo.h"
 #include "../util/WindowsVersion.h"
+#include "I18n.h"
 #include "ThemeManager.h"
 
 namespace uwf::ui {
@@ -80,7 +81,7 @@ QString ramText(const SystemHardwareInfo& info) {
 
   const auto installedModules = static_cast<std::uint64_t>(info.memoryModules.size());
   if (installedModules != 0 && info.totalMemorySlots >= installedModules) {
-    parts << QString("%1/%2 slots").arg(installedModules).arg(info.totalMemorySlots);
+    parts << I18n::tr("%1/%2 slots").arg(installedModules).arg(info.totalMemorySlots);
   }
   return parts.join(QStringLiteral(" · "));
 }

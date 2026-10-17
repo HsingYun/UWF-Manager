@@ -96,7 +96,8 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   hh->setSectionResizeMode(2, QHeaderView::ResizeToContents);
   hh->setSectionResizeMode(3, QHeaderView::Stretch);
   table->setColumnWidth(0, 110);
-  table->setColumnWidth(1, 50);
+  table->ensurePolished();
+  table->setColumnWidth(1, std::max(50, table->fontMetrics().horizontalAdvance(I18n::tr("Level")) + 24));
   // Tag / Message 套 PathElideDelegate——绕开 Qt 默认 paint 路径在非 100% DPI 下
   // 把 elide 宽度算小的 bug（详见 PathElideDelegate.h）。
   table->setItemDelegateForColumn(2, new PathElideDelegate(table));

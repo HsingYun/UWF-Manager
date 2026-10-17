@@ -22,8 +22,8 @@
 // 工作流：
 //   - 源语言：英文。代码里所有 UI 文案都写英文 source。
 //   - lupdate 扫源码识别 I18n::tr("...")（因为它走 QCoreApplication::translate
-//     的标准路径），把 source 提到 resources/i18n/zh_CN.ts；译者填中文
-//     translation；lrelease 编出 .qm 嵌进资源。
+//     的标准路径），把 source 提到 resources/i18n/*.ts；译者填写本地文案，
+//     lrelease 编出 .qm 嵌进资源。
 //   - 运行时按系统语言加载相应 .qm；加载失败或没匹配项时 translate() 会
 //     回落到 source（即英文），这正是我们要的 fallback。
 //
@@ -36,8 +36,11 @@
 // 不同语言可以在 .ts 里自由调换 %1/%2 的位置实现重排。
 
 #include <QCoreApplication>
+#include <QLatin1StringView>
 #include <QString>
+#include <QStringView>
 #include <optional>
+#include <span>
 
 namespace uwf::ui {
 
@@ -46,11 +49,37 @@ class I18n {
 
  public:
   enum class Lang {
-    En,     // English (源语言，不需要 .qm)
-    Zh_CN,  // 简体中文
-    // 新增语言：在这里加 enum、扩 detectSystemLang/loadLang，并在 .ts 旁边
-    // 放对应 locale 的 .ts 文件。
+    En,
+    Zh_CN,
+    Zh_TW,
+    Ja,
+    Ko,
+    De,
+    Fr,
+    Es,
+    It,
+    Pt_BR,
+    Pt_PT,
+    Ru,
+    Uk,
+    Pl,
+    Nl,
+    Tr,
+    Id,
+    Vi,
+    Ar,
   };
+
+  struct Language {
+    Lang id;
+    QLatin1StringView code;
+    QStringView nativeName;
+  };
+
+  [[nodiscard]] static std::span<const Language> languages();
+  [[nodiscard]] static std::optional<Lang> parseLanguageCode(QStringView code);
+  // 按首选顺序匹配语言与脚本/地区；所有首选语言均不支持时使用英文。
+  [[nodiscard]] static Lang matchLanguage(const QStringList& preferredLanguages);
 
   static I18n& instance();
   [[nodiscard]] static QString applicationTitle();

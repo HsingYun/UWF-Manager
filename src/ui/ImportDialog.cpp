@@ -333,6 +333,7 @@ ImportDialog::ImportDialog(dialogs::FileDialogProvider& fileDialogs, QWidget* pa
   layout->addWidget(desc);
 
   m_text = new QPlainTextEdit(this);
+  m_text->setLayoutDirection(Qt::LeftToRight);
   m_text->setObjectName("importTextEdit");
   m_text->setPlaceholderText(
       I18n::tr("uwfmgr filter enable\n"

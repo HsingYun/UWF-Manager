@@ -1180,5 +1180,6 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>Failed to enumerate registry keys: %1</source><translation>枚举注册表键失败：%1</translation></message>
     <message><source>Delete and commit failed</source><translation>删除并提交失败</translation></message>
     <message><source>Failed to resolve the volume for path %1: %2</source><translation>无法解析路径 %1 所在的卷：%2</translation></message>
+    <message><source>%1/%2 slots</source><translation>%1/%2 插槽</translation></message>
 </context>
 </TS>

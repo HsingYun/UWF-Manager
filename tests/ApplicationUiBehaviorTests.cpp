@@ -25,6 +25,7 @@
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
+#include <QFileDialog>
 #include <QFileInfo>
 #include <QFontDatabase>
 #include <QFontInfo>
@@ -60,6 +61,7 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QUuid>
+#include <QVBoxLayout>
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -74,8 +76,8 @@
 #include <utility>
 #include <vector>
 
-#include "UiTextChecks.h"
 #include "UiTestInput.h"
+#include "UiTextChecks.h"
 #include "app/FileStagingConflictPolicy.h"
 #include "app/FileStagingStore.h"
 #include "app/UserConfig.h"
@@ -86,6 +88,7 @@
 #include "ui/ApplyPlanDialog.h"
 #include "ui/CommitBatch.h"
 #include "ui/CommitDispatcher.h"
+#include "ui/CommitReportDialog.h"
 #include "ui/ContentHintBox.h"
 #include "ui/DiagnosticReportProvider.h"
 #include "ui/Dialogs.h"
@@ -99,11 +102,14 @@
 #include "ui/ImportDialog.h"
 #include "ui/LogViewerDialog.h"
 #include "ui/MainWindow.h"
-#include "ui/OverlayHudPalette.h"
+#include "ui/OverlayFilesDialog.h"
 #include "ui/OverlayHubView.h"
+#include "ui/OverlayHudPalette.h"
 #include "ui/OverlayUsageBar.h"
 #include "ui/PendingCollect.h"
+#include "ui/PowerConfirmDialog.h"
 #include "ui/PowerController.h"
+#include "ui/RegistryPickerDialog.h"
 #include "ui/StatusBanner.h"
 #include "ui/StatusPanel.h"
 #include "ui/SwitchButton.h"
@@ -393,6 +399,8 @@ class ApplicationUiBehaviorTests final : public QObject {
   void initTestCase();
   void cleanupTestCase();
   void languageAndThemeChangesReachProductionWidgets();
+  void qtStandardWidgetsUseSupplementalTranslations_data();
+  void qtStandardWidgetsUseSupplementalTranslations();
   void startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges_data();
   void startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges();
   void startupHiddenHubRemainsHiddenAcrossRefreshAndUiRebuild_data();
@@ -484,6 +492,86 @@ void ApplicationUiBehaviorTests::languageAndThemeChangesReachProductionWidgets()
   QCOMPARE(theme.current(), ui::Theme::Dark);
 }
 
+void ApplicationUiBehaviorTests::qtStandardWidgetsUseSupplementalTranslations_data() {
+  QTest::addColumn<ui::I18n::Lang>("locale");
+  QTest::addColumn<bool>("dark");
+  for (const auto locale : {ui::I18n::Lang::Id, ui::I18n::Lang::Vi})
+    for (const bool dark : {false, true})
+      QTest::newRow(locale == ui::I18n::Lang::Id ? (dark ? "id-dark" : "id-light") : (dark ? "vi-dark" : "vi-light")) << locale << dark;
+}
+
+void ApplicationUiBehaviorTests::qtStandardWidgetsUseSupplementalTranslations() {
+  QFETCH(ui::I18n::Lang, locale);
+  QFETCH(bool, dark);
+  auto& language = ui::I18n::instance();
+  auto& theme = ui::ThemeManager::instance();
+  const auto oldLanguage = language.lang();
+  const auto oldTheme = theme.current();
+  const auto restore = qScopeGuard([&] {
+    language.setLang(oldLanguage);
+    theme.apply(oldTheme);
+  });
+  language.setLang(locale);
+  theme.apply(dark ? ui::Theme::Dark : ui::Theme::Light);
+  const bool indonesian = locale == ui::I18n::Lang::Id;
+  const QString copy = indonesian ? QStringLiteral("Salin") : QStringLiteral("Sao chép");
+  const QString cancel = indonesian ? QStringLiteral("Batal") : QStringLiteral("Hủy");
+  const QString save = indonesian ? QStringLiteral("Simpan") : QStringLiteral("Lưu");
+  QCOMPARE(QCoreApplication::translate("QAbstractSpinBox", "&Step up"), indonesian ? QStringLiteral("&Naikkan") : QStringLiteral("&Tăng"));
+  const QString screenshots = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
+  const auto capture = [&](QWidget& widget, const QString& name) {
+    QTRY_VERIFY2(test::clippedLabel(widget).isEmpty(), qPrintable(test::clippedLabel(widget)));
+    if (!screenshots.isEmpty()) {
+      QVERIFY(QDir().mkpath(screenshots));
+      QVERIFY(widget.grab().save(QDir(screenshots).filePath(name + "-" + QString::fromLatin1(QTest::currentDataTag()) + ".png")));
+    }
+  };
+  QDialog dialog;
+  auto* layout = new QVBoxLayout(&dialog);
+  auto* line = new QLineEdit(QStringLiteral("C:\\Example.txt"), &dialog);
+  auto* text = new QTextEdit(QStringLiteral("Example"), &dialog);
+  auto* buttons = new QDialogButtonBox(QDialogButtonBox::Save | QDialogButtonBox::Cancel, &dialog);
+  layout->addWidget(line);
+  layout->addWidget(text);
+  layout->addWidget(buttons);
+  dialog.resize(520, 280);
+  dialog.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+  QCOMPARE(buttons->button(QDialogButtonBox::Cancel)->text().remove('&'), cancel);
+  QCOMPARE(buttons->button(QDialogButtonBox::Save)->text().remove('&'), save);
+  capture(dialog, QStringLiteral("qt-buttons"));
+  const auto inspectMenu = [&](std::unique_ptr<QMenu> menu, const QString& name) {
+    bool copyPresent = false;
+    for (auto* action : menu->actions()) copyPresent = copyPresent || action->text().section('\t', 0, 0).remove('&') == copy;
+    QVERIFY(copyPresent);
+    menu->popup(dialog.mapToGlobal(QPoint(20, 30)));
+    QTRY_VERIFY(menu->isVisible());
+    for (auto* action : menu->actions()) {
+      if (action->isSeparator()) continue;
+      QVERIFY(menu->rect().contains(menu->actionGeometry(action)));
+    }
+    capture(*menu, name);
+    menu->hide();
+  };
+  inspectMenu(std::unique_ptr<QMenu>(line->createStandardContextMenu()), QStringLiteral("qt-line-menu"));
+  inspectMenu(std::unique_ptr<QMenu>(text->createStandardContextMenu()), QStringLiteral("qt-text-menu"));
+  dialog.hide();
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  QFileDialog files(nullptr, {}, directory.path());
+  files.setOptions(QFileDialog::DontUseNativeDialog | QFileDialog::ReadOnly);
+  files.setFileMode(QFileDialog::ExistingFile);
+  files.resize(900, 620);
+  files.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&files));
+  QVERIFY(buttonWithText(&files, cancel));
+  QStringList fileLabels;
+  for (auto* label : files.findChildren<QLabel*>()) fileLabels.append(label->text().remove('&'));
+  QVERIFY(fileLabels.contains(indonesian ? QStringLiteral("Lihat di:") : QStringLiteral("Tìm trong:")));
+  QVERIFY(fileLabels.contains(indonesian ? QStringLiteral("Jenis berkas:") : QStringLiteral("Loại tệp:")));
+  capture(files, QStringLiteral("qt-file-dialog"));
+}
+
 void ApplicationUiBehaviorTests::startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges_data() {
   QTest::addColumn<QByteArray>("contents");
   QTest::addColumn<std::optional<ui::Theme>>("expectedTheme");
@@ -498,6 +586,8 @@ void ApplicationUiBehaviorTests::startupPreferencesReachTheRealUiWithoutPersisti
       Case{"dark-english", "[UI]\nTheme=dark\nLanguage=en\n", ui::Theme::Dark, ui::I18n::Lang::En},
       Case{"light-chinese", "[UI]\nTheme=light\nLanguage=zh_CN\n", ui::Theme::Light, ui::I18n::Lang::Zh_CN},
       Case{"dark-chinese", "[UI]\nTheme=dark\nLanguage=zh_CN\n", ui::Theme::Dark, ui::I18n::Lang::Zh_CN},
+      Case{"dark-french", "[UI]\nTheme=dark\nLanguage=fr\n", ui::Theme::Dark, ui::I18n::Lang::Fr},
+      Case{"light-arabic", "[UI]\nTheme=light\nLanguage=ar\n", ui::Theme::Light, ui::I18n::Lang::Ar},
       Case{"light-english", "[UI]\nTheme=light\nLanguage=en\n", ui::Theme::Light, ui::I18n::Lang::En},
       Case{"system", "[UI]\nTheme=system\nLanguage=system\n", {}, {}},
       Case{"empty", {}, {}, {}},
@@ -546,26 +636,27 @@ void ApplicationUiBehaviorTests::startupPreferencesReachTheRealUiWithoutPersisti
     source.snapshot.uwfAvailable = false;
     source.snapshot.unavailableReason = "provider unavailable in fixture";
     // 所有系统能力均停留在既有内存边界，真实窗口不会触及 UWF、SCM 或代理管道。
-    ui::MainWindow window({wmi, source, staging, &serviceControl, &agent},
-                          {.uwfCapability = UwfCapability::Unavailable,
-                           .compatibilityMode = false,
-                           .osProductName = {},
-                           .osEditionId = {},
-                           .hubVisible = config.hubVisible});
+    ui::MainWindow window(
+        {wmi, source, staging, &serviceControl, &agent},
+        {.uwfCapability = UwfCapability::Unavailable, .compatibilityMode = false, .osProductName = {}, .osEditionId = {}, .hubVisible = config.hubVisible});
     window.show();
     QVERIFY(QTest::qWaitForWindowExposed(&window));
     QTRY_COMPARE_WITH_TIMEOUT(source.reads, 1, 2000);
     QTRY_COMPARE_WITH_TIMEOUT(window.windowOpacity(), 1.0, 2000);
-    QCOMPARE(window.windowTitle(),
-             startupLanguage == ui::I18n::Lang::En ? QStringLiteral("Unified Write Filter (UWF) Manager") : QStringLiteral("统一写入筛选器 (UWF) 管理器"));
-    QVERIFY(actionWithText(&window, startupLanguage == ui::I18n::Lang::En ? QStringLiteral("Refresh") : QStringLiteral("刷新")));
+    const QString expectedTitle = startupLanguage == ui::I18n::Lang::En      ? QStringLiteral("Unified Write Filter (UWF) Manager")
+                                  : startupLanguage == ui::I18n::Lang::Zh_CN ? QStringLiteral("统一写入筛选器 (UWF) 管理器")
+                                                                             : ui::I18n::applicationTitle();
+    const QString expectedRefresh = startupLanguage == ui::I18n::Lang::En      ? QStringLiteral("Refresh")
+                                    : startupLanguage == ui::I18n::Lang::Zh_CN ? QStringLiteral("刷新")
+                                                                               : ui::I18n::tr("Refresh");
+    QCOMPARE(window.windowTitle(), expectedTitle);
+    QVERIFY(actionWithText(&window, expectedRefresh));
     QCOMPARE(window.palette().color(QPalette::Window), theme.color(ui::Sem::Bg));
     QVERIFY(!QApplication::activeModalWidget());
 
     QToolButton* themeButton = nullptr;
     for (const auto buttons = window.findChildren<QToolButton*>(); auto* button : buttons) {
-      if (button->defaultAction() &&
-          button->defaultAction()->toolTip() == ui::I18n::tr("Toggle light / dark theme")) {
+      if (button->defaultAction() && button->defaultAction()->toolTip() == ui::I18n::tr("Toggle light / dark theme")) {
         themeButton = button;
       }
     }
@@ -2343,17 +2434,16 @@ void ApplicationUiBehaviorTests::safePowerActionsRequireConfirmationAndUseTheInj
   directFromSafeStore.entries = {{app::FileStagingKind::File, QStringLiteral("C:\\never-commit.bin")}};
   ui::FileStagingCoordinator directFromSafeCoordinator(directFromSafeWmi, directFromSafeStore, UwfCapability::Available, nullptr);
   int directFromSafePreshutdownMarks = 0;
-  ui::PowerController directFromSafeController(
-      {directFromSafeWmi,
-       directFromSafeStore,
-       UwfCapability::Available,
-       directFromSafeCoordinator,
-       {[&] {
-          ++directFromSafePreshutdownMarks;
-          return PreshutdownControlResult::Acknowledged;
-        },
-        {}}},
-      nullptr);
+  ui::PowerController directFromSafeController({directFromSafeWmi,
+                                                directFromSafeStore,
+                                                UwfCapability::Available,
+                                                directFromSafeCoordinator,
+                                                {[&] {
+                                                   ++directFromSafePreshutdownMarks;
+                                                   return PreshutdownControlResult::Acknowledged;
+                                                 },
+                                                 {}}},
+                                               nullptr);
   bool directOptionAvailableDuringPreparation = false;
   std::optional<app::ApplicationCommandResult> skippedConcurrentCommit;
   QTimer directFromSafeDriver;
@@ -2418,8 +2508,8 @@ void ApplicationUiBehaviorTests::safePowerActionsRequireConfirmationAndUseTheInj
     if (!dialog) return;
     auto* directRestart = dialog->findChild<QPushButton*>(QStringLiteral("directRestartBtn"));
     if (!directRestart || !directRestart->isEnabled()) return;
-    directDialogConfirmed = dialog->windowTitle() == QStringLiteral("Direct restart") &&
-                            dialog->findChild<QPushButton*>(QStringLiteral("restartBtn")) == nullptr;
+    directDialogConfirmed =
+        dialog->windowTitle() == QStringLiteral("Direct restart") && dialog->findChild<QPushButton*>(QStringLiteral("restartBtn")) == nullptr;
     QTest::mouseClick(directRestart, Qt::LeftButton);
     directDriver.stop();
   });
@@ -2888,21 +2978,21 @@ void ApplicationUiBehaviorTests::mainWindowDistinguishesInitialFailureFromCommit
 }
 
 void ApplicationUiBehaviorTests::mainWindowCompactLayoutKeepsControlsReachable_data() {
-  QTest::addColumn<bool>("chinese");
+  QTest::addColumn<ui::I18n::Lang>("locale");
   QTest::addColumn<bool>("dark");
   QTest::addColumn<QSize>("windowSize");
   QTest::addColumn<bool>("warnings");
-  for (const bool chinese : {false, true}) {
+  for (const auto& locale : ui::I18n::languages()) {
     for (const bool dark : {false, true}) {
       for (const auto size : {QSize(1280, 720), QSize(1120, 680), QSize(1440, 900)}) {
         for (const bool warnings : {false, true}) {
           const QByteArray name = QStringLiteral("%1-%2-%3x%4-%5")
-                                      .arg(chinese ? "zh" : "en", dark ? "dark" : "light")
+                                      .arg(QString(locale.code), dark ? "dark" : "light")
                                       .arg(size.width())
                                       .arg(size.height())
                                       .arg(warnings ? "warnings" : "normal")
                                       .toLatin1();
-          QTest::newRow(name.constData()) << chinese << dark << size << warnings;
+          QTest::newRow(name.constData()) << locale.id << dark << size << warnings;
         }
       }
     }
@@ -2910,7 +3000,7 @@ void ApplicationUiBehaviorTests::mainWindowCompactLayoutKeepsControlsReachable_d
 }
 
 void ApplicationUiBehaviorTests::mainWindowCompactLayoutKeepsControlsReachable() {
-  QFETCH(bool, chinese);
+  QFETCH(ui::I18n::Lang, locale);
   QFETCH(bool, dark);
   QFETCH(QSize, windowSize);
   QFETCH(bool, warnings);
@@ -2922,7 +3012,8 @@ void ApplicationUiBehaviorTests::mainWindowCompactLayoutKeepsControlsReachable()
     language.setLang(oldLanguage);
     theme.apply(oldTheme);
   });
-  language.setLang(chinese ? ui::I18n::Lang::Zh_CN : ui::I18n::Lang::En);
+  language.setLang(locale);
+  QCOMPARE(language.lang(), locale);
   theme.apply(dark ? ui::Theme::Dark : ui::Theme::Light);
   RecordingWmiOperations wmi;
   MemoryFileStagingStore staging;
@@ -2956,10 +3047,12 @@ void ApplicationUiBehaviorTests::mainWindowCompactLayoutKeepsControlsReachable()
   QVERIFY(global && scroll && disk && status && inner);
   if (warnings) {
     global->showVolumeInfoWarning(QStringLiteral("Mock inventory warning: provider read failed.\nWQL: SELECT * FROM UWF_Volume\n") +
-                                 QStringLiteral("\\\\COMPUTER\\root\\standardcimv2\\embedded:") + QString(160, u'x') + QStringLiteral("\n旧数据保持不变"));
+                                  QStringLiteral("\\\\COMPUTER\\root\\standardcimv2\\embedded:") + QString(160, u'x') + QStringLiteral("\n旧数据保持不变"));
   }
+  QTest::qWait(80);
   QTRY_VERIFY(scroll->viewport()->width() > 0 && scroll->viewport()->height() > 0);
   QTRY_COMPARE(scroll->horizontalScrollBar()->maximum(), 0);
+  QTRY_VERIFY(!scroll->horizontalScrollBar()->isVisible());
   auto* initialHint = window.findChild<ui::ContentHintBox*>(QStringLiteral("hoverHintBox"));
   QVERIFY(initialHint && !initialHint->toPlainText().isEmpty());
   QTRY_VERIFY_WITH_TIMEOUT(initialHint->viewport()->height() >= initialHint->document()->size().height(), 2000);
@@ -2971,6 +3064,39 @@ void ApplicationUiBehaviorTests::mainWindowCompactLayoutKeepsControlsReachable()
     QVERIFY(QDir().mkpath(screenshots));
     QVERIFY(window.grab().save(QDir(screenshots).filePath(QString::fromLatin1(QTest::currentDataTag()) + QStringLiteral(".png"))));
   }
+  auto* typeCombo = global->findChild<QComboBox*>();
+  QVERIFY(typeCombo);
+  const int originalType = typeCombo->currentIndex();
+  typeCombo->setCurrentIndex(typeCombo->findData(static_cast<int>(core::OverlayType::RAM)));
+  // 切换后先等待布局请求及原生滚动条更新；旧的几何可能暂时仍满足断言。
+  QTest::qWait(80);
+  QTRY_VERIFY2_WITH_TIMEOUT(test::clippedLabel(window).isEmpty(), qPrintable(test::clippedLabel(window)), 2000);
+  QTRY_COMPARE(scroll->horizontalScrollBar()->maximum(), 0);
+  QTRY_VERIFY(scroll->viewport()->width() >= scroll->widget()->minimumSizeHint().width());
+  bool inspectedRamCaption = false;
+  for (const auto labels = global->findChildren<QLabel*>(); const auto* label : labels) {
+    if (!label->text().contains(QStringLiteral("RAM"))) continue;
+    inspectedRamCaption = true;
+    QVERIFY(!label->wordWrap());
+    QVERIFY(label->width() >= label->sizeHint().width());
+  }
+  QVERIFY(inspectedRamCaption);
+  const auto ramScreenshot = window.grab();
+  QCOMPARE(scroll->horizontalScrollBar()->maximum(), 0);
+  QVERIFY(!scroll->horizontalScrollBar()->isVisible());
+  for (const auto controls = global->findChildren<QWidget*>(); const auto* control : controls) {
+    if (!control->isVisible() || (!qobject_cast<QLabel const*>(control) && !qobject_cast<QAbstractSpinBox const*>(control) &&
+                                  !qobject_cast<QComboBox const*>(control) && !qobject_cast<QAbstractButton const*>(control)))
+      continue;
+    const QRect bounds(control->mapTo(scroll->viewport(), QPoint()), control->size());
+    QVERIFY2(bounds.left() >= 0 && bounds.right() < scroll->viewport()->width(), control->metaObject()->className());
+  }
+  if (!screenshots.isEmpty())
+    QVERIFY(ramScreenshot.save(QDir(screenshots).filePath(QString::fromLatin1(QTest::currentDataTag()) + QStringLiteral("-ram.png"))));
+  typeCombo->setCurrentIndex(originalType);
+  QTest::qWait(80);
+  QTRY_COMPARE(scroll->horizontalScrollBar()->maximum(), 0);
+  QTRY_COMPARE(window.size(), windowSize);
   qInfo() << "layout" << QTest::currentDataTag() << "dpr" << window.devicePixelRatioF() << "window" << window.size() << "minimum" << window.minimumSizeHint()
           << "status" << status->size() << "right" << scroll->size() << "content" << scroll->widget()->minimumSizeHint() << "horizontal overflow"
           << scroll->horizontalScrollBar()->maximum();
@@ -3008,6 +3134,8 @@ void ApplicationUiBehaviorTests::mainWindowCompactLayoutKeepsControlsReachable()
   for (int index = 0; index < inner->count(); ++index) {
     QTest::mouseClick(inner->tabBar(), Qt::LeftButton, Qt::NoModifier, inner->tabBar()->tabRect(index).center());
     QCOMPARE(inner->currentIndex(), index);
+    if (!screenshots.isEmpty())
+      QVERIFY(window.grab().save(QDir(screenshots).filePath(QString::fromLatin1(QTest::currentDataTag()) + QStringLiteral("-tab%1.png").arg(index))));
     auto* page = inner->currentWidget();
     for (const auto widgets = page->findChildren<QWidget*>(); auto* widget : widgets) {
       if (!widget->isVisible() || (!qobject_cast<QLineEdit*>(widget) && !qobject_cast<QPushButton*>(widget) && !qobject_cast<QListWidget*>(widget))) continue;
@@ -3124,14 +3252,17 @@ void ApplicationUiBehaviorTests::mainWindowCompactToolbarKeepsLanguageMenuUsable
 }
 
 void ApplicationUiBehaviorTests::dialogLayoutsKeepActionsVisible_data() {
-  QTest::addColumn<bool>("chinese");
+  QTest::addColumn<ui::I18n::Lang>("locale");
   QTest::addColumn<bool>("dark");
-  for (const bool chinese : {false, true})
-    for (const bool dark : {false, true}) QTest::newRow(chinese ? (dark ? "zh-dark" : "zh-light") : (dark ? "en-dark" : "en-light")) << chinese << dark;
+  for (const auto& locale : ui::I18n::languages())
+    for (const bool dark : {false, true}) {
+      const QByteArray name = QStringLiteral("%1-%2").arg(QString(locale.code), dark ? "dark" : "light").toLatin1();
+      QTest::newRow(name.constData()) << locale.id << dark;
+    }
 }
 
 void ApplicationUiBehaviorTests::dialogLayoutsKeepActionsVisible() {
-  QFETCH(bool, chinese);
+  QFETCH(ui::I18n::Lang, locale);
   QFETCH(bool, dark);
   auto& language = ui::I18n::instance();
   auto& theme = ui::ThemeManager::instance();
@@ -3141,7 +3272,8 @@ void ApplicationUiBehaviorTests::dialogLayoutsKeepActionsVisible() {
     language.setLang(oldLanguage);
     theme.apply(oldTheme);
   });
-  language.setLang(chinese ? ui::I18n::Lang::Zh_CN : ui::I18n::Lang::En);
+  language.setLang(locale);
+  QCOMPARE(language.lang(), locale);
   theme.apply(dark ? ui::Theme::Dark : ui::Theme::Light);
   const QString screenshots = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
   const auto inspect = [&](QDialog& dialog, const QString& name) {
@@ -3169,6 +3301,18 @@ void ApplicationUiBehaviorTests::dialogLayoutsKeepActionsVisible() {
     }
     dialog.hide();
   };
+  const auto inspectModal = [&](const QString& name, const std::function<void()>& open) {
+    bool inspected = false;
+    QTimer::singleShot(0, this, [&] {
+      auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+      QVERIFY(dialog);
+      const auto close = qScopeGuard([dialog] { dialog->reject(); });
+      inspect(*dialog, name);
+      inspected = true;
+    });
+    open();
+    QVERIFY2(inspected, qPrintable(name));
+  };
   {
     ui::AboutDialog dialog([] { return QStringLiteral("Mock report, no machine data"); }, nullptr);
     inspect(dialog, QStringLiteral("about"));
@@ -3177,6 +3321,21 @@ void ApplicationUiBehaviorTests::dialogLayoutsKeepActionsVisible() {
     MemoryFileDialogs files;
     ui::ImportDialog dialog(files);
     inspect(dialog, QStringLiteral("import"));
+    auto* recommended = buttonWithText(&dialog, ui::I18n::tr("Load recommended configuration"));
+    QVERIFY(recommended);
+    inspectModal(QStringLiteral("recommended-configuration"), [&] { recommended->click(); });
+  }
+  {
+    RecordingWmiOperations wmi;
+    MemoryFileStagingStore store;
+    QWidget parent;
+    ui::FileStagingCoordinator coordinator(wmi, store, UwfCapability::Unavailable, &parent);
+    coordinator.requestCommit([](const ui::FileStagingBatchResult&) {});
+    auto* progress = parent.findChild<QDialog*>(QStringLiteral("fileStagingProgressDialog"));
+    QVERIFY(progress);
+    inspect(*progress, QStringLiteral("file-staging-progress"));
+    QVERIFY(wmi.invocations.empty());
+    QCOMPARE(store.writes, 0);
   }
   {
     ui::SystemInformationDialog dialog(QStringLiteral("[Mock system]\nos=Windows 11\n[Mock token]\nelevated=false\n"));
@@ -3206,7 +3365,8 @@ void ApplicationUiBehaviorTests::dialogLayoutsKeepActionsVisible() {
     if (state == service::EnhancedModeState::Stopped) control.current.running = false;
     if (state == service::EnhancedModeState::RepairRequired) {
       control.current.executableMatches = false;
-      control.current.detail = QStringLiteral("Mock service contract mismatch:\nC:\\") + QString(180, QLatin1Char('x')) + QStringLiteral("\\UWF.exe\n最后一行错误详情");
+      control.current.detail =
+          QStringLiteral("Mock service contract mismatch:\nC:\\") + QString(180, QLatin1Char('x')) + QStringLiteral("\\UWF.exe\n最后一行错误详情");
     }
     service::EnhancedModeManager manager(control, wmi, UwfCapability::Unavailable);
     ui::EnhancedModeDialog dialog(manager);
@@ -3214,12 +3374,57 @@ void ApplicationUiBehaviorTests::dialogLayoutsKeepActionsVisible() {
     QVERIFY(wmi.invocations.empty());
     QCOMPARE(control.installs + control.starts + control.removals, 0);
   }
+  class OfflineRegistryBrowser final : public ui::RegistryBrowser {
+   public:
+    std::vector<std::string> rootHiveLongNames() const override { return {"HKEY_LOCAL_MACHINE"}; }
+    std::vector<std::string> subkeyNames(std::string_view key) const override {
+      return key == "HKEY_LOCAL_MACHINE" ? std::vector<std::string>{"SOFTWARE"} : std::vector<std::string>{};
+    }
+    bool hasSubkeys(std::string_view key) const override { return key == "HKEY_LOCAL_MACHINE"; }
+    std::vector<regkey::RegValueInfo> values(std::string_view) const override { return {{"MockValue", REG_DWORD, std::vector<uint8_t>{1, 0, 0, 0}}}; }
+  } browser;
+  for (const auto mode :
+       {ui::RegistryPickerDialog::Mode::CommitValue, ui::RegistryPickerDialog::Mode::DeleteValue, ui::RegistryPickerDialog::Mode::Exclusion}) {
+    ui::RegistryPickerDialog dialog(mode, ui::I18n::tr("Commit registry changes"), browser);
+    dialog.preselectKey(QStringLiteral("HKLM\\SOFTWARE"));
+    inspect(dialog, QStringLiteral("registry-%1").arg(static_cast<int>(mode)));
+  }
+  for (const bool failure : {false, true}) {
+    MemoryFileDialogs files;
+    ui::OverlayFilesDialog dialog(QStringLiteral("C:"), {[failure](const QString&, std::stop_token) -> QVector<ui::OverlayFileEntry> {
+                                                           if (failure) throw std::runtime_error("Mock provider error");
+                                                           return {{QStringLiteral("\\Mock.txt"), {}, false, false, 1024}};
+                                                         },
+                                                         files});
+    dialog.show();
+    QTRY_VERIFY(!dialog.findChildren<QListWidget*>().isEmpty());
+    inspect(dialog, failure ? QStringLiteral("overlay-error") : QStringLiteral("overlay-files"));
+  }
+  for (const auto operation : {ui::CommitOperation::Persist, ui::CommitOperation::DeleteAndPersist}) {
+    inspectModal(QStringLiteral("commit-report-%1").arg(static_cast<int>(operation)), [&] {
+      ui::showCommitReport(nullptr,
+                           {{ui::I18n::tr("Succeeded"), QStringLiteral("C:\\Mock.txt"), QStringLiteral("-"), QStringLiteral("-"), true, false},
+                            {ui::I18n::tr("Failed"), QStringLiteral("C:\\Blocked.txt"), QStringLiteral("0x80041001"),
+                             ui::I18n::tr("The operation failed (see log for details)."), true, true}},
+                           operation, 2);
+    });
+  }
+  for (const auto action : {ui::PowerAction::Shutdown, ui::PowerAction::Restart}) {
+    for (const auto mode : {ui::PowerActionDialogMode::Safe, ui::PowerActionDialogMode::Direct}) {
+      inspectModal(QStringLiteral("power-%1-%2").arg(static_cast<int>(action)).arg(static_cast<int>(mode)),
+                   [&] { QCOMPARE(ui::runPowerActionDialog(nullptr, {action, {}, {}, mode}), ui::PowerActionDialogOutcome::Canceled); });
+    }
+    inspectModal(QStringLiteral("power-failure-%1").arg(static_cast<int>(action)), [&] {
+      const auto outcome = ui::runPowerActionDialog(nullptr, {action, {}, ui::PowerStagingFailure{QStringLiteral("Mock file staging failure")}});
+      QVERIFY(outcome == ui::PowerActionDialogOutcome::Canceled || outcome == ui::PowerActionDialogOutcome::CanceledAfterStagingFailure);
+    });
+  }
 }
 
 void ApplicationUiBehaviorTests::longMessageDialogsKeepCompleteTextAndReachableActions_data() { dialogLayoutsKeepActionsVisible_data(); }
 
 void ApplicationUiBehaviorTests::longMessageDialogsKeepCompleteTextAndReachableActions() {
-  QFETCH(bool, chinese);
+  QFETCH(ui::I18n::Lang, locale);
   QFETCH(bool, dark);
   const auto language = ui::I18n::instance().lang();
   const auto theme = ui::ThemeManager::instance().current();
@@ -3227,7 +3432,7 @@ void ApplicationUiBehaviorTests::longMessageDialogsKeepCompleteTextAndReachableA
     ui::I18n::instance().setLang(language);
     ui::ThemeManager::instance().apply(theme);
   });
-  ui::I18n::instance().setLang(chinese ? ui::I18n::Lang::Zh_CN : ui::I18n::Lang::En);
+  ui::I18n::instance().setLang(locale);
   ui::ThemeManager::instance().apply(dark ? ui::Theme::Dark : ui::Theme::Light);
   const QString target = QStringLiteral("C:\\") + QString(180, u'x') + QStringLiteral("\\<literal>&data.txt");
   const QString details = (QStringLiteral("WMI: 0x80041003 — mock failure; no operation performed.\n") + target + "\n").repeated(25);

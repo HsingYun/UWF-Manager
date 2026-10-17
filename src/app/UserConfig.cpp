@@ -72,13 +72,12 @@ UserConfig readUserConfig(const QString& applicationDirectory) {
                           << " expected=system|light|dark";
   }
   if (const auto language = readOption(settings, QStringLiteral("UI/Language"))) {
-    if (*language == QStringLiteral("en"))
-      config.language = ui::I18n::Lang::En;
-    else if (*language == QStringLiteral("zh_cn"))
-      config.language = ui::I18n::Lang::Zh_CN;
-    else if (*language != QStringLiteral("system"))
-      UWF_LOG_W("config") << "configuration option ignored: path=" << path.toStdString() << " key=UI/Language value=" << language->toStdString()
-                          << " expected=system|en|zh_CN";
+    if (*language != QStringLiteral("system")) {
+      config.language = ui::I18n::parseLanguageCode(*language);
+      if (!config.language)
+        UWF_LOG_W("config") << "configuration option ignored: path=" << path.toStdString() << " key=UI/Language value=" << language->toStdString()
+                            << " reason=unsupported-language";
+    }
   }
   if (const auto hubVisible = readOption(settings, QStringLiteral("UI/HubVisible"))) {
     if (*hubVisible == QStringLiteral("true"))

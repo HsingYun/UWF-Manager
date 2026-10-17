@@ -79,6 +79,8 @@ class CoreBehaviorTests final : public QObject {
   void userConfigMalformedFileFallsBackWithoutDiscardingTheUserFile();
   void userConfigInvalidOptionsAreLoggedIndependently();
   void userConfigReadFailuresFallBackWithoutChangingPermissions();
+  void languageMatchingRespectsPreferenceOrderScriptAndRegion_data();
+  void languageMatchingRespectsPreferenceOrderScriptAndRegion();
   void applicationCommandProtocolRejectsTruncationAndCorruption();
   void enhancedAgentControlProtocolCorrelatesAcknowledgements();
   void fileStagingRegistryCodecPreservesKindsAndRejectsCorruption();
@@ -174,10 +176,10 @@ void CoreBehaviorTests::userConfigReadsOnlyRecognizedValues_data() {
       Case{"quoted-values", "[UI]\nTheme=\" dark \"\nLanguage=\" zh_CN \"\n", Theme::Dark, I18n::Lang::Zh_CN},
       Case{"utf8-bom", QByteArray::fromHex("efbbbf") + "[UI]\r\nTheme=dark\r\nLanguage=en\r\n", Theme::Dark, I18n::Lang::En},
       Case{"empty-values", "[UI]\nTheme=\nLanguage=\n", {}, {}},
-      Case{"unknown-values", "[UI]\nTheme=automatic\nLanguage=fr\n", {}, {}},
+      Case{"unknown-values", "[UI]\nTheme=automatic\nLanguage=unsupported\n", {}, {}},
       Case{"no-substring-matching", "[UI]\nTheme=dark-mode\nLanguage=english\n", {}, {}},
       Case{"invalid-theme-keeps-language", "[UI]\nTheme=invalid\nLanguage=en\n", {}, I18n::Lang::En},
-      Case{"invalid-language-keeps-theme", "[UI]\nTheme=dark\nLanguage=zh_TW\n", Theme::Dark, {}},
+      Case{"invalid-language-keeps-theme", "[UI]\nTheme=dark\nLanguage=unsupported\n", Theme::Dark, {}},
       Case{"typed-theme-keeps-language", "[UI]\nTheme=dark,light\nLanguage=en\n", {}, I18n::Lang::En},
       Case{"typed-language-keeps-theme", "[UI]\nTheme=dark\nLanguage=@ByteArray(en)\n", Theme::Dark, {}},
       Case{"empty-theme-keeps-language", "[UI]\nTheme=\nLanguage=zh_CN\n", {}, I18n::Lang::Zh_CN},
@@ -212,6 +214,45 @@ void CoreBehaviorTests::userConfigReadsOnlyRecognizedValues_data() {
       Case{"hub-malformed-utf8", QByteArray("[UI]\nHubVisible=") + char(0xFF) + "\n", {}, {}},
   };
   for (const auto& entry : cases) QTest::newRow(entry.name) << entry.contents << entry.theme << entry.language << entry.hubVisible;
+  for (const auto& language : I18n::languages()) {
+    const QByteArray code = QString(language.code).toUtf8();
+    const QByteArray canonical = "[UI]\nLanguage=" + code + '\n';
+    QTest::newRow(("language-" + code).constData()) << canonical << std::optional<Theme>{} << std::optional{language.id} << true;
+    const QByteArray normalized = "[UI]\nLanguage=\" " + QString(language.code).replace(u'_', u'-').toUpper().toUtf8() + " \"\n";
+    QTest::newRow(("language-normalized-" + code).constData()) << normalized << std::optional<Theme>{} << std::optional{language.id} << true;
+  }
+}
+
+void CoreBehaviorTests::languageMatchingRespectsPreferenceOrderScriptAndRegion_data() {
+  using Lang = uwf::ui::I18n::Lang;
+  QTest::addColumn<QStringList>("preferred");
+  QTest::addColumn<Lang>("expected");
+  QTest::newRow("no-preference") << QStringList{} << Lang::En;
+  QTest::newRow("unsupported") << QStringList{QStringLiteral("sv-SE"), QStringLiteral("fi-FI")} << Lang::En;
+  QTest::newRow("invalid") << QStringList{QStringLiteral("not-a-language"), QStringLiteral("C")} << Lang::En;
+  QTest::newRow("later-supported") << QStringList{QStringLiteral("sv-SE"), QStringLiteral("fr-CA"), QStringLiteral("de-DE")} << Lang::Fr;
+  QTest::newRow("english-first") << QStringList{QStringLiteral("en-GB"), QStringLiteral("zh-CN")} << Lang::En;
+  QTest::newRow("simplified-cn") << QStringList{QStringLiteral("zh-CN")} << Lang::Zh_CN;
+  QTest::newRow("simplified-sg") << QStringList{QStringLiteral("zh-SG")} << Lang::Zh_CN;
+  QTest::newRow("simplified-script") << QStringList{QStringLiteral("zh-Hans-HK")} << Lang::Zh_CN;
+  QTest::newRow("traditional-tw") << QStringList{QStringLiteral("zh-TW")} << Lang::Zh_TW;
+  QTest::newRow("traditional-hk") << QStringList{QStringLiteral("zh-HK")} << Lang::Zh_TW;
+  QTest::newRow("traditional-mo") << QStringList{QStringLiteral("zh-MO")} << Lang::Zh_TW;
+  QTest::newRow("traditional-script") << QStringList{QStringLiteral("zh-Hant-CN")} << Lang::Zh_TW;
+  QTest::newRow("portuguese-br") << QStringList{QStringLiteral("pt-BR")} << Lang::Pt_BR;
+  QTest::newRow("portuguese-pt") << QStringList{QStringLiteral("pt-PT")} << Lang::Pt_PT;
+  QTest::newRow("portuguese-ao") << QStringList{QStringLiteral("pt-AO")} << Lang::Pt_PT;
+  QTest::newRow("spanish-mx") << QStringList{QStringLiteral("es-MX")} << Lang::Es;
+  QTest::newRow("german-ch") << QStringList{QStringLiteral("de-CH")} << Lang::De;
+  QTest::newRow("arabic-eg") << QStringList{QStringLiteral("ar-EG")} << Lang::Ar;
+  for (const auto& language : uwf::ui::I18n::languages())
+    QTest::newRow(QString(language.code).toUtf8().constData()) << QStringList{QString(language.code)} << language.id;
+}
+
+void CoreBehaviorTests::languageMatchingRespectsPreferenceOrderScriptAndRegion() {
+  QFETCH(QStringList, preferred);
+  QFETCH(uwf::ui::I18n::Lang, expected);
+  QCOMPARE(uwf::ui::I18n::matchLanguage(preferred), expected);
 }
 
 void CoreBehaviorTests::userConfigReadsOnlyRecognizedValues() {

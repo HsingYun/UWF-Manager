@@ -16,10 +16,16 @@
  */
 #pragma once
 
+#include <QAbstractButton>
+#include <QAbstractSpinBox>
+#include <QComboBox>
+#include <QHeaderView>
 #include <QLabel>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QTableWidget>
 #include <QTextDocument>
+#include <QToolButton>
 #include <QWidget>
 
 #include "ui/ContentHintBox.h"
@@ -48,6 +54,31 @@ inline QString clippedLabel(const QWidget& root) {
           .arg(label->sizeHint().width())
           .arg(label->width())
           .arg(label->text().left(120));
+    }
+    if (label->objectName() == QLatin1String("statusKey")) {
+      const QRect labelBounds(label->mapTo(&root, QPoint()), label->size());
+      for (const auto controls = root.findChildren<QWidget*>(); const auto* control : controls) {
+        if (!control->isVisible() || (!qobject_cast<const QAbstractSpinBox*>(control) && !qobject_cast<const QComboBox*>(control))) continue;
+        if (labelBounds.intersects(QRect(control->mapTo(&root, QPoint()), control->size())))
+          return QStringLiteral("setting label overlaps its input: %1").arg(label->text());
+      }
+    }
+  }
+  for (const auto buttons = root.findChildren<QAbstractButton*>(); const auto* button : buttons) {
+    if (!button->isVisible() || button->text().isEmpty() || button->property("pagerNavigation").toBool()) continue;
+    if (const auto* tool = qobject_cast<const QToolButton*>(button); tool && tool->toolButtonStyle() == Qt::ToolButtonIconOnly) continue;
+    if (button->width() < button->sizeHint().width())
+      return QStringLiteral("button needs width %1, allocated %2; text=%3").arg(button->sizeHint().width()).arg(button->width()).arg(button->text());
+  }
+  for (const auto tables = root.findChildren<QTableWidget*>(); const auto* table : tables) {
+    const auto* header = table->horizontalHeader();
+    if (!table->isVisible() || !header->isVisible()) continue;
+    for (int column = 0; column < table->columnCount(); ++column) {
+      const auto* item = table->horizontalHeaderItem(column);
+      if (!item || table->isColumnHidden(column)) continue;
+      const int textWidth = header->fontMetrics().horizontalAdvance(item->text());
+      if (header->sectionSize(column) < textWidth)
+        return QStringLiteral("table header needs width %1, allocated %2; text=%3").arg(textWidth).arg(header->sectionSize(column)).arg(item->text());
     }
   }
   for (const auto boxes = root.findChildren<ui::ContentHintBox*>(); auto* box : boxes) {

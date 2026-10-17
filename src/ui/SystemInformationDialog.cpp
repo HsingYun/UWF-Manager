@@ -228,6 +228,7 @@ SystemInformationDialog::SystemInformationDialog(QString report, QWidget* parent
   reportLayout->addWidget(divider);
 
   auto* editor = new QPlainTextEdit(reportCard);
+  editor->setLayoutDirection(Qt::LeftToRight);
   editor->setObjectName(QStringLiteral("systemInformationReport"));
   editor->setReadOnly(true);
   editor->setLineWrapMode(QPlainTextEdit::NoWrap);

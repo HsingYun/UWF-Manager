@@ -402,6 +402,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
     edit->setReadOnly(true);
     edit->setObjectName("planText");
     edit->setLineWrapMode(QTextEdit::NoWrap);
+    edit->setLayoutDirection(Qt::LeftToRight);
   };
 
   auto* pendingText = new CommandTextEdit(this);
