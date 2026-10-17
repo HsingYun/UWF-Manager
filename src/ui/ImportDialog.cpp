@@ -317,6 +317,8 @@ ImportDialog::ImportDialog(dialogs::FileDialogProvider& fileDialogs, QWidget* pa
   resize(820, 600);
 
   auto* layout = new QVBoxLayout(this);
+  layout->setContentsMargins(20, 18, 20, 14);
+  layout->setSpacing(12);
 
   auto* desc = new QLabel(this);
   desc->setWordWrap(true);
@@ -353,6 +355,7 @@ ImportDialog::ImportDialog(dialogs::FileDialogProvider& fileDialogs, QWidget* pa
   // 结果表格初始隐藏，第一次 Import 后填充并显示；用户可以再次清空文本继续导。
   m_report = new QTableWidget(0, 4, this);
   m_report->setHorizontalHeaderLabels({I18n::tr("#"), I18n::tr("Status"), I18n::tr("Command"), I18n::tr("Detail")});
+  m_report->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   m_report->verticalHeader()->setVisible(false);
   m_report->setEditTriggers(QAbstractItemView::NoEditTriggers);
   m_report->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -472,7 +475,7 @@ void ImportDialog::appendReport(const QList<ImportReportRow>& rows) {
     m_report->setRowCount(sepRow + 1);
     auto* sep = new QTableWidgetItem(I18n::tr("── Batch %1 ──").arg(m_batchNo));
     QFont f = sep->font();
-    f.setBold(true);
+    f.setWeight(QFont::Medium);
     sep->setFont(f);
     sep->setForeground(QBrush(tm.color(Sem::FgMuted)));
     sep->setTextAlignment(Qt::AlignCenter);

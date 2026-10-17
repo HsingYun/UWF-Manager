@@ -172,7 +172,7 @@ SystemInformationDialog::SystemInformationDialog(QString report, QWidget* parent
   auto* title = new QLabel(I18n::tr("Diagnostic snapshot"), headingText);
   QFont titleFont = title->font();
   titleFont.setPointSizeF(titleFont.pointSizeF() + 2.0);
-  titleFont.setWeight(QFont::DemiBold);
+  titleFont.setWeight(QFont::Medium);
   title->setFont(titleFont);
   headingTextLayout->addWidget(title);
   auto* subtitle = new QLabel(I18n::tr("System, security, UWF, enhanced mode, and recent application logs."), headingText);
@@ -214,7 +214,7 @@ SystemInformationDialog::SystemInformationDialog(QString report, QWidget* parent
   reportToolbarLayout->setSpacing(8);
   auto* reportTitle = new QLabel(I18n::tr("Diagnostic report"), reportToolbar);
   QFont reportTitleFont = reportTitle->font();
-  reportTitleFont.setWeight(QFont::DemiBold);
+  reportTitleFont.setWeight(QFont::Medium);
   reportTitle->setFont(reportTitleFont);
   reportToolbarLayout->addWidget(reportTitle);
   reportToolbarLayout->addStretch();

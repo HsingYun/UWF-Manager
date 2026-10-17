@@ -176,6 +176,8 @@ OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, OverlayFilesS
   resize(760, 540);
 
   auto* layout = new QVBoxLayout(this);
+  layout->setContentsMargins(20, 18, 20, 14);
+  layout->setSpacing(12);
 
   // 简介：UI 风格的精简版（不是把官方文档原文搬过来），只抓三件事——
   // 别拿来决策、慢且可能失败、列表本身就不精确。
@@ -235,7 +237,7 @@ OverlayFilesDialog::OverlayFilesDialog(const QString& driveLetter, OverlayFilesS
   m_pageInfo->setMinimumWidth(220);
   m_nextBtn = new QPushButton(QStringLiteral("›"), this);
   m_lastBtn = new QPushButton(QStringLiteral("»"), this);
-  for (auto* b : {m_firstBtn, m_prevBtn, m_nextBtn, m_lastBtn}) b->setMaximumWidth(36);
+  configurePagerButtons({m_firstBtn, m_prevBtn, m_nextBtn, m_lastBtn});
   pageRow->addStretch(1);
   pageRow->addWidget(m_firstBtn);
   pageRow->addWidget(m_prevBtn);

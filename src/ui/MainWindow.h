@@ -198,6 +198,7 @@ class MainWindow : public QMainWindow {
   // 后续 show 不再重复。让首屏的几何和样式与切换路径完全一致——polish /
   // QStyle 一些计算只有在 widget 真正进入 shown 状态后才稳定。
   bool m_firstShowDone = false;
+  bool m_initialGeometryApplied = false;
   bool m_exitRequested = false;
 
   // 系统托盘（图标 + 右键菜单）——独立组件，由本窗口编排。

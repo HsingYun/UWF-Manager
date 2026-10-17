@@ -32,7 +32,6 @@
 #include "src/app/StartupOptions.h"
 #include "src/app/UserConfig.h"
 #include "src/service/EnhancedModeService.h"
-#include "src/ui/CenteredTextStyle.h"
 #include "src/ui/I18n.h"
 #include "src/ui/MainWindow.h"
 #include "src/ui/ThemeManager.h"
@@ -70,23 +69,7 @@ std::optional<int> handleSingleInstanceStartup(uwf::app::SecureSingleInstance& s
   return std::nullopt;
 }
 
-void initializeUserInterface(QApplication& app, const uwf::app::UserConfig& config) {
-  // 用自定义 QProxyStyle 抵消 QToolButton / QTabBar 文字基线偏下的问题。
-  app.setStyle(new uwf::ui::CenteredTextStyle());
-
-  // 字体渲染：关 hinting + 关次像素 AA。Microsoft YaHei 在 9-10pt 小字号
-  // 下，hinter 把笔画对齐像素网格时整除不下来的几条会落在分数像素被 ClearType
-  // 反锯齿成"半透明 2 像素"，看起来比对齐到整数行的笔画细。关掉 hinting 让
-  // 所有笔画用同一种次像素 AA 处理，粗细就一致；NoSubpixelAntialias 进一步
-  // 把次像素 AA 退回灰度 AA，避免 ClearType 在某些 DPI 下产生彩边。代价是
-  // 字看起来略软（"Mac 风"），但更整齐。
-  {
-    QFont f = app.font();
-    f.setHintingPreference(QFont::PreferNoHinting);
-    f.setStyleStrategy(static_cast<QFont::StyleStrategy>(QFont::PreferAntialias | QFont::NoSubpixelAntialias));
-    app.setFont(f);
-  }
-
+void initializeUserInterface(const uwf::app::UserConfig& config) {
   uwf::ui::I18n::instance().applyStartupLanguage(config.language);
 
   // 在创建窗口前应用启动偏好，避免先显示默认语言或主题再切换。工具栏的
@@ -165,7 +148,7 @@ int runApplication(int argc, char* argv[], const uwf::app::StartupOptions& optio
   uwf::app::SecureSingleInstance singleInstance;
   if (const auto forwardedExitCode = handleSingleInstanceStartup(singleInstance, options)) return *forwardedExitCode;
 
-  initializeUserInterface(app, uwf::app::readUserConfig(QCoreApplication::applicationDirPath()));
+  initializeUserInterface(uwf::app::readUserConfig(QCoreApplication::applicationDirPath()));
   UWF_LOG_I("main") << "application started: pid=" << QCoreApplication::applicationPid();
   const auto check = checkRuntimeEnvironment();
   // WMI 运行时守卫覆盖完整 UI 事件循环。窗口及其控制器先销毁，随后守卫在

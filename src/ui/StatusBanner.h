@@ -17,12 +17,16 @@
 #pragma once
 
 #include <QLabel>
+#include <memory>
+
+class QTextDocument;
 
 namespace uwf::ui {
 
 // 状态横幅（错误 / 警告条）。替代原先靠 QSS border-radius 画圆角底+边框的 QLabel：
 // Qt 的 QSS 圆角不抗锯齿，且半透明底叠半透明边在锯齿角上会叠出杂色。本类改用 QPainter
-// 抗锯齿绘制圆角底+边框，文字仍由 QLabel 基类按 QSS 的 color / padding 绘制。
+// 抗锯齿绘制圆角底+边框。错误消息按纯文本排版，长路径允许在字符间换行，
+// 不把最长连续字符段当作窗口最小宽度；测量和绘制共用同一套排版规则。
 //
 // 配色按动态属性 "level" 取："warn" → 琥珀色警告，其余 → 红色错误；并随当前主题切换。
 // 用法和原来一致：setObjectName("statusBanner")（沿用 QSS 的文字色 / 内边距）、需要警告
@@ -30,9 +34,15 @@ namespace uwf::ui {
 class StatusBanner : public QLabel {
  public:
   explicit StatusBanner(QWidget* parent = nullptr);
+  [[nodiscard]] QSize minimumSizeHint() const override;
+  [[nodiscard]] int heightForWidth(int width) const override;
 
  protected:
+  bool event(QEvent* event) override;
   void paintEvent(QPaintEvent* ev) override;
+
+ private:
+  [[nodiscard]] std::unique_ptr<QTextDocument> documentForWidth(int width) const;
 };
 
 }  // namespace uwf::ui

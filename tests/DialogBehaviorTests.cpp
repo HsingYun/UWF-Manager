@@ -21,12 +21,15 @@
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
+#include <QHeaderView>
 #include <QLabel>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QScopeGuard>
+#include <QScrollArea>
 #include <QSignalSpy>
 #include <QTableWidget>
 #include <QTemporaryDir>
@@ -52,6 +55,9 @@
 #include "ui/I18n.h"
 #include "ui/OverlayFilesDialog.h"
 #include "ui/RegistryPickerDialog.h"
+#include "ui/ThemeManager.h"
+#include "UiTextChecks.h"
+#include "UiTestInput.h"
 
 namespace {
 
@@ -152,6 +158,9 @@ QString labelContaining(const QWidget* parent, const QString& needle) {
   for (const auto labels = parent->findChildren<QLabel*>(); const auto* label : labels) {
     if (label->text().contains(needle, Qt::CaseInsensitive)) return label->text();
   }
+  for (const auto texts = parent->findChildren<uwf::ui::ContentHintBox*>(); const auto* text : texts) {
+    if (text->toPlainText().contains(needle, Qt::CaseInsensitive)) return text->toPlainText();
+  }
   return {};
 }
 
@@ -197,6 +206,8 @@ class DialogBehaviorTests final : public QObject {
   void registryExclusionDisablesValueSelection();
   void commitReportPaginatesAndCopiesTheCompleteDeleteReport();
   void commitReportKeepsPersistColumnsAndEmptyStateConsistent();
+  void dataDialogsKeepCompactGeometryAndReadableColumns_data();
+  void dataDialogsKeepCompactGeometryAndReadableColumns();
 };
 
 void DialogBehaviorTests::overlayFilesNormalizesMergesAndClassifiesMockRows() {
@@ -605,6 +616,11 @@ void DialogBehaviorTests::registryAddressBarNavigatesShorthandAndClearResetsSele
   QCOMPARE(tree->currentItem()->text(0), QStringLiteral("Product"));
   QCOMPARE(address->text(), QStringLiteral("HKEY_LOCAL_MACHINE\\SOFTWARE\\Vendor\\Product"));
   QCOMPARE(values->rowCount(), 4);
+  QVERIFY(dialog.isVisible());
+  QVERIFY(!dialog.selection().has_value());
+  QTest::keyClick(address, Qt::Key_Enter);
+  QVERIFY(dialog.isVisible());
+  QVERIFY(!dialog.selection().has_value());
 
   address->clear();
   QCOMPARE(tree->selectedItems().size(), 0);
@@ -694,6 +710,136 @@ void DialogBehaviorTests::commitReportKeepsPersistColumnsAndEmptyStateConsistent
   uwf::ui::showCommitReport(nullptr, {}, uwf::ui::CommitOperation::Persist);
   QVERIFY(inspected);
   QVERIFY(structureValid);
+}
+
+void DialogBehaviorTests::dataDialogsKeepCompactGeometryAndReadableColumns_data() {
+  QTest::addColumn<bool>("chinese");
+  QTest::addColumn<bool>("dark");
+  for (const bool chinese : {false, true})
+    for (const bool dark : {false, true}) QTest::newRow(chinese ? (dark ? "zh-dark" : "zh-light") : (dark ? "en-dark" : "en-light")) << chinese << dark;
+}
+
+void DialogBehaviorTests::dataDialogsKeepCompactGeometryAndReadableColumns() {
+  using namespace uwf::ui;
+  QFETCH(bool, chinese);
+  QFETCH(bool, dark);
+  const auto language = I18n::instance().lang();
+  const auto theme = ThemeManager::instance().current();
+  const auto restore = qScopeGuard([&] {
+    I18n::instance().setLang(language);
+    ThemeManager::instance().apply(theme);
+  });
+  I18n::instance().setLang(chinese ? I18n::Lang::Zh_CN : I18n::Lang::En);
+  ThemeManager::instance().apply(dark ? Theme::Dark : Theme::Light);
+  const QString screenshots = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
+  const auto inspect = [&](QDialog& dialog, const QString& name) {
+    dialog.resize(1000, 600);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+    QCOMPARE(dialog.size(), QSize(1000, 600));
+    QTRY_VERIFY2_WITH_TIMEOUT(uwf::test::clippedLabel(dialog).isEmpty(), qPrintable(uwf::test::clippedLabel(dialog)), 2000);
+    for (const auto buttons = dialog.findChildren<QPushButton*>(); auto* button : buttons) {
+      if (!button->isVisible()) continue;
+      QVERIFY2(dialog.rect().contains(QRect(button->mapTo(&dialog, QPoint()), button->size())), qPrintable(name + ": " + button->text()));
+      QVERIFY(!button->visibleRegion().isEmpty());
+    }
+    for (const auto tables = dialog.findChildren<QTableWidget*>(); auto* table : tables) {
+      QVERIFY(table->horizontalHeader()->defaultAlignment().testFlag(Qt::AlignLeft));
+      QVERIFY(table->viewport()->width() > 0 && table->viewport()->height() > 0);
+    }
+    if (!screenshots.isEmpty()) {
+      QVERIFY(QDir().mkpath(screenshots));
+      QVERIFY(dialog.grab().save(QDir(screenshots).filePath(name + "-" + QString::fromLatin1(QTest::currentDataTag()) + ".png")));
+    }
+  };
+  {
+    auto browser = registrySnapshot();
+    const std::string longKey = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Vendor\\Product\\" + std::string(180, 'x');
+    const std::string longValue(180, 'v');
+    const std::string veryLongValue(16383, 'v');
+    browser.children["HKEY_LOCAL_MACHINE\\SOFTWARE\\Vendor\\Product"] = {std::string(180, 'x')};
+    browser.keyValues[longKey] = {{longValue, 1u, utf16Le(u"Mock data, no registry access")}, {veryLongValue, 1u, utf16Le(u"Mock long value")}};
+    RegistryPickerDialog dialog(RegistryPickerDialog::Mode::CommitValue, I18n::tr("Select registry key / value"), browser);
+    dialog.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+    auto* address = dialog.findChild<QLineEdit*>();
+    QVERIFY(address);
+    address->setText(QStringLiteral("HKLM\\SOFTWARE\\Vendor\\Product"));
+    QTest::keyClick(address, Qt::Key_Return);
+    auto* table = dialog.findChild<QTableWidget*>();
+    QVERIFY(table);
+    QTRY_COMPARE(table->rowCount(), 4);
+    inspect(dialog, QStringLiteral("registry-picker"));
+    address->setText(QString::fromStdString(longKey));
+    QTest::keyClick(address, Qt::Key_Return);
+    // 即使数据源没有默认值，选择器也必须保留不可选择的默认值占位行。
+    QTRY_COMPARE(table->rowCount(), 3);
+    QVERIFY(!table->item(0, 0)->flags().testFlag(Qt::ItemIsSelectable));
+    QCOMPARE(table->item(0, 0)->data(Qt::UserRole).toString(), QString());
+    table->setCurrentCell(1, 0);
+    QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier, table->visualItemRect(table->item(1, 0)).center());
+    QTRY_VERIFY(uwf::test::clippedLabel(dialog).isEmpty());
+    const auto selections = dialog.findChildren<ContentHintBox*>();
+    QCOMPARE(selections.size(), 2);
+    QCOMPARE(selections[0]->toPlainText(), I18n::tr("Key: %1").arg(QString::fromStdString(longKey)));
+    QCOMPARE(selections[1]->toPlainText(), I18n::tr("Value: %1").arg(QString::fromStdString(longValue)));
+    inspect(dialog, QStringLiteral("registry-picker-long-selection"));
+    table->setCurrentCell(2, 0);
+    QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier, table->visualItemRect(table->item(2, 0)).center());
+    QCOMPARE(selections[1]->toPlainText(), I18n::tr("Value: %1").arg(QString::fromStdString(veryLongValue)));
+    inspect(dialog, QStringLiteral("registry-picker-long-value"));
+    auto* selectionScroll = dialog.findChild<QScrollArea*>(QStringLiteral("registrySelectionScroll"));
+    QVERIFY(selectionScroll);
+    QTRY_VERIFY_WITH_TIMEOUT(selectionScroll->verticalScrollBar()->maximum() > 0, 2000);
+    selectionScroll->verticalScrollBar()->setValue(0);
+    uwf::test::sendWheel(*selectionScroll->viewport(), QPoint(0, -120));
+    QTRY_VERIFY_WITH_TIMEOUT(selectionScroll->verticalScrollBar()->value() > 0, 1500);
+    uwf::test::sendWheel(*selectionScroll->viewport(), QPoint(0, 120));
+    QTRY_COMPARE(selectionScroll->verticalScrollBar()->value(), 0);
+    QTest::keyClick(selectionScroll->verticalScrollBar(), Qt::Key_End);
+    QTRY_COMPARE(selectionScroll->verticalScrollBar()->value(), selectionScroll->verticalScrollBar()->maximum());
+    auto* ok = buttonByRole(&dialog, QDialogButtonBox::AcceptRole);
+    QVERIFY(ok && ok->isEnabled());
+    QTest::mouseClick(ok, Qt::LeftButton);
+    QVERIFY(dialog.selection().has_value());
+    QCOMPARE(dialog.selection()->key, QString::fromStdString(longKey));
+    QCOMPARE(dialog.selection()->valueName, QString::fromStdString(veryLongValue));
+  }
+  {
+    MemoryFileDialogs files;
+    OverlayFilesDialog dialog(QStringLiteral("C:"),
+                              overlayServices(
+                                  [](const QString&, std::stop_token) {
+                                    QVector<OverlayFileEntry> entries;
+                                    for (int i = 0; i < 100; ++i)
+                                      entries.append({QStringLiteral("\\Application Data\\用户数据\\document-%1.txt:$DATA").arg(i), {}, false, false, 4096});
+                                    return entries;
+                                  },
+                                  files));
+    dialog.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+    auto* list = dialog.findChild<QListWidget*>();
+    QVERIFY(list);
+    QTRY_VERIFY_WITH_TIMEOUT(list->count() > 0, 2000);
+    inspect(dialog, QStringLiteral("overlay-files"));
+    QVERIFY(list->viewport()->width() > 0 && list->viewport()->height() > 0);
+    QVERIFY(files.requests.isEmpty());
+  }
+  for (const auto operation : {CommitOperation::Persist, CommitOperation::DeleteAndPersist}) {
+    bool inspected = false;
+    QTimer::singleShot(0, this, [&] {
+      auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+      if (!dialog) return;
+      inspect(*dialog, operation == CommitOperation::Persist ? QStringLiteral("commit-report") : QStringLiteral("deletion-report"));
+      inspected = true;
+      dialog->reject();
+    });
+    const QList<CommitReportRow> rows{
+        {I18n::tr("Succeeded"), QStringLiteral("C:\\Application Data\\用户数据\\Saved State.json"), QStringLiteral("-"), QStringLiteral("-"), true, false},
+        {I18n::tr("Failed"), QStringLiteral("C:\\Application Data\\用户数据\\Locked State.json"), QStringLiteral("0x80041003"),
+         QStringLiteral("Mock access denied; no system operation was performed."), true, true}};
+    showCommitReport(nullptr, rows, operation);
+    QVERIFY(inspected);
+  }
 }
 
 }  // namespace

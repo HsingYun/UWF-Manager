@@ -22,6 +22,7 @@
 #include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QHeaderView>
+#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMouseEvent>
@@ -39,10 +40,12 @@
 
 #include "../core/RegistryExclusionPolicy.h"
 #include "../util/RegistryKey.h"
+#include "ContentHintBox.h"
 #include "Dialogs.h"
 #include "I18n.h"
 #include "PathElideDelegate.h"
 #include "ThemeManager.h"
+#include "VerticalScrollArea.h"
 
 namespace uwf::ui {
 
@@ -210,7 +213,8 @@ RegistryPickerDialog::RegistryPickerDialog(Mode mode, const QString& title, cons
 
 void RegistryPickerDialog::buildUi() {
   auto* root = new QVBoxLayout(this);
-  root->setSpacing(10);
+  root->setContentsMargins(20, 18, 20, 14);
+  root->setSpacing(12);
 
   // 地址栏：用户可输入 / 粘贴完整键路径，回车跳到该路径（树自动展开）。
   // placeholder 也告诉用户支持简写 hive（HKLM / HKCU）。最右侧一个刷新按钮——
@@ -228,7 +232,7 @@ void RegistryPickerDialog::buildUi() {
   addrRow->addWidget(m_addressBar, 1);
   addrRow->addWidget(refreshBtn);
   root->addLayout(addrRow);
-  connect(m_addressBar, &QLineEdit::returnPressed, this, &RegistryPickerDialog::onAddressBarReturnPressed);
+  m_addressBar->installEventFilter(this);
   // 地址栏被清空（X 按钮 / 用户全删 / 任何外部 setText("")）→ 回初态。
   // 树和值表选中都清掉、树折叠回 populateRootHives 后的默认（仅 HKLM 展开）。
   // setText 不为空时 onTreeSelectionChanged 仍会同步地址栏，不会丢失选中。
@@ -298,20 +302,33 @@ void RegistryPickerDialog::buildUi() {
   split->setSizes({250, 750});
   root->addWidget(split, 1);
 
-  // 底部"当前选择"展示：键一行，支持值选择的模式额外加值一行。Exclusion 不
+  // 底部“当前选择”：键和值分开显示，长文本可换行和滚动。Exclusion 不
   // 展示值——值表纯辅助查看、整表禁选、不参与结果，再写一行徒增噪音。可选中
   // 文本方便用户拷走路径。
-  m_keyLabel = new QLabel(this);
+  auto* selectionHost = new QWidget(this);
+  auto* selectionLayout = new QVBoxLayout(selectionHost);
+  selectionLayout->setContentsMargins(0, 0, 0, 0);
+  selectionLayout->setSpacing(6);
+  m_keyLabel = new ContentHintBox(selectionHost);
   m_keyLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  m_keyLabel->setWordWrap(true);
-  root->addWidget(m_keyLabel);
+  m_keyLabel->setStyleSheet("QTextBrowser { background: transparent; border: 0; padding: 0; }");
+  selectionLayout->addWidget(m_keyLabel);
 
   if (supportsValueSelection()) {
-    m_valueLabel = new QLabel(this);
+    m_valueLabel = new ContentHintBox(selectionHost);
     m_valueLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_valueLabel->setWordWrap(true);
-    root->addWidget(m_valueLabel);
+    m_valueLabel->setStyleSheet("QTextBrowser { background: transparent; border: 0; padding: 0; }");
+    selectionLayout->addWidget(m_valueLabel);
   }
+  // 当前选择通常只有一两行；极长的值名允许在独立区域滚动，不能把树、值表
+  // 和确认按钮一起挤出窗口。内容仍是完整可选文本，不以省略号替代。
+  auto* selectionScroll = new VerticalScrollArea(this);
+  selectionScroll->setObjectName(QStringLiteral("registrySelectionScroll"));
+  selectionScroll->setWidget(selectionHost);
+  const int selectionGap = supportsValueSelection() ? selectionLayout->spacing() : 0;
+  selectionScroll->setMinimumHeight(fontMetrics().lineSpacing() * (supportsValueSelection() ? 2 : 1) + selectionGap);
+  selectionScroll->setMaximumHeight(fontMetrics().lineSpacing() * 6 + selectionGap);
+  root->addWidget(selectionScroll);
 
   // 显式 I18n::tr 的按钮——不走 QDialogButtonBox::Ok / Cancel 标准枚举，那条路径
   // 的文案来自 Qt 内置 qt_zh_CN.qm（我们没加载），会卡在英文。
@@ -473,8 +490,7 @@ void RegistryPickerDialog::onRefresh() {
 
 void RegistryPickerDialog::onTreeSelectionChanged() {
   const QString key = currentKeyPath();
-  // 地址栏跟随选中——但不要让 setText 触发我们自己的 returnPressed 回环。
-  // QLineEdit::setText 不会触发 returnPressed，安全。
+  // 地址栏跟随选中；程序写入文本不会触发按键导航。
   if (!key.isEmpty()) m_addressBar->setText(key);
   refreshValueTable(key);
   refreshSelectionLabels();
@@ -487,6 +503,15 @@ void RegistryPickerDialog::onValueSelectionChanged() {
 }
 
 bool RegistryPickerDialog::eventFilter(QObject* obj, QEvent* ev) {
+  // 地址栏的 Enter 只表示跳转；不能继续冒泡到 QDialog，否则默认的 OK
+  // 会同时被触发，导致跳转成功后立即接受并关闭对话框。
+  if (obj == m_addressBar && ev->type() == QEvent::KeyPress) {
+    const auto key = static_cast<QKeyEvent*>(ev)->key();
+    if (key == Qt::Key_Return || key == Qt::Key_Enter) {
+      onAddressBarReturnPressed();
+      return true;
+    }
+  }
   // Exclusion 模式整表 NoSelection，没选中可清——直接走默认。
   if (supportsValueSelection() && m_valueTable && obj == m_valueTable->viewport() && ev->type() == QEvent::MouseButtonPress) {
     const auto* me = static_cast<QMouseEvent*>(ev);
@@ -602,7 +627,7 @@ void RegistryPickerDialog::navigateTo(const QString& keyPath) {
 
 void RegistryPickerDialog::refreshSelectionLabels() {
   const QString key = currentKeyPath();
-  m_keyLabel->setText(I18n::tr("Key: %1").arg(key.isEmpty() ? I18n::tr("(none)") : key));
+  m_keyLabel->setPlainText(I18n::tr("Key: %1").arg(key.isEmpty() ? I18n::tr("(none)") : key));
 
   // Exclusion 模式没有 value 行——值不参与结果，再展示一行只是噪音。
   if (!m_valueLabel) return;
@@ -620,7 +645,7 @@ void RegistryPickerDialog::refreshSelectionLabels() {
   } else {
     valueText = I18n::tr("(whole key recursive, including subkeys)");
   }
-  m_valueLabel->setText(I18n::tr("Value: %1").arg(valueText));
+  m_valueLabel->setPlainText(I18n::tr("Value: %1").arg(valueText));
 }
 
 void RegistryPickerDialog::updateOkButton() {

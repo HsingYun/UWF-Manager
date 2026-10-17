@@ -22,6 +22,7 @@
 #include <QApplication>
 #include <QByteArray>
 #include <QFile>
+#include <QFontDatabase>
 #include <QIconEngine>
 #include <QPainter>
 #include <QPalette>
@@ -33,6 +34,7 @@
 
 #include "../util/Log.h"
 #include "../util/RegistryKey.h"
+#include "CenteredTextStyle.h"
 
 namespace uwf::ui {
 
@@ -104,6 +106,13 @@ ThemeManager& ThemeManager::instance() {
 }
 
 ThemeManager::ThemeManager() : m_systemTheme(detectSystemShellTheme()) {
+  // 所有 UI 入口共用系统字体和自然轮廓排版。Windows 下采用 DirectWrite
+  // 平滑字形，避免小字号粗体被横向像素取整；保留 ClearType，不强制灰度渲染。
+  QApplication::setStyle(new CenteredTextStyle());
+  QFont font = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
+  font.setHintingPreference(QFont::PreferNoHinting);
+  font.setStyleStrategy(QFont::PreferAntialias);
+  QApplication::setFont(font);
   if (auto* dispatcher = QAbstractEventDispatcher::instance()) dispatcher->installNativeEventFilter(this);
 }
 

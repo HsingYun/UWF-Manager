@@ -25,6 +25,7 @@
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QPushButton>
 #include <QStyle>
 #include <QVariant>
 #include <QWidget>
@@ -103,6 +104,19 @@ void markDirty(QWidget* w, bool dirty) {
   w->setProperty("dirty", dirty);
   w->style()->unpolish(w);
   w->style()->polish(w);
+}
+
+void configurePagerButtons(const std::array<QPushButton*, 4>& buttons) {
+  const std::array captions{I18n::tr("First page"), I18n::tr("Previous page"), I18n::tr("Next page"), I18n::tr("Last page")};
+  for (size_t index = 0; index < buttons.size(); ++index) {
+    auto* button = buttons[index];
+    button->setProperty("pagerNavigation", true);
+    button->setMaximumWidth(36);
+    button->setToolTip(captions[index]);
+#if QT_CONFIG(accessibility)
+    button->setAccessibleName(captions[index]);
+#endif
+  }
 }
 
 QString enabledStateLabel(bool enabled) {

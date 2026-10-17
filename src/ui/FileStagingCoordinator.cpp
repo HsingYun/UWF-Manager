@@ -20,6 +20,7 @@
 #include <QElapsedTimer>
 #include <QFont>
 #include <QLabel>
+#include <QLineEdit>
 #include <QProgressBar>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -96,7 +97,7 @@ class FileStagingCoordinator::Operation final : public QDialog {
     layout->setSpacing(12);
     m_heading = new QLabel(I18n::tr("Committing staged files"), this);
     QFont font = m_heading->font();
-    font.setBold(true);
+    font.setWeight(QFont::Medium);
     font.setPointSizeF(font.pointSizeF() + 1.0);
     m_heading->setFont(font);
     layout->addWidget(m_heading);
@@ -111,10 +112,12 @@ class FileStagingCoordinator::Operation final : public QDialog {
     m_progress->setRange(0, 0);
     layout->addWidget(m_progress);
 
-    m_path = new QLabel(this);
+    m_path = new QLineEdit(this);
     m_path->setObjectName(QStringLiteral("fileStagingCommandPath"));
-    m_path->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_path->setStyleSheet(QStringLiteral("color: %1;").arg(ThemeManager::instance().color(Sem::FgMuted).name()));
+    m_path->setReadOnly(true);
+    m_path->setFrame(false);
+    m_path->setStyleSheet(
+        QStringLiteral("QLineEdit { color: %1; background: transparent; border: 0; padding: 0; }").arg(ThemeManager::instance().color(Sem::FgMuted).name()));
     m_path->hide();
     layout->addWidget(m_path);
 
@@ -160,6 +163,7 @@ class FileStagingCoordinator::Operation final : public QDialog {
         m_detail->setText(
             I18n::tr("Processed %1 of %2 file(s).").arg(static_cast<qulonglong>(progress.processedFiles)).arg(static_cast<qulonglong>(progress.totalFiles)));
         m_path->setText(progress.currentPath);
+        m_path->setCursorPosition(0);
         m_path->setToolTip(progress.currentPath);
         m_path->setVisible(!progress.currentPath.isEmpty());
         notifyProgress(m_progressObserver, progress.processedFiles, progress.totalFiles);
@@ -218,7 +222,7 @@ class FileStagingCoordinator::Operation final : public QDialog {
   QLabel* m_heading = nullptr;
   QLabel* m_detail = nullptr;
   QProgressBar* m_progress = nullptr;
-  QLabel* m_path = nullptr;
+  QLineEdit* m_path = nullptr;
   QTimer m_timer;
   QElapsedTimer m_visibleElapsed;
   std::optional<FileStagingBatchResult> m_finalResult;

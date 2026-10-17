@@ -42,15 +42,13 @@ AboutDialog::AboutDialog(std::function<QString()> systemInformationProvider, QWi
 }
 
 void AboutDialog::buildUi() {
-  // 改用普通 QDialog 而非 QMessageBox：QMessageBox 内部 label 走另一条
-  // 字体路径，全局 app.setFont() 设置的 hinting / styleStrategy 不会传播过去，
-  // 中文渲染会"糊"。QDialog + QLabel 跟其它对话框一样能继承 app font。
+  // 使用与其他页面一致的普通对话框，统一继承应用字体和主题。
   setWindowTitle(I18n::tr("About UWF Manager"));
   setMinimumWidth(520);
 
   auto* layout = new QVBoxLayout(this);
-  layout->setContentsMargins(20, 16, 20, 12);
-  layout->setSpacing(10);
+  layout->setContentsMargins(20, 18, 20, 14);
+  layout->setSpacing(12);
 
   // 头部：左侧软件 logo，右侧标题 + 版本号竖排。
   auto* header = new QHBoxLayout();
@@ -69,7 +67,7 @@ void AboutDialog::buildUi() {
   // 避免 QTextDocument 的 <h3> 默认合成粗体（同样的 hinting 问题）。
   auto* title = new QLabel(I18n::applicationTitle(), this);
   QFont titleFont = title->font();
-  titleFont.setBold(true);
+  titleFont.setWeight(QFont::Medium);
   titleFont.setPointSizeF(titleFont.pointSizeF() + 3);
   title->setFont(titleFont);
   title->setTextInteractionFlags(Qt::TextSelectableByMouse);

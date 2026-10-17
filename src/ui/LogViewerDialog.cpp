@@ -48,6 +48,7 @@
 #include "Pager.h"
 #include "PathElideDelegate.h"
 #include "TableText.h"
+#include "UiUtil.h"
 
 namespace uwf::ui {
 
@@ -58,6 +59,8 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   setWindowTitle(I18n::tr("Log"));
   resize(1100, 560);
   auto* layout = new QVBoxLayout(this);
+  layout->setContentsMargins(20, 18, 20, 14);
+  layout->setSpacing(12);
 
   // 本地 QTableWidget 子类：暴露 resize 钩子，让外层在 viewport 高度变化时
   // 重算单页能装多少行。无 Q_OBJECT，纯虚函数 override。
@@ -84,6 +87,7 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   // 永远不出垂直滚动条——pageSize 跟 viewport 高度走，单页内容必然刚好填满。
   table->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
   auto* hh = table->horizontalHeader();
+  hh->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   hh->setSectionResizeMode(0, QHeaderView::Interactive);
   hh->setSectionResizeMode(1, QHeaderView::Interactive);
   // Tag 列按内容定宽——最长 tag 是 "UWF_RegistryFilter"，让 Qt 自己量；
@@ -124,7 +128,7 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   pageInfo->setMinimumWidth(220);
   auto* nextBtn = new QPushButton(QStringLiteral("›"), this);
   auto* lastBtn = new QPushButton(QStringLiteral("»"), this);
-  for (auto* b : {firstBtn, prevBtn, nextBtn, lastBtn}) b->setMaximumWidth(36);
+  configurePagerButtons({firstBtn, prevBtn, nextBtn, lastBtn});
   pageRow->addStretch(1);
   pageRow->addWidget(firstBtn);
   pageRow->addWidget(prevBtn);

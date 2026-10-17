@@ -106,6 +106,10 @@ target_include_directories(UwfUiBehaviorTests PRIVATE "${PROJECT_SOURCE_DIR}/src
 target_link_libraries(UwfUiBehaviorTests PRIVATE UwfOverlayRuntime Qt6::Widgets Qt6::Svg Qt6::Test advapi32 shell32 user32)
 uwf_configure_cpp_target(UwfUiBehaviorTests)
 uwf_add_test_resources(UwfUiBehaviorTests)
+qt_add_translations(UwfUiBehaviorTests
+        QM_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/UwfUiBehaviorTests_translations"
+        TS_FILES ../resources/i18n/zh_CN.ts ../resources/i18n/qtbase_zh_CN.ts
+)
 
 add_test(NAME UwfUiBehaviorTests COMMAND UwfUiBehaviorTests)
 if (WIN32)
@@ -148,7 +152,6 @@ qt_add_executable(UwfApplicationUiBehaviorTests
         ../src/ui/ImportDialog.cpp
         ../src/ui/LogViewerDialog.cpp
         ../src/ui/MainWindow.cpp
-        ../src/ui/MarqueeHintBox.cpp
         ../src/ui/OverlayFilesDialog.cpp
         ../src/ui/OverlayUsageBar.cpp
         ../src/ui/PendingCollect.cpp
@@ -161,7 +164,6 @@ qt_add_executable(UwfApplicationUiBehaviorTests
         ../src/ui/SwitchButton.cpp
         ../src/ui/TableText.cpp
         ../src/ui/UiUtil.cpp
-        ../src/ui/CenteredTextStyle.cpp
         ../src/ui/CommitDispatcher.cpp
         ../src/ui/EnhancedModeDialog.cpp
         ../src/ui/FileStagingCoordinator.cpp
@@ -234,6 +236,10 @@ target_include_directories(UwfDialogBehaviorTests PRIVATE "${PROJECT_SOURCE_DIR}
 target_link_libraries(UwfDialogBehaviorTests PRIVATE UwfOverlayRuntime Qt6::Widgets Qt6::Svg Qt6::Test advapi32 ole32 shell32 user32 wbemuuid)
 uwf_configure_cpp_target(UwfDialogBehaviorTests)
 uwf_add_test_resources(UwfDialogBehaviorTests)
+qt_add_translations(UwfDialogBehaviorTests
+        QM_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/UwfDialogBehaviorTests_translations"
+        TS_FILES ../resources/i18n/zh_CN.ts ../resources/i18n/qtbase_zh_CN.ts
+)
 
 add_test(NAME UwfDialogBehaviorTests COMMAND UwfDialogBehaviorTests)
 if (WIN32)

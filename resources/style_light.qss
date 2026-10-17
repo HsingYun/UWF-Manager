@@ -10,10 +10,6 @@
    滚动条 / 把手 #3A4049 → #BDC1C6
 */
 
-* {
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI";
-}
-
 QMainWindow, QDialog {
     background-color: #F8F9FA;
     color: #1F1F1F;
@@ -21,8 +17,6 @@ QMainWindow, QDialog {
 
 QWidget {
     color: #1F1F1F;
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", sans-serif;
-    font-size: 9pt;
 }
 
 QToolBar#mainToolbar {
@@ -147,7 +141,7 @@ QFrame#statusCard {
 
 QLabel#statusSection {
     color: #1A73E8;
-    font-weight: bold;
+    font-weight: 500;
     font-size: 10.5pt;
     padding-top: 6px;
     padding-bottom: 2px;
@@ -171,7 +165,7 @@ QLabel#lockedHint {
     max-width: 18px;
     min-height: 18px;
     max-height: 18px;
-    font-weight: bold;
+    font-weight: 600;
     font-size: 10pt;
     qproperty-alignment: AlignCenter;
 }
@@ -251,7 +245,7 @@ QLabel#statusBarLabel {
 QLabel#panelTitle {
     color: #1F1F1F;
     font-size: 12pt;
-    font-weight: bold;
+    font-weight: 500;
     padding: 2px 0 8px 2px;
 }
 
@@ -340,6 +334,10 @@ QPushButton {
 
 QPushButton:hover {
     background: #F1F3F4;
+}
+
+QPushButton[pagerNavigation="true"] {
+    padding: 6px 8px;
 }
 
 QPushButton#primaryBtn {

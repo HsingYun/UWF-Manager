@@ -17,17 +17,12 @@
 #include "GlobalStatusPanel.h"
 
 #include <QComboBox>
-#include <QEvent>
 #include <QFrame>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPalette>
-#include <QScrollArea>
-#include <QScrollBar>
 #include <QSizePolicy>
 #include <QSpinBox>
-#include <QStyle>
 #include <algorithm>
 #include <format>
 #include <limits>
@@ -37,7 +32,6 @@
 #include "../util/ByteFormat.h"
 #include "I18n.h"
 #include "OverlayUsageBar.h"
-#include "RoundedCornerOverlay.h"
 #include "StatusBanner.h"
 #include "SwitchButton.h"
 #include "ThemeManager.h"
@@ -49,9 +43,6 @@ using core::OverlayType;
 
 namespace {
 
-// Rounded-corner overlay matches the scroll viewport; horizontal alignment is handled by layouts.
-constexpr qreal kCardInset = 0;
-constexpr qreal kCardRadius = 10;
 constexpr int kOverlaySpinMaxMb = std::numeric_limits<int>::max();
 
 int toOverlaySpinValue(const uint32_t valueMb) { return static_cast<int>(std::min<uint32_t>(valueMb, static_cast<uint32_t>(kOverlaySpinMaxMb))); }
@@ -185,22 +176,8 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   m_banner->hide();
   outer->addWidget(m_banner);
 
-  auto* scroll = new QScrollArea(this);
-  m_scroll = scroll;
-  scroll->setWidgetResizable(true);
-  scroll->setFrameShape(QFrame::NoFrame);
-  // QScrollArea 的 viewport 默认用 QPalette::Base 填底（#22252A 一类），
-  // 比 globalWrap 的 #1B1D20 深一号；内容不够长时底部空白露出来会穿帮。
-  // 走 QSS + backgroundRole 双保险：scroll 本身、viewport、里面的 scrollHost
-  // 全部设成透明，让父容器 globalWrap 的色透上来。
-  scroll->setStyleSheet("QScrollArea { background: transparent; border: none; } QScrollArea > QWidget > QWidget { background: transparent; }");
-  scroll->setBackgroundRole(QPalette::NoRole);
-  scroll->viewport()->setBackgroundRole(QPalette::NoRole);
-  scroll->viewport()->setAutoFillBackground(false);
-  m_scrollHost = new QWidget(scroll);
-  m_scrollHost->setBackgroundRole(QPalette::NoRole);
-  m_scrollHost->setAutoFillBackground(false);
-  auto* body = new QVBoxLayout(m_scrollHost);
+  m_controls = new QWidget(this);
+  auto* body = new QVBoxLayout(m_controls);
   body->setContentsMargins(0, 0, 0, 0);
   body->setSpacing(10);
 
@@ -245,11 +222,9 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
     // 因为我们的范围是动态计算的，用户的意图是"尽量接近上限"。
     s->setCorrectionMode(QAbstractSpinBox::CorrectToNearestValue);
     s->setKeyboardTracking(false);
-    // 三个数值 spinbox 固定同宽：160 足以显示 uint32_t 最大值（10 位数字）
-    // 加 " MB" 后缀和上下箭头按钮；用 Fixed 水平策略锁死宽度，避免 grid 按
-    // 行内容差异拉伸某一行，视觉上三行的输入框错开。
-    s->setFixedWidth(160);
-    s->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    // 宽度交给字体、数值范围及原生样式共同测量；同一网格列保持等宽。
+    // 固定像素宽度在放大字号或不同 Windows 样式下可能裁掉数值。
+    s->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     return s;
   };
   auto addNumRow = [&](const QString& label, QSpinBox*& next, const QString& suffix, QLabel** outLabel = nullptr) {
@@ -257,7 +232,7 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
     auto* keyLbl = makeKey(label);
     if (outLabel) *outLabel = keyLbl;
     overlayGrid->addWidget(keyLbl, r, 0);
-    overlayGrid->addWidget(next, r, 1, Qt::AlignRight);
+    overlayGrid->addWidget(next, r, 1);
     ++r;
   };
 
@@ -321,34 +296,7 @@ GlobalStatusPanel::GlobalStatusPanel(QWidget* parent) : QWidget(parent) {
   overlayGrid->setColumnStretch(1, 1);
 
   body->addWidget(makeSection(I18n::tr("Overlay"), overlayGrid));
-  body->addStretch(1);
-
-  scroll->setWidget(m_scrollHost);
-  outer->addWidget(scroll, 1);
-  // 滚动区最小高恒为 0、永远可收缩——这样无论窗口下限是多少、有几条横幅占高，滚动
-  // 区都能让出空间、给出覆盖全部内容的完整滚动范围，滚动表现一致。绝不把它钉成内容
-  // 完整高：一旦钉死，内容放不下时布局只能走"超约束"回退，能滚多少取决于挤掉的高度，
-  // 于是出现"两条横幅能滚、一条横幅只能滚一点点"的不一致。
-  scroll->setMinimumHeight(0);
-
-  // 圆角遮罩层：盖在 viewport 上抗锯齿补圆角，卡片浮在主背景上、四角补 Sem::Bg。
-  // 另给上/下两条边补一条 Sem::Border 描边线：内容滚动被裁时那条边没了边框，补上才
-  // 像个完整的框；只在该边确有内容被裁时画（见 edgesFn），内容放得下时不画、避免凭空
-  // 多线。viewport Resize 时跟着改大小（见 eventFilter）；滚动 / 范围变化时重绘。
-  auto* vbar = scroll->verticalScrollBar();
-  m_cornerOverlay = new RoundedCornerOverlay(
-      scroll->viewport(), kCardInset, kCardRadius, [] { return ThemeManager::instance().color(Sem::Bg); },
-      [] { return ThemeManager::instance().color(Sem::Border); }, 1,
-      [vbar]() -> Qt::Edges {
-        Qt::Edges e;
-        if (vbar->value() > vbar->minimum()) e |= Qt::TopEdge;     // 上方有隐藏内容
-        if (vbar->value() < vbar->maximum()) e |= Qt::BottomEdge;  // 下方有隐藏内容
-        return e;
-      });
-  scroll->viewport()->installEventFilter(this);
-  m_cornerOverlay->syncToParent();
-  connect(vbar, &QAbstractSlider::valueChanged, m_cornerOverlay, QOverload<>::of(&QWidget::update));
-  connect(vbar, &QAbstractSlider::rangeChanged, m_cornerOverlay, QOverload<>::of(&QWidget::update));
+  outer->addWidget(m_controls);
 
   connect(m_filterNext, &QAbstractButton::toggled, this, &GlobalStatusPanel::emitIfChanged);
   connect(m_overlayTypeNext, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
@@ -440,9 +388,8 @@ void GlobalStatusPanel::setUnavailable(const QString& reason) {
   m_banner->setText("⚠ " + I18n::tr("UWF status unavailable: ") + reason);
   // 不设 level=warn —— UWF 不可用是硬错误，用默认的 statusBanner 红色错误样式。
   m_banner->show();
-  // 只禁用滚动区的内容宿主——内部控件全部变灰不可交互，但 QScrollArea
-  // 本身仍可用，窗口偏矮时还能滚动查看被截断的卡片。
-  m_scrollHost->setEnabled(false);
+  // 不禁用整个面板，警告文本仍可阅读；宿主窗口负责滚动。
+  m_controls->setEnabled(false);
   // UWF 不可用时 ? 徽标无意义，强制隐藏。
   if (m_typeLockedHint) m_typeLockedHint->hide();
   if (m_maxLockedHint) m_maxLockedHint->hide();
@@ -463,20 +410,7 @@ void GlobalStatusPanel::showElevationRequired() const {
   m_banner->show();
 }
 
-int GlobalStatusPanel::preferredContentHeight() const { return m_scrollHost ? m_scrollHost->sizeHint().height() : 0; }
-
-bool GlobalStatusPanel::eventFilter(QObject* obj, QEvent* ev) {
-  if (m_scroll && m_cornerOverlay && obj == m_scroll->viewport() && ev->type() == QEvent::Resize) {
-    m_cornerOverlay->syncToParent();
-  }
-  return QWidget::eventFilter(obj, ev);
-}
-
-void GlobalStatusPanel::setControlsEnabled(const bool enabled) const {
-  // 只动滚动区内容宿主——和 setUnavailable 一致：QScrollArea 本身保持可用，
-  // 窗口偏矮时仍能滚动查看被截断的卡片。
-  m_scrollHost->setEnabled(enabled);
-}
+void GlobalStatusPanel::setControlsEnabled(const bool enabled) const { m_controls->setEnabled(enabled); }
 
 void GlobalStatusPanel::setData(const core::SessionSnapshot& cur, const core::SessionSnapshot& nxt, const core::OverlayRuntime& rt) {
   m_available = true;

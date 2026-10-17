@@ -45,7 +45,7 @@ enum class Sem {
   Thumb,     // SwitchButton 滑块色
 };
 
-// 全局主题管理器：探测系统主题、加载对应 QSS、为 SVG 图标做按主题染色，
+// 全局外观管理：初始化共享字体/样式、探测系统主题、加载对应 QSS、为 SVG 图标做按主题染色，
 // 并向自绘控件 / RichText 提供语义色。单例（按需懒加载）。
 // Qt-only 类型，在 GUI 线程使用。
 class ThemeManager : public QObject, private QAbstractNativeEventFilter {

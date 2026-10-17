@@ -27,6 +27,8 @@ class QPushButton;
 
 namespace uwf::ui {
 
+class ContentHintBox;
+
 class EnhancedModeDialog final : public QDialog {
   Q_OBJECT
  public:
@@ -59,8 +61,8 @@ class EnhancedModeDialog final : public QDialog {
   std::optional<service::EnhancedModeStatus> m_status;
   std::optional<OperationFeedback> m_operationFeedback;
   QLabel* m_statusLabel = nullptr;
-  QLabel* m_issueLabel = nullptr;
-  QLabel* m_detailLabel = nullptr;
+  ContentHintBox* m_issueLabel = nullptr;
+  ContentHintBox* m_detailLabel = nullptr;
   QPushButton* m_changeButton = nullptr;
   QPushButton* m_removeButton = nullptr;
 };

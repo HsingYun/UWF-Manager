@@ -26,6 +26,8 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
+#include <QFontDatabase>
+#include <QFontInfo>
 #include <QImage>
 #include <QLabel>
 #include <QLineEdit>
@@ -37,16 +39,25 @@
 #include <QProgressBar>
 #include <QPushButton>
 #include <QScopeGuard>
+#include <QScreen>
+#include <QScrollArea>
 #include <QScrollBar>
 #include <QSignalSpy>
+#include <QSpinBox>
+#include <QStyle>
 #include <QStyleHints>
+#include <QStyleOptionButton>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QTableWidget>
 #include <QTemporaryDir>
 #include <QTemporaryFile>
 #include <QTest>
+#include <QTextDocument>
 #include <QTextEdit>
+#include <QTextLayout>
 #include <QTimer>
+#include <QToolBar>
 #include <QToolButton>
 #include <QUuid>
 #include <algorithm>
@@ -63,6 +74,8 @@
 #include <utility>
 #include <vector>
 
+#include "UiTextChecks.h"
+#include "UiTestInput.h"
 #include "app/FileStagingConflictPolicy.h"
 #include "app/FileStagingStore.h"
 #include "app/UserConfig.h"
@@ -73,6 +86,7 @@
 #include "ui/ApplyPlanDialog.h"
 #include "ui/CommitBatch.h"
 #include "ui/CommitDispatcher.h"
+#include "ui/ContentHintBox.h"
 #include "ui/DiagnosticReportProvider.h"
 #include "ui/Dialogs.h"
 #include "ui/DiskTab.h"
@@ -82,14 +96,17 @@
 #include "ui/GlobalStatusPanel.h"
 #include "ui/I18n.h"
 #include "ui/ImportApplier.h"
+#include "ui/ImportDialog.h"
 #include "ui/LogViewerDialog.h"
 #include "ui/MainWindow.h"
-#include "ui/MarqueeHintBox.h"
 #include "ui/OverlayHudPalette.h"
 #include "ui/OverlayUsageBar.h"
 #include "ui/PendingCollect.h"
 #include "ui/PowerController.h"
 #include "ui/StatusBanner.h"
+#include "ui/StatusPanel.h"
+#include "ui/SwitchButton.h"
+#include "ui/SystemInformationDialog.h"
 #include "ui/ThemeManager.h"
 #include "ui/UiUtil.h"
 #include "util/DriveLetter.h"
@@ -381,7 +398,7 @@ class ApplicationUiBehaviorTests final : public QObject {
   void diagnosticReportDistinguishesMissingStateAndBoundsLogs();
   void commonDialogsPreserveSafeDefaultsAndPreviewPagination();
   void logBufferAndViewerPreserveMalformedAndStructuredLines();
-  void marqueeAndUsageWidgetsHandleEmptyOverflowAndThresholdEdges();
+  void hintAndUsageWidgetsHandleEmptyOverflowAndThresholdEdges();
   void diskTabsApplyCapabilityBoundariesAndPreserveInnerSelection();
   void diskTabKeepsExclusionsBoundToEachSessionVolume();
   void fileStagingTabPersistsImmediateEditsAndCollapsesCoveredPaths();
@@ -411,6 +428,14 @@ class ApplicationUiBehaviorTests final : public QObject {
   void mainWindowMountsFileStagingOnlyWherePerFileCommitIsSupported();
   void mainWindowQuietStartupInitializesWhileRemainingHidden();
   void mainWindowDistinguishesInitialFailureFromCommittedUnavailableState();
+  void mainWindowCompactLayoutKeepsControlsReachable_data();
+  void mainWindowCompactLayoutKeepsControlsReachable();
+  void mainWindowCompactToolbarKeepsLanguageMenuUsable();
+  void dialogLayoutsKeepActionsVisible_data();
+  void dialogLayoutsKeepActionsVisible();
+  void longMessageDialogsKeepCompleteTextAndReachableActions_data();
+  void longMessageDialogsKeepCompleteTextAndReachableActions();
+  void typographyUsesNativeFontsAndAntialiasedText();
 
  private:
   ui::I18n::Lang m_originalLanguage = ui::I18n::Lang::En;
@@ -553,8 +578,8 @@ void ApplicationUiBehaviorTests::startupPreferencesReachTheRealUiWithoutPersisti
     for (const auto buttons = window.findChildren<QToolButton*>(); auto* button : buttons) {
       if (button->defaultAction() && button->defaultAction()->toolTip() == ui::I18n::tr("Switch display language")) languageButton = button;
     }
-    QVERIFY(languageButton && languageButton->isVisible() && languageButton->isEnabled() && languageButton->menu());
-    const QPointer<QMenu> menu = languageButton->menu();
+    QVERIFY(languageButton && languageButton->isVisible() && languageButton->isEnabled() && languageButton->defaultAction()->menu());
+    const QPointer<QMenu> menu = languageButton->defaultAction()->menu();
     QPointer<QAction> selectedLanguage;
     for (const auto actions = menu->actions(); auto* action : actions) {
       if (action->text() == (toggledLanguage == ui::I18n::Lang::En ? QStringLiteral("English") : QStringLiteral("简体中文"))) selectedLanguage = action;
@@ -667,7 +692,7 @@ void ApplicationUiBehaviorTests::commonDialogsPreserveSafeDefaultsAndPreviewPagi
   QTimer::singleShot(0, this, [&] {
     auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
     if (!dialog) return;
-    for (const auto labels = dialog->findChildren<QLabel*>(); auto* label : labels) {
+    for (const auto labels = dialog->findChildren<ui::ContentHintBox*>(); auto* label : labels) {
       warningSelectable = warningSelectable || label->textInteractionFlags().testFlag(Qt::TextSelectableByMouse);
     }
     dialog->accept();
@@ -742,18 +767,33 @@ void ApplicationUiBehaviorTests::logBufferAndViewerPreserveMalformedAndStructure
   dialog.close();
 }
 
-void ApplicationUiBehaviorTests::marqueeAndUsageWidgetsHandleEmptyOverflowAndThresholdEdges() {
-  ui::MarqueeHintBox marquee;
-  marquee.resize(180, 48);
-  marquee.show();
-  QVERIFY(QTest::qWaitForWindowExposed(&marquee));
-  marquee.setText(QStringLiteral("short"));
-  QTRY_COMPARE_WITH_TIMEOUT(marquee.verticalScrollBar()->maximum(), 0, 250);
-  marquee.setText(QStringLiteral("a long overflowing line ").repeated(50));
-  QTRY_VERIFY_WITH_TIMEOUT(marquee.verticalScrollBar()->maximum() > 0, 500);
-  QCOMPARE(marquee.verticalScrollBar()->value(), 0);
-  marquee.setText(QStringLiteral("short again"));
-  QTRY_COMPARE_WITH_TIMEOUT(marquee.verticalScrollBar()->maximum(), 0, 500);
+void ApplicationUiBehaviorTests::hintAndUsageWidgetsHandleEmptyOverflowAndThresholdEdges() {
+  QScrollArea host;
+  host.setWidgetResizable(true);
+  host.resize(240, 160);
+  auto* hint = new ui::ContentHintBox(&host);
+  host.setWidget(hint);
+  host.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&host));
+  hint->setText(QStringLiteral("short"));
+  QTRY_COMPARE_WITH_TIMEOUT(hint->verticalScrollBar()->maximum(), 0, 500);
+  const int shortHeight = hint->height();
+  hint->setText(QStringLiteral("a long information line ").repeated(50));
+  QTRY_VERIFY_WITH_TIMEOUT(hint->height() > shortHeight, 1000);
+  QTRY_COMPARE_WITH_TIMEOUT(hint->verticalScrollBar()->maximum(), 0, 1000);
+  QVERIFY(hint->document()->size().height() <= hint->viewport()->height());
+  QVERIFY(host.verticalScrollBar()->maximum() > 0);
+  host.verticalScrollBar()->setValue(0);
+  test::sendWheel(*host.viewport(), QPoint(0, -120));
+  QTRY_VERIFY(host.verticalScrollBar()->value() > 0);
+  const int narrowHeight = hint->height();
+  host.resize(480, 160);
+  QTRY_VERIFY_WITH_TIMEOUT(hint->height() < narrowHeight, 1000);
+  QTRY_COMPARE_WITH_TIMEOUT(hint->verticalScrollBar()->maximum(), 0, 1000);
+  hint->setText(QStringLiteral("short again"));
+  QTRY_COMPARE_WITH_TIMEOUT(host.verticalScrollBar()->maximum(), 0, 1000);
+  hint->clear();
+  QTRY_COMPARE_WITH_TIMEOUT(hint->verticalScrollBar()->maximum(), 0, 500);
 
   ui::OverlayUsageBar bar;
   QCOMPARE(bar.minimumSizeHint().height(), bar.sizeHint().height());
@@ -777,6 +817,31 @@ void ApplicationUiBehaviorTests::marqueeAndUsageWidgetsHandleEmptyOverflowAndThr
   rendered.fill(Qt::transparent);
   banner.render(&rendered);
   QVERIFY(!rendered.isNull());
+
+  banner.setObjectName(QStringLiteral("statusBanner"));
+  const QString longError = QStringLiteral("WMI query failed: <raw error> & code\nC:\\") + QString(180, QLatin1Char('x')) + QStringLiteral("\\data\n");
+  for (const int width : {180, 320, 480}) {
+    banner.setText(longError + QStringLiteral("Ending AAA"));
+    const int required = banner.heightForWidth(width);
+    QVERIFY(required > 2 * banner.fontMetrics().height());
+    QVERIFY(banner.minimumSizeHint().width() <= width);
+    banner.resize(width, required);
+    QImage first(banner.size(), QImage::Format_ARGB32_Premultiplied);
+    first.fill(Qt::transparent);
+    banner.render(&first);
+    banner.setText(longError + QStringLiteral("Ending BBB"));
+    QCOMPARE(banner.heightForWidth(width), required);
+    QImage second(banner.size(), QImage::Format_ARGB32_Premultiplied);
+    second.fill(Qt::transparent);
+    banner.render(&second);
+    // 只改变末行，末行所在区域必须实际绘制变化，不能仅验证控件返回的高度。
+    const int lastLineHeight = 2 * banner.fontMetrics().height();
+    const QRect lastLine(0, required - lastLineHeight, width, lastLineHeight);
+    QVERIFY(first.copy(lastLine) != second.copy(lastLine));
+  }
+  const auto errorTextColor = banner.palette().color(QPalette::WindowText);
+  banner.setProperty("level", "warn");
+  QVERIFY(banner.palette().color(QPalette::WindowText) != errorTextColor);
 }
 
 void ApplicationUiBehaviorTests::diskTabsApplyCapabilityBoundariesAndPreserveInnerSelection() {
@@ -1256,7 +1321,7 @@ void ApplicationUiBehaviorTests::fileStagingCommandUiCoalescesRequestsAndComplet
   QTemporaryDir directory;
   QVERIFY(directory.isValid());
   QStringList paths;
-  for (const QString& name : {QStringLiteral("first.bin"), QStringLiteral("second.bin")}) {
+  for (const QString& name : {QString(180, u'a') + QStringLiteral(".bin"), QString(180, u'b') + QStringLiteral(".bin")}) {
     const QString path = QDir::toNativeSeparators(directory.filePath(name));
     QFile file(path);
     QVERIFY(file.open(QIODevice::WriteOnly));
@@ -1319,6 +1384,11 @@ void ApplicationUiBehaviorTests::fileStagingCommandUiCoalescesRequestsAndComplet
   QVERIFY(dialog->windowFlags().testFlag(Qt::FramelessWindowHint));
   QVERIFY(dialog->findChildren<QPushButton*>().isEmpty());
   QVERIFY(dialog->findChild<QProgressBar*>(QStringLiteral("fileStagingCommandProgress")));
+  auto* currentPath = dialog->findChild<QLineEdit*>(QStringLiteral("fileStagingCommandPath"));
+  QVERIFY(currentPath && currentPath->isReadOnly());
+  QTRY_VERIFY_WITH_TIMEOUT(!currentPath->text().isEmpty(), 1000);
+  QVERIFY(dialog->width() <= 760);
+  QVERIFY(paths.contains(currentPath->text()));
   QTRY_COMPARE_WITH_TIMEOUT(completions, 2, 5000);
   QVERIFY(visibleDuration.elapsed() >= 1900);
   QCOMPARE(firstResult.outcome, app::ApplicationCommandOutcome::Succeeded);
@@ -1368,14 +1438,14 @@ void ApplicationUiBehaviorTests::enhancedModeDialogReflectsDisabledEnabledAndRep
 
   const int queriesBeforeAgentStateChanges = serviceControl.queries;
   manager.setAgentState(service::EnhancedModeAgentState::Connecting);
-  auto* issue = dialog.findChild<QLabel*>(QStringLiteral("enhancedModeIssue"));
+  auto* issue = dialog.findChild<ui::ContentHintBox*>(QStringLiteral("enhancedModeIssue"));
   QVERIFY(issue);
-  QCOMPARE(issue->text(), QStringLiteral("Waiting for the UI agent to complete authentication."));
+  QCOMPARE(issue->toPlainText(), QStringLiteral("Waiting for the UI agent to complete authentication."));
 
   manager.setAgentState(service::EnhancedModeAgentState::Disconnected);
   QCOMPARE(status->text(), QStringLiteral("Status: Enabled"));
   QCOMPARE(change->text(), QStringLiteral("Disable enhanced mode"));
-  QCOMPARE(issue->text(), QStringLiteral("The service is running, but no authenticated UI agent is connected."));
+  QCOMPARE(issue->toPlainText(), QStringLiteral("The service is running, but no authenticated UI agent is connected."));
 
   manager.setAgentState(service::EnhancedModeAgentState::Connected);
   QVERIFY(!issue->isVisible());
@@ -1401,7 +1471,7 @@ void ApplicationUiBehaviorTests::enhancedModeDialogReflectsDisabledEnabledAndRep
   ui::EnhancedModeDialog stopped(manager);
   auto* start = stopped.findChild<QPushButton*>(QStringLiteral("enhancedModeChangeButton"));
   auto* stoppedStatus = stopped.findChild<QLabel*>(QStringLiteral("enhancedModeStatus"));
-  auto* stoppedIssue = stopped.findChild<QLabel*>(QStringLiteral("enhancedModeIssue"));
+  auto* stoppedIssue = stopped.findChild<ui::ContentHintBox*>(QStringLiteral("enhancedModeIssue"));
   QVERIFY(start && stoppedStatus && stoppedIssue);
   QCOMPARE(stoppedStatus->text(), QStringLiteral("Status: Service stopped"));
   QCOMPARE(start->text(), QStringLiteral("Start service"));
@@ -1417,31 +1487,31 @@ void ApplicationUiBehaviorTests::enhancedModeDialogReflectsDisabledEnabledAndRep
   ui::EnhancedModeDialog repairRequired(manager);
   auto* repair = repairRequired.findChild<QPushButton*>(QStringLiteral("enhancedModeChangeButton"));
   auto* repairStatus = repairRequired.findChild<QLabel*>(QStringLiteral("enhancedModeStatus"));
-  auto* repairIssue = repairRequired.findChild<QLabel*>(QStringLiteral("enhancedModeIssue"));
+  auto* repairIssue = repairRequired.findChild<ui::ContentHintBox*>(QStringLiteral("enhancedModeIssue"));
   QVERIFY(repair && repairStatus && repairIssue);
   QCOMPARE(repairStatus->text(), QStringLiteral("Status: Repair required"));
   QCOMPARE(repair->text(), QStringLiteral("Repair enhanced mode"));
-  QVERIFY(repairIssue->text().contains(QStringLiteral("executable path or startup arguments")));
+  QVERIFY(repairIssue->toPlainText().contains(QStringLiteral("executable path or startup arguments")));
 
   serviceControl.current = {};
   serviceControl.current.state = service::EnhancedModeState::RepairRequired;
   serviceControl.current.serviceRegistryPresent = true;
   ui::EnhancedModeDialog residual(manager);
   auto* residualRemove = residual.findChild<QPushButton*>(QStringLiteral("enhancedModeRemoveButton"));
-  auto* residualIssue = residual.findChild<QLabel*>(QStringLiteral("enhancedModeIssue"));
+  auto* residualIssue = residual.findChild<ui::ContentHintBox*>(QStringLiteral("enhancedModeIssue"));
   QVERIFY(residualRemove && residualIssue);
   QVERIFY(residualRemove->isEnabled());
-  QCOMPARE(residualIssue->text(), QStringLiteral("The service is absent, but its service registry data remains."));
+  QCOMPARE(residualIssue->toPlainText(), QStringLiteral("The service is absent, but its service registry data remains."));
 
   serviceControl.queryFailure = QStringLiteral("SCM unavailable");
   ui::EnhancedModeDialog unavailable(manager);
   auto* unavailableStatus = unavailable.findChild<QLabel*>(QStringLiteral("enhancedModeStatus"));
   auto* unavailableChange = unavailable.findChild<QPushButton*>(QStringLiteral("enhancedModeChangeButton"));
   auto* unavailableRemove = unavailable.findChild<QPushButton*>(QStringLiteral("enhancedModeRemoveButton"));
-  auto* unavailableIssue = unavailable.findChild<QLabel*>(QStringLiteral("enhancedModeIssue"));
+  auto* unavailableIssue = unavailable.findChild<ui::ContentHintBox*>(QStringLiteral("enhancedModeIssue"));
   QVERIFY(unavailableStatus && unavailableChange && unavailableRemove && unavailableIssue);
   QCOMPARE(unavailableStatus->text(), QStringLiteral("Enhanced mode status could not be read"));
-  QCOMPARE(unavailableIssue->text(), serviceControl.queryFailure);
+  QCOMPARE(unavailableIssue->toPlainText(), serviceControl.queryFailure);
   QVERIFY(!unavailableChange->isEnabled());
   QVERIFY(!unavailableRemove->isEnabled());
 }
@@ -1527,12 +1597,12 @@ void ApplicationUiBehaviorTests::mainWindowEnhancedModeActionTracksTheServiceLif
     auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
     if (!dialog || dialog->objectName() != QStringLiteral("enhancedModeDialog")) return;
     auto* status = dialog->findChild<QLabel*>(QStringLiteral("enhancedModeStatus"));
-    auto* issue = dialog->findChild<QLabel*>(QStringLiteral("enhancedModeIssue"));
+    auto* issue = dialog->findChild<ui::ContentHintBox*>(QStringLiteral("enhancedModeIssue"));
     auto* change = dialog->findChild<QPushButton*>(QStringLiteral("enhancedModeChangeButton"));
     if (!status || !issue || !change || status->text() != QStringLiteral("Status: Disabled")) return;
     enableDialogObserved = true;
     change->click();
-    QCOMPARE(issue->text(), QStringLiteral("Waiting for the UI agent to complete authentication."));
+    QCOMPARE(issue->toPlainText(), QStringLiteral("Waiting for the UI agent to complete authentication."));
     dialog->reject();
   });
   enhancedAction->trigger();
@@ -1790,8 +1860,8 @@ void ApplicationUiBehaviorTests::applyPlanPreviewAndCopyUseTheSameProductionComm
   QTimer::singleShot(0, this, [&] {
     auto* warning = qobject_cast<QDialog*>(QApplication::activeModalWidget());
     if (warning) {
-      for (const auto labels = warning->findChildren<QLabel*>(); auto* label : labels) {
-        failureReported = failureReported || label->text().contains(QStringLiteral("Could not open file for writing"));
+      for (const auto labels = warning->findChildren<ui::ContentHintBox*>(); auto* label : labels) {
+        failureReported = failureReported || label->toPlainText().contains(QStringLiteral("Could not open file for writing"));
       }
     }
     if (warning) warning->accept();
@@ -1841,6 +1911,10 @@ void ApplicationUiBehaviorTests::applyPlanConfirmedWritePublishesReconciliationA
   QVERIFY(!directRestart->isHidden());
   QVERIFY(!directRestartHint->isHidden());
   QVERIFY(directRestartHint->text().contains(QStringLiteral("skips File staging commits")));
+  dialog.resize(820, 560);
+  QTRY_COMPARE(dialog.size(), QSize(820, 560));
+  QTRY_VERIFY2_WITH_TIMEOUT(test::clippedLabel(dialog).isEmpty(), qPrintable(test::clippedLabel(dialog)), 2000);
+  for (auto* button : {apply, restart, directRestart}) QVERIFY(dialog.rect().contains(QRect(button->mapTo(&dialog, QPoint()), button->size())));
   QTest::mouseClick(restart, Qt::LeftButton);
   QTest::mouseClick(directRestart, Qt::LeftButton);
   QCOMPARE(safeRestartRequested.count(), 1);
@@ -2710,6 +2784,457 @@ void ApplicationUiBehaviorTests::mainWindowDistinguishesInitialFailureFromCommit
       laterFailureLeakedIntoUi = laterFailureLeakedIntoUi || label->text().contains(source.failure);
     QVERIFY(!laterFailureLeakedIntoUi);
     window.close();
+  }
+}
+
+void ApplicationUiBehaviorTests::mainWindowCompactLayoutKeepsControlsReachable_data() {
+  QTest::addColumn<bool>("chinese");
+  QTest::addColumn<bool>("dark");
+  QTest::addColumn<QSize>("windowSize");
+  QTest::addColumn<bool>("warnings");
+  for (const bool chinese : {false, true}) {
+    for (const bool dark : {false, true}) {
+      for (const auto size : {QSize(1280, 720), QSize(1120, 680), QSize(1440, 900)}) {
+        for (const bool warnings : {false, true}) {
+          const QByteArray name = QStringLiteral("%1-%2-%3x%4-%5")
+                                      .arg(chinese ? "zh" : "en", dark ? "dark" : "light")
+                                      .arg(size.width())
+                                      .arg(size.height())
+                                      .arg(warnings ? "warnings" : "normal")
+                                      .toLatin1();
+          QTest::newRow(name.constData()) << chinese << dark << size << warnings;
+        }
+      }
+    }
+  }
+}
+
+void ApplicationUiBehaviorTests::mainWindowCompactLayoutKeepsControlsReachable() {
+  QFETCH(bool, chinese);
+  QFETCH(bool, dark);
+  QFETCH(QSize, windowSize);
+  QFETCH(bool, warnings);
+  auto& language = ui::I18n::instance();
+  auto& theme = ui::ThemeManager::instance();
+  const auto oldLanguage = language.lang();
+  const auto oldTheme = theme.current();
+  const auto restore = qScopeGuard([&] {
+    language.setLang(oldLanguage);
+    theme.apply(oldTheme);
+  });
+  language.setLang(chinese ? ui::I18n::Lang::Zh_CN : ui::I18n::Lang::En);
+  theme.apply(dark ? ui::Theme::Dark : ui::Theme::Light);
+  RecordingWmiOperations wmi;
+  MemoryFileStagingStore staging;
+  MemoryEnhancedModeServiceControl serviceControl;
+  MemoryEnhancedModeAgent agent;
+  MutableApplicationStateSource source;
+  source.snapshot = editableSnapshot();
+  // 模拟关闭的筛选器，避免测试把真实窗口嵌入 Explorer 任务栏。
+  // snapshot.elevated 只控制 mock 页面的可编辑性，不改变进程令牌。
+  source.snapshot.current.filter.enabled = false;
+  source.snapshot.next.filter.enabled = false;
+  source.disks = {{"C:", R"(\\?\Volume{12345678-1234-1234-1234-123456789abc}\)", "NTFS", "Workstation System Volume", 512ULL << 30, 256ULL << 30,
+                   core::DiskSupport::Supported}};
+  ui::MainWindow window({wmi, source, staging, &serviceControl, &agent},
+                        {.uwfCapability = UwfCapability::Available,
+                         .compatibilityMode = warnings,
+                         .osProductName = QStringLiteral("Windows 11 Professional Workstation Compatibility Environment"),
+                         .osEditionId = QStringLiteral("Professional")});
+  window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+  QTRY_COMPARE_WITH_TIMEOUT(window.windowOpacity(), 1.0, 2000);
+  QVERIFY(window.screen()->availableGeometry().contains(window.frameGeometry()));
+  window.resize(windowSize);
+  QTRY_COMPARE(window.size(), windowSize);
+
+  auto* global = window.findChild<ui::GlobalStatusPanel*>();
+  auto* scroll = window.findChild<QScrollArea*>(QStringLiteral("globalSettingsScroll"));
+  auto* disk = window.findChild<ui::DiskTab*>();
+  auto* status = disk ? disk->findChild<ui::StatusPanel*>() : nullptr;
+  auto* inner = disk ? disk->findChild<QTabWidget*>(QStringLiteral("innerTabs")) : nullptr;
+  QVERIFY(global && scroll && disk && status && inner);
+  if (warnings) {
+    global->showVolumeInfoWarning(QStringLiteral("Mock inventory warning: provider read failed.\nWQL: SELECT * FROM UWF_Volume\n") +
+                                 QStringLiteral("\\\\COMPUTER\\root\\standardcimv2\\embedded:") + QString(160, u'x') + QStringLiteral("\n旧数据保持不变"));
+  }
+  QTRY_VERIFY(scroll->viewport()->width() > 0 && scroll->viewport()->height() > 0);
+  QTRY_COMPARE(scroll->horizontalScrollBar()->maximum(), 0);
+  auto* initialHint = window.findChild<ui::ContentHintBox*>(QStringLiteral("hoverHintBox"));
+  QVERIFY(initialHint && !initialHint->toPlainText().isEmpty());
+  QTRY_VERIFY_WITH_TIMEOUT(initialHint->viewport()->height() >= initialHint->document()->size().height(), 2000);
+  QTRY_VERIFY_WITH_TIMEOUT(initialHint->document()->size().height() > 0, 2000);
+  QTRY_VERIFY2_WITH_TIMEOUT(test::clippedLabel(window).isEmpty(), qPrintable(test::clippedLabel(window)), 2000);
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+  const QString screenshots = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
+  if (!screenshots.isEmpty()) {
+    QVERIFY(QDir().mkpath(screenshots));
+    QVERIFY(window.grab().save(QDir(screenshots).filePath(QString::fromLatin1(QTest::currentDataTag()) + QStringLiteral(".png"))));
+  }
+  qInfo() << "layout" << QTest::currentDataTag() << "dpr" << window.devicePixelRatioF() << "window" << window.size() << "minimum" << window.minimumSizeHint()
+          << "status" << status->size() << "right" << scroll->size() << "content" << scroll->widget()->minimumSizeHint() << "horizontal overflow"
+          << scroll->horizontalScrollBar()->maximum();
+  QCOMPARE(window.findChildren<QScrollArea*>().size(), 1);
+
+  // 所有状态操作必须完整落在卡片内，不能靠压缩父窗口的 min-size 裁掉按钮。
+  for (const auto widgets = status->findChildren<QWidget*>(); auto* widget : widgets) {
+    if (!widget->isVisible() || (!qobject_cast<QAbstractButton*>(widget) && !qobject_cast<QComboBox*>(widget))) continue;
+    const QRect bounds(widget->mapTo(status, QPoint()), widget->size());
+    QVERIFY2(status->rect().contains(bounds), qPrintable(QStringLiteral("clipped status control: %1 %2,%3 %4x%5 in %6x%7")
+                                                             .arg(widget->metaObject()->className())
+                                                             .arg(bounds.x())
+                                                             .arg(bounds.y())
+                                                             .arg(bounds.width())
+                                                             .arg(bounds.height())
+                                                             .arg(status->width())
+                                                             .arg(status->height())));
+    QVERIFY(!widget->visibleRegion().isEmpty());
+    QVERIFY(widget->width() >= widget->minimumSizeHint().width());
+  }
+  const auto protectionButtons = status->findChildren<QAbstractButton*>();
+  auto* protection = status->findChild<ui::SwitchButton*>();
+  QVERIFY(protection && protection->isEnabled());
+  QTest::mouseClick(protection, Qt::LeftButton);
+  QCOMPARE(status->pendingVolumeProtected(), std::optional<bool>(false));
+  const int heightAtTarget = status->height();
+  window.resize(1800, windowSize.height());
+  QTRY_VERIFY(status->height() <= heightAtTarget);
+  window.resize(windowSize);
+  QTRY_COMPARE(window.size(), windowSize);
+  QCOMPARE(status->pendingVolumeProtected(), std::optional<bool>(false));
+  QCOMPARE(status->findChildren<QAbstractButton*>(), protectionButtons);
+
+  // 真正切换每个业务页，校验搜索、列表及操作区均在窗口内，重排不丢选择。
+  for (int index = 0; index < inner->count(); ++index) {
+    QTest::mouseClick(inner->tabBar(), Qt::LeftButton, Qt::NoModifier, inner->tabBar()->tabRect(index).center());
+    QCOMPARE(inner->currentIndex(), index);
+    auto* page = inner->currentWidget();
+    for (const auto widgets = page->findChildren<QWidget*>(); auto* widget : widgets) {
+      if (!widget->isVisible() || (!qobject_cast<QLineEdit*>(widget) && !qobject_cast<QPushButton*>(widget) && !qobject_cast<QListWidget*>(widget))) continue;
+      QVERIFY2(window.rect().contains(QRect(widget->mapTo(&window, QPoint()), widget->size())), widget->metaObject()->className());
+      QVERIFY(!widget->visibleRegion().isEmpty());
+    }
+  }
+
+  // 逐项滚动到真实设置控件，并用鼠标改变开关，确认并非“滚动条存在”假通过。
+  auto* filter = global->findChild<ui::SwitchButton*>();
+  QVERIFY(filter && filter->isEnabled());
+  scroll->ensureWidgetVisible(filter);
+  QTRY_VERIFY(scroll->viewport()->rect().contains(QRect(filter->mapTo(scroll->viewport(), QPoint()), filter->size())));
+  QTest::mouseClick(filter, Qt::LeftButton);
+  QCOMPARE(global->pendingFilterEnabled(), std::optional<bool>(true));
+  for (const auto spins = global->findChildren<QSpinBox*>(); auto* spin : spins) {
+    // ensureWidgetVisible 对输入控件只保证输入光标可见，而不是整个边框。
+    // 这里验证整项设置可触达，必须按控件的完整矩形滚动。
+    const QPoint center = spin->mapTo(scroll->widget(), spin->rect().center());
+    scroll->ensureVisible(center.x(), center.y(), spin->width() / 2 + 1, spin->height() / 2 + 1);
+    QTRY_VERIFY2(scroll->viewport()->rect().contains(QRect(spin->mapTo(scroll->viewport(), QPoint()), spin->size())),
+                 qPrintable(QStringLiteral("spin %1 at %2,%3 size %4x%5; viewport %6x%7 scroll %8/%9")
+                                .arg(spin->value())
+                                .arg(spin->mapTo(scroll->viewport(), QPoint()).x())
+                                .arg(spin->mapTo(scroll->viewport(), QPoint()).y())
+                                .arg(spin->width())
+                                .arg(spin->height())
+                                .arg(scroll->viewport()->width())
+                                .arg(scroll->viewport()->height())
+                                .arg(scroll->verticalScrollBar()->value())
+                                .arg(scroll->verticalScrollBar()->maximum())));
+    QVERIFY(spin->width() >= spin->minimumSizeHint().width());
+  }
+  auto* hint = window.findChild<ui::ContentHintBox*>(QStringLiteral("hoverHintBox"));
+  QVERIFY(hint);
+  QTest::keyClick(scroll->verticalScrollBar(), Qt::Key_End);
+  QTRY_VERIFY(scroll->viewport()->rect().contains(QRect(hint->mapTo(scroll->viewport(), QPoint()), hint->size())));
+  scroll->verticalScrollBar()->setValue(0);
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+  QVERIFY(wmi.invocations.empty());
+  QCOMPARE(staging.writes, 0);
+  QCOMPARE(serviceControl.installs + serviceControl.starts + serviceControl.removals, 0);
+  QCOMPARE(agent.starts, 0);
+}
+
+void ApplicationUiBehaviorTests::mainWindowCompactToolbarKeepsLanguageMenuUsable() {
+  auto& language = ui::I18n::instance();
+  const auto oldLanguage = language.lang();
+  const auto restore = qScopeGuard([&] { language.setLang(oldLanguage); });
+  language.setLang(ui::I18n::Lang::En);
+  RecordingWmiOperations wmi;
+  MemoryFileStagingStore staging;
+  MutableApplicationStateSource source;
+  source.snapshot.uwfAvailable = false;
+  ui::MainWindow window({wmi, source, staging},
+                        {.uwfCapability = UwfCapability::Unavailable, .compatibilityMode = false, .osProductName = {}, .osEditionId = {}});
+  window.show();
+  QTRY_COMPARE_WITH_TIMEOUT(window.windowOpacity(), 1.0, 2000);
+  window.resize(900, 680);
+  auto* toolbar = window.findChild<QToolBar*>(QStringLiteral("mainToolbar"));
+  QVERIFY(toolbar);
+  auto* extension = toolbar->findChild<QToolButton*>(QStringLiteral("qt_toolbar_ext_button"));
+  QVERIFY(extension);
+  QTRY_VERIFY(extension->isVisible());
+  auto* action = actionWithText(toolbar, QStringLiteral("Language"));
+  QVERIFY(action && action->menu());
+  const QPointer<QToolButton> languageButton = qobject_cast<QToolButton*>(toolbar->widgetForAction(action));
+  QVERIFY(languageButton);
+  bool selected = false;
+  bool languageRequested = false;
+  QTimer driver;
+  driver.setInterval(10);
+  connect(&driver, &QTimer::timeout, this, [&] {
+    auto* menu = qobject_cast<QMenu*>(QApplication::activePopupWidget());
+    if (!menu) {
+      // QMainWindow 中 Qt 优先展开第二行；高度不足时才使用溢出菜单。
+      // 两种原生呈现都必须保留同一语言入口。
+      if (languageButton && languageButton->isVisible() && !languageRequested) {
+        languageRequested = true;
+        const QPoint position = languageButton->mapTo(&window, languageButton->rect().center());
+        QTimer::singleShot(0, &window, [&window, position] { QTest::mouseClick(window.windowHandle(), Qt::LeftButton, Qt::NoModifier, position); });
+      }
+      return;
+    }
+    for (auto* candidate : menu->actions()) {
+      if (candidate->text() == QStringLiteral("Language") && candidate->menu()) {
+        QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier, menu->actionGeometry(candidate).center());
+        return;
+      }
+      if (candidate->text() == QStringLiteral("简体中文")) {
+        driver.stop();
+        selected = true;
+        QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier, menu->actionGeometry(candidate).center());
+        return;
+      }
+    }
+  });
+  QTimer timeout;
+  timeout.setSingleShot(true);
+  connect(&timeout, &QTimer::timeout, this, [&] {
+    driver.stop();
+    for (auto* widget : QApplication::topLevelWidgets())
+      if (auto* menu = qobject_cast<QMenu*>(widget)) menu->close();
+  });
+  driver.start();
+  timeout.start(3000);
+  QTest::mouseClick(window.windowHandle(), Qt::LeftButton, Qt::NoModifier, extension->mapTo(&window, extension->rect().center()));
+  QTRY_VERIFY_WITH_TIMEOUT(selected, 3500);
+  timeout.stop();
+  QTRY_COMPARE(language.lang(), ui::I18n::Lang::Zh_CN);
+  QTRY_COMPARE(window.windowTitle(), QStringLiteral("统一写入筛选器 (UWF) 管理器"));
+  QVERIFY(wmi.invocations.empty());
+  QCOMPARE(staging.writes, 0);
+}
+
+void ApplicationUiBehaviorTests::dialogLayoutsKeepActionsVisible_data() {
+  QTest::addColumn<bool>("chinese");
+  QTest::addColumn<bool>("dark");
+  for (const bool chinese : {false, true})
+    for (const bool dark : {false, true}) QTest::newRow(chinese ? (dark ? "zh-dark" : "zh-light") : (dark ? "en-dark" : "en-light")) << chinese << dark;
+}
+
+void ApplicationUiBehaviorTests::dialogLayoutsKeepActionsVisible() {
+  QFETCH(bool, chinese);
+  QFETCH(bool, dark);
+  auto& language = ui::I18n::instance();
+  auto& theme = ui::ThemeManager::instance();
+  const auto oldLanguage = language.lang();
+  const auto oldTheme = theme.current();
+  const auto restore = qScopeGuard([&] {
+    language.setLang(oldLanguage);
+    theme.apply(oldTheme);
+  });
+  language.setLang(chinese ? ui::I18n::Lang::Zh_CN : ui::I18n::Lang::En);
+  theme.apply(dark ? ui::Theme::Dark : ui::Theme::Light);
+  const QString screenshots = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
+  const auto inspect = [&](QDialog& dialog, const QString& name) {
+    dialog.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+    const QSize workArea(1200, 700);
+    dialog.resize(dialog.size().boundedTo(workArea));
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+    QTRY_VERIFY2_WITH_TIMEOUT(test::clippedLabel(dialog).isEmpty(), qPrintable(test::clippedLabel(dialog)), 2000);
+    if (!screenshots.isEmpty()) {
+      QVERIFY(QDir().mkpath(screenshots));
+      QVERIFY(dialog.grab().save(QDir(screenshots).filePath(name + "-" + QString::fromLatin1(QTest::currentDataTag()) + ".png")));
+    }
+    QVERIFY2(dialog.width() <= workArea.width() && dialog.height() <= workArea.height(),
+             qPrintable(QStringLiteral("%1 exceeds compact work area: %2x%3").arg(name).arg(dialog.width()).arg(dialog.height())));
+    for (const auto buttons = dialog.findChildren<QPushButton*>(); auto* button : buttons) {
+      if (!button->isVisible()) continue;
+      QVERIFY2(dialog.rect().contains(QRect(button->mapTo(&dialog, QPoint()), button->size())), qPrintable(name + ": " + button->text()));
+      QVERIFY2(!button->visibleRegion().isEmpty(), qPrintable(name + ": " + button->text()));
+      QStyleOptionButton option;
+      option.initFrom(button);
+      const QRect contents = button->style()->subElementRect(QStyle::SE_PushButtonContents, &option, button);
+      const int textWidth = button->fontMetrics().horizontalAdvance(button->text().remove('&'));
+      QVERIFY2(contents.width() >= textWidth, qPrintable(name + ": " + button->text()));
+    }
+    dialog.hide();
+  };
+  {
+    ui::AboutDialog dialog([] { return QStringLiteral("Mock report, no machine data"); }, nullptr);
+    inspect(dialog, QStringLiteral("about"));
+  }
+  {
+    MemoryFileDialogs files;
+    ui::ImportDialog dialog(files);
+    inspect(dialog, QStringLiteral("import"));
+  }
+  {
+    ui::SystemInformationDialog dialog(QStringLiteral("[Mock system]\nos=Windows 11\n[Mock token]\nelevated=false\n"));
+    inspect(dialog, QStringLiteral("system-information"));
+  }
+  {
+    RecordingWmiOperations wmi;
+    MemoryFileDialogs files;
+    auto snapshot = editableSnapshot();
+    ui::GlobalStatusPanel global;
+    global.setData(snapshot.current, snapshot.next, snapshot.runtime);
+    QVERIFY(global.importFilterEnabled(false));
+    ui::ApplyPlanDialog dialog(&global, {}, snapshot, ui::ApplyPlanServices{wmi, files});
+    inspect(dialog, QStringLiteral("apply-plan"));
+    QVERIFY(wmi.invocations.empty());
+  }
+  {
+    ui::LogViewerDialog dialog;
+    inspect(dialog, QStringLiteral("log"));
+  }
+  for (const auto state : {service::EnhancedModeState::Disabled, service::EnhancedModeState::Enabled, service::EnhancedModeState::Stopped,
+                           service::EnhancedModeState::RepairRequired}) {
+    RecordingWmiOperations wmi;
+    MemoryEnhancedModeServiceControl control;
+    if (state != service::EnhancedModeState::Disabled) control.current = completeEnhancedModeStatus();
+    control.current.state = state;
+    if (state == service::EnhancedModeState::Stopped) control.current.running = false;
+    if (state == service::EnhancedModeState::RepairRequired) {
+      control.current.executableMatches = false;
+      control.current.detail = QStringLiteral("Mock service contract mismatch:\nC:\\") + QString(180, QLatin1Char('x')) + QStringLiteral("\\UWF.exe\n最后一行错误详情");
+    }
+    service::EnhancedModeManager manager(control, wmi, UwfCapability::Unavailable);
+    ui::EnhancedModeDialog dialog(manager);
+    inspect(dialog, QStringLiteral("enhanced-%1").arg(static_cast<int>(state)));
+    QVERIFY(wmi.invocations.empty());
+    QCOMPARE(control.installs + control.starts + control.removals, 0);
+  }
+}
+
+void ApplicationUiBehaviorTests::longMessageDialogsKeepCompleteTextAndReachableActions_data() { dialogLayoutsKeepActionsVisible_data(); }
+
+void ApplicationUiBehaviorTests::longMessageDialogsKeepCompleteTextAndReachableActions() {
+  QFETCH(bool, chinese);
+  QFETCH(bool, dark);
+  const auto language = ui::I18n::instance().lang();
+  const auto theme = ui::ThemeManager::instance().current();
+  const auto restore = qScopeGuard([&] {
+    ui::I18n::instance().setLang(language);
+    ui::ThemeManager::instance().apply(theme);
+  });
+  ui::I18n::instance().setLang(chinese ? ui::I18n::Lang::Zh_CN : ui::I18n::Lang::En);
+  ui::ThemeManager::instance().apply(dark ? ui::Theme::Dark : ui::Theme::Light);
+  const QString target = QStringLiteral("C:\\") + QString(180, u'x') + QStringLiteral("\\<literal>&data.txt");
+  const QString details = (QStringLiteral("WMI: 0x80041003 — mock failure; no operation performed.\n") + target + "\n").repeated(25);
+  for (int purpose = 0; purpose < 4; ++purpose) {
+    bool inspected = false;
+    QTimer::singleShot(0, this, [&] {
+      auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+      if (!dialog) return;
+      const auto close = qScopeGuard([dialog] { dialog->reject(); });
+      dialog->resize(800, 500);
+      QTRY_COMPARE(dialog->size(), QSize(800, 500));
+      QTRY_VERIFY2_WITH_TIMEOUT(test::clippedLabel(*dialog).isEmpty(), qPrintable(test::clippedLabel(*dialog)), 2000);
+      auto* scroll = dialog->findChild<QScrollArea*>();
+      QVERIFY(scroll);
+      QTRY_COMPARE(scroll->horizontalScrollBar()->maximum(), 0);
+      QTRY_VERIFY(scroll->verticalScrollBar()->maximum() > 0);
+      const auto texts = dialog->findChildren<ui::ContentHintBox*>();
+      QVERIFY(!texts.isEmpty());
+      QVERIFY(std::ranges::any_of(texts, [&](const auto* text) { return text->toPlainText().contains(target); }));
+      if (purpose >= 2) QVERIFY(std::ranges::any_of(texts, [&](const auto* text) { return text->toPlainText() == target; }));
+      for (const auto boxes = dialog->findChildren<QDialogButtonBox*>(); auto* box : boxes) {
+        QVERIFY(dialog->rect().contains(QRect(box->mapTo(dialog, QPoint()), box->size())));
+        QVERIFY(!box->visibleRegion().isEmpty());
+      }
+      inspected = true;
+    });
+    switch (purpose) {
+      case 0:
+        ui::dialogs::warning(nullptr, ui::I18n::tr("Error"), details);
+        break;
+      case 1:
+        QVERIFY(!ui::dialogs::confirm(nullptr, ui::I18n::tr("Confirm"), details));
+        break;
+      case 2:
+        QVERIFY(!ui::dialogs::confirmCommit(nullptr, ui::I18n::tr("Commit"), QStringLiteral("Mock confirmation"), target, details));
+        break;
+      case 3:
+        ui::dialogs::showCommitBlocker(nullptr, ui::I18n::tr("Error"), QStringLiteral("Mock unavailable operation"), target, details);
+        break;
+    }
+    QVERIFY(inspected);
+  }
+}
+
+void ApplicationUiBehaviorTests::typographyUsesNativeFontsAndAntialiasedText() {
+  auto& theme = ui::ThemeManager::instance();
+  theme.apply(theme.current());
+  const QFont systemFont = QFontDatabase::systemFont(QFontDatabase::GeneralFont);
+  QLabel label(QStringLiteral("UWF Manager · 文件暂存 · 0123456789"));
+  label.setStyleSheet("QLabel { background: white; color: black; padding: 0; border: 0; }");
+  label.resize(600, 80);
+  label.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&label));
+  QCOMPARE(label.font().family(), systemFont.family());
+  QCOMPARE(label.font().hintingPreference(), QFont::PreferNoHinting);
+  QVERIFY(label.font().styleStrategy() & QFont::PreferAntialias);
+  QVERIFY(!(label.font().styleStrategy() & (QFont::NoAntialias | QFont::NoSubpixelAntialias)));
+  for (const auto weight : {QFont::Normal, QFont::Medium, QFont::DemiBold}) {
+    for (const auto& text : {QStringLiteral("UWF Manager · 0123456789"), QStringLiteral("全局设置 · 筛选器 · 覆盖层")}) {
+      label.setText(text);
+      QFont font = label.font();
+      font.setWeight(weight);
+      label.setFont(font);
+      const auto image = label.grab().toImage().convertToFormat(QImage::Format_RGB32);
+      int intermediatePixels = 0;
+      for (int y = 0; y < image.height(); ++y)
+        for (int x = 0; x < image.width(); ++x) {
+          const QRgb pixel = image.pixel(x, y);
+          if (pixel != qRgb(255, 255, 255) && pixel != qRgb(0, 0, 0)) ++intermediatePixels;
+        }
+      QVERIFY2(intermediatePixels > 100, "real QLabel rendering must contain antialiased edges, including semibold text");
+      QTextLayout layout(label.text(), font);
+      layout.beginLayout();
+      auto line = layout.createLine();
+      QVERIFY(line.isValid());
+      line.setLineWidth(label.width());
+      layout.endLayout();
+      const auto runs = layout.glyphRuns();
+      QVERIFY(!runs.isEmpty());
+      for (const auto& run : runs) {
+        QVERIFY(run.rawFont().isValid());
+        qInfo() << "typography" << label.devicePixelRatioF() << QFontInfo(font).family() << weight << run.rawFont().familyName() << run.rawFont().styleName();
+      }
+      const QString screenshots = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
+      if (!screenshots.isEmpty()) {
+        QVERIFY(QDir().mkpath(screenshots));
+        const QString name = QStringLiteral("typography-%1-%2.png").arg(static_cast<int>(weight)).arg(text.startsWith("UWF") ? "en" : "zh");
+        QVERIFY(label.grab().save(QDir(screenshots).filePath(name)));
+        label.repaint();
+        QTest::qWait(100);
+        QVERIFY(label.screen()->grabWindow(label.winId()).save(QDir(screenshots).filePath("native-" + name)));
+      }
+    }
+  }
+  ui::GlobalStatusPanel panel;
+  panel.setData(editableSnapshot().current, editableSnapshot().next, editableSnapshot().runtime);
+  panel.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&panel));
+  auto* title = panel.findChild<QLabel*>(QStringLiteral("panelTitle"));
+  QVERIFY(title);
+  QCOMPARE(title->font().weight(), QFont::Medium);
+  QCOMPARE(title->font().hintingPreference(), QFont::PreferNoHinting);
+  QVERIFY(!(title->font().styleStrategy() & QFont::NoAntialias));
+  const QString screenshots = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
+  if (!screenshots.isEmpty()) {
+    QTest::qWait(100);
+    QVERIFY(panel.screen()->grabWindow(panel.winId()).save(QDir(screenshots).filePath(QStringLiteral("native-settings.png"))));
   }
 }
 

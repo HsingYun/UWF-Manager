@@ -139,7 +139,7 @@ OverlayHubView::ReleaseResult OverlayHubView::detachPresentation(ReleaseReason) 
 void OverlayHubView::addApplicationTitleToMenu(QMenu& menu) const {
   QAction* const title = menu.addAction(I18n::applicationTitle());
   QFont titleFont = title->font();
-  titleFont.setBold(true);
+  titleFont.setWeight(QFont::Medium);
   title->setFont(titleFont);
   title->setEnabled(false);
   menu.addSeparator();

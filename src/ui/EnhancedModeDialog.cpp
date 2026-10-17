@@ -30,8 +30,10 @@
 #include <exception>
 #include <stdexcept>
 
+#include "ContentHintBox.h"
 #include "I18n.h"
 #include "ThemeManager.h"
+#include "VerticalScrollArea.h"
 
 namespace uwf::ui {
 
@@ -153,12 +155,13 @@ void renderStatusLabel(QLabel& label, const StatusPresentation& presentation) {
                           .arg(color.name(), translucentBackground(color, theme.isLight() ? 15 : 28)));
 }
 
-void renderIssueLabel(QLabel& label, const QString& text, const QColor& color) {
-  label.setText(text);
+void renderIssueLabel(ContentHintBox& label, const QString& text, const QColor& color) {
+  label.setPlainText(text);
   label.setVisible(!text.isEmpty());
   const auto& theme = ThemeManager::instance();
-  label.setStyleSheet(QStringLiteral("QLabel#enhancedModeIssue { color: %1; background: %2; border: 1px solid %3; border-radius: 8px; padding: 10px 12px; }")
-                          .arg(theme.color(Sem::Fg).name(), translucentBackground(color, theme.isLight() ? 10 : 18), theme.color(Sem::Border).name()));
+  label.setStyleSheet(
+      QStringLiteral("QTextBrowser#enhancedModeIssue { color: %1; background: %2; border: 1px solid %3; border-radius: 8px; padding: 10px 12px; }")
+          .arg(theme.color(Sem::Fg).name(), translucentBackground(color, theme.isLight() ? 10 : 18), theme.color(Sem::Border).name()));
 }
 
 QWidget* createChangeRow(QWidget* parent, const int number, const QString& text) {
@@ -172,7 +175,7 @@ QWidget* createChangeRow(QWidget* parent, const int number, const QString& text)
   marker->setAlignment(Qt::AlignCenter);
   marker->setFixedSize(24, 24);
   QFont markerFont = marker->font();
-  markerFont.setBold(true);
+  markerFont.setWeight(QFont::DemiBold);
   marker->setFont(markerFont);
   const QColor accent = theme.color(Sem::Accent);
   marker->setStyleSheet(
@@ -199,7 +202,7 @@ QWidget* createNoticeRow(QWidget* parent, const QString& text, const Sem tone = 
   marker->setAlignment(Qt::AlignCenter);
   marker->setFixedSize(20, 20);
   QFont markerFont = marker->font();
-  markerFont.setBold(true);
+  markerFont.setWeight(QFont::DemiBold);
   marker->setFont(markerFont);
   marker->setStyleSheet(QStringLiteral("QLabel { color: %1; background: %2; border-radius: 10px; }")
                             .arg(markerColor.name(), translucentBackground(markerColor, theme.isLight() ? 18 : 30)));
@@ -230,12 +233,20 @@ EnhancedModeDialog::EnhancedModeDialog(service::EnhancedModeManager& manager, QW
   // 对话框包含会随服务状态出现或消失的故障与操作反馈。建立稳定的初始
   // 几何和足够的纵向余量，让这些内容消耗预留空间，而不是反复触发顶层
   // 窗口按 sizeHint 缩放，造成状态切换时整页跳动。
-  setMinimumSize(700, 660);
+  setMinimumSize(700, 480);
   resize(740, 660);
 
-  auto* rootLayout = new QVBoxLayout(this);
-  rootLayout->setContentsMargins(26, 24, 26, 18);
+  auto* windowLayout = new QVBoxLayout(this);
+  windowLayout->setContentsMargins(26, 24, 26, 18);
+  windowLayout->setSpacing(16);
+  auto* content = new QWidget(this);
+  auto* rootLayout = new QVBoxLayout(content);
+  rootLayout->setContentsMargins(0, 0, 0, 0);
   rootLayout->setSpacing(16);
+  auto* scroll = new VerticalScrollArea(this);
+  scroll->setObjectName(QStringLiteral("enhancedModeScroll"));
+  scroll->setWidget(content);
+  windowLayout->addWidget(scroll, 1);
 
   auto* header = new QHBoxLayout();
   header->setContentsMargins(0, 0, 0, 0);
@@ -253,7 +264,7 @@ EnhancedModeDialog::EnhancedModeDialog(service::EnhancedModeManager& manager, QW
   auto* tagline = new QLabel(I18n::tr("Coordinate automatic file staging with Windows shutdown and restart."), this);
   tagline->setWordWrap(true);
   QFont taglineFont = tagline->font();
-  taglineFont.setBold(true);
+  taglineFont.setWeight(QFont::Medium);
   taglineFont.setPointSizeF(taglineFont.pointSizeF() + 1.0);
   tagline->setFont(taglineFont);
   header->addWidget(tagline, 1, Qt::AlignVCenter);
@@ -261,7 +272,7 @@ EnhancedModeDialog::EnhancedModeDialog(service::EnhancedModeManager& manager, QW
   m_statusLabel = new QLabel(this);
   m_statusLabel->setObjectName(QStringLiteral("enhancedModeStatus"));
   QFont statusFont = m_statusLabel->font();
-  statusFont.setBold(true);
+  statusFont.setWeight(QFont::Medium);
   m_statusLabel->setFont(statusFont);
   header->addWidget(m_statusLabel, 0, Qt::AlignTop);
   rootLayout->addLayout(header);
@@ -283,7 +294,7 @@ EnhancedModeDialog::EnhancedModeDialog(service::EnhancedModeManager& manager, QW
   disclosureLayout->setSpacing(10);
   auto* changesHeading = new QLabel(I18n::tr("System changes"), disclosure);
   QFont changesFont = changesHeading->font();
-  changesFont.setBold(true);
+  changesFont.setWeight(QFont::Medium);
   changesHeading->setFont(changesFont);
   disclosureLayout->addWidget(changesHeading);
   disclosureLayout->addWidget(
@@ -309,7 +320,7 @@ EnhancedModeDialog::EnhancedModeDialog(service::EnhancedModeManager& manager, QW
   noticesLayout->setSpacing(9);
   auto* noticesHeading = new QLabel(I18n::tr("Operational and security considerations"), notices);
   QFont noticesFont = noticesHeading->font();
-  noticesFont.setBold(true);
+  noticesFont.setWeight(QFont::Medium);
   noticesHeading->setFont(noticesFont);
   noticesLayout->addWidget(noticesHeading);
   noticesLayout->addWidget(createNoticeRow(
@@ -325,17 +336,18 @@ EnhancedModeDialog::EnhancedModeDialog(service::EnhancedModeManager& manager, QW
       Sem::Danger));
   rootLayout->addWidget(notices);
 
-  m_issueLabel = new QLabel(this);
+  m_issueLabel = new ContentHintBox(this);
   m_issueLabel->setObjectName(QStringLiteral("enhancedModeIssue"));
-  m_issueLabel->setWordWrap(true);
   m_issueLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
   rootLayout->addWidget(m_issueLabel);
 
-  m_detailLabel = new QLabel(this);
+  m_detailLabel = new ContentHintBox(this);
   m_detailLabel->setObjectName(QStringLiteral("enhancedModeDetail"));
-  m_detailLabel->setWordWrap(true);
   m_detailLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
   rootLayout->addWidget(m_detailLabel);
+  for (auto* text : {m_issueLabel, m_detailLabel}) {
+    text->setFocusPolicy(Qt::ClickFocus);
+  }
   rootLayout->addStretch(1);
 
   auto* actions = new QHBoxLayout();
@@ -369,7 +381,7 @@ EnhancedModeDialog::EnhancedModeDialog(service::EnhancedModeManager& manager, QW
     status.agentState = state;
     render(status);
   });
-  rootLayout->addLayout(actions);
+  windowLayout->addLayout(actions);
 
   refreshStatus();
 }
@@ -436,9 +448,9 @@ void EnhancedModeDialog::renderOperationFeedback() {
   }
   const auto& theme = ThemeManager::instance();
   const QColor detailColor = theme.color(detailSem);
-  m_detailLabel->setText(m_operationFeedback->detail);
+  m_detailLabel->setPlainText(m_operationFeedback->detail);
   m_detailLabel->show();
-  m_detailLabel->setStyleSheet(QStringLiteral("QLabel#enhancedModeDetail { color: %1; background: %2; border-radius: 8px; padding: 10px 12px; }")
+  m_detailLabel->setStyleSheet(QStringLiteral("QTextBrowser#enhancedModeDetail { color: %1; background: %2; border-radius: 8px; padding: 10px 12px; }")
                                    .arg(detailColor.name(), translucentBackground(detailColor, theme.isLight() ? 10 : 18)));
 }
 

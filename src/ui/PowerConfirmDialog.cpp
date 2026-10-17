@@ -41,6 +41,7 @@
 #include "I18n.h"
 #include "ThemeManager.h"
 #include "UiTiming.h"
+#include "VerticalScrollArea.h"
 
 namespace uwf::ui {
 
@@ -166,10 +167,10 @@ PowerActionDialogOutcome runPowerActionDialog(QWidget* parent, PowerActionDialog
                                  : (shutdown ? I18n::tr("Confirm safe shutdown?") : I18n::tr("Confirm safe restart?"));
   const QString actionText = direct ? directText : (shutdown ? I18n::tr("Safe shutdown") : I18n::tr("Safe restart"));
   const QString continueText = shutdown ? I18n::tr("Continue shutdown") : I18n::tr("Continue restart");
-  const QString summaryText = direct ? (shutdown ? I18n::tr("The system will shut down without committing files in File staging.")
-                                                 : I18n::tr("The system will restart without committing files in File staging."))
-                                     : (shutdown ? I18n::tr("The system will shut down safely through UWF.")
-                                                 : I18n::tr("The system will restart safely through UWF."));
+  const QString summaryText =
+      direct ? (shutdown ? I18n::tr("The system will shut down without committing files in File staging.")
+                         : I18n::tr("The system will restart without committing files in File staging."))
+             : (shutdown ? I18n::tr("The system will shut down safely through UWF.") : I18n::tr("The system will restart safely through UWF."));
   const QString iconPath = shutdown ? QStringLiteral(":/icons/shutdown.svg") : QStringLiteral(":/icons/restart.svg");
 
   PowerDialog dialog(parent);
@@ -178,9 +179,17 @@ PowerActionDialogOutcome runPowerActionDialog(QWidget* parent, PowerActionDialog
   dialog.setWindowIcon(ThemeManager::instance().icon(iconPath));
   dialog.setMinimumWidth(direct ? 500 : 650);
 
-  auto* layout = new QVBoxLayout(&dialog);
-  layout->setContentsMargins(24, 22, 24, 16);
+  auto* windowLayout = new QVBoxLayout(&dialog);
+  windowLayout->setContentsMargins(24, 22, 24, 16);
+  windowLayout->setSpacing(16);
+  auto* content = new QWidget(&dialog);
+  auto* layout = new QVBoxLayout(content);
+  layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(16);
+  auto* scroll = new VerticalScrollArea(&dialog);
+  scroll->setObjectName(QStringLiteral("powerConfirmationScroll"));
+  scroll->setWidget(content);
+  windowLayout->addWidget(scroll, 1);
 
   auto* header = new QHBoxLayout();
   header->setContentsMargins(0, 0, 0, 0);
@@ -203,7 +212,7 @@ PowerActionDialogOutcome runPowerActionDialog(QWidget* parent, PowerActionDialog
   headingLabel->setObjectName(QStringLiteral("powerActionHeading"));
   QFont headingFont = headingLabel->font();
   headingFont.setPointSizeF(headingFont.pointSizeF() + 2.0);
-  headingFont.setBold(true);
+  headingFont.setWeight(QFont::Medium);
   headingLabel->setFont(headingFont);
   titles->addWidget(headingLabel);
 
@@ -224,14 +233,13 @@ PowerActionDialogOutcome runPowerActionDialog(QWidget* parent, PowerActionDialog
   safetyLayout->setSpacing(4);
   auto* safetyHeading = new QLabel(direct ? I18n::tr("File staging will be skipped") : I18n::tr("UWF protection"), safetyCard);
   QFont safetyFont = safetyHeading->font();
-  safetyFont.setBold(true);
+  safetyFont.setWeight(QFont::Medium);
   safetyHeading->setFont(safetyFont);
   safetyLayout->addWidget(safetyHeading);
-  auto* safetyDetail =
-      new QLabel(direct ? (shutdown ? I18n::tr("Files in File staging will not be committed before shutdown.")
-                                    : I18n::tr("Files in File staging will not be committed before restart."))
-                        : I18n::tr("This operation remains available even if the UWF overlay is full."),
-                 safetyCard);
+  auto* safetyDetail = new QLabel(direct ? (shutdown ? I18n::tr("Files in File staging will not be committed before shutdown.")
+                                                     : I18n::tr("Files in File staging will not be committed before restart."))
+                                         : I18n::tr("This operation remains available even if the UWF overlay is full."),
+                                  safetyCard);
   safetyDetail->setWordWrap(true);
   safetyDetail->setStyleSheet(QStringLiteral("color: %1;").arg(theme.color(Sem::FgMuted).name()));
   safetyLayout->addWidget(safetyDetail);
@@ -282,7 +290,7 @@ PowerActionDialogOutcome runPowerActionDialog(QWidget* parent, PowerActionDialog
   auto* warningHeading = new QLabel(I18n::tr("Uncommitted changes will be lost"), warningCard);
   warningHeading->setObjectName(QStringLiteral("powerWarningHeading"));
   QFont warningFont = warningHeading->font();
-  warningFont.setBold(true);
+  warningFont.setWeight(QFont::Medium);
   warningHeading->setFont(warningFont);
   warningHeading->setStyleSheet(QStringLiteral("color: %1;").arg(theme.color(Sem::Danger).name()));
   warningLayout->addWidget(warningHeading);
@@ -305,15 +313,15 @@ PowerActionDialogOutcome runPowerActionDialog(QWidget* parent, PowerActionDialog
   auto* cancelButton = buttons->addButton(I18n::tr("Cancel"), QDialogButtonBox::RejectRole);
   QObject::connect(cancelButton, &QPushButton::clicked, &dialog, &QDialog::reject);
   auto* buttonRow = new QHBoxLayout();
-  auto* directHint = new QLabel(shutdown ? I18n::tr("Direct shutdown skips File staging commits.")
-                                        : I18n::tr("Direct restart skips File staging commits."),
-                                &dialog);
+  auto* directHint =
+      new QLabel(shutdown ? I18n::tr("Direct shutdown skips File staging commits.") : I18n::tr("Direct restart skips File staging commits."), &dialog);
   directHint->setObjectName(QStringLiteral("directPowerHint"));
+  directHint->setWordWrap(true);
   directHint->setStyleSheet(QStringLiteral("color: %1;").arg(theme.color(Sem::FgMuted).name()));
   directHint->setVisible(!direct);
   buttonRow->addWidget(directHint, 1);
   buttonRow->addWidget(buttons);
-  layout->addLayout(buttonRow);
+  windowLayout->addLayout(buttonRow);
   actionButton->setAutoDefault(false);
   actionButton->setEnabled(!preparationRequired);
   cancelButton->setAutoDefault(true);

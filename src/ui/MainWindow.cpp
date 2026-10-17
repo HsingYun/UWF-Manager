@@ -27,6 +27,7 @@
 #include <QLabel>
 #include <QMap>
 #include <QMenu>
+#include <QScreen>
 #include <QStatusBar>
 #include <QTabWidget>
 #include <QTextBrowser>
@@ -37,6 +38,8 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 #include <QWidget>
+#include <QWindow>
+#include <algorithm>
 #include <chrono>
 #include <exception>
 #include <optional>
@@ -53,6 +56,7 @@
 #include "../uwf/api/UwfmgrCli.h"
 #include "AboutDialog.h"
 #include "ApplyPlanDialog.h"
+#include "ContentHintBox.h"
 #include "DiagnosticReportProvider.h"
 #include "Dialogs.h"
 #include "DiskTab.h"
@@ -63,7 +67,6 @@
 #include "ImportApplier.h"
 #include "ImportDialog.h"
 #include "LogViewerDialog.h"
-#include "MarqueeHintBox.h"
 #include "OverlayPresentationController.h"
 #include "PendingCollect.h"
 #include "PowerController.h"
@@ -71,6 +74,7 @@
 #include "ThemeManager.h"
 #include "TransientLabel.h"
 #include "TrayController.h"
+#include "VerticalScrollArea.h"
 #include "WindowChromeController.h"
 
 namespace uwf::ui {
@@ -350,7 +354,7 @@ void MainWindow::buildUi() {
     tb->addWidget(spacer);
   }
 
-  auto* hubAction = tb->addAction("");
+  auto* hubAction = tb->addAction("HUB");
   hubAction->setCheckable(true);
   hubAction->setToolTip(I18n::tr("Show or hide the overlay hub."));
   connect(hubAction, &QAction::toggled, m_overlayPresentation.get(), &OverlayPresentationController::setHubEnabled);
@@ -359,17 +363,15 @@ void MainWindow::buildUi() {
   }
 
   // 语言切换按钮（IconOnly，下拉菜单展示支持的语言）。
-  m_actLang = tb->addAction("");
+  m_actLang = tb->addAction(I18n::tr("Language"));
   m_actLang->setToolTip(I18n::tr("Switch display language"));
   if (auto* btn = qobject_cast<QToolButton*>(tb->widgetForAction(m_actLang))) {
     btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
     btn->setPopupMode(QToolButton::InstantPopup);
     // 去掉 InstantPopup 默认的小下拉箭头——纯 icon 按钮更干净。
     btn->setStyleSheet("QToolButton::menu-indicator{image:none;width:0}");
-    // 把 menu 的 parent 设成 btn——btn 是 toolbar 的子项，toolbar 在
-    // rebuildUi 时被 deleteLater，menu 跟着一起释放，避免每次重建留下
-    // 一个孤立 QMenu 挂在 MainWindow 下。
-    auto* menu = new QMenu(btn);
+    // 菜单属于 action，而不只是按钮：工具栏溢出菜单也能打开语言子菜单。
+    auto* menu = new QMenu(tb);
     // QActionGroup 让两个语言项互斥单选；语言名一律用各自语言的本地写法
     // (English / 简体中文)，不参与翻译。
     auto* langGroup = new QActionGroup(menu);
@@ -411,10 +413,10 @@ void MainWindow::buildUi() {
       if (!switchTo(I18n::Lang::Zh_CN)) restoreLangChecks();
     });
 
-    btn->setMenu(menu);
+    m_actLang->setMenu(menu);
   }
 
-  m_actTheme = tb->addAction("");
+  m_actTheme = tb->addAction(I18n::tr("Theme"));
   m_actTheme->setToolTip(I18n::tr("Toggle light / dark theme for this session. No preferences are saved."));
   // 在 toggle() 之前禁 paint：toggle 内部会 setPalette + setStyleSheet("") +
   // setStyleSheet(sheet)，中间 unstyled 那一帧会闪。先压 paint 再切，再让
@@ -464,12 +466,7 @@ void MainWindow::buildUi() {
   m_tabs->setObjectName("mainTabs");
   m_tabs->setDocumentMode(true);
   m_tabs->setTabPosition(QTabWidget::North);
-  // 不再钉死一个固定的 minimumWidth。Qt 的 qSmartMinSize 里 "minSize.width()>0 →
-  // 直接覆盖" 的规则会让任何显式 setMinimumWidth 盖掉内容真实需求——之前这里
-  // 写死 220，磁盘页那行（保护状态 + 两张会话卡片 + 绑定下拉框 + 右侧两个按钮，
-  // 都不可压缩）实际要 ~目标宽度，却被上报成 220，窗口于是能缩到把整行裁掉。
-  // 留空让磁盘页内容如实上报最小宽度，QMainWindow 自动把窗口下限钉到
-  // 「左区内容 + 右侧 globalWrap」之和，低于此不再允许缩小。
+  // 状态卡按控件组换行，最小宽度来自最宽的组，而不是整行操作之和。
   m_tabs->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   mainRow->addWidget(m_tabs, 1);
 
@@ -492,9 +489,8 @@ void MainWindow::buildUi() {
                  "and some features may be unavailable.")
             .arg(m_osProductName, m_osEditionId));
   }
-  // 顶部全局设置拿走所有可拉伸空间，里面的 QScrollArea 会在高度不足时
-  // 自己滚动；tips 区用固定高度贴底。
-  globalLayout->addWidget(m_global, 1);
+  globalLayout->addWidget(m_global);
+  globalLayout->addStretch(1);
   // 用 QTextBrowser 而非 QLabel：QLabel 的自动换行只能在词边界断，遇到没有空格
   // 的长串（注册表键 HKEY_LOCAL_MACHINE\... 整串无断点）只能在中文前缀"注册表："
   // 处断一次、余下整段溢出裁掉。改用 QTextBrowser + WrapAnywhere（任意字符断行）。
@@ -502,10 +498,8 @@ void MainWindow::buildUi() {
   // 行再硬断，第一行照样空着；WrapAnywhere 才是逐字符填满每行、键紧接"注册表："往下
   // 排。配成只读 / 无边框 / 关滚动条 / 不可交互，外观仍由 QSS #hoverHintBox 提供
   // （圆角灰底）。
-  // MarqueeHintBox（QTextBrowser 子类）：英文下个别提示（域机密密钥 / TSCAL 的默认
-  // 排除说明）超过这 110px 放不下，本类在溢出时自动循环来回滚动让全文都能看到；
-  // 放得下时静止。其余配置照旧——它对外仍是个普通 QTextBrowser。
-  auto* hoverHint = new MarqueeHintBox(this);
+  // 高度跟随完整文本，外层设置列统一滚动；长硬件信息及提示不再内部裁切。
+  auto* hoverHint = new ContentHintBox(this);
   hoverHint->setObjectName("hoverHintBox");
   hoverHint->setWordWrapMode(QTextOption::WrapAnywhere);
   hoverHint->setFrameShape(QFrame::NoFrame);
@@ -517,8 +511,6 @@ void MainWindow::buildUi() {
   hoverHint->document()->setDocumentMargin(0);
   // viewport 透明，让 QSS 画在 frame 上的圆角灰底透出来（否则文本区方角会盖角）。
   hoverHint->viewport()->setAutoFillBackground(false);
-  hoverHint->setFixedHeight(110);
-  hoverHint->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   // 默认文案是机器基本信息（OS / CPU / RAM / GPU）的 HTML，悬停事件临时覆盖成
   // 纯文本 tooltip。QTextBrowser::setText 走 Qt::mightBeRichText 自动判别：HTML
   // 基线按富文本渲染，纯文本 tooltip 按纯文本渲染，里面的 & / < 不会被解析走样。
@@ -527,17 +519,12 @@ void MainWindow::buildUi() {
   m_hoverHints->setTarget(m_hoverCtl);
   globalLayout->addWidget(hoverHint, 0);
   globalWrap->setObjectName("globalWrap");
-  globalWrap->setFixedWidth(420);
-  // 右侧面板整体最小高度 = 外壳最小高 + 滚动内容完整高。GlobalStatusPanel 的滚动区
-  // 最小高恒为 0（永远可收缩、保证有横幅时滚动表现一致），所以 globalLayout->minimumSize()
-  // 只含外壳（标题 / 横幅 / tips / 内边距）、不含两张卡片的高度；这里把内容完整高
-  // （preferredContentHeight）显式加回，窗口下限才恰好容得下整块内容、无横幅时不滚动，
-  // 也不会因为漏算内容而能把窗口缩得过小。二者解耦：抬窗口下限不影响滚动一致性。
-  globalWrap->setMinimumHeight(globalLayout->minimumSize().height() + m_global->preferredContentHeight());
-  mainRow->addWidget(globalWrap, 0);
-
-  // 让 MainWindow 也跟随到这个最小高度（加上工具栏和状态栏的大致高度）。
-  setMinimumHeight(globalWrap->minimumHeight() + 80);
+  // 整列只有一个滚动边界：标题、警告、设置及提示都可触达，警告不会把
+  // 设置区挤成零高度。列宽来自当前字体与内容，不再用完整内容高度抬高窗口下限。
+  auto* globalScroll = new VerticalScrollArea(this);
+  globalScroll->setObjectName("globalSettingsScroll");
+  globalScroll->setWidget(globalWrap);
+  mainRow->addWidget(globalScroll, 0);
 
   centralLayout->addLayout(mainRow, 1);
   setCentralWidget(central);
@@ -619,6 +606,19 @@ void MainWindow::rebuildUi() {
   // 揭幕前先把挂起的布局请求与绘制同步跑完——确保恢复不透明的那一刻窗口
   // 已是完整绘制好的最终形态，不会闪过一帧尚未绘制完的空窗。
   QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+  if (!m_initialGeometryApplied && isVisible() && isWindow()) {
+    m_initialGeometryApplied = true;
+    if (!isMaximized() && !isFullScreen()) {
+      const auto margins = windowHandle()->frameMargins();
+      const QRect available = screen()->availableGeometry();
+      const QSize frameSize(margins.left() + margins.right(), margins.top() + margins.bottom());
+      resize(size().boundedTo(available.size() - frameSize));
+      const QRect frame = frameGeometry();
+      const QPoint position(std::clamp(frame.x(), available.left(), std::max(available.left(), available.right() - frame.width() + 1)),
+                            std::clamp(frame.y(), available.top(), std::max(available.top(), available.bottom() - frame.height() + 1)));
+      move(position);
+    }
+  }
   repaint();
 
   // 揭幕：首屏时窗口自构造起就是全透明的（opacity 0），此刻内容 / 数据 / 绘制

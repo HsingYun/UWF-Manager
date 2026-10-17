@@ -23,6 +23,7 @@
 #include <QStyle>
 #include <QVBoxLayout>
 
+#include "FlowLayout.h"
 #include "I18n.h"
 #include "StatusBanner.h"
 #include "SwitchButton.h"
@@ -62,12 +63,12 @@ StatusPanel::StatusPanel(QWidget* parent) : QWidget(parent) {
   m_banner->hide();
   outer->addWidget(m_banner);
 
-  // 保护状态 + 绑定方式 放同一行；每组的形式是：
-  //   标签：[当前值] →[下次会话编辑控件]
-  // 这样用户可以同时看到本次会话的生效值和将要写入的值。
-  auto* row = new QHBoxLayout();
+  auto* flow = new FlowLayout();
+  // 会话状态、绑定方式和操作按钮分别保持完整，组之间按实际内容宽度换行。
+  auto* protection = new QWidget();
+  auto* row = new QHBoxLayout(protection);
+  row->setContentsMargins(0, 0, 0, 0);
   row->setSpacing(6);
-  m_row = row;
 
   m_protectCur = new QLabel("—");
   m_protectCur->setObjectName("statusCurLabel");
@@ -88,7 +89,11 @@ StatusPanel::StatusPanel(QWidget* parent) : QWidget(parent) {
                       I18n::tr("The session that takes effect after a reboot. Changes you make take effect after the system restarts."), m_protectNext),
       0, Qt::AlignVCenter);
 
-  row->addSpacing(28);
+  flow->addWidget(protection);
+  auto* binding = new QWidget();
+  auto* bindRow = new QHBoxLayout(binding);
+  bindRow->setContentsMargins(0, 0, 0, 0);
+  bindRow->setSpacing(6);
 
   // 绑定方式不是 on/off，保留为选择框：按盘符 / 按卷 ID。
   // data=true → bBindByVolumeName=true → 按卷 ID
@@ -98,24 +103,23 @@ StatusPanel::StatusPanel(QWidget* parent) : QWidget(parent) {
   m_bindNext->setToolTip(
       I18n::tr("How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing "
                "other disks). Volume ID stays stable across drive letter changes."));
-  row->addWidget(makeKey(I18n::tr("Bind by:")), 0, Qt::AlignVCenter);
-  row->addWidget(m_bindNext, 0, Qt::AlignVCenter);
-
-  row->addStretch(1);
-
-  outer->addWidget(makeBareCard(row));
+  bindRow->addWidget(makeKey(I18n::tr("Bind by:")), 0, Qt::AlignVCenter);
+  bindRow->addWidget(m_bindNext, 0, Qt::AlignVCenter);
+  flow->addWidget(binding);
+  auto* actions = new QWidget();
+  m_actions = new QHBoxLayout(actions);
+  m_actions->setContentsMargins(0, 0, 0, 0);
+  m_actions->setSpacing(8);
+  flow->addWidget(actions);
+  flow->setAlignment(actions, Qt::AlignRight);
+  outer->addWidget(makeBareCard(flow));
 
   connect(m_protectNext, &QAbstractButton::toggled, this, &StatusPanel::emitIfChanged);
   connect(m_bindNext, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &StatusPanel::emitIfChanged);
 }
 
 void StatusPanel::addTrailingAction(QWidget* w) const {
-  if (!m_row || !w) return;
-  // 直接 append 到 row 末尾；由于 row 末尾已经有一个 addStretch，
-  // 这里新增的 widget 会被 stretch 推到行尾，实现右对齐。
-  // 同时把 widget reparent 到 card 上，让它随 setUnsupported 的遍历一起被
-  // 置灰（调用方可在其上再次 setEnabled(true) 来覆盖）。
-  m_row->addWidget(w);
+  if (w) m_actions->addWidget(w);
 }
 
 void StatusPanel::setUnsupported(const QString& reason) {

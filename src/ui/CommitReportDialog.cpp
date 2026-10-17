@@ -94,13 +94,11 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, const
   QDialog dlg(parent);
   dlg.setWindowTitle(canceledRemaining > 0 ? I18n::tr("Commit canceled") : I18n::tr("Commit result"));
   dlg.resize(showExistence ? 1300 : 1180, 520);
-  // 给一个合理的尺寸下限：Path / ErrorCode 走 ResizeToContents 不再有"被挤成
-  // C:..."的风险、Reason 由 stretchLastSection 撑剩余空间，但对话框拖得太窄仍然
-  // 影响摘要 / 分页栏 / 按钮的可读性。900 / 1100 是经验值——能让常见路径 +
-  // 常见错误码 + 短中文 reason 一行全部不滚动地显示完。垂直 360 保留表至少
-  // 8 行 + 分页栏 + 按钮。
-  dlg.setMinimumSize(showExistence ? 1100 : 900, 360);
+  // 表格负责横向滚动，不再要求所有列同时展开才能缩小窗口。
+  dlg.setMinimumSize(680, 360);
   auto* lay = new QVBoxLayout(&dlg);
+  lay->setContentsMargins(20, 18, 20, 14);
+  lay->setSpacing(12);
 
   const QString okLabel = I18n::tr("Succeeded");
   const QString skipLabel = I18n::tr("Skipped");
@@ -116,6 +114,7 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, const
   QString summaryText = I18n::tr("%1 succeeded; %2 skipped; %3 failed.").arg(okN).arg(skipN).arg(failN);
   if (canceledRemaining > 0) summaryText += I18n::tr("\nCanceled by user; %1 entries not processed.").arg(canceledRemaining);
   auto* summary = new QLabel(summaryText);
+  summary->setWordWrap(true);
   summary->setTextInteractionFlags(Qt::TextSelectableByMouse);
   lay->addWidget(summary);
 

@@ -16,8 +16,15 @@
  */
 #include "StatusBanner.h"
 
+#include <QAbstractTextDocumentLayout>
+#include <QDynamicPropertyChangeEvent>
 #include <QPainter>
 #include <QPen>
+#include <QStyle>
+#include <QTextDocument>
+#include <QTextOption>
+#include <algorithm>
+#include <cmath>
 
 #include "ThemeManager.h"
 
@@ -43,12 +50,50 @@ BannerColors colorsFor(const bool warn, const bool light) {
 }  // namespace
 
 StatusBanner::StatusBanner(QWidget* parent) : QLabel(parent) {
+  setWordWrap(true);
+  setTextFormat(Qt::PlainText);
   // 配色随主题变；切主题时重绘（GlobalStatusPanel 会整体重建，但 StatusPanel 等常驻
   // 实例不会，故这里自挂一条）。
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this](Theme) { update(); });
 }
 
-void StatusBanner::paintEvent(QPaintEvent* ev) {
+std::unique_ptr<QTextDocument> StatusBanner::documentForWidth(const int width) const {
+  auto document = std::make_unique<QTextDocument>();
+  document->setDocumentMargin(0);
+  document->setDefaultFont(font());
+  QTextOption option;
+  option.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
+  document->setDefaultTextOption(option);
+  document->setPlainText(text());
+  document->setTextWidth(std::max(1, width));
+  return document;
+}
+
+QSize StatusBanner::minimumSizeHint() const {
+  ensurePolished();
+  const auto insets = contentsMargins();
+  return QSize(fontMetrics().maxWidth() + insets.left() + insets.right() + 2 * margin(),
+               fontMetrics().height() + insets.top() + insets.bottom() + 2 * margin());
+}
+
+int StatusBanner::heightForWidth(const int width) const {
+  ensurePolished();
+  const auto insets = contentsMargins();
+  const auto document = documentForWidth(width - insets.left() - insets.right() - 2 * margin());
+  return static_cast<int>(std::ceil(document->size().height())) + insets.top() + insets.bottom() + 2 * margin();
+}
+
+bool StatusBanner::event(QEvent* event) {
+  const bool handled = QLabel::event(event);
+  if (event->type() == QEvent::DynamicPropertyChange && static_cast<QDynamicPropertyChangeEvent*>(event)->propertyName() == "level") {
+    style()->unpolish(this);
+    style()->polish(this);
+    update();
+  }
+  return handled;
+}
+
+void StatusBanner::paintEvent(QPaintEvent*) {
   const bool warn = property("level").toString() == QLatin1String("warn");
   const BannerColors c = colorsFor(warn, ThemeManager::instance().isLight());
   QPainter p(this);
@@ -58,8 +103,13 @@ void StatusBanner::paintEvent(QPaintEvent* ev) {
   p.setPen(QPen(c.border, 1));
   p.setBrush(c.bg);
   p.drawRoundedRect(r, 6, 6);
-  // 文字由基类按 QSS 的 color / padding 绘制，叠在底之上。
-  QLabel::paintEvent(ev);
+  const QRect textBounds = contentsRect().adjusted(margin(), margin(), -margin(), -margin());
+  const auto document = documentForWidth(textBounds.width());
+  QAbstractTextDocumentLayout::PaintContext context;
+  context.palette.setColor(QPalette::Text, palette().color(QPalette::WindowText));
+  p.setClipRect(textBounds);
+  p.translate(textBounds.topLeft());
+  document->documentLayout()->draw(&p, context);
 }
 
 }  // namespace uwf::ui

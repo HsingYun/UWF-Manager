@@ -20,10 +20,12 @@
 // 都是薄封装：包一层 QString 边界 / Win32 Shell / 表单控件样式，无业务逻辑。
 
 #include <QString>
+#include <array>
 
 class QComboBox;
 class QVariant;
 class QWidget;
+class QPushButton;
 
 namespace uwf::ui {
 
@@ -42,6 +44,9 @@ void setComboValue(QComboBox* combo, const QVariant& value);
 
 // 切换控件的 "dirty" 动态属性并重跑 style polish，让 QSS 据此变色。两个状态面板共用。
 void markDirty(QWidget* w, bool dirty);
+
+// 为四个紧凑分页按钮统一尺寸、内边距及可访问名称；顺序为首/上/下/末页。
+void configurePagerButtons(const std::array<QPushButton*, 4>& buttons);
 
 // 当前会话"启用 / 停用"状态文字的富文本：启用 → 绿（Sem::AddOk），停用 →
 // 红（Sem::Danger）。塞进 QLabel 即可（设 Qt::RichText）。全局筛选器与单卷

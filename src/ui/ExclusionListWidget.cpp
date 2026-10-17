@@ -340,6 +340,7 @@ ExclusionListWidget::ExclusionListWidget(Kind kind, dialogs::FileDialogProvider&
   // 而不是压在底部离 StatusPanel 太远。
   m_summary = new QLabel(this);
   m_summary->setObjectName("diffSummary");
+  m_summary->setWordWrap(true);
   m_summary->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   layout->addWidget(m_summary);
 

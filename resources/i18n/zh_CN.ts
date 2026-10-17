@@ -534,6 +534,8 @@ Next session: %2</source>
     <message><source>About</source><translation>关于</translation></message>
     <message><source>About this program.</source><translation>关于本程序。</translation></message>
     <message><source>Switch display language</source><translation>切换显示语言</translation></message>
+    <message><source>Language</source><translation>语言</translation></message>
+    <message><source>Theme</source><translation>主题</translation></message>
     <message>
         <source>Toggle light / dark theme for this session. No preferences are saved.</source>
         <translation>仅切换本次运行的浅色 / 深色主题，不保存偏好设置。</translation>
@@ -612,6 +614,8 @@ Canceled by user; %1 entries not processed.</source>
     <message><source>Error code</source><translation>错误码</translation></message>
     <message><source>Reason</source><translation>原因</translation></message>
     <message><source>Previous page</source><translation>上一页</translation></message>
+    <message><source>First page</source><translation>首页</translation></message>
+    <message><source>Last page</source><translation>末页</translation></message>
     <message><source>Next page</source><translation>下一页</translation></message>
     <message><source>Page %1 / %2 · %3 entries total</source><translation>第 %1 / %2 页 · 共 %3 条</translation></message>
     <message><source>Copy selected rows</source><translation>复制选中行</translation></message>

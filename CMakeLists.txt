@@ -31,6 +31,14 @@ find_package(Qt6 COMPONENTS Widgets Svg Network LinguistTools REQUIRED)
 qt_standard_project_setup()
 
 set(UWF_OVERLAY_RUNTIME_SOURCES
+        src/ui/CenteredTextStyle.h
+        src/ui/CenteredTextStyle.cpp
+        src/ui/FlowLayout.h
+        src/ui/FlowLayout.cpp
+        src/ui/VerticalScrollArea.h
+        src/ui/VerticalScrollArea.cpp
+        src/ui/ContentHintBox.h
+        src/ui/ContentHintBox.cpp
         src/ui/OverlayFloatingWidget.h
         src/ui/OverlayFloatingWidget.cpp
         src/ui/OverlayHubView.h
@@ -186,8 +194,6 @@ set(UWF_SOURCES
         src/ui/UiTiming.h
         src/ui/PowerController.h
         src/ui/PowerController.cpp
-        src/ui/MarqueeHintBox.h
-        src/ui/MarqueeHintBox.cpp
         src/ui/LogViewerDialog.h
         src/ui/LogViewerDialog.cpp
         src/ui/TableText.h
@@ -220,8 +226,6 @@ set(UWF_SOURCES
         src/ui/OverlayUsageBar.h
         src/ui/OverlayUsageBar.cpp
         src/ui/UsageBarGeometry.h
-        src/ui/CenteredTextStyle.h
-        src/ui/CenteredTextStyle.cpp
         src/ui/UiUtil.h
         src/ui/UiUtil.cpp
         src/ui/Pager.h

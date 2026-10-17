@@ -21,6 +21,7 @@
 #include <QClipboard>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QDir>
 #include <QElapsedTimer>
 #include <QLabel>
 #include <QLineEdit>
@@ -28,6 +29,9 @@
 #include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QScopeGuard>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QSignalSpy>
 #include <QTableWidget>
 #include <QTemporaryFile>
@@ -35,12 +39,15 @@
 #include <QTimer>
 #include <QVBoxLayout>
 #include <algorithm>
+#include <array>
+#include <memory>
 #include <optional>
 #include <utility>
 
 #include "core/UwfModel.h"
 #include "ui/Dialogs.h"
 #include "ui/ExclusionListWidget.h"
+#include "ui/FlowLayout.h"
 #include "ui/GlobalStatusPanel.h"
 #include "ui/HoverHintController.h"
 #include "ui/I18n.h"
@@ -49,6 +56,8 @@
 #include "ui/StatusPanel.h"
 #include "ui/SwitchButton.h"
 #include "ui/TableText.h"
+#include "ui/ThemeManager.h"
+#include "UiTextChecks.h"
 #include "ui/TransientLabel.h"
 
 namespace {
@@ -106,6 +115,9 @@ class UiBehaviorTests final : public QObject {
   void powerConfirmationCanSkipStagingForDirectRestart();
   void powerConfirmationAcceptsOnlyTheExplicitAction();
   void powerDialogShowsProgressAndFailureInPlace();
+  void powerDialogCompactLayoutKeepsSafeActionsOutsideScrolling_data();
+  void powerDialogCompactLayoutKeepsSafeActionsOutsideScrolling();
+  void groupedLayoutReflowsWithoutClippingOrRecreatingControls();
   void tableCopyReflectsTheActualSelectionAndMissingCells();
   void volumeStatusTracksOnlyChangesFromTheDisplayedSnapshot();
   void globalStatusImportProducesConstrainedPendingDelta();
@@ -893,6 +905,110 @@ void UiBehaviorTests::recommendedConfigurationSelectionAppendsOnlyChosenGroups()
   auto* import = dialog.findChild<QPushButton*>(QStringLiteral("primaryBtn"));
   QVERIFY(import);
   QVERIFY(import->isEnabled());
+}
+
+void UiBehaviorTests::powerDialogCompactLayoutKeepsSafeActionsOutsideScrolling_data() {
+  QTest::addColumn<bool>("chinese");
+  QTest::addColumn<bool>("dark");
+  QTest::addColumn<bool>("failure");
+  for (const bool chinese : {false, true})
+    for (const bool dark : {false, true})
+      for (const bool failure : {false, true}) {
+        const QByteArray name = QStringLiteral("%1-%2-%3").arg(chinese ? "zh" : "en", dark ? "dark" : "light", failure ? "failure" : "confirmation").toLatin1();
+        QTest::newRow(name.constData()) << chinese << dark << failure;
+      }
+}
+
+void UiBehaviorTests::powerDialogCompactLayoutKeepsSafeActionsOutsideScrolling() {
+  using namespace uwf::ui;
+  QFETCH(bool, chinese);
+  QFETCH(bool, dark);
+  QFETCH(bool, failure);
+  const auto language = I18n::instance().lang();
+  const auto theme = ThemeManager::instance().current();
+  const auto restore = qScopeGuard([&] {
+    I18n::instance().setLang(language);
+    ThemeManager::instance().apply(theme);
+  });
+  I18n::instance().setLang(chinese ? I18n::Lang::Zh_CN : I18n::Lang::En);
+  ThemeManager::instance().apply(dark ? Theme::Dark : Theme::Light);
+  bool inspected = false;
+  QTimer::singleShot(0, this, [&] {
+    auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+    if (!dialog) return;
+    const auto reject = qScopeGuard([&] { dialog->reject(); });
+    dialog->resize(760, 420);
+    QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+    QCOMPARE(dialog->size(), QSize(760, 420));
+    QTRY_VERIFY2_WITH_TIMEOUT(uwf::test::clippedLabel(*dialog).isEmpty(), qPrintable(uwf::test::clippedLabel(*dialog)), 2000);
+    auto* scroll = dialog->findChild<QScrollArea*>(QStringLiteral("powerConfirmationScroll"));
+    auto* buttons = dialog->findChild<QDialogButtonBox*>();
+    QVERIFY(scroll && buttons);
+    QCOMPARE(scroll->horizontalScrollBar()->maximum(), 0);
+    for (auto* button : buttons->buttons()) {
+      QVERIFY(!scroll->isAncestorOf(button));
+      QVERIFY(dialog->rect().contains(QRect(button->mapTo(dialog, QPoint()), button->size())));
+      QVERIFY(!button->visibleRegion().isEmpty());
+    }
+    auto* cancel = qobject_cast<QPushButton*>(buttons->button(QDialogButtonBox::Cancel));
+    if (!cancel) {
+      for (auto* button : buttons->buttons())
+        if (buttons->buttonRole(button) == QDialogButtonBox::RejectRole) cancel = qobject_cast<QPushButton*>(button);
+    }
+    QVERIFY(cancel && cancel->isDefault());
+    const QString screenshots = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
+    if (!screenshots.isEmpty()) {
+      QVERIFY(QDir().mkpath(screenshots));
+      QVERIFY(dialog->grab().save(QDir(screenshots).filePath("power-" + QString::fromLatin1(QTest::currentDataTag()) + ".png")));
+    }
+    inspected = true;
+  });
+  PowerActionDialogRequest request{PowerAction::Restart};
+  if (failure) request.completedStagingFailure = PowerStagingFailure{QStringLiteral("Mock failure details:\n").repeated(40)};
+  const auto outcome = runPowerActionDialog(nullptr, std::move(request));
+  QCOMPARE(outcome, failure ? PowerActionDialogOutcome::CanceledAfterStagingFailure : PowerActionDialogOutcome::Canceled);
+  QVERIFY(inspected);
+}
+
+void UiBehaviorTests::groupedLayoutReflowsWithoutClippingOrRecreatingControls() {
+  QWidget host;
+  auto* layout = new uwf::ui::FlowLayout(&host);
+  const std::array sizes{QSize(180, 40), QSize(120, 28), QSize(200, 32)};
+  std::array<QWidget*, 3> groups{};
+  for (size_t i = 0; i < groups.size(); ++i) {
+    groups[i] = new QWidget(&host);
+    groups[i]->setFixedSize(sizes[i]);
+    layout->addWidget(groups[i]);
+  }
+  layout->setAlignment(groups.back(), Qt::AlignRight);
+  host.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&host));
+  for (const auto direction : {Qt::LeftToRight, Qt::RightToLeft}) {
+    host.setLayoutDirection(direction);
+    for (int width = 200; width <= 1000; width += 13) {
+      host.resize(width, layout->heightForWidth(width));
+      QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+      for (size_t i = 0; i < groups.size(); ++i) {
+        QCOMPARE(groups[i]->size(), sizes[i]);
+        QVERIFY(host.rect().contains(groups[i]->geometry()));
+        for (size_t j = i + 1; j < groups.size(); ++j) QVERIFY(!groups[i]->geometry().intersects(groups[j]->geometry()));
+      }
+    }
+  }
+  const int allVisibleHeight = layout->heightForWidth(200);
+  groups[1]->hide();
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+  QVERIFY(layout->heightForWidth(200) < allVisibleHeight);
+  groups[1]->show();
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+  QCOMPARE(layout->heightForWidth(200), allVisibleHeight);
+  QCOMPARE(layout->count(), 3);
+  QVERIFY(!layout->itemAt(-1));
+  QVERIFY(!layout->takeAt(3));
+  const std::unique_ptr<QLayoutItem> removed(layout->takeAt(1));
+  QVERIFY(removed);
+  QCOMPARE(removed->widget(), groups[1]);
+  QCOMPARE(layout->count(), 2);
 }
 
 }  // namespace

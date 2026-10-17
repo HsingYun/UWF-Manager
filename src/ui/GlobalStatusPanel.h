@@ -24,13 +24,11 @@
 class QLabel;
 class QComboBox;
 class QSpinBox;
-class QScrollArea;
 
 namespace uwf::ui {
 
 class SwitchButton;
 class OverlayUsageBar;
-class RoundedCornerOverlay;
 
 class GlobalStatusPanel : public QWidget {
   Q_OBJECT
@@ -46,7 +44,7 @@ class GlobalStatusPanel : public QWidget {
   // 由 setUnavailable 负责。
   void showElevationRequired() const;
 
-  // 在 setData 之后调用，决定滚动区内的控件是否可交互。UWF 可读但进程未提权
+  // 在 setData 之后调用，决定设置控件是否可交互。UWF 可读但进程未提权
   // 时用它把控件全部置灰——数据照常显示，但不能改。setUnavailable 已自行置灰，
   // 该路径下再调用为幂等。
   void setControlsEnabled(bool enabled) const;
@@ -58,11 +56,6 @@ class GlobalStatusPanel : public QWidget {
   // 仅刷新覆盖层占用（占用条 + 已用标签）——供 5s 定时器周期更新，不动其他
   // 控件、不触发 pendingChanged。面板处于不可用状态时为空操作。
   void updateUsage(const core::OverlayRuntime& runtime);
-
-  // 滚动内容（筛选器 + 覆盖层两张卡片）不滚动所需的完整高度。滚动区最小高恒为 0、
-  // 不向布局上报内容高度，故 MainWindow 用「外壳最小高 + 本值」算窗口下限，使其恰好
-  // 容得下整块内容、无横幅时不滚动；有横幅占高放不下时滚动区照常滚动（不被裁切）。
-  [[nodiscard]] int preferredContentHeight() const;
 
   [[nodiscard]] std::optional<bool> pendingFilterEnabled() const;
   [[nodiscard]] core::OverlayConfigDelta pendingOverlay() const;
@@ -88,10 +81,6 @@ class GlobalStatusPanel : public QWidget {
  signals:
   void pendingChanged();
 
- protected:
-  // 监听滚动区 viewport 的 Resize，让圆角遮罩层（m_cornerOverlay）跟着改大小。
-  bool eventFilter(QObject* obj, QEvent* ev) override;
-
  private:
   void emitIfChanged();
   void updateDirtyStyle();
@@ -108,12 +97,8 @@ class GlobalStatusPanel : public QWidget {
   QLabel* m_banner = nullptr;
   // 兼容模式警告横幅——独立于 m_banner，一经显示便常驻。
   QLabel* m_compatBanner = nullptr;
-  // 滚动区本体 + 内容宿主。UWF 不可用时只禁用宿主（而非整个面板），让
-  // QScrollArea 本身保持可用，内部控件变灰但仍能滚动查看。
-  QScrollArea* m_scroll = nullptr;
-  QWidget* m_scrollHost = nullptr;
-  // 盖在 viewport 上、抗锯齿补圆角的遮罩层（卡片滚到边缘时仍保持圆角）。
-  RoundedCornerOverlay* m_cornerOverlay = nullptr;
+  // 仅禁用设置区，不禁用标题与警告；滚动由宿主窗口统一管理。
+  QWidget* m_controls = nullptr;
 
   QLabel* m_filterCur = nullptr;
   SwitchButton* m_filterNext = nullptr;

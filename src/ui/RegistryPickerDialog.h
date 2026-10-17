@@ -68,6 +68,8 @@ class QTreeWidgetItem;
 
 namespace uwf::ui {
 
+class ContentHintBox;
+
 // 注册表选择器所需的只读浏览能力。系统实现委托给 util/RegistryKey；将数据源
 // 与 QWidget 生命周期分离后，选择器可以浏览离线快照或受控视图，而无需改变
 // 路径校验、选择语义和结果协议。所有方法都在选择器所属的 GUI 线程同步调用；
@@ -175,8 +177,8 @@ class RegistryPickerDialog : public QDialog {
   QLineEdit* m_addressBar = nullptr;
   QTreeWidget* m_tree = nullptr;
   QTableWidget* m_valueTable = nullptr;
-  QLabel* m_keyLabel = nullptr;    // 底部"键：……"行
-  QLabel* m_valueLabel = nullptr;  // 底部"值：……"行（仅支持值选择的模式创建）
+  ContentHintBox* m_keyLabel = nullptr;    // 底部"键：……"行
+  ContentHintBox* m_valueLabel = nullptr;  // 底部"值：……"行（仅支持值选择的模式创建）
   QPushButton* m_okBtn = nullptr;
 };
 

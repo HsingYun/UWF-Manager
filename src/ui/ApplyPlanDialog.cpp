@@ -383,6 +383,8 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   setWindowTitle(I18n::tr("Review and apply changes"));
   resize(820, 560);
   auto* layout = new QVBoxLayout(this);
+  layout->setContentsMargins(20, 18, 20, 14);
+  layout->setSpacing(12);
   // 不用 <b>：Qt RichText 在 Segoe UI 优先的 fallback 链下，给中文字符合成
   // 粗体（synthetic bold），渲染发虚。改用主题色强调取代粗体。accent 在
   // 上面 formatBlockHtml 那段已经定义。
@@ -433,6 +435,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   directRestartBtn->setVisible(false);
   auto* directRestartHint = new QLabel(I18n::tr("Direct restart skips File staging commits."), this);
   directRestartHint->setObjectName("directRestartHint");
+  directRestartHint->setWordWrap(true);
   directRestartHint->setStyleSheet(QStringLiteral("color: %1;").arg(ThemeManager::instance().color(Sem::FgMuted).name()));
   directRestartHint->setVisible(false);
   auto* exportBtn = new QPushButton(I18n::tr("Export commands…"), this);
@@ -440,7 +443,7 @@ ApplyPlanDialog::ApplyPlanDialog(GlobalStatusPanel* global, const QVector<QPoint
   buttonRow->addWidget(commitBtn);
   buttonRow->addWidget(restartBtn);
   buttonRow->addWidget(directRestartBtn);
-  buttonRow->addWidget(directRestartHint);
+  buttonRow->addWidget(directRestartHint, 1);
   buttonRow->addStretch(1);
   buttonRow->addWidget(exportBtn);
   buttonRow->addWidget(closeBtn);

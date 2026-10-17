@@ -37,14 +37,25 @@
 #include <algorithm>
 #include <memory>
 
+#include "ContentHintBox.h"
 #include "I18n.h"
 #include "Pager.h"
 #include "StatusBanner.h"
 #include "ThemeManager.h"
+#include "UiUtil.h"
+#include "VerticalScrollArea.h"
 
 namespace uwf::ui::dialogs {
 
 namespace {
+
+ContentHintBox* messageText(const QString& text, QWidget* parent) {
+  auto* body = new ContentHintBox(parent);
+  body->setText(text);
+  body->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+  body->setStyleSheet("QTextBrowser { background: transparent; border: 0; padding: 0; }");
+  return body;
+}
 
 class SystemFileDialogProvider final : public FileDialogProvider {
  public:
@@ -80,16 +91,13 @@ void warning(QWidget* parent, const QString& title, const QString& text) {
   layout->setContentsMargins(20, 16, 20, 12);
   layout->setSpacing(12);
 
-  auto* body = new QLabel(text, &dialog);
-  body->setWordWrap(true);
-  // 排错场景常需要复制文字进日志，所有 dialog 默认开启选中。
-  body->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
-  body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  layout->addWidget(body, 1);
+  auto* body = messageText(text, &dialog);
+  auto* scroll = new VerticalScrollArea(&dialog);
+  scroll->setWidget(body);
+  layout->addWidget(scroll, 1);
 
   // 对话框宽度跟随内容：按最宽一行（整行不折所需的宽度）定下限，夹在
-  // [360, 760]。够宽时 wordWrap 自然不折——长注册表路径之类的单行内容因而
-  // 完整显示；只有极长文本才会折到 760 上限，避免对话框宽到溢出屏幕。
+  // [360, 760]；长路径在字符边界换行，大段错误信息交由正文滚动，按钮保持可见。
   const QFontMetrics fm(body->fontMetrics());
   int widest = 0;
   // 绑到 const 变量再 range-loop——直接 for (... : text.split('\n')) 会让
@@ -103,6 +111,7 @@ void warning(QWidget* parent, const QString& title, const QString& text) {
   layout->addWidget(btns);
   auto* ok = btns->addButton(I18n::tr("OK"), QDialogButtonBox::AcceptRole);
   QObject::connect(ok, &QPushButton::clicked, &dialog, &QDialog::accept);
+  dialog.resize(dialog.minimumWidth(), std::min(560, dialog.sizeHint().height()));
   dialog.exec();
 }
 
@@ -139,11 +148,10 @@ bool confirm(QWidget* parent, const QString& title, const QString& text) {
   bodyLayout->setContentsMargins(12, 10, 12, 10);
   bodyLayout->setSpacing(0);
 
-  auto* body = new QLabel(text, bodyFrame);
-  body->setWordWrap(true);
-  body->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
-  body->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  bodyLayout->addWidget(body);
+  auto* body = messageText(text, bodyFrame);
+  auto* scroll = new VerticalScrollArea(bodyFrame);
+  scroll->setWidget(body);
+  bodyLayout->addWidget(scroll);
   bodyRow->addWidget(bodyFrame, 1);
   layout->addLayout(bodyRow, 1);
 
@@ -165,8 +173,8 @@ bool confirm(QWidget* parent, const QString& title, const QString& text) {
   const QStringList lines = measuredText.split('\n');
   for (const auto& line : lines) widest = std::max(widest, bodyFm.horizontalAdvance(line));
   const int bodyWidth = std::clamp(widest, 320, 440);
-  body->setFixedWidth(bodyWidth);
   dialog.setMinimumWidth(bodyWidth + 96);
+  dialog.resize(dialog.minimumWidth(), std::min(560, dialog.sizeHint().height()));
 
   return dialog.exec() == QDialog::Accepted;
 }
@@ -183,35 +191,40 @@ bool runCommitDialog(QWidget* parent, const QString& title, const QString& headi
   QDialog dialog(parent);
   dialog.setWindowTitle(title);
 
-  auto* layout = new QVBoxLayout(&dialog);
-  layout->setContentsMargins(20, 18, 20, 14);
+  auto* windowLayout = new QVBoxLayout(&dialog);
+  windowLayout->setContentsMargins(20, 18, 20, 14);
+  windowLayout->setSpacing(12);
+  auto* content = new QWidget(&dialog);
+  auto* layout = new QVBoxLayout(content);
+  layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(12);
+  auto* scroll = new VerticalScrollArea(&dialog);
+  scroll->setWidget(content);
+  windowLayout->addWidget(scroll, 1);
 
   // 操作标题：加粗，作为视觉重心——一句话说清"即将做什么"。
   auto* head = new QLabel(heading, &dialog);
   head->setWordWrap(true);
   QFont headFont = head->font();
-  headFont.setBold(true);
+  headFont.setWeight(QFont::Medium);
   head->setFont(headFont);
   layout->addWidget(head);
 
   // 目标：等宽字体 + 描边框，单独成块——一眼看清"动的是哪一个"。
-  auto* targetLabel = new QLabel(target, &dialog);
-  targetLabel->setWordWrap(true);
-  targetLabel->setTextInteractionFlags(Qt::TextSelectableByMouse | Qt::TextSelectableByKeyboard);
+  auto* targetLabel = messageText(target, &dialog);
+  targetLabel->setPlainText(target);
   QFont monoFont("Consolas");
   monoFont.setStyleHint(QFont::Monospace);
   targetLabel->setFont(monoFont);
   const QString mutedHex = ThemeManager::instance().color(Sem::FgMuted).name();
-  targetLabel->setStyleSheet(QString("QLabel { border: 1px solid %1; border-radius: 4px; padding: 8px 10px; }").arg(mutedHex));
+  targetLabel->setStyleSheet(QString("QTextBrowser { background: transparent; border: 1px solid %1; border-radius: 4px; padding: 8px 10px; }").arg(mutedHex));
   layout->addWidget(targetLabel);
 
   // 范围说明：次要色弱化。阻止提示中的 detail 是"无法继续的原因"，
   // 改放进下方警示横幅醒目展示，这里不再重复渲染。
   if (!detail.isEmpty() && isConfirmation) {
-    auto* detailLabel = new QLabel(detail, &dialog);
-    detailLabel->setWordWrap(true);
-    detailLabel->setStyleSheet(QString("color: %1;").arg(mutedHex));
+    auto* detailLabel = messageText(detail, &dialog);
+    detailLabel->setStyleSheet(QString("QTextBrowser { color: %1; background: transparent; border: 0; padding: 0; }").arg(mutedHex));
     layout->addWidget(detailLabel);
   }
 
@@ -252,7 +265,7 @@ bool runCommitDialog(QWidget* parent, const QString& title, const QString& headi
     pageLabel->setMinimumWidth(220);
     auto* nextBtn = new QPushButton(QStringLiteral("›"), &dialog);
     auto* lastBtn = new QPushButton(QStringLiteral("»"), &dialog);
-    for (auto* b : {firstBtn, prevBtn, nextBtn, lastBtn}) b->setMaximumWidth(36);
+    configurePagerButtons({firstBtn, prevBtn, nextBtn, lastBtn});
     pageRow->addStretch(1);
     pageRow->addWidget(firstBtn);
     pageRow->addWidget(prevBtn);
@@ -334,7 +347,7 @@ bool runCommitDialog(QWidget* parent, const QString& title, const QString& headi
     closeBtn->setDefault(true);
     closeBtn->setFocus();
   }
-  layout->addWidget(btns);
+  windowLayout->addWidget(btns);
 
   // 宽度跟随内容：取标题 / 目标 / 说明里最宽的一行，夹在 [420, 760]。
   const QFontMetrics headFm(headFont);
@@ -343,6 +356,7 @@ bool runCommitDialog(QWidget* parent, const QString& title, const QString& headi
   if (!detail.isEmpty()) widest = std::max(widest, headFm.horizontalAdvance(detail));
   if (!previewItems.isEmpty()) widest = std::max(widest, 620);
   dialog.setMinimumWidth(std::clamp(widest + 64, 420, 760));
+  dialog.resize(dialog.minimumWidth(), std::min(620, dialog.sizeHint().height()));
 
   return dialog.exec() == QDialog::Accepted;
 }

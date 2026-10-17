@@ -1,7 +1,3 @@
-* {
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI";
-}
-
 QMainWindow, QDialog {
     background-color: #1B1D20;
     color: #E8EAED;
@@ -9,8 +5,6 @@ QMainWindow, QDialog {
 
 QWidget {
     color: #E8EAED;
-    font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", sans-serif;
-    font-size: 9pt;
 }
 
 QToolBar#mainToolbar {
@@ -137,7 +131,7 @@ QFrame#statusCard {
 
 QLabel#statusSection {
     color: #4C8BF5;
-    font-weight: bold;
+    font-weight: 500;
     font-size: 10.5pt;
     padding-top: 6px;
     padding-bottom: 2px;
@@ -162,7 +156,7 @@ QLabel#lockedHint {
     max-width: 18px;
     min-height: 18px;
     max-height: 18px;
-    font-weight: bold;
+    font-weight: 600;
     font-size: 10pt;
     qproperty-alignment: AlignCenter;
 }
@@ -242,7 +236,7 @@ QLabel#statusBarLabel {
 QLabel#panelTitle {
     color: #E8EAED;
     font-size: 12pt;
-    font-weight: bold;
+    font-weight: 500;
     padding: 2px 0 8px 2px;
 }
 
@@ -338,6 +332,10 @@ QPushButton {
 
 QPushButton:hover {
     background: #363B43;
+}
+
+QPushButton[pagerNavigation="true"] {
+    padding: 6px 8px;
 }
 
 QPushButton#primaryBtn {

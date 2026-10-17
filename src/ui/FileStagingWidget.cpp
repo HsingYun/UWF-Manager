@@ -161,6 +161,7 @@ FileStagingWidget::FileStagingWidget(QString driveLetter, app::FileStagingStore&
 
   m_summary = new QLabel(this);
   m_summary->setObjectName(QStringLiteral("diffSummary"));
+  m_summary->setWordWrap(true);
   m_summary->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
   layout->addWidget(m_summary);
 

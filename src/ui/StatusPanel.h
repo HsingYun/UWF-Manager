@@ -46,8 +46,8 @@ class StatusPanel : public QWidget {
   // 用于"卷可保护但有局部限制"的情况（如 exFAT 不支持文件排除）。
   void setNotice(const QString& text);
 
-  // 把额外的控件（例如"持久化文件/目录/注册表修改"按钮）挂到保护状态那一行
-  // 的右侧。调用方必须自己管控按钮生命周期与 enable 状态。
+  // 操作按钮作为一个完整分组加入状态卡，宽度不足时整组换行并保持右对齐。
+  // Qt 父子关系管理按钮生命周期，调用方负责 enable 状态。
   void addTrailingAction(QWidget* w) const;
 
   [[nodiscard]] std::optional<bool> pendingVolumeProtected() const;
@@ -68,7 +68,7 @@ class StatusPanel : public QWidget {
 
   QLabel* m_banner = nullptr;
 
-  QHBoxLayout* m_row = nullptr;  // 保护状态/绑定方式那一行的布局
+  QHBoxLayout* m_actions = nullptr;
   QLabel* m_protectCur = nullptr;
   SwitchButton* m_protectNext = nullptr;
   QComboBox* m_bindNext = nullptr;
