@@ -16,15 +16,19 @@
  */
 #include "UwfVolume.h"
 
+#include <algorithm>
 #include <exception>
 #include <format>
+#include <map>
 #include <optional>
 #include <set>
 #include <stdexcept>
+#include <tuple>
 #include <utility>
 
 #include "../../util/DriveLetter.h"
 #include "../../util/Log.h"
+#include "../../util/StringUtil.h"
 #include "../wmi/WmiError.h"
 #include "../wmi/WmiException.h"
 #include "../wmi/WmiRowUtil.h"
@@ -100,23 +104,69 @@ bool isAlreadyExists(const WmiInfrastructureError& error) { return WmiError(stat
 
 }  // namespace
 
+UwfVolume::UwfVolume(WmiOperations& session) : UwfVolume(session, drive::mountedLetters) {}
+
+UwfVolume::UwfVolume(WmiOperations& session, MountLookup mounts) : m_session(session), m_mounts(std::move(mounts)) {
+  if (!m_mounts) throw std::invalid_argument("UWF volume mount lookup is required");
+}
+
 std::vector<api::VolumeRow> UwfVolume::readAll() const {
   const auto rows = m_session.queryInstances("SELECT * FROM UWF_Volume");
   std::vector<api::VolumeRow> volumes;
-  std::set<std::pair<bool, std::string>> managedIdentities;
+  std::set<std::tuple<bool, std::string, std::string>> identities;
+  std::map<std::pair<bool, std::string>, std::vector<std::size_t>> sessions;
   volumes.reserve(rows.size());
   for (const auto& source : rows) {
     rowutil::dumpRow("UWF_Volume", source);
     auto decoded = decodeManagedVolume(source);
     if (!decoded) continue;
-    if (!managedIdentities.emplace(decoded->currentSession, decoded->driveLetter).second) {
-      throw WmiProtocolError("read UWF_Volume",
-                             std::format("duplicate {} session instance for {}", decoded->currentSession ? "current" : "next", decoded->driveLetter));
+    const auto volumeName = toUpperAscii(decoded->volumeName);
+    if (!identities.emplace(decoded->currentSession, decoded->driveLetter, volumeName).second) {
+      throw WmiProtocolError("read UWF_Volume", std::format("duplicate {} session instance for {} / {}", decoded->currentSession ? "current" : "next",
+                                                            decoded->driveLetter, decoded->volumeName));
     }
+    sessions[{decoded->currentSession, decoded->driveLetter}].push_back(volumes.size());
     volumes.push_back(std::move(*decoded));
   }
-  UWF_LOG_D("uwf") << "volume read completed: providerRows=" << rows.size() << " managedRows=" << volumes.size();
-  return volumes;
+
+  // 两个会话各自独立：单一配置完整保留，同一会话内的盘符冲突才需要消歧。
+  // 不能用当前挂载关系抹掉另一会话中明确配置的卷身份。挂载缓存只活在这次
+  // 读取中，不沿用磁盘拔插前的结论。
+  std::map<std::string, std::vector<std::string>> mountedLetters;
+  const auto mountedAtDrive = [&](const api::VolumeRow& row) {
+    const auto key = toUpperAscii(row.volumeName);
+    auto mounts = mountedLetters.find(key);
+    if (mounts == mountedLetters.end()) {
+      mounts = mountedLetters.emplace(key, m_mounts(R"(\\?\)" + row.volumeName + '\\')).first;
+    }
+    return std::ranges::find(mounts->second, row.driveLetter) != mounts->second.end();
+  };
+  std::vector<bool> selected(volumes.size(), true);
+  for (const auto& [identity, indices] : sessions) {
+    const auto& [currentSession, driveLetter] = identity;
+    if (indices.size() == 1) continue;
+    std::optional<std::size_t> match;
+    for (const auto index : indices) {
+      const auto& row = volumes[index];
+      // 当前状态必须属于实际挂载卷；下次会话按盘符绑定的配置则仍针对该
+      // 盘符生效，不能仅因记录中的旧 GUID 不再挂载就丢弃。
+      const bool applies = (!currentSession && row.bindByDriveLetter) || mountedAtDrive(row);
+      selected[index] = applies;
+      if (!applies) continue;
+      if (match) {
+        throw WmiProtocolError("resolve UWF_Volume", std::format("ambiguous {} session instances for {}: {} and {}", currentSession ? "current" : "next",
+                                                                 driveLetter, volumes[*match].volumeName, row.volumeName));
+      }
+      match = index;
+    }
+  }
+  std::vector<api::VolumeRow> managed;
+  managed.reserve(volumes.size());
+  for (std::size_t index = 0; index < volumes.size(); ++index) {
+    if (selected[index]) managed.push_back(std::move(volumes[index]));
+  }
+  UWF_LOG_D("uwf") << "volume read completed: providerRows=" << rows.size() << " managedRows=" << managed.size();
+  return managed;
 }
 
 void UwfVolume::protectVolume(const api::VolumeRow& row) const {

@@ -31,9 +31,9 @@
 #include <QTableWidget>
 #include <QTemporaryDir>
 #include <QTemporaryFile>
+#include <QTest>
 #include <QTimer>
 #include <QTreeWidget>
-#include <QtTest>
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
@@ -141,7 +141,7 @@ QPushButton* buttonByText(QWidget* parent, const QString& text) {
 QPushButton* buttonByRole(QWidget* parent, const QDialogButtonBox::ButtonRole role) {
   const auto boxes = parent->findChildren<QDialogButtonBox*>();
   for (auto* box : boxes) {
-    for (auto* button : box->buttons()) {
+    for (const auto buttons = box->buttons(); auto* button : buttons) {
       if (box->buttonRole(button) == role) return qobject_cast<QPushButton*>(button);
     }
   }
@@ -149,7 +149,7 @@ QPushButton* buttonByRole(QWidget* parent, const QDialogButtonBox::ButtonRole ro
 }
 
 QString labelContaining(const QWidget* parent, const QString& needle) {
-  for (const auto* label : parent->findChildren<QLabel*>()) {
+  for (const auto labels = parent->findChildren<QLabel*>(); const auto* label : labels) {
     if (label->text().contains(needle, Qt::CaseInsensitive)) return label->text();
   }
   return {};

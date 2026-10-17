@@ -73,6 +73,12 @@ QStringList toQList(const std::vector<std::string>& v) {
   return out;
 }
 
+QStringList fileExclusionsForVolume(const core::SessionSnapshot& session, const core::VolumeRecord* volume) {
+  if (!volume) return {};
+  const auto entries = session.fileExclusions.find(volume->volumeName);
+  return entries != session.fileExclusions.end() ? toQList(entries->second) : QStringList{};
+}
+
 void applyRegistrySnapshot(ExclusionListWidget* regs, const core::UwfSnapshot& snap, const bool editable) {
   if (!regs) return;
   regs->setBaseline(toQList(snap.current.registryExclusions), toQList(snap.next.registryExclusions));
@@ -485,15 +491,9 @@ void DiskTab::applySnapshot(const core::UwfSnapshot& snap) {
   // setData 按 hasVolume 点亮保护开关 / 绑定方式；这里再叠加可写性统一收口。
   m_status->setControlsEnabled(m_editable);
 
-  const std::string volKey = nv ? nv->volumeName : (cv ? cv->volumeName : std::string{});
-  QStringList curFiles, nxtFiles;
-  if (!volKey.empty()) {
-    const auto it = snap.current.fileExclusions.find(volKey);
-    if (it != snap.current.fileExclusions.end()) curFiles = toQList(it->second);
-    const auto it2 = snap.next.fileExclusions.find(volKey);
-    if (it2 != snap.next.fileExclusions.end()) nxtFiles = toQList(it2->second);
-  }
-  m_files->setBaseline(curFiles, nxtFiles);
+  // 按盘符绑定的下次配置可以保留旧 GUID；两个会话必须各用自己的实例身份
+  // 取排除项，不能用 next 的 GUID 覆盖 current 的索引。
+  m_files->setBaseline(fileExclusionsForVolume(snap.current, cv), fileExclusionsForVolume(snap.next, nv));
 
   applyRegistrySnapshot(m_regs, snap, registryEditable);
 
@@ -502,9 +502,11 @@ void DiskTab::applySnapshot(const core::UwfSnapshot& snap) {
   m_files->setReadOnly(!m_editable || !canManageExclusions());
   if (m_fileStaging) m_fileStaging->setReadOnly(!m_editable);
 
-  // 快照里可能补充 volumeName 信息，刷一下标题。
-  if (nv && !nv->volumeName.empty() && m_disk.volumeName.empty()) {
-    m_disk.volumeName = nv->volumeName;
+  // 标题描述当前磁盘；挂载清单没有 GUID 时优先采用当前卷身份，不能让
+  // 下次会话保留的旧配置 GUID 覆盖它。
+  const auto* displayedVolume = cv ? cv : nv;
+  if (displayedVolume && !displayedVolume->volumeName.empty() && m_disk.volumeName.empty()) {
+    m_disk.volumeName = displayedVolume->volumeName;
     m_headingLabel->setText(renderDiskHeading(m_disk));
   }
 

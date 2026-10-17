@@ -24,6 +24,7 @@
 //       SetBindByDriveLetter / AddExclusion / RemoveExclusion /
 //       RemoveAllExclusions / FindExclusion / GetExclusions
 
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -41,8 +42,16 @@ struct VolumeRegistration {
 
 class UwfVolume {
  public:
-  explicit UwfVolume(WmiOperations& session) : m_session(session) {}
+  // 挂载查询接收完整卷 GUID 路径，返回该卷当前挂载的所有规范盘符。
+  // 这是文件系统边界；默认实现直接查询 Windows 卷管理器。
+  using MountLookup = std::function<std::vector<std::string>(const std::string&)>;
 
+  explicit UwfVolume(WmiOperations& session);
+  UwfVolume(WmiOperations& session, MountLookup mounts);
+
+  // WMI 身份是会话、盘符、卷名三元组。两个会话独立保留配置，各自出现盘符
+  // 冲突时按真实挂载关系和绑定语义消歧，向消费者提供每会话、每盘符至多一条
+  // 可操作记录；真正重复或仍有歧义的实例报告异常，不能随枚举顺序任取一条。
   std::vector<api::VolumeRow> readAll() const;
 
   void protectVolume(const api::VolumeRow& row) const;
@@ -79,6 +88,7 @@ class UwfVolume {
 
  private:
   WmiOperations& m_session;
+  MountLookup m_mounts;
 };
 
 }  // namespace uwf::api

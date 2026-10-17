@@ -23,6 +23,7 @@
 
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace uwf::drive {
 
@@ -55,6 +56,11 @@ std::string normalize(const std::string& raw);
 //   "\\?\Volume{GUID}\\foo"  → {"",   ...}                只做字面拆分，不查卷 GUID
 // 需要把卷 GUID 路径反查成盘符，用 fromPath。
 PathSplit split(const std::string& path);
+
+// 查询卷 GUID 路径（"\\?\Volume{GUID}\"）当前挂载的全部盘符。
+// 只返回盘符根挂载点，不把目录挂载点误当成其宿主盘符。卷已不存在或没有
+// 盘符时返回空列表；权限、I/O 和协议错误抛出异常。
+[[nodiscard]] std::vector<std::string> mountedLetters(const std::string& volumeGuidPath);
 
 // 从一个文件路径解析出所在卷的盘符（如 "C:"）。
 //   "C:\\x" / "\\?\C:\\x"            —— 字面拆分即得 "C:"

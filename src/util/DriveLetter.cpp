@@ -18,9 +18,8 @@
 
 #include <windows.h>
 
-#include <algorithm>
 #include <cctype>
-#include <iterator>
+#include <string_view>
 #include <system_error>
 
 #include "StringUtil.h"
@@ -65,45 +64,40 @@ std::string volumeNameFromGuidBody(const std::string& body) {
   return R"(\\?\)" + body.substr(0, brace + 2);  // 含结尾反斜杠
 }
 
-// 用 Win32 把卷名 "\\?\Volume{GUID}\\" 解析成挂载的盘符（"C:"）。
-// 成功但没有盘符挂载点时返回空串；API 失败抛 std::system_error，不能把系统
-// 故障与“该卷确实没有盘符”折叠成同一业务状态。
-std::string resolveVolumeDriveLetter(const std::string& volumeName) {
-  const std::wstring wvol = utf8ToWide(volumeName);
-
-  // 先用 0 长缓冲探所需大小：必失败，且 GetLastError()==ERROR_MORE_DATA、
-  // needed 被填好。其它错误保留原始 Win32 语义。
-  DWORD needed = 0;
-  if (GetVolumePathNamesForVolumeNameW(wvol.c_str(), nullptr, 0, &needed)) {
-    throw std::runtime_error("volume path query unexpectedly succeeded without an output buffer");
-  }
-  const DWORD sizingError = GetLastError();
-  if (sizingError != ERROR_MORE_DATA) {
-    throw std::system_error(static_cast<int>(sizingError), std::system_category(), "measure volume path names");
-  }
-  if (needed == 0) throw std::runtime_error("volume path query returned an empty required size");
-
-  std::wstring buf(static_cast<size_t>(needed), L'\0');
-  DWORD got = 0;
-  if (!GetVolumePathNamesForVolumeNameW(wvol.c_str(), buf.data(), needed, &got)) {
-    throw std::system_error(static_cast<int>(GetLastError()), std::system_category(), "read volume path names");
-  }
-
-  // buf 是"多个以 NUL 结尾的挂载点路径 + 末尾再一个 NUL"。逐段扫描，取第一个
-  // 形如 "C:\\" 的盘符根挂载点。目录挂载点不是盘符，不能截取其前缀。
-  for (size_t i = 0; i < buf.size() && buf[i] != L'\0';) {
-    const auto terminator = std::find(buf.cbegin() + static_cast<std::ptrdiff_t>(i), buf.cend(), L'\0');
-    if (terminator == buf.cend()) throw std::runtime_error("volume path query returned a malformed MULTI_SZ");
-    const size_t len = static_cast<size_t>(std::distance(buf.cbegin() + static_cast<std::ptrdiff_t>(i), terminator));
-    if (len == 3 && buf[i + 1] == L':' && buf[i + 2] == L'\\' && buf[i] <= 0x7f && isAsciiLetter(static_cast<char>(buf[i]))) {
-      return normalizedLetter(static_cast<char>(buf[i]));
-    }
-    i += len + 1;
-  }
-  return {};
-}
-
 }  // namespace
+
+std::vector<std::string> mountedLetters(const std::string& volumeGuidPath) {
+  const std::wstring volume = utf8ToWide(volumeGuidPath);
+  std::wstring paths(MAX_PATH, L'\0');
+  // 装入点可能在查询期间增加；有限次扩容后仍不稳定就报告失败，避免无限重试。
+  constexpr int kMaximumMountQueryAttempts = 3;
+  for (int attempt = 0; attempt < kMaximumMountQueryAttempts; ++attempt) {
+    DWORD length = 0;
+    if (!GetVolumePathNamesForVolumeNameW(volume.c_str(), paths.data(), static_cast<DWORD>(paths.size()), &length)) {
+      const DWORD error = GetLastError();
+      if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND) return {};
+      if (error != ERROR_MORE_DATA) throw std::system_error(static_cast<int>(error), std::system_category(), "read volume path names");
+      if (length <= paths.size()) throw std::runtime_error("volume path query returned an inconsistent required size");
+      paths.resize(length);
+      continue;
+    }
+    if (length == 0 || length > paths.size()) throw std::runtime_error("volume path query returned an invalid result size");
+    const std::wstring_view result(paths.data(), length);
+    std::vector<std::string> letters;
+    for (size_t offset = 0; offset < result.size();) {
+      if (result[offset] == L'\0') return letters;
+      const auto end = result.find(L'\0', offset);
+      if (end == std::wstring_view::npos) break;
+      const auto path = result.substr(offset, end - offset);
+      if (path.size() == 3 && path[1] == L':' && path[2] == L'\\' && path[0] <= 0x7f && isAsciiLetter(static_cast<char>(path[0]))) {
+        letters.push_back(normalizedLetter(static_cast<char>(path[0])));
+      }
+      offset = end + 1;
+    }
+    throw std::runtime_error("volume path query returned a malformed MULTI_SZ");
+  }
+  throw std::system_error(ERROR_MORE_DATA, std::system_category(), "volume mount points kept changing during query");
+}
 
 std::string normalize(const std::string& raw) {
   const std::string s = stripExtendedPrefix(trim(raw));
@@ -132,9 +126,9 @@ std::string fromPath(const std::string& path) {
   if (startsWithCI(body, "Volume{")) {
     const std::string volumeName = volumeNameFromGuidBody(body);
     if (volumeName.empty()) throw DriveLetterResolutionError("malformed volume GUID path: " + path);
-    const std::string dl = resolveVolumeDriveLetter(volumeName);
-    if (dl.empty()) throw DriveLetterResolutionError("could not resolve volume to a drive letter: " + volumeName);
-    return dl;
+    const auto letters = mountedLetters(volumeName);
+    if (letters.empty()) throw DriveLetterResolutionError("could not resolve volume to a drive letter: " + volumeName);
+    return letters.front();
   }
 
   // 其余（UNC 路径、卷内相对路径等）本就没有盘符——返回空串，不算错误。

@@ -38,10 +38,10 @@
 #include <QTableWidget>
 #include <QTemporaryDir>
 #include <QTemporaryFile>
+#include <QTest>
 #include <QTextEdit>
 #include <QTimer>
 #include <QUuid>
-#include <QtTest>
 #include <algorithm>
 #include <array>
 #include <cstddef>
@@ -98,14 +98,14 @@ namespace {
 using namespace uwf;
 
 QPushButton* buttonWithText(QWidget* root, const QString& text) {
-  for (auto* button : root->findChildren<QPushButton*>()) {
+  for (const auto buttons = root->findChildren<QPushButton*>(); auto* button : buttons) {
     if (button->text() == text) return button;
   }
   return nullptr;
 }
 
 QAction* actionWithText(QWidget* root, const QString& text) {
-  for (auto* action : root->findChildren<QAction*>()) {
+  for (const auto actions = root->findChildren<QAction*>(); auto* action : actions) {
     if (action->text() == text) return action;
   }
   return nullptr;
@@ -372,6 +372,7 @@ class ApplicationUiBehaviorTests final : public QObject {
   void logBufferAndViewerPreserveMalformedAndStructuredLines();
   void marqueeAndUsageWidgetsHandleEmptyOverflowAndThresholdEdges();
   void diskTabsApplyCapabilityBoundariesAndPreserveInnerSelection();
+  void diskTabKeepsExclusionsBoundToEachSessionVolume();
   void fileStagingTabPersistsImmediateEditsAndCollapsesCoveredPaths();
   void fileStagingTabPreservesStateAcrossInvalidInputAndStorageFailures();
   void fileStagingAndFileExclusionsRejectOverlapFromEitherEntryPoint();
@@ -450,7 +451,7 @@ void ApplicationUiBehaviorTests::aboutDialogExposesVersionLicenseAndSafeClose() 
   bool hasVersion = false;
   bool hasLicense = false;
   bool hasSourceLink = false;
-  for (auto* label : dialog.findChildren<QLabel*>()) {
+  for (const auto labels = dialog.findChildren<QLabel*>(); auto* label : labels) {
     hasVersion = hasVersion || label->text().contains(QStringLiteral("Version "));
     hasLicense = hasLicense || label->text().contains(QStringLiteral("GNU General Public License"));
     hasSourceLink = hasSourceLink || label->text().contains(QStringLiteral("github.com/HsingYun/UWF-Manager"));
@@ -505,7 +506,7 @@ void ApplicationUiBehaviorTests::commonDialogsPreserveSafeDefaultsAndPreviewPagi
   QTimer::singleShot(0, this, [&] {
     auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
     if (!dialog) return;
-    for (auto* label : dialog->findChildren<QLabel*>()) {
+    for (const auto labels = dialog->findChildren<QLabel*>(); auto* label : labels) {
       warningSelectable = warningSelectable || label->textInteractionFlags().testFlag(Qt::TextSelectableByMouse);
     }
     dialog->accept();
@@ -518,7 +519,7 @@ void ApplicationUiBehaviorTests::commonDialogsPreserveSafeDefaultsAndPreviewPagi
     auto* dialog = qobject_cast<QDialog*>(QApplication::activeModalWidget());
     if (!dialog) return;
     if (auto* box = dialog->findChild<QDialogButtonBox*>()) {
-      for (auto* button : box->buttons()) {
+      for (const auto buttons = box->buttons(); auto* button : buttons) {
         if (box->buttonRole(button) == QDialogButtonBox::RejectRole) {
           cancelWasDefault = qobject_cast<QPushButton*>(button)->isDefault();
           QTest::mouseClick(button, Qt::LeftButton);
@@ -661,6 +662,67 @@ void ApplicationUiBehaviorTests::diskTabsApplyCapabilityBoundariesAndPreserveInn
   QVERIFY(!ui::diskSupportText(core::DiskSupport::ExceedsMaxSize, "NTFS").empty());
 }
 
+void ApplicationUiBehaviorTests::diskTabKeepsExclusionsBoundToEachSessionVolume() {
+  const core::DiskInfo disk{"C:", "", "NTFS", "System", 1000, 500, core::DiskSupport::Supported};
+  ui::DiskTab tab(disk, false);
+  auto snapshot = editableSnapshot();
+  snapshot.current.volumes.front().volumeName = "Volume{mounted-guid}";
+  snapshot.next.volumes.front().volumeName = "Volume{old}";
+  snapshot.next.volumes.front().bindByDriveLetter = true;
+  snapshot.current.fileExclusions = {{"Volume{mounted-guid}", {R"(C:\CurrentOnly)"}}, {"Volume{old}", {R"(C:\WrongCurrent)"}}};
+  snapshot.next.fileExclusions = {{"Volume{old}", {R"(C:\NextOnly)"}}, {"Volume{mounted-guid}", {R"(C:\WrongNext)"}}};
+  tab.applySnapshot(snapshot);
+  tab.resize(700, 450);
+  tab.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&tab));
+  auto* tabs = tab.findChild<QTabWidget*>(QStringLiteral("innerTabs"));
+  QVERIFY(tabs);
+  auto* files = qobject_cast<ui::ExclusionListWidget*>(tabs->widget(0));
+  QVERIFY(files);
+  auto* list = files->findChild<QListWidget*>(QStringLiteral("exclusionList"));
+  QVERIFY(list);
+  QCOMPARE(list->count(), 2);
+  bool currentObserved = false;
+  bool nextObserved = false;
+  for (int index = 0; index < list->count(); ++index) {
+    const auto* item = list->item(index);
+    const auto path = item->data(Qt::UserRole).toString();
+    if (path == QStringLiteral(R"(C:\CurrentOnly)")) {
+      currentObserved = true;
+      QVERIFY(item->toolTip().contains(QStringLiteral("Current session: Excluded\nNext session: Not excluded")));
+    } else if (path == QStringLiteral(R"(C:\NextOnly)")) {
+      nextObserved = true;
+      QVERIFY(item->toolTip().contains(QStringLiteral("Current session: Not excluded\nNext session: Excluded")));
+    } else {
+      QFAIL("the displayed exclusions came from the wrong session volume");
+    }
+  }
+  QVERIFY(currentObserved);
+  QVERIFY(nextObserved);
+  QVERIFY(files->pendingAdded().isEmpty());
+  QVERIFY(files->pendingRemoved().isEmpty());
+  const auto labels = tab.findChildren<QLabel*>();
+  QVERIFY(std::ranges::any_of(labels, [](const QLabel* label) { return label->text().contains(QStringLiteral("mounted-guid")); }));
+
+  const auto nextVolumes = snapshot.next.volumes;
+  snapshot.next.volumes.clear();
+  tab.applySnapshot(snapshot);
+  QCOMPARE(list->count(), 1);
+  QCOMPARE(list->item(0)->data(Qt::UserRole).toString(), QStringLiteral(R"(C:\CurrentOnly)"));
+
+  snapshot.next.volumes = nextVolumes;
+  snapshot.current.volumes.clear();
+  tab.applySnapshot(snapshot);
+  QCOMPARE(list->count(), 1);
+  QCOMPARE(list->item(0)->data(Qt::UserRole).toString(), QStringLiteral(R"(C:\NextOnly)"));
+
+  snapshot.next.volumes.clear();
+  tab.applySnapshot(snapshot);
+  QCOMPARE(list->count(), 0);
+  QVERIFY(files->pendingAdded().isEmpty());
+  QVERIFY(files->pendingRemoved().isEmpty());
+}
+
 void ApplicationUiBehaviorTests::fileStagingTabPersistsImmediateEditsAndCollapsesCoveredPaths() {
   QTemporaryDir directory;
   QVERIFY(directory.isValid());
@@ -776,7 +838,7 @@ void ApplicationUiBehaviorTests::fileStagingTabPreservesStateAcrossInvalidInputA
   QVERIFY(remove->isEnabled());
 
   dialogs.selectedDirectory = filePath;
-  QTimer::singleShot(0, [] {
+  QTimer::singleShot(0, &staging, [] {
     if (auto* warning = qobject_cast<QDialog*>(QApplication::activeModalWidget())) warning->reject();
   });
   addDirectory->trigger();
@@ -784,7 +846,7 @@ void ApplicationUiBehaviorTests::fileStagingTabPreservesStateAcrossInvalidInputA
   QCOMPARE(list->count(), 1);
 
   dialogs.openedFile = QStringLiteral("C:relative-state.bin");
-  QTimer::singleShot(0, [] {
+  QTimer::singleShot(0, &staging, [] {
     if (auto* warning = qobject_cast<QDialog*>(QApplication::activeModalWidget())) warning->reject();
   });
   addFiles->trigger();
@@ -798,7 +860,7 @@ void ApplicationUiBehaviorTests::fileStagingTabPreservesStateAcrossInvalidInputA
   auto* crossDriveList = crossDrive.findChild<QListWidget*>(QStringLiteral("exclusionList"));
   QVERIFY(crossDriveAction && crossDriveList);
   dialogs.openedFile = filePath;
-  QTimer::singleShot(0, [] {
+  QTimer::singleShot(0, &crossDrive, [] {
     if (auto* warning = qobject_cast<QDialog*>(QApplication::activeModalWidget())) warning->reject();
   });
   crossDriveAction->trigger();
@@ -809,7 +871,7 @@ void ApplicationUiBehaviorTests::fileStagingTabPreservesStateAcrossInvalidInputA
 
   store.writeFailure = QStringLiteral("registry write failed");
   list->item(0)->setSelected(true);
-  QTimer::singleShot(0, [] {
+  QTimer::singleShot(0, &staging, [] {
     if (auto* warning = qobject_cast<QDialog*>(QApplication::activeModalWidget())) warning->reject();
   });
   QTest::mouseClick(remove, Qt::LeftButton);
@@ -843,7 +905,7 @@ void ApplicationUiBehaviorTests::fileStagingAndFileExclusionsRejectOverlapFromEi
   MemoryFileStagingStore emptyStore;
   ui::FileStagingWidget staging(drive, emptyStore, dialogs, conflicts);
   dialogs.openedFile = filePath;
-  QTimer::singleShot(0, [] {
+  QTimer::singleShot(0, &staging, [] {
     if (auto* warning = qobject_cast<QDialog*>(QApplication::activeModalWidget())) warning->reject();
   });
   auto* addFiles = staging.findChild<QAction*>(QStringLiteral("stageFilesAction"));
@@ -1527,7 +1589,7 @@ void ApplicationUiBehaviorTests::applyPlanPreviewAndCopyUseTheSameProductionComm
   dialog.show();
   QVERIFY(QTest::qWaitForWindowExposed(&dialog));
   QTextEdit* pending = nullptr;
-  for (auto* edit : dialog.findChildren<QTextEdit*>()) {
+  for (const auto edits = dialog.findChildren<QTextEdit*>(); auto* edit : edits) {
     if (edit->toPlainText().contains(QStringLiteral("uwfmgr.exe filter disable"))) pending = edit;
   }
   QVERIFY(pending);
@@ -1567,7 +1629,7 @@ void ApplicationUiBehaviorTests::applyPlanPreviewAndCopyUseTheSameProductionComm
   QTimer::singleShot(0, this, [&] {
     auto* warning = qobject_cast<QDialog*>(QApplication::activeModalWidget());
     if (warning) {
-      for (auto* label : warning->findChildren<QLabel*>()) {
+      for (const auto labels = warning->findChildren<QLabel*>(); auto* label : labels) {
         failureReported = failureReported || label->text().contains(QStringLiteral("Could not open file for writing"));
       }
     }
@@ -1623,7 +1685,7 @@ void ApplicationUiBehaviorTests::applyPlanConfirmedWritePublishesReconciliationA
   QCOMPARE(safeRestartRequested.count(), 1);
   QCOMPARE(directRestartRequested.count(), 1);
   bool successReported = false;
-  for (auto* edit : dialog.findChildren<QTextEdit*>()) {
+  for (const auto edits = dialog.findChildren<QTextEdit*>(); auto* edit : edits) {
     successReported = successReported || edit->toPlainText().contains(QStringLiteral("Filter: Disabled"));
   }
   QVERIFY(successReported);
@@ -1653,7 +1715,7 @@ void ApplicationUiBehaviorTests::applyPlanConnectionFailureRemainsRetryableAndDo
   QVERIFY(apply->isEnabled());
   QCOMPARE(reconciliation.count(), 0);
   bool failureReported = false;
-  for (auto* edit : dialog.findChildren<QTextEdit*>()) {
+  for (const auto edits = dialog.findChildren<QTextEdit*>(); auto* edit : edits) {
     failureReported = failureReported || (edit->toPlainText().contains(QStringLiteral("transport unavailable")) &&
                                           edit->toPlainText().contains(QStringLiteral("Failed to connect")));
   }
@@ -1717,7 +1779,7 @@ void ApplicationUiBehaviorTests::commitDispatcherConfirmsAndReportsARealFileThro
       return;
     }
     if (auto* box = dialog->findChild<QDialogButtonBox*>()) {
-      for (auto* button : box->buttons()) {
+      for (const auto buttons = box->buttons(); auto* button : buttons) {
         if (box->buttonRole(button) == QDialogButtonBox::AcceptRole) {
           confirmationAccepted = true;
           QTest::mouseClick(button, Qt::LeftButton);
@@ -1783,7 +1845,7 @@ void ApplicationUiBehaviorTests::commitDispatcherRoutesAnExistingRegistryValueTh
       return;
     }
     if (auto* box = dialog->findChild<QDialogButtonBox*>()) {
-      for (auto* button : box->buttons()) {
+      for (const auto buttons = box->buttons(); auto* button : buttons) {
         if (box->buttonRole(button) == QDialogButtonBox::AcceptRole) {
           confirmationAccepted = true;
           QTest::mouseClick(button, Qt::LeftButton);
@@ -2254,10 +2316,10 @@ void ApplicationUiBehaviorTests::safePowerActionsRequireConfirmationAndUseTheInj
 void ApplicationUiBehaviorTests::commitBatchUsesAuthoritativeExistenceForEveryOutcome() {
   QStringList categories;
   QStringList reasons;
-  auto* watcher = new QTimer(this);
-  watcher->setInterval(5);
-  connect(watcher, &QTimer::timeout, this, [watcher, &categories, &reasons] {
-    for (auto* widget : QApplication::topLevelWidgets()) {
+  QTimer watcher;
+  watcher.setInterval(5);
+  connect(&watcher, &QTimer::timeout, &watcher, [&watcher, &categories, &reasons] {
+    for (const auto widgets = QApplication::topLevelWidgets(); auto* widget : widgets) {
       auto* dialog = qobject_cast<QDialog*>(widget);
       auto* table = dialog ? dialog->findChild<QTableWidget*>() : nullptr;
       if (!table || table->columnCount() != 6 || table->rowCount() != 3) continue;
@@ -2265,12 +2327,12 @@ void ApplicationUiBehaviorTests::commitBatchUsesAuthoritativeExistenceForEveryOu
         categories.append(table->item(row, 0)->text());
         reasons.append(table->item(row, 5)->text());
       }
-      watcher->stop();
+      watcher.stop();
       dialog->accept();
       return;
     }
   });
-  watcher->start();
+  watcher.start();
 
   const QList<QString> targets{QStringLiteral("missing"), QStringLiteral("confirmed"), QStringLiteral("still-present")};
   QMap<QString, int> probes;
@@ -2439,7 +2501,8 @@ void ApplicationUiBehaviorTests::mainWindowDistinguishesInitialFailureFromCommit
     QVERIFY(import && !import->isEnabled());
     QVERIFY(enhanced && enhanced->isEnabled());
     bool reasonVisible = false;
-    for (auto* label : window.findChildren<QLabel*>()) reasonVisible = reasonVisible || label->text().contains(failingSource.failure);
+    for (const auto labels = window.findChildren<QLabel*>(); auto* label : labels)
+      reasonVisible = reasonVisible || label->text().contains(failingSource.failure);
     QVERIFY(reasonVisible);
     window.close();
   }
@@ -2469,7 +2532,7 @@ void ApplicationUiBehaviorTests::mainWindowDistinguishesInitialFailureFromCommit
 
     bool compatibilityVisible = false;
     bool unavailableVisible = false;
-    for (auto* label : window.findChildren<QLabel*>()) {
+    for (const auto labels = window.findChildren<QLabel*>(); auto* label : labels) {
       compatibilityVisible = compatibilityVisible || label->text().contains(QStringLiteral("Compatibility OS"));
       unavailableVisible = unavailableVisible || label->text().contains(QStringLiteral("embedded provider absent"));
     }
@@ -2482,7 +2545,8 @@ void ApplicationUiBehaviorTests::mainWindowDistinguishesInitialFailureFromCommit
     QCOMPARE(tabs->count(), 1);
     QCOMPARE(tabs->tabText(0), QStringLiteral("C:"));
     bool laterFailureLeakedIntoUi = false;
-    for (auto* label : window.findChildren<QLabel*>()) laterFailureLeakedIntoUi = laterFailureLeakedIntoUi || label->text().contains(source.failure);
+    for (const auto labels = window.findChildren<QLabel*>(); auto* label : labels)
+      laterFailureLeakedIntoUi = laterFailureLeakedIntoUi || label->text().contains(source.failure);
     QVERIFY(!laterFailureLeakedIntoUi);
     window.close();
   }

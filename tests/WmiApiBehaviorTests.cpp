@@ -15,18 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <QtTest>
+#include <QTest>
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <deque>
 #include <functional>
 #include <limits>
+#include <map>
 #include <optional>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <utility>
 #include <vector>
 
+#include "util/StringUtil.h"
 #include "uwf/UwfSnapshot.h"
 #include "uwf/api/Types.h"
 #include "uwf/api/UwfFilter.h"
@@ -53,6 +57,7 @@ class MemoryWmiOperations final : public WmiOperations {
   mutable int ensureConnectedCalls = 0;
   mutable std::vector<std::string> projectionQueries;
   mutable std::vector<std::string> instanceQueries;
+  mutable std::vector<std::string> objectReads;
   mutable std::deque<std::vector<WmiRow>> queryResults;
   mutable std::deque<WmiRow> objectResults;
   mutable std::deque<WmiMethodOutput> readResults;
@@ -79,7 +84,8 @@ class MemoryWmiOperations final : public WmiOperations {
     return reportedClassStatus;
   }
 
-  [[nodiscard]] WmiRow getObject(const std::string&) const override {
+  [[nodiscard]] WmiRow getObject(const std::string& objectPath) const override {
+    objectReads.push_back(objectPath);
     if (objectResults.empty()) throw std::runtime_error("no object result queued");
     WmiRow row = std::move(objectResults.front());
     objectResults.pop_front();
@@ -176,6 +182,12 @@ class WmiApiBehaviorTests final : public QObject {
   void registryFilterBuildsTypedInputsAndDecodesArrays();
   void registryFilterMutationsConfirmMembershipAndRouteDeletion();
   void volumeDecodingSkipsUnmanagedRowsAndRejectsDuplicates();
+  void volumeMountResolutionSelectsRealInstancesRegardlessOfOrder();
+  void volumeMountResolutionKeepsUnconfiguredMountedDisks();
+  void volumeMountResolutionPreservesLooseNextBindings();
+  void volumeMountResolutionRefreshesMountsForEachRead();
+  void volumeMountResolutionRejectsAmbiguityAndLookupFailures();
+  void volumeMountResolutionRoutesWritesAndRegistration();
   void volumeFileOperationsNormalizePathsAndRejectCrossVolumeTargets();
   void volumeStateAndExclusionMutationsConfirmEveryPublicOperation();
   void volumeRegistrationHandlesExistingCreatedAndUncertainOutcomes();
@@ -223,12 +235,12 @@ void WmiApiBehaviorTests::wmiValueConversionMatrixCoversKindsAndBoundaries() {
   QVERIFY_THROWS_EXCEPTION(WmiValueConversionError, (void)WmiValue::fromDouble(-1.0).toULongLong());
   QVERIFY_THROWS_EXCEPTION(WmiValueConversionError, (void)WmiValue::fromDouble(std::numeric_limits<double>::quiet_NaN()).toBool());
 
-  for (const std::string value : {"true", "TRUE", "TrUe", "false", "FALSE", "FaLsE"}) {
+  for (const auto* value : {"true", "TRUE", "TrUe", "false", "FALSE", "FaLsE"}) {
     QCOMPARE(WmiValue::fromString(value).toBool(), value[0] == 't' || value[0] == 'T');
   }
   QCOMPARE(WmiValue::fromString("-9223372036854775808").toInt64(), std::numeric_limits<int64_t>::min());
   QCOMPARE(WmiValue::fromString("18446744073709551615").toULongLong(), std::numeric_limits<uint64_t>::max());
-  for (const std::string value : {"", " ", "+1", "01x", "18446744073709551616", "-9223372036854775809"}) {
+  for (const auto* value : {"", " ", "+1", "01x", "18446744073709551616", "-9223372036854775809"}) {
     QVERIFY_THROWS_EXCEPTION(WmiValueConversionError, (void)WmiValue::fromString(value).toULongLong());
   }
 
@@ -543,10 +555,231 @@ void WmiApiBehaviorTests::volumeDecodingSkipsUnmanagedRowsAndRejectsDuplicates()
   QCOMPARE(unconfiguredRows.size(), std::size_t{1});
   QVERIFY(!unconfiguredRows.front().isProtected);
 
-  wmi.queryResults.push_back({volumeRow(false, "C:", "Volume{c}", true, false, false, "a"), volumeRow(false, "c", "Volume{other}", true, false, false, "b")});
+  // 真正重复的是完整三元组；盘符、卷名大小写不影响实例身份。
+  wmi.queryResults.push_back({volumeRow(false, "C:", "Volume{c}", true, false, false, "a"), volumeRow(false, "c", "volume{C}", true, false, false, "b")});
   QVERIFY_THROWS_EXCEPTION(WmiProtocolError, (void)volume.readAll());
   wmi.queryResults.push_back({volumeRow(true, "not-a-drive", "Volume{x}", true, false, false, "x")});
   QVERIFY_THROWS_EXCEPTION(WmiDecodeError, (void)volume.readAll());
+}
+
+void WmiApiBehaviorTests::volumeMountResolutionSelectsRealInstancesRegardlessOfOrder() {
+  const std::string disk = "Volume{15a398be-0000-0000-0000-200000000000}";
+  const std::string cache = "Volume{77afca1a-fb20-4853-9394-21b205f1c884}";
+  const auto lookup = [&](const std::string& path) -> std::vector<std::string> {
+    // 目标盘符故意不放首位，确保消歧检查全部盘符，而不是只取第一个。
+    if (path == R"(\\?\)" + disk + '\\') return {"G:", "D:"};
+    if (path == R"(\\?\)" + cache + '\\') return {};  // 卷仍存在，但没有盘符装入点。
+    throw std::runtime_error("unexpected volume mount query");
+  };
+
+  for (const bool protectedState : {false, true}) {
+    std::vector<WmiRow> providerRows{
+        volumeRow(true, "D:", disk, true, false, protectedState, "current-disk"), volumeRow(true, "d:", cache, false, false, false, "current-cache"),
+        volumeRow(false, "D:", disk, true, false, false, "next-disk"), volumeRow(false, "d:", cache, false, false, true, "next-cache")};
+    providerRows[1]["Protected"] = WmiValue{};
+    // 真实卷的 NULL 也必须保留，不能用保护状态判断哪个才是目标卷。
+    if (!protectedState) providerRows[0]["Protected"] = WmiValue{};
+    std::vector<int> order{0, 1, 2, 3};
+    do {
+      MemoryWmiOperations wmi;
+      std::vector<WmiRow> shuffled;
+      for (const auto index : order) shuffled.push_back(providerRows[static_cast<std::size_t>(index)]);
+      wmi.queryResults.push_back(std::move(shuffled));
+      api::UwfVolume volume(wmi, lookup);
+      const auto rows = volume.readAll();
+      QCOMPARE(rows.size(), std::size_t{2});
+      const auto* current = api::findBySession(rows, api::Session::Current);
+      const auto* next = api::findBySession(rows, api::Session::Next);
+      QVERIFY(current);
+      QVERIFY(next);
+      QCOMPARE(current->volumeName, disk);
+      QCOMPARE(current->path, std::string("current-disk"));
+      QCOMPARE(current->isProtected, protectedState);
+      QCOMPARE(next->volumeName, disk);
+      QCOMPARE(next->path, std::string("next-disk"));
+      QVERIFY(!next->isProtected);
+      QVERIFY(wmi.invocations.empty());
+      QVERIFY(wmi.puts.empty());
+    } while (std::next_permutation(order.begin(), order.end()));
+  }
+}
+
+void WmiApiBehaviorTests::volumeMountResolutionPreservesLooseNextBindings() {
+  for (const bool bindByLetter : {false, true}) {
+    MemoryWmiOperations wmi;
+    wmi.queryResults.push_back({volumeRow(true, "C:", "Volume{current}", true, false, true, "current"),
+                                volumeRow(false, "C:", "Volume{old}", bindByLetter, false, true, "next"),
+                                volumeRow(false, "C:", "Volume{retired}", false, false, false, "retired")});
+    api::UwfVolume volume(wmi, [](const std::string& path) -> std::vector<std::string> {
+      return path == R"(\\?\Volume{current}\)" ? std::vector<std::string>{"C:"} : std::vector<std::string>{};
+    });
+    const auto rows = volume.readAll();
+    QCOMPARE(rows.size(), bindByLetter ? std::size_t{2} : std::size_t{1});
+    const auto* next = api::findBySession(rows, api::Session::Next);
+    QCOMPARE(next != nullptr, bindByLetter);
+    if (next) {
+      QCOMPARE(next->path, std::string("next"));
+      QVERIFY(next->bindByDriveLetter);
+      QVERIFY(next->isProtected);
+    }
+  }
+
+  MemoryWmiOperations ordinary;
+  ordinary.queryResults.push_back(
+      {volumeRow(true, "E:", "Volume{ordinary}", false, false, false, "current"), volumeRow(false, "E:", "volume{ORDINARY}", false, false, true, "next")});
+  api::UwfVolume ordinaryVolume(ordinary, [](const std::string&) -> std::vector<std::string> {
+    throw std::runtime_error("an unambiguous volume must not require an additional mount query");
+  });
+  QCOMPARE(ordinaryVolume.readAll().size(), std::size_t{2});
+
+  // 不同会话的 GUID 差异本身不是重复；用户配置的紧/松绑定都必须保留。
+  for (const bool bindByLetter : {false, true}) {
+    ordinary.queryResults.push_back({volumeRow(true, "E:", "Volume{mounted}", false, false, true, "current"),
+                                     volumeRow(false, "E:", "Volume{configured}", bindByLetter, false, true, "next")});
+    const auto independent = ordinaryVolume.readAll();
+    QCOMPARE(independent.size(), std::size_t{2});
+    const auto* next = api::findBySession(independent, api::Session::Next);
+    QVERIFY(next);
+    QCOMPARE(next->volumeName, std::string("Volume{configured}"));
+    QCOMPARE(next->bindByDriveLetter, bindByLetter);
+    QVERIFY(next->isProtected);
+  }
+}
+
+void WmiApiBehaviorTests::volumeMountResolutionKeepsUnconfiguredMountedDisks() {
+  MemoryWmiOperations wmi;
+  std::vector<WmiRow> raw{
+      volumeRow(true, "C:", "Volume{system-cache}", false, false, false, "system-cache"),
+      volumeRow(true, "F:", "Volume{data-cache}", false, false, false, "data-cache"), volumeRow(true, "C:", "Volume{system}", false, false, false, "system"),
+      volumeRow(true, "F:", "Volume{data}", false, false, false, "data"), volumeRow(true, "E:", "Volume{ordinary}", false, false, false, "ordinary")};
+  for (auto& row : raw) row["Protected"] = WmiValue{};
+  wmi.queryResults.push_back(raw);
+  api::UwfVolume volume(wmi, [](const std::string& path) -> std::vector<std::string> {
+    if (path == R"(\\?\Volume{system}\)") return {"C:"};
+    if (path == R"(\\?\Volume{data}\)") return {"F:"};
+    return {};
+  });
+  const auto rows = volume.readAll();
+  QCOMPARE(rows.size(), std::size_t{3});
+  QCOMPARE(rows[0].path, std::string("system"));
+  QCOMPARE(rows[1].path, std::string("data"));
+  QCOMPARE(rows[2].path, std::string("ordinary"));
+  for (const auto& row : rows) {
+    QVERIFY(row.currentSession);
+    QVERIFY(!row.isProtected);
+  }
+}
+
+void WmiApiBehaviorTests::volumeMountResolutionRejectsAmbiguityAndLookupFailures() {
+  const std::vector<WmiRow> conflicting{volumeRow(true, "C:", "Volume{one}", false, false, false, "one"),
+                                        volumeRow(true, "C:", "Volume{two}", false, false, true, "two")};
+  MemoryWmiOperations wmi;
+  wmi.queryResults.push_back(conflicting);
+  api::UwfVolume ambiguous(wmi, [](const std::string&) { return std::vector<std::string>{"C:"}; });
+  QVERIFY_THROWS_EXCEPTION(WmiProtocolError, (void)ambiguous.readAll());
+
+  wmi.queryResults.push_back(conflicting);
+  api::UwfVolume failedLookup(wmi, [](const std::string&) -> std::vector<std::string> {
+    throw std::system_error(std::make_error_code(std::errc::permission_denied), "read mount points");
+  });
+  QVERIFY_THROWS_EXCEPTION(std::system_error, (void)failedLookup.readAll());
+
+  auto orphaned = conflicting;
+  orphaned.push_back(volumeRow(true, "D:", "Volume{healthy}", false, false, true, "healthy"));
+  wmi.queryResults.push_back(orphaned);
+  api::UwfVolume unmounted(wmi, [](const std::string&) { return std::vector<std::string>{}; });
+  const auto remaining = unmounted.readAll();
+  QCOMPARE(remaining.size(), std::size_t{1});
+  QCOMPARE(remaining.front().path, std::string("healthy"));
+
+  wmi.queryResults.push_back(
+      {volumeRow(false, "C:", "Volume{one}", true, false, false, "next-one"), volumeRow(false, "C:", "Volume{two}", false, false, true, "next-two")});
+  api::UwfVolume conflictingBindings(wmi, [](const std::string&) { return std::vector<std::string>{"C:"}; });
+  QVERIFY_THROWS_EXCEPTION(WmiProtocolError, (void)conflictingBindings.readAll());
+  QVERIFY(wmi.invocations.empty());
+  QVERIFY(wmi.puts.empty());
+  QVERIFY_THROWS_EXCEPTION(std::invalid_argument, (void)api::UwfVolume(wmi, {}));
+}
+
+void WmiApiBehaviorTests::volumeMountResolutionRefreshesMountsForEachRead() {
+  const std::vector<WmiRow> raw{
+      volumeRow(true, "C:", "Volume{one}", false, false, true, "current-one"), volumeRow(false, "C:", "volume{ONE}", false, false, true, "next-one"),
+      volumeRow(true, "C:", "Volume{two}", false, false, false, "current-two"), volumeRow(false, "C:", "volume{TWO}", false, false, false, "next-two")};
+  MemoryWmiOperations wmi;
+  bool firstMounted = true;
+  std::map<std::string, int> reads;
+  api::UwfVolume volume(wmi, [&](const std::string& path) -> std::vector<std::string> {
+    // 卷 GUID 不区分大小写；两个会话应共用本次观察，而不是各查一次。
+    const auto identity = toUpperAscii(path);
+    ++reads[identity];
+    const bool matches = (identity == R"(\\?\VOLUME{ONE}\)") == firstMounted;
+    return matches ? std::vector<std::string>{"C:"} : std::vector<std::string>{"E:"};
+  });
+  wmi.queryResults.push_back(raw);
+  const auto first = volume.readAll();
+  QCOMPARE(first.size(), std::size_t{2});
+  QCOMPARE(first[0].path, std::string("current-one"));
+  QCOMPARE(first[1].path, std::string("next-one"));
+  QCOMPARE(reads.at(R"(\\?\VOLUME{ONE}\)"), 1);
+  QCOMPARE(reads.at(R"(\\?\VOLUME{TWO}\)"), 1);
+
+  firstMounted = false;
+  wmi.queryResults.push_back(raw);
+  const auto second = volume.readAll();
+  QCOMPARE(second.size(), std::size_t{2});
+  QCOMPARE(second[0].path, std::string("current-two"));
+  QCOMPARE(second[1].path, std::string("next-two"));
+  QCOMPARE(reads.at(R"(\\?\VOLUME{ONE}\)"), 2);
+  QCOMPARE(reads.at(R"(\\?\VOLUME{TWO}\)"), 2);
+}
+
+void WmiApiBehaviorTests::volumeMountResolutionRoutesWritesAndRegistration() {
+  const auto disk = volumeRow(true, "C:", "Volume{disk}", false, false, true, "current-disk");
+  const auto cache = volumeRow(true, "C:", "Volume{cache}", false, false, true, "current-cache");
+  const auto next = volumeRow(false, "C:", "Volume{disk}", true, false, false, "next-disk");
+  const auto staleNext = volumeRow(false, "C:", "Volume{cache}", false, false, false, "next-cache");
+  const auto otherStaleNext = volumeRow(false, "C:", "Volume{other-cache}", false, false, false, "next-other-cache");
+  const auto mounts = [](const std::string& path) -> std::vector<std::string> {
+    return path == R"(\\?\Volume{disk}\)" ? std::vector<std::string>{"C:"} : std::vector<std::string>{};
+  };
+  MemoryWmiOperations wmi;
+  api::UwfVolume volume(wmi, mounts);
+  wmi.queryResults.push_back({cache, disk});
+  const auto currentRows = volume.readAll();
+  QCOMPARE(currentRows.size(), std::size_t{1});
+  volume.commitFile(currentRows.front(), R"(C:\Data\state.db)");
+  QCOMPARE(wmi.invocations.back().objectPath, std::string("current-disk"));
+  QCOMPARE(wmi.invocations.back().inputs.at("FileName").toString(), std::string(R"(\Data\state.db)"));
+
+  // 多条残留 next 行经挂载关系确认均不属于目标盘符，才能注册真实卷。
+  wmi.queryResults.push_back({cache, disk, staleNext, otherStaleNext});
+  wmi.objectResults.push_back(next);
+  const auto registered = volume.ensureNextSessionEntry("C:");
+  QCOMPARE(registered.disposition, api::VolumeRegistrationDisposition::Created);
+  QCOMPARE(registered.row.path, std::string("next-disk"));
+  QCOMPARE(wmi.putProperties.back().at("VolumeName").toString(), std::string("Volume{disk}"));
+  QCOMPARE(wmi.objectReads, std::vector<std::string>{R"(UWF_Volume.CurrentSession=FALSE,DriveLetter="C:",VolumeName="Volume{disk}")"});
+
+  auto protectedNext = next;
+  protectedNext["Protected"] = WmiValue::fromBool(true);
+  wmi.objectResults.push_back(protectedNext);
+  volume.protectVolume(registered.row);
+  QCOMPARE(wmi.invocations.back().objectPath, std::string("next-disk"));
+  QCOMPARE(wmi.invocations.back().method, std::string("Protect"));
+  QCOMPARE(wmi.objectReads.size(), std::size_t{2});
+  QCOMPARE(wmi.objectReads.back(), std::string("next-disk"));
+
+  WmiMethodOutput exclusions;
+  exclusions.arrays["ExcludedFiles"] = {{{"FileName", WmiValue::fromString(R"(\Cache)")}}};
+  wmi.readResults.push_back(exclusions);
+  QCOMPARE(volume.getExclusions(registered.row).front().fileName, std::string(R"(\Cache)"));
+  QCOMPARE(wmi.reads.back().objectPath, std::string("next-disk"));
+
+  wmi.queryResults.push_back({cache, disk, staleNext, next});
+  const auto existing = volume.ensureNextSessionEntry("C:");
+  QCOMPARE(existing.disposition, api::VolumeRegistrationDisposition::AlreadyPresent);
+  QCOMPARE(existing.row.path, std::string("next-disk"));
+  QCOMPARE(wmi.putProperties.size(), std::size_t{1});
 }
 
 void WmiApiBehaviorTests::volumeFileOperationsNormalizePathsAndRejectCrossVolumeTargets() {

@@ -19,8 +19,9 @@
 #include <QProcess>
 #include <QScopeGuard>
 #include <QSignalSpy>
+#include <QTest>
 #include <QUuid>
-#include <QtTest>
+#include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstddef>
@@ -34,6 +35,8 @@
 #include "app/SecureSingleInstance.h"
 #include "service/EnhancedModePipeIo.h"
 #include "ui/SystemInfoProvider.h"
+#include "util/DriveLetter.h"
+#include "util/StringUtil.h"
 #include "util/SystemHardwareInfo.h"
 #include "util/WindowsVersion.h"
 #include "uwf/SystemCheck.h"
@@ -50,6 +53,7 @@ class WindowsPlatformIntegrationTests final : public QObject {
  private slots:
   void windowsAndHardwareMetadataRemainInternallyConsistent();
   void cimv2TransportDistinguishesPresentAndMissingClasses();
+  void volumeMountQueryIncludesTheSystemDrive();
   void embeddedCapabilityAndSnapshotUseTheProductionTransport();
   void explicitWmiShutdownRetiresTheWorkerContext();
   void enhancedModePipeReadIsCancelledByStopEvent();
@@ -96,6 +100,24 @@ void WindowsPlatformIntegrationTests::cimv2TransportDistinguishesPresentAndMissi
     QFAIL(error.what());
   } catch (...) {
     QFAIL("CIMv2 transport raised a non-standard exception");
+  }
+}
+
+void WindowsPlatformIntegrationTests::volumeMountQueryIncludesTheSystemDrive() {
+  try {
+    const auto systemDrive = drive::systemLetter();
+    QVERIFY(!systemDrive.empty());
+    const auto root = utf8ToWide(systemDrive + '\\');
+    std::array<wchar_t, 50> volumeName{};
+    QVERIFY(GetVolumeNameForVolumeMountPointW(root.c_str(), volumeName.data(), static_cast<DWORD>(volumeName.size())));
+    const auto letters = drive::mountedLetters(wideToUtf8(volumeName.data()));
+    QVERIFY(std::ranges::find(letters, systemDrive) != letters.end());
+    for (const auto& letter : letters) {
+      QCOMPARE(letter, drive::normalize(letter));
+      QCOMPARE(letter.size(), std::size_t{2});
+    }
+  } catch (const std::exception& error) {
+    QFAIL(error.what());
   }
 }
 

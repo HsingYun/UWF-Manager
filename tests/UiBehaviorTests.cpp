@@ -31,9 +31,9 @@
 #include <QSignalSpy>
 #include <QTableWidget>
 #include <QTemporaryFile>
+#include <QTest>
 #include <QTimer>
 #include <QVBoxLayout>
-#include <QtTest>
 #include <algorithm>
 #include <optional>
 #include <utility>
@@ -80,14 +80,14 @@ class MemoryFileDialogs final : public uwf::ui::dialogs::FileDialogProvider {
 };
 
 QAction* actionWithText(QWidget* root, const QString& text) {
-  for (auto* action : root->findChildren<QAction*>()) {
+  for (const auto actions = root->findChildren<QAction*>(); auto* action : actions) {
     if (action->text() == text) return action;
   }
   return nullptr;
 }
 
 QPushButton* buttonWithText(QWidget* root, const QString& text) {
-  for (auto* button : root->findChildren<QPushButton*>()) {
+  for (const auto buttons = root->findChildren<QPushButton*>(); auto* button : buttons) {
     if (button->text() == text) return button;
   }
   return nullptr;
@@ -218,7 +218,7 @@ void UiBehaviorTests::powerConfirmationDefaultsToCancel() {
       return;
     }
     QPushButton* cancel = nullptr;
-    for (auto* button : box->buttons()) {
+    for (const auto buttons = box->buttons(); auto* button : buttons) {
       if (box->buttonRole(button) == QDialogButtonBox::RejectRole) cancel = qobject_cast<QPushButton*>(button);
       if (box->buttonRole(button) == QDialogButtonBox::AcceptRole) actionObjectName = button->objectName();
     }
@@ -321,7 +321,7 @@ void UiBehaviorTests::powerConfirmationAcceptsOnlyTheExplicitAction() {
         return;
       }
       preparationDurationMs = preparationElapsed.elapsed();
-      for (const auto* label : dialog->findChildren<QLabel*>()) {
+      for (const auto labels = dialog->findChildren<QLabel*>(); const auto* label : labels) {
         if (label->text().contains(QStringLiteral("3 file(s)"))) stagingSummaryVisible = true;
       }
       actionObjectName = action->objectName();
@@ -374,7 +374,7 @@ void UiBehaviorTests::powerDialogShowsProgressAndFailureInPlace() {
       sameDialog = dialog == initialDialog;
       auto* box = dialog->findChild<QDialogButtonBox*>();
       if (box) {
-        for (auto* button : box->buttons()) {
+        for (const auto buttons = box->buttons(); auto* button : buttons) {
           if (box->buttonRole(button) != QDialogButtonBox::RejectRole) continue;
           auto* cancel = qobject_cast<QPushButton*>(button);
           cancelWasDefault = cancel && cancel->isDefault();
@@ -851,7 +851,7 @@ void UiBehaviorTests::recommendedConfigurationSelectionAppendsOnlyChosenGroups()
   uwf::ui::ImportDialog dialog;
   auto* input = dialog.findChild<QPlainTextEdit*>(QStringLiteral("importTextEdit"));
   QPushButton* recommended = nullptr;
-  for (auto* button : dialog.findChildren<QPushButton*>()) {
+  for (const auto buttons = dialog.findChildren<QPushButton*>(); auto* button : buttons) {
     if (button->text() == QStringLiteral("Load recommended configuration")) recommended = button;
   }
   QVERIFY(input);
@@ -873,7 +873,7 @@ void UiBehaviorTests::recommendedConfigurationSelectionAppendsOnlyChosenGroups()
       return;
     }
     QPushButton* accept = nullptr;
-    for (auto* button : box->buttons()) {
+    for (const auto buttons = box->buttons(); auto* button : buttons) {
       if (box->buttonRole(button) == QDialogButtonBox::AcceptRole) accept = qobject_cast<QPushButton*>(button);
     }
     if (!accept || !accept->isEnabled()) {
