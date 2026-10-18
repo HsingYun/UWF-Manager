@@ -64,6 +64,7 @@
 #include <QVBoxLayout>
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <deque>
 #include <exception>
@@ -401,6 +402,10 @@ class ApplicationUiBehaviorTests final : public QObject {
   void languageAndThemeChangesReachProductionWidgets();
   void qtStandardWidgetsUseSupplementalTranslations_data();
   void qtStandardWidgetsUseSupplementalTranslations();
+  void buttonContrastAndSwitchFocusStayVisible_data();
+  void buttonContrastAndSwitchFocusStayVisible();
+  void reportDetailsPreserveCompleteText_data();
+  void reportDetailsPreserveCompleteText();
   void startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges_data();
   void startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges();
   void startupHiddenHubRemainsHiddenAcrossRefreshAndUiRebuild_data();
@@ -570,6 +575,197 @@ void ApplicationUiBehaviorTests::qtStandardWidgetsUseSupplementalTranslations() 
   QVERIFY(fileLabels.contains(indonesian ? QStringLiteral("Lihat di:") : QStringLiteral("Tìm trong:")));
   QVERIFY(fileLabels.contains(indonesian ? QStringLiteral("Jenis berkas:") : QStringLiteral("Loại tệp:")));
   capture(files, QStringLiteral("qt-file-dialog"));
+}
+
+void ApplicationUiBehaviorTests::buttonContrastAndSwitchFocusStayVisible_data() {
+  QTest::addColumn<bool>("dark");
+  QTest::newRow("light") << false;
+  QTest::newRow("dark") << true;
+}
+
+void ApplicationUiBehaviorTests::buttonContrastAndSwitchFocusStayVisible() {
+  QFETCH(bool, dark);
+  auto& theme = ui::ThemeManager::instance();
+  const auto original = theme.current();
+  const auto restore = qScopeGuard([&] { theme.apply(original); });
+  theme.apply(dark ? ui::Theme::Dark : ui::Theme::Light);
+  QDialog host;
+  auto* layout = new QVBoxLayout(&host);
+  auto* primary = new QPushButton(QStringLiteral("Apply"), &host);
+  primary->setObjectName(QStringLiteral("primaryBtn"));
+  auto* danger = new QPushButton(QStringLiteral("Remove"), &host);
+  danger->setObjectName(QStringLiteral("dangerBtn"));
+  auto* enable = new QPushButton(QStringLiteral("Enable enhanced mode"), &host);
+  enable->setObjectName(QStringLiteral("enhancedModeChangeButton"));
+  enable->setProperty("actionStyle", "enable");
+  auto* repair = new QPushButton(QStringLiteral("Repair enhanced mode"), &host);
+  repair->setObjectName(QStringLiteral("enhancedModeChangeButton"));
+  repair->setProperty("actionStyle", "repair");
+  auto* toggle = new ui::SwitchButton(&host);
+  auto* other = new QPushButton(QStringLiteral("Other"), &host);
+  layout->addWidget(primary);
+  layout->addWidget(danger);
+  layout->addWidget(enable);
+  layout->addWidget(repair);
+  layout->addWidget(toggle);
+  layout->addWidget(other);
+  QWidget::setTabOrder(other, toggle);
+  host.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&host));
+  host.activateWindow();
+  QVERIFY(QTest::qWaitForWindowActive(&host));
+  const auto luminance = [](const QColor& color) {
+    const auto linear = [](const double value) { return value <= 0.04045 ? value / 12.92 : std::pow((value + 0.055) / 1.055, 2.4); };
+    return 0.2126 * linear(color.redF()) + 0.7152 * linear(color.greenF()) + 0.0722 * linear(color.blueF());
+  };
+  const auto surface = [](QPushButton* button) {
+    const auto image = button->grab().toImage();
+    return image.pixelColor(image.width() / 2, qRound(5 * image.devicePixelRatio()));
+  };
+  const auto contrast = [&](QPushButton* button, const QColor& background) {
+    const double foreground = luminance(button->palette().color(QPalette::ButtonText));
+    const double backdrop = luminance(background);
+    return (std::max(foreground, backdrop) + 0.05) / (std::min(foreground, backdrop) + 0.05);
+  };
+  for (auto* button : {primary, danger, enable, repair}) {
+    QTest::mouseMove(host.windowHandle(), other->mapTo(&host, other->rect().center()));
+    QTRY_VERIFY(!button->underMouse());
+    const QColor normal = surface(button);
+    QVERIFY(contrast(button, normal) >= 4.5);
+    QTest::mouseMove(host.windowHandle(), button->mapTo(&host, button->rect().center()));
+    QTRY_VERIFY(button->underMouse());
+    QTRY_VERIFY(surface(button) != normal);
+    const QColor hovered = surface(button);
+    QVERIFY(hovered != normal);
+    QVERIFY(contrast(button, hovered) >= 4.5);
+    QTest::mousePress(button, Qt::LeftButton);
+    if (button == primary || button == danger) QTRY_VERIFY(surface(button) != hovered);
+    const QColor pressed = surface(button);
+    QVERIFY(contrast(button, pressed) >= 4.5);
+    QTest::mouseRelease(button, Qt::LeftButton);
+  }
+  other->setFocus();
+  QTRY_VERIFY(other->hasFocus());
+  const auto before = toggle->grab().toImage();
+  const QSize originalSize = toggle->size();
+  QTest::keyClick(other, Qt::Key_Tab);
+  QTRY_VERIFY(toggle->hasFocus());
+  QVERIFY(toggle->grab().toImage() != before);
+  QCOMPARE(toggle->size(), originalSize);
+  QTest::keyClick(toggle, Qt::Key_Space);
+  QVERIFY(toggle->isChecked());
+  const QString screenshots = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
+  if (!screenshots.isEmpty()) {
+    QVERIFY(QDir().mkpath(screenshots));
+    QVERIFY(host.grab().save(QDir(screenshots).filePath(QStringLiteral("focus-") + QString::fromLatin1(QTest::currentDataTag()) + ".png")));
+  }
+  QTest::keyClick(toggle, Qt::Key_Tab, Qt::ShiftModifier);
+  QTRY_VERIFY(!toggle->hasFocus());
+}
+
+void ApplicationUiBehaviorTests::reportDetailsPreserveCompleteText_data() {
+  QTest::addColumn<ui::I18n::Lang>("locale");
+  QTest::addColumn<bool>("dark");
+  for (const auto& language : ui::I18n::languages()) {
+    if (language.id != ui::I18n::Lang::En && language.id != ui::I18n::Lang::Zh_CN && language.id != ui::I18n::Lang::Ar) continue;
+    for (const bool dark : {false, true}) QTest::newRow((QString(language.code) + (dark ? "-dark" : "-light")).toLatin1().constData()) << language.id << dark;
+  }
+}
+
+void ApplicationUiBehaviorTests::reportDetailsPreserveCompleteText() {
+  QFETCH(ui::I18n::Lang, locale);
+  QFETCH(bool, dark);
+  auto& language = ui::I18n::instance();
+  auto& theme = ui::ThemeManager::instance();
+  const auto oldLanguage = language.lang();
+  const auto oldTheme = theme.current();
+  const auto restore = qScopeGuard([&] {
+    language.setLang(oldLanguage);
+    theme.apply(oldTheme);
+    clearLogLines();
+  });
+  language.setLang(locale);
+  theme.apply(dark ? ui::Theme::Dark : ui::Theme::Light);
+  const QString fullText = QStringLiteral("<literal>& data 中文 %1\n") + QStringLiteral("long-details-").repeated(1000);
+  const auto inspectDetails = [&](const std::function<void()>& open, const QString& screenshot) {
+    bool inspected = false;
+    QTimer timer;
+    timer.setSingleShot(true);
+    connect(&timer, &QTimer::timeout, this, [&] {
+      auto* details = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+      QVERIFY(details);
+      const auto close = qScopeGuard([&] { details->reject(); });
+      QCOMPARE(details->objectName(), QStringLiteral("tableRowDetailsDialog"));
+      auto* text = details->findChild<QPlainTextEdit*>(QStringLiteral("tableRowDetailsText"));
+      QVERIFY(text && text->isReadOnly());
+      QVERIFY(text->toPlainText().contains(fullText));
+      auto* copy = buttonWithText(details, ui::I18n::tr("Copy all"));
+      QVERIFY(copy);
+      QTRY_VERIFY_WITH_TIMEOUT((copy->click(), QApplication::clipboard()->text().contains(fullText)), 2000);
+      const QString screenshots = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
+      if (!screenshots.isEmpty()) {
+        QVERIFY(QDir().mkpath(screenshots));
+        QVERIFY(details->grab().save(QDir(screenshots).filePath(screenshot + "-" + QString::fromLatin1(QTest::currentDataTag()) + ".png")));
+      }
+      inspected = true;
+    });
+    timer.start(20);
+    open();
+    timer.stop();
+    QVERIFY(inspected);
+  };
+  clearLogLines();
+  logLine('E', "details-test", fullText.toStdString());
+  {
+    ui::LogViewerDialog dialog;
+    dialog.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+    auto* table = dialog.findChild<QTableWidget*>();
+    QVERIFY(table && !table->showGrid());
+    QTRY_VERIFY(table->rowCount() > 0);
+    QTest::qWait(80);
+    QVERIFY(!table->item(0, 1)->icon().isNull());
+    QCOMPARE(table->item(0, 1)->text(), QStringLiteral("E"));
+    const auto position = table->viewport()->mapTo(&dialog, table->visualItemRect(table->item(0, 3)).center());
+    QTest::mouseClick(dialog.windowHandle(), Qt::LeftButton, Qt::NoModifier, position);
+    QTRY_VERIFY(!table->selectedItems().isEmpty());
+    auto* button = dialog.findChild<QPushButton*>(QStringLiteral("tableDetailsButton"));
+    QVERIFY(button && button->isEnabled());
+    inspectDetails([&] { button->click(); }, QStringLiteral("log-details"));
+    inspectDetails(
+        [&] {
+          const auto point = table->visualItemRect(table->item(0, 3)).center();
+          QTest::mouseClick(table->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+          QTest::mouseDClick(table->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+          QTest::mouseRelease(table->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+        },
+        QStringLiteral("log-details-double-click"));
+    dialog.activateWindow();
+    QVERIFY(QTest::qWaitForWindowActive(&dialog));
+    table->setFocus();
+    QTRY_VERIFY(table->hasFocus());
+    inspectDetails([&] { QTest::keyClick(table, Qt::Key_Return); }, QStringLiteral("log-details-enter"));
+  }
+  bool reportInspected = false;
+  QTimer::singleShot(0, this, [&] {
+    auto* report = qobject_cast<QDialog*>(QApplication::activeModalWidget());
+    QVERIFY(report);
+    const auto close = qScopeGuard([&] { report->reject(); });
+    auto* table = report->findChild<QTableWidget*>();
+    QVERIFY(table && !table->showGrid());
+    QCOMPARE(table->rowCount(), 1);
+    QVERIFY(!table->item(0, 0)->icon().isNull());
+    const auto position = table->viewport()->mapTo(report, table->visualItemRect(table->item(0, 0)).center());
+    QTest::mouseClick(report->windowHandle(), Qt::LeftButton, Qt::NoModifier, position);
+    QTRY_VERIFY(!table->selectedItems().isEmpty());
+    auto* button = report->findChild<QPushButton*>(QStringLiteral("tableDetailsButton"));
+    QVERIFY(button && button->isEnabled());
+    inspectDetails([&] { button->click(); }, QStringLiteral("commit-details"));
+    reportInspected = true;
+  });
+  ui::showCommitReport(nullptr, {{ui::I18n::tr("Failed"), QStringLiteral("C:\\Example.txt"), QStringLiteral("0x80041001"), fullText, true, true}},
+                       ui::CommitOperation::Persist);
+  QVERIFY(reportInspected);
 }
 
 void ApplicationUiBehaviorTests::startupPreferencesReachTheRealUiWithoutPersistingToolbarChanges_data() {

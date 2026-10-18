@@ -245,7 +245,7 @@ DiskTab::DiskTab(const core::DiskInfo& disk, bool showRegistry, dialogs::FileDia
 
   if (fileStagingStore && core::supportsFileOverlayOperations(m_disk.support)) {
     m_fileStaging = new FileStagingWidget(QString::fromStdString(disk.driveLetter), *fileStagingStore, m_fileDialogs, m_filePathConflicts, this);
-    const int stagingIndex = m_infoTabs->addTab(m_fileStaging, tm.icon(":/icons/commit.svg"), I18n::tr("File staging"));
+    const int stagingIndex = m_infoTabs->addTab(m_fileStaging, tm.icon(":/icons/file_staging.svg"), I18n::tr("File staging"));
     m_infoTabs->setTabToolTip(
         stagingIndex,
         I18n::tr("Files and folders in this list are committed automatically before safe shutdown or restart. Folders are processed recursively. While the "
@@ -311,7 +311,7 @@ void DiskTab::refreshThemedIcons() {
     }
     if (m_fileStaging) {
       const int idx = m_infoTabs->indexOf(m_fileStaging);
-      if (idx >= 0) m_infoTabs->setTabIcon(idx, tm.icon(":/icons/commit.svg"));
+      if (idx >= 0) m_infoTabs->setTabIcon(idx, tm.icon(":/icons/file_staging.svg"));
     }
   }
   // heading 用了 inline 颜色，重新生成一遍 RichText。

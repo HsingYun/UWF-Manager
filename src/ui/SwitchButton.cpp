@@ -16,6 +16,7 @@
  */
 #include "SwitchButton.h"
 
+#include <QFocusEvent>
 #include <QPainter>
 #include <QPainterPath>
 
@@ -48,6 +49,16 @@ SwitchButton::SwitchButton(QWidget* parent) : QAbstractButton(parent) {
 
 QSize SwitchButton::sizeHint() const { return {kTrackW + kSidePad * 2, kTrackH + 4}; }
 
+void SwitchButton::focusInEvent(QFocusEvent* event) {
+  QAbstractButton::focusInEvent(event);
+  update();
+}
+
+void SwitchButton::focusOutEvent(QFocusEvent* event) {
+  QAbstractButton::focusOutEvent(event);
+  update();
+}
+
 void SwitchButton::paintEvent(QPaintEvent*) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);
@@ -78,6 +89,12 @@ void SwitchButton::paintEvent(QPaintEvent*) {
   if (dirty) {
     p.setPen(QPen(tm.color(Sem::Warn), 1.5));
     p.drawPath(path);
+  }
+  if (hasFocus() && !dis) {
+    // 外圈利用现有 2px 留白，不改变开关和会话卡片的尺寸；内圈仍保留 dirty 提示。
+    p.setPen(QPen(accent, 1.5));
+    p.setBrush(Qt::NoBrush);
+    p.drawRoundedRect(QRectF(track).adjusted(-1.25, -1.25, 1.25, 1.25), kTrackH / 2.0 + 1.25, kTrackH / 2.0 + 1.25);
   }
 
   constexpr int thumbD = kTrackH - kThumbMargin * 2;

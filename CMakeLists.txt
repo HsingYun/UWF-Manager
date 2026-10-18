@@ -91,6 +91,8 @@ set(UWF_OVERLAY_RUNTIME_SOURCES
         src/ui/ThemeManager.cpp
         src/ui/I18n.h
         src/ui/I18n.cpp
+        src/ui/TablePresentation.h
+        src/ui/TablePresentation.cpp
         src/util/Log.h
         src/util/Log.cpp
         src/util/RegistryKey.h
@@ -291,6 +293,10 @@ set(UWF_APP_RESOURCE_FILES
         resources/icons/shutdown.svg
         resources/icons/restart.svg
         resources/icons/enhanced.svg
+        resources/icons/file_staging.svg
+        resources/icons/status_warning.svg
+        resources/icons/status_error.svg
+        resources/icons/status_success.svg
         resources/icons/commit.svg
         resources/icons/theme_sun.svg
         resources/icons/theme_moon.svg

@@ -363,13 +363,13 @@ QPushButton#dangerBtn {
 }
 
 QPushButton#dangerBtn:hover {
-    background: #EF4444;
-    border-color: #EF4444;
+    background: #B91C1C;
+    border-color: #B91C1C;
 }
 
 QPushButton#dangerBtn:pressed {
-    background: #B91C1C;
-    border-color: #B91C1C;
+    background: #991B1B;
+    border-color: #991B1B;
 }
 
 /* 与普通按钮保持同一尺寸，只用轻量红色底与 1px 外轮廓提示重启风险。 */
@@ -756,4 +756,38 @@ QHeaderView::section {
 
 QHeaderView::section:last {
     border-right: none;
+}
+
+/* 电源确认：主要操作、直接操作和默认取消保持同一尺寸，分别表达操作层级。 */
+QDialog#powerConfirmDialog QPushButton[powerActionRole="safe"] {
+    background: #1A73E8;
+    border-color: #1A73E8;
+    color: #FFFFFF;
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole="safe"]:hover {
+    background: #185ABC;
+    border-color: #185ABC;
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole="safe"]:pressed {
+    background: #174EA6;
+    border-color: #174EA6;
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole="direct"] {
+    background: transparent;
+    color: #B3261E;
+    border-color: #B3261E;
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole="direct"]:hover {
+    background: rgba(217, 48, 37, 0.12);
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole="direct"]:pressed {
+    background: rgba(217, 48, 37, 0.20);
+}
+QDialog#powerConfirmDialog QPushButton:default {
+    border-color: #1A73E8;
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole]:disabled {
+    background: #F1F3F4;
+    color: #BDC1C6;
+    border-color: #E8EAED;
 }

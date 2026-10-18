@@ -30,6 +30,8 @@ class SwitchButton : public QAbstractButton {
   [[nodiscard]] QSize sizeHint() const override;
 
  protected:
+  void focusInEvent(QFocusEvent*) override;
+  void focusOutEvent(QFocusEvent*) override;
   void paintEvent(QPaintEvent*) override;
 };
 

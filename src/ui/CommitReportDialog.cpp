@@ -36,6 +36,7 @@
 #include "I18n.h"
 #include "Pager.h"
 #include "PathElideDelegate.h"
+#include "TablePresentation.h"
 #include "TableText.h"
 
 namespace uwf::ui {
@@ -124,6 +125,7 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, const
   const int colCount = static_cast<int>(headers.size());
 
   auto* table = new QTableWidget(0, colCount, &dlg);
+  configureReportTable(table);
   table->setHorizontalHeaderLabels(headers);
   table->verticalHeader()->setVisible(false);
   table->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -156,7 +158,7 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, const
   table->ensurePolished();
   const auto textWidth = [&](const QString& value) { return table->fontMetrics().horizontalAdvance(value) + 24; };
   hh->setMinimumSectionSize(textWidth(headers.back()));
-  hh->resizeSection(0, std::max({textWidth(headers[0]), textWidth(okLabel), textWidth(skipLabel), textWidth(I18n::tr("Failed"))}));
+  hh->resizeSection(0, std::max({textWidth(headers[0]), textWidth(okLabel), textWidth(skipLabel), textWidth(I18n::tr("Failed"))}) + 20);
   if (showExistence) {
     hh->resizeSection(2, std::max(100, textWidth(headers[2])));
     hh->resizeSection(3, std::max(100, textWidth(headers[3])));
@@ -192,7 +194,11 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, const
       const auto& r = rows[i];
       const int vr = i - start;
       int c = 0;
-      table->setItem(vr, c++, new QTableWidgetItem(r.category));
+      auto* category = new QTableWidgetItem(r.category);
+      const auto status = r.category == okLabel ? TableStatus::Success : r.category == skipLabel ? TableStatus::Muted : TableStatus::Error;
+      category->setIcon(tableStatusIcon(status));
+      category->setForeground(tableStatusColor(status));
+      table->setItem(vr, c++, category);
       auto* pathItem = new QTableWidgetItem(r.path);
       pathItem->setToolTip(r.path);
       table->setItem(vr, c++, pathItem);
@@ -277,6 +283,7 @@ void showCommitReport(QWidget* parent, const QList<CommitReportRow>& rows, const
   });
 
   auto* btns = new QDialogButtonBox;
+  addTableDetailsButton(table, btns);
   const auto* copyAllBtn = btns->addButton(I18n::tr("Copy all"), QDialogButtonBox::ActionRole);
   QObject::connect(copyAllBtn, &QPushButton::clicked, &dlg, [allRowsToText] { QGuiApplication::clipboard()->setText(allRowsToText()); });
   const auto* closeBtn = btns->addButton(I18n::tr("Close"), QDialogButtonBox::AcceptRole);

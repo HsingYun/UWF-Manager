@@ -339,19 +339,19 @@ QPushButton[pagerNavigation="true"] {
 }
 
 QPushButton#primaryBtn {
-    background: #3B82F6;
-    border-color: #3B82F6;
+    background: #2563EB;
+    border-color: #2563EB;
     color: #FFFFFF;
 }
 
 QPushButton#primaryBtn:hover {
-    background: #60A5FA;
-    border-color: #60A5FA;
+    background: #1D4ED8;
+    border-color: #1D4ED8;
 }
 
 QPushButton#primaryBtn:pressed {
-    background: #2563EB;
-    border-color: #2563EB;
+    background: #1E40AF;
+    border-color: #1E40AF;
 }
 
 QPushButton#dangerBtn {
@@ -361,13 +361,13 @@ QPushButton#dangerBtn {
 }
 
 QPushButton#dangerBtn:hover {
-    background: #EF4444;
-    border-color: #EF4444;
+    background: #B91C1C;
+    border-color: #B91C1C;
 }
 
 QPushButton#dangerBtn:pressed {
-    background: #B91C1C;
-    border-color: #B91C1C;
+    background: #991B1B;
+    border-color: #991B1B;
 }
 
 /* 应用完成后的安全重启：保持普通按钮相同的尺寸与圆角，只用浅红底、红色
@@ -418,8 +418,8 @@ QPushButton#enhancedModeChangeButton[actionStyle="enable"] {
 }
 
 QPushButton#enhancedModeChangeButton[actionStyle="enable"]:hover {
-    background: #229A65;
-    border-color: #35B979;
+    background: #166B44;
+    border-color: #229A65;
 }
 
 QPushButton#enhancedModeChangeButton[actionStyle="repair"] {
@@ -429,8 +429,8 @@ QPushButton#enhancedModeChangeButton[actionStyle="repair"] {
 }
 
 QPushButton#enhancedModeChangeButton[actionStyle="repair"]:hover {
-    background: #A86F00;
-    border-color: #D39718;
+    background: #754D00;
+    border-color: #B77900;
 }
 
 QPushButton#enhancedModeRemoveButton {
@@ -766,4 +766,38 @@ QHeaderView::section {
 
 QHeaderView::section:last {
     border-right: none;
+}
+
+/* 电源确认：主要操作、直接操作和默认取消保持同一尺寸，分别表达操作层级。 */
+QDialog#powerConfirmDialog QPushButton[powerActionRole="safe"] {
+    background: #2563EB;
+    border-color: #2563EB;
+    color: #FFFFFF;
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole="safe"]:hover {
+    background: #1D4ED8;
+    border-color: #1D4ED8;
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole="safe"]:pressed {
+    background: #1E40AF;
+    border-color: #1E40AF;
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole="direct"] {
+    background: transparent;
+    color: #F28B96;
+    border-color: #F28B96;
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole="direct"]:hover {
+    background: rgba(201, 77, 88, 0.12);
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole="direct"]:pressed {
+    background: rgba(201, 77, 88, 0.20);
+}
+QDialog#powerConfirmDialog QPushButton:default {
+    border-color: #4C8BF5;
+}
+QDialog#powerConfirmDialog QPushButton[powerActionRole]:disabled {
+    background: #1F2226;
+    color: #5C6168;
+    border-color: #2A2D33;
 }

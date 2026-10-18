@@ -47,6 +47,7 @@
 #include "I18n.h"
 #include "Pager.h"
 #include "PathElideDelegate.h"
+#include "TablePresentation.h"
 #include "TableText.h"
 #include "UiUtil.h"
 
@@ -77,6 +78,7 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   };
 
   auto* table = new PagedTable(0, 4, this);
+  configureReportTable(table);
   table->setHorizontalHeaderLabels({I18n::tr("Time"), I18n::tr("Level"), I18n::tr("Tag"), I18n::tr("Message")});
   table->verticalHeader()->setVisible(false);
   table->setEditTriggers(QAbstractItemView::NoEditTriggers);
@@ -97,7 +99,7 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   hh->setSectionResizeMode(3, QHeaderView::Stretch);
   table->setColumnWidth(0, 110);
   table->ensurePolished();
-  table->setColumnWidth(1, std::max(50, table->fontMetrics().horizontalAdvance(I18n::tr("Level")) + 24));
+  table->setColumnWidth(1, std::max(64, table->fontMetrics().horizontalAdvance(I18n::tr("Level")) + 24));
   // Tag / Message 套 PathElideDelegate——绕开 Qt 默认 paint 路径在非 100% DPI 下
   // 把 elide 宽度算小的 bug（详见 PathElideDelegate.h）。
   table->setItemDelegateForColumn(2, new PathElideDelegate(table));
@@ -197,6 +199,14 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
       const auto& f = pager->entries[static_cast<size_t>(start + i)];
       for (int c = 0; c < 4; ++c) {
         auto* it = new QTableWidgetItem(f[static_cast<size_t>(c)]);
+        if (c == 1) {
+          const auto status = f[1] == QLatin1String("E") || f[1] == QLatin1String("F") ? TableStatus::Error
+                              : f[1] == QLatin1String("W")                             ? TableStatus::Warning
+                              : f[1] == QLatin1String("I")                             ? TableStatus::Information
+                                                                                       : TableStatus::Muted;
+          it->setIcon(tableStatusIcon(status));
+          it->setForeground(tableStatusColor(status));
+        }
         if (c == 3) it->setToolTip(f[3]);
         tablePtr->setItem(i, c, it);
       }
@@ -352,6 +362,7 @@ LogViewerDialog::LogViewerDialog(QWidget* parent) : QDialog(parent) {
   };
 
   auto* btns = new QDialogButtonBox(this);
+  addTableDetailsButton(table, btns);
   auto* refreshBtn = btns->addButton(I18n::tr("Refresh"), QDialogButtonBox::ActionRole);
   auto* copyAllBtn = btns->addButton(I18n::tr("Copy all"), QDialogButtonBox::ActionRole);
   auto* clearBtn = btns->addButton(I18n::tr("Clear"), QDialogButtonBox::DestructiveRole);

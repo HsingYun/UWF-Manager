@@ -28,6 +28,7 @@
 #include <QPlainTextEdit>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QStyle>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <algorithm>
@@ -302,13 +303,17 @@ PowerActionDialogOutcome runPowerActionDialog(QWidget* parent, PowerActionDialog
   layout->addWidget(warningCard);
 
   auto* buttons = new QDialogButtonBox(&dialog);
-  auto* actionButton = buttons->addButton(actionText, QDialogButtonBox::AcceptRole);
+  auto* actionButton = new QPushButton(actionText, &dialog);
   actionButton->setObjectName(direct ? (shutdown ? QStringLiteral("directShutdownBtn") : QStringLiteral("directRestartBtn"))
                                      : (shutdown ? QStringLiteral("dangerBtn") : QStringLiteral("restartBtn")));
+  actionButton->setProperty("powerActionRole", direct ? "direct" : "safe");
+  buttons->addButton(actionButton, QDialogButtonBox::AcceptRole);
   QPushButton* directActionButton = nullptr;
   if (!direct) {
-    directActionButton = buttons->addButton(directText, QDialogButtonBox::DestructiveRole);
+    directActionButton = new QPushButton(directText, &dialog);
     directActionButton->setObjectName(shutdown ? QStringLiteral("directShutdownBtn") : QStringLiteral("directRestartBtn"));
+    directActionButton->setProperty("powerActionRole", "direct");
+    buttons->addButton(directActionButton, QDialogButtonBox::DestructiveRole);
     directActionButton->setAutoDefault(false);
   }
   auto* cancelButton = buttons->addButton(I18n::tr("Cancel"), QDialogButtonBox::RejectRole);
@@ -362,6 +367,9 @@ PowerActionDialogOutcome runPowerActionDialog(QWidget* parent, PowerActionDialog
                                     : I18n::tr("If you continue, the system will restart without the files that could not be committed."));
     warningCard->show();
     actionButton->setText(continueText);
+    actionButton->setProperty("powerActionRole", "direct");
+    actionButton->style()->unpolish(actionButton);
+    actionButton->style()->polish(actionButton);
     actionButton->setEnabled(true);
     if (directActionButton) {
       directActionButton->setVisible(!stagingStarted);

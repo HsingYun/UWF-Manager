@@ -43,6 +43,8 @@
 #include <QStyleOptionViewItem>
 #include <QStyledItemDelegate>
 
+#include "TablePresentation.h"
+
 namespace uwf::ui {
 
 class PathElideDelegate : public QStyledItemDelegate {
@@ -69,6 +71,7 @@ class PathElideDelegate : public QStyledItemDelegate {
     const QPalette::ColorRole role = (opt.state & QStyle::State_Selected) ? QPalette::HighlightedText : QPalette::Text;
     painter->setPen(opt.palette.color(role));
     painter->drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, elided);
+    paintTableRowSeparator(painter, opt);
   }
 };
 
