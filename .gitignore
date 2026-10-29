@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # CMake build directories
 cmake-build-debug/
 CMakeFiles/
@@ -9,6 +11,9 @@ build/
 *.ipr
 *.iws
 
+# VSCode specific files
+.vscode/
+
 # Common temporary and backup files
 *.swp
 *.swo
@@ -16,11 +21,6 @@ build/
 *.tmp
 
 # Build Tools
+cmake/*-portable.cmake
 CMakePresets.json
-cmake/*
 compile_commands.json
-
-# AI knowledge
-.*
-knowledge/
-scripts/

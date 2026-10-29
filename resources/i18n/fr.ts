@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 HsingYun (iakext@gmail.com) -->
 <!DOCTYPE TS>
 <TS version="2.1" language="fr" sourcelanguage="en">
 <context>
     <name>uwf</name>
-    <message><source>Enable</source><translation>Activer</translation></message>
-    <message><source>Disable</source><translation>Désactiver</translation></message>
+    <message><source>Preview</source><translation>Aperçu</translation></message>
     <message><source>enable</source><translation>activer</translation></message>
     <message><source>disable</source><translation>désactiver</translation></message>
     <message><source>Enabled</source><translation>Activé</translation></message>
@@ -13,7 +14,6 @@
     <message><source>Cancel</source><translation>Annuler</translation></message>
     <message><source>Close</source><translation>Fermer</translation></message>
     <message><source>Refresh</source><translation>Actualiser</translation></message>
-    <message><source>Apply</source><translation>Appliquer</translation></message>
     <message><source>Add</source><translation>Ajouter</translation></message>
     <message><source>Remove</source><translation>Retirer</translation></message>
     <message><source>Yes</source><translation>Oui</translation></message>
@@ -26,21 +26,15 @@
     <message><source>drive letter</source><translation>lettre de lecteur</translation></message>
     <message><source>Drive letter</source><translation>Lettre de lecteur</translation></message>
     <message><source>Volume ID</source><translation>ID de volume</translation></message>
-    <message><source>The current system "%1" (%2) is not a recognized supported Windows 10/11 edition. UWF Manager is running in compatibility mode and some features may be unavailable.</source><translation>Le système « %1 » (%2) n’est pas reconnu comme une édition Windows 10/11 prise en charge. UWF Manager fonctionne en mode de compatibilité ; certaines fonctions peuvent être indisponibles.</translation></message>
     <message><source>Protection state of this volume in the current session (read-only).</source><translation>État de protection de ce volume pour la session actuelle (lecture seule).</translation></message>
     <message><source>Protect this volume in the next session. Writes to this volume are redirected to the overlay and discarded on reboot.</source><translation>Protéger ce volume à la prochaine session. Les écritures sont redirigées vers l’overlay, puis supprimées au redémarrage.</translation></message>
-    <message><source>Protection:</source><translation>Protection :</translation></message>
     <message><source>Current session</source><translation>Session actuelle</translation></message>
     <message><source>Next session</source><translation>Prochaine session</translation></message>
-    <message><source>The currently active session (read-only). Changes you make never take effect in this session.</source><translation>Session en cours (lecture seule). Les modifications ne prennent pas effet pendant cette session.</translation></message>
-    <message><source>The session that takes effect after a reboot. Changes you make take effect after the system restarts.</source><translation>Session après redémarrage. Les modifications prennent effet au redémarrage du système.</translation></message>
     <message><source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source><translation>Identification du volume : la lettre de lecteur est simple, mais l’association est perdue si elle change, notamment après un changement de disques. L’ID de volume reste stable.</translation></message>
-    <message><source>Bind by:</source><translation>Identification par :</translation></message>
     <message><source>This volume is not supported by UWF: </source><translation>Volume non pris en charge par UWF : </translation></message>
     <message><source>Global settings</source><translation>Paramètres généraux</translation></message>
     <message><source>UWF filter state in the current session (read-only).</source><translation>État du filtre UWF dans la session actuelle (lecture seule).</translation></message>
     <message><source>Enable the UWF filter in the next session. Writes to protected volumes are redirected to the overlay and discarded on reboot.</source><translation>Activer UWF à la prochaine session. Les écritures sur les volumes protégés vont dans l’overlay et sont supprimées au redémarrage.</translation></message>
-    <message><source>Filter</source><translation>Filtre</translation></message>
     <message><source>Overlay type and maximum size can only be changed while the filter is disabled:
 1. Disable the filter using the switch above.
 2. Reboot (the filter will be off after reboot).
@@ -54,14 +48,10 @@
     <message><source>Maximum size</source><translation>Taille maximale</translation></message>
     <message><source>Maximum size · RAM %1</source><translation>Taille maximale · RAM %1</translation></message>
     <message><source>Warning threshold</source><translation>Seuil d’avertissement</translation></message>
-    <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. Must be lower than the critical threshold. Set to 0 to disable this event.</source><translation>À ce niveau d’utilisation, écrit un avertissement dans le journal d’événements. Doit être inférieur au seuil critique. 0 désactive l’événement.</translation></message>
+    <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be lower than the critical threshold. Set to 0 to disable only the warning event.</source><translation>Inscrit une notification de niveau avertissement dans le journal des événements lorsque l’utilisation de la surcouche atteint cette valeur. Lorsque les deux événements sont activés, cette valeur doit être inférieure au seuil critique. La valeur 0 désactive uniquement l’événement d’avertissement.</translation></message>
     <message><source>Critical threshold</source><translation>Seuil critique</translation></message>
-    <message><source>Triggers a critical-level event-log notification when overlay usage reaches this value. Must be higher than the warning threshold. Set to 0 to disable this event.</source><translation>À ce niveau d’utilisation, écrit un événement critique dans le journal. Doit être supérieur au seuil d’avertissement. 0 désactive l’événement.</translation></message>
-    <message><source>Used / total</source><translation>Utilisé / total</translation></message>
+    <message><source>Triggers a critical-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be higher than the warning threshold. Set to 0 to disable only the critical event.</source><translation>Inscrit une notification de niveau critique dans le journal des événements lorsque l’utilisation de la surcouche atteint cette valeur. Lorsque les deux événements sont activés, cette valeur doit être supérieure au seuil d’avertissement. La valeur 0 désactive uniquement l’événement critique.</translation></message>
     <message><source>Overlay</source><translation>Overlay</translation></message>
-    <message><source>&lt;span style='color:%1'&gt;■&lt;/span&gt; Used &amp;nbsp; &lt;span style='color:%2'&gt;■&lt;/span&gt; Warning &amp;nbsp; &lt;span style='color:%3'&gt;■&lt;/span&gt; Critical</source><translation>&lt;span style='color:%1'&gt;■&lt;/span&gt; Utilisé &amp;nbsp; &lt;span style='color:%2'&gt;■&lt;/span&gt; Avertissement &amp;nbsp; &lt;span style='color:%3'&gt;■&lt;/span&gt; Critique</translation></message>
-    <message><source>UWF status unavailable: </source><translation>État UWF indisponible : </translation></message>
-    <message><source>Administrator privileges are required to change UWF settings. Restart the program via right-click → "Run as administrator".</source><translation>Les droits administrateur sont nécessaires pour modifier UWF. Relancez le programme par clic droit → « Exécuter en tant qu’administrateur ».</translation></message>
     <message><source>Unsupported drive type (only fixed local disks are supported).</source><translation>Type de lecteur non pris en charge (disques locaux fixes uniquement).</translation></message>
     <message><source>Volume capacity exceeds the UWF limit of 16 TiB for a single protected volume.</source><translation>Ce volume dépasse la limite UWF de 16 TiB par volume protégé.</translation></message>
     <message><source>%1 file system: this volume can be protected, but file exclusions and per-file commit are not supported.</source><translation>%1 : protection du volume possible, mais sans exclusions ni enregistrement par fichier.</translation></message>
@@ -87,11 +77,9 @@
     <message><source>Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is shared across all volumes and shown only once in the disk tabs. Double-click an entry to copy its path.</source><translation>Les exclusions du Registre dépendent du filtre UWF global, pas de la protection de ce volume. La liste commune à tous les volumes n’est affichée qu’une fois. Double-cliquez pour copier un chemin.</translation></message>
     <message><source>File staging</source><translation>Fichiers à enregistrer</translation></message>
     <message><source>Files and folders in this list are committed automatically before safe shutdown or restart. Folders are processed recursively. While the list contains data, UWF Manager excludes HKLM\SOFTWARE\HsingYun\UWF Manager so the list persists across protected sessions.</source><translation>fichiers / dossiers: Enregistrement automatique avant un arrêt ou redémarrage sécurisé. Tous les sous-dossiers sont inclus. Tant que la liste contient des entrées, cette exclusion du Registre permet de la conserver entre les sessions protégées : HKLM\SOFTWARE\HsingYun\UWF Manager</translation></message>
-    <message><source>Search staged paths…</source><translation>Rechercher un chemin à enregistrer…</translation></message>
     <message><source>Add files or a folder to the automatic commit list.</source><translation>Ajouter des fichiers ou un dossier à la liste d’enregistrement automatique.</translation></message>
     <message><source>Select one or more files to commit automatically before safe shutdown or restart.</source><translation>Choisir un fichier à enregistrer sur disque. Enregistrement automatique avant un arrêt ou redémarrage sécurisé.</translation></message>
     <message><source>Select a folder whose files will be committed recursively before safe shutdown or restart.</source><translation>Choisir un dossier à enregistrer sur disque. Enregistrement automatique avant un arrêt ou redémarrage sécurisé. Tous les sous-dossiers sont inclus.</translation></message>
-    <message><source>Remove the selected paths from automatic commit immediately.</source><translation>Retirer immédiatement les chemins sélectionnés de l’enregistrement automatique.</translation></message>
     <message><source>Select files for automatic commit</source><translation>Choisir un fichier à enregistrer sur disque · Fichiers à enregistrer</translation></message>
     <message><source>Select a folder for automatic recursive commit</source><translation>Choisir un dossier à enregistrer sur disque · Fichiers à enregistrer · Tous les sous-dossiers sont inclus.</translation></message>
     <message><source>Cannot stage this path</source><translation>Impossible d’ajouter ce chemin à l’enregistrement automatique</translation></message>
@@ -124,7 +112,8 @@
     <message><source>File staging is unavailable: %1</source><translation>Fichiers à enregistrer: %1</translation></message>
     <message><source>Committed automatically before safe shutdown or restart.</source><translation>Enregistrement automatique avant un arrêt ou redémarrage sécurisé.</translation></message>
     <message><source>%1 staged entries · %2 files · %3 folders</source><translation>Fichiers à enregistrer: %1 · fichiers: %2 · dossiers: %3</translation></message>
-    <message><source>Required by UWF for File staging.</source><translation>Nécessaire à l’enregistrement automatique UWF.</translation></message>
+    <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>L’enregistrement automatique des fichiers dépend de cette exclusion de registre pour conserver sa liste après les redémarrages.</translation></message>
+    <message><source>Built-in</source><translation>Intégré</translation></message>
     <message><source>The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit.</source><translation>Le filtre UWF est désactivé. Aucune modification d’overlay n’a été accumulée ni n’est à enregistrer.</translation></message>
     <message><source>Per-file commit is not supported on the %1 file system.</source><translation>Le système de fichiers %1 ne permet pas l’enregistrement par fichier.</translation></message>
     <message><source>This volume is not supported by UWF.</source><translation>Ce volume n’est pas pris en charge par UWF.</translation></message>
@@ -136,41 +125,23 @@
     <message><source>Select a folder to commit to disk</source><translation>Choisir un dossier à enregistrer sur disque</translation></message>
     <message><source>Select a file whose deletion you want to commit</source><translation>Choisir un fichier à supprimer définitivement</translation></message>
     <message><source>Select a folder whose deletion you want to commit</source><translation>Choisir un dossier à supprimer définitivement</translation></message>
-    <message><source>Commit registry changes</source><translation>Enregistrer les modifications du Registre</translation></message>
-    <message><source>Commit registry deletion</source><translation>Enregistrer la suppression dans le Registre</translation></message>
-    <message><source>Key path:</source><translation>Clé · Chemin:</translation></message>
-    <message><source>HKLM\Software\... — type or paste, press Enter to jump</source><translation>Saisissez ou collez HKLM\Software\... puis appuyez sur Entrée</translation></message>
     <message><source>Name</source><translation>Nom</translation></message>
     <message><source>Data</source><translation>Données</translation></message>
-    <message><source>Key: %1</source><translation>Clé: %1</translation></message>
-    <message><source>Value: %1</source><translation>Valeur: %1</translation></message>
-    <message><source>(none)</source><translation>(aucun)</translation></message>
     <message><source>(Default)</source><translation>(par défaut)</translation></message>
     <message><source>(value not set)</source><translation>(valeur non définie)</translation></message>
     <message><source>(empty)</source><translation>(vide)</translation></message>
     <message><source>Preview unavailable (value is too large)</source><translation>Inconnu (Valeur: Fichier trop volumineux)</translation></message>
-    <message><source>(whole key recursive, including subkeys)</source><translation>(clé entière et toutes ses sous-clés)</translation></message>
-    <message><source>Overlay files - %1</source><translation>Overlay · fichiers - %1</translation></message>
-    <message><source>View overlay files</source><translation>Voir les fichiers de l’overlay</translation></message>
     <message><source>Open a diagnostic view of files currently cached in the overlay for this volume.</source><translation>Voir les fichiers de l’overlay. &lt;b&gt;Instantané de diagnostic uniquement.&lt;/b&gt; N’utilisez pas cette liste pour décider quoi enregistrer.</translation></message>
     <message><source>Overlay file listing is only supported on NTFS volumes.</source><translation>La liste des fichiers de l’overlay nécessite un volume NTFS.</translation></message>
     <message><source>The UWF filter is currently disabled, so no volume has an overlay to inspect.</source><translation>Le filtre UWF est désactivé ; aucun volume n’a d’overlay à examiner.</translation></message>
     <message><source>This volume is not currently protected by UWF, so it has no overlay to inspect.</source><translation>Ce volume n’est pas protégé par UWF et n’a pas d’overlay à examiner.</translation></message>
-    <message><source>&lt;b&gt;Diagnostic snapshot only.&lt;/b&gt; Don't use this list to decide what to commit.</source><translation>&lt;b&gt;Instantané de diagnostic uniquement.&lt;/b&gt; N’utilisez pas cette liste pour décider quoi enregistrer.</translation></message>
-    <message><source>NTFS volumes only.</source><translation>La liste des fichiers de l’overlay nécessite un volume NTFS.</translation></message>
-    <message><source>Can be slow or fail when the overlay is large — memory and time grow with overlay size.</source><translation>Un overlay volumineux augmente la mémoire et le temps nécessaires ; l’opération peut ralentir ou échouer.</translation></message>
-    <message><source>The list is not exact: files smaller than the disk cluster size (typically 4 KB) may be missing; earlier commits, files in excluded paths, and files affected by unrelated operations may appear.</source><translation>Liste non exacte : les fichiers plus petits qu’un cluster (souvent 4 KB) peuvent manquer ; des fichiers déjà enregistrés, exclus ou touchés par d’autres opérations peuvent apparaître.</translation></message>
-    <message><source>Loading…</source><translation>Chargement…</translation></message>
     <message><source>Failed: %1</source><translation>Échec: %1</translation></message>
-    <message><source>%1 file(s) in overlay</source><translation>Overlay · fichiers: %1</translation></message>
-    <message><source>No files</source><translation>Aucun fichier</translation></message>
-    <message><source>Page %1 / %2 · %3 file(s) total</source><translation>Page %1 / %2 · fichiers: %3</translation></message>
     <message><source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure.</source><translation>Le fournisseur WMI a planté pendant l’énumération. C’est une instabilité connue de UWF_Overlay.GetOverlayFiles avec un overlay volumineux ou une forte charge d’E/S.</translation></message>
     <message><source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source><translation>Mémoire insuffisante ou opération non prise en charge. NTFS et de la mémoire libre sont nécessaires. Réessayez avec un overlay plus petit ou après avoir fermé les applications gourmandes.</translation></message>
     <message><source>Raw error: %1</source><translation>Code d’erreur: %1</translation></message>
-    <message><source>Export to file…</source><translation>Exporter dans un fichier…</translation></message>
     <message><source>Export overlay file list</source><translation>Exporter dans un fichier… · Overlay · fichiers</translation></message>
     <message><source>Text files (*.txt);;All files (*)</source><translation>Fichiers texte (*.txt);;Tous les fichiers (*)</translation></message>
+    <message><source>Command files (*.cmd);;All files (*)</source><translation>Fichiers de commandes (*.cmd);;Tous les fichiers (*)</translation></message>
     <message><source>Export failed</source><translation>Échec de l’exportation</translation></message>
     <message><source>Export finished</source><translation>Exportation terminée</translation></message>
     <message><source>Could not open file for writing: %1</source><translation>Échec: Ouverture du fichier (%1).</translation></message>
@@ -204,8 +175,6 @@
   HKLM\SAM
   HKLM\SECURITY
   HKLM\COMPONENTS</translation></message>
-    <message><source>Search file paths…</source><translation>Rechercher un chemin de fichier…</translation></message>
-    <message><source>Search registry keys…</source><translation>Rechercher une clé du Registre…</translation></message>
     <message><source>Add a file or folder to the exclusion list. Excluded entries are not protected by UWF.</source><translation>Ajouter des fichiers ou dossiers aux exclusions. Ils ne seront pas protégés par UWF.</translation></message>
     <message><source>Pick a file to add to the exclusion list.</source><translation>Choisir un fichier à ajouter · Exclusions de fichiers.</translation></message>
     <message><source>Pick a folder (and all of its contents) to add to the exclusion list.</source><translation>Choisir un dossier à ajouter · Exclusions de fichiers. Tous les sous-dossiers sont inclus.</translation></message>
@@ -216,7 +185,6 @@
     <message><source>Terminal Services Client Access License (TSCAL)</source><translation>Licence d’accès client aux services Terminal Server (TSCAL)</translation></message>
     <message><source>Persist the domain secret key (machine account password) across UWF sessions.</source><translation>Conserver le secret du domaine (mot de passe du compte ordinateur) entre les sessions UWF.</translation></message>
     <message><source>Persist Terminal Services client access licenses across UWF sessions.</source><translation>Conserver les licences d’accès client Terminal Server entre les sessions UWF.</translation></message>
-    <message><source>· %1 persistence %2</source><translation>· Persistance %1: %2</translation></message>
     <message><source>✓ %1 persistence: %2</source><translation>✓ Persistance %1: %2</translation></message>
     <message><source>Remove selected</source><translation>Retirer la sélection</translation></message>
     <message><source>Remove the selected entries from the exclusion list. Takes effect after Apply.</source><translation>Retirer les exclusions sélectionnées. Prend effet après application.</translation></message>
@@ -225,7 +193,7 @@
     <message><source>Copy registry path</source><translation>Copier le chemin du Registre</translation></message>
     <message><source>Commit folder changes to disk…</source><translation>Enregistrer sur disque les modifications de ce dossier dans l’overlay…</translation></message>
     <message><source>Commit file changes to disk…</source><translation>Enregistrer sur disque les modifications de ce fichier dans l’overlay…</translation></message>
-    <message><source>Copied to clipboard: </source><translation>Copié dans le presse-papiers : </translation></message>
+    <message><source>Copied to clipboard</source><translation>Copié dans le presse-papiers</translation></message>
     <message><source>Select files to add to the exclusion list (multiple selection allowed)</source><translation>Choisir un fichier à ajouter · Exclusions de fichiers. Sélection multiple possible.</translation></message>
     <message><source>Select a folder to add to the exclusion list</source><translation>Choisir un dossier à ajouter · Exclusions de fichiers</translation></message>
     <message><source>Add registry exclusion</source><translation>Ajout d’une exclusion du Registre</translation></message>
@@ -240,9 +208,7 @@
 Next session: %2</source><translation>Session actuelle: %1
 Prochaine session: %2</translation></message>
     <message><source>Pending change: %1</source><translation>Modifications en attente: %1</translation></message>
-    <message><source>%1 entries · %2 to add · %3 to remove in next session · %4 pending</source><translation>entrées: %1 · À ajouter: %2 · À retirer à la prochaine session: %3 · Modifications en attente: %4</translation></message>
     <message><source>Unified Write Filter (UWF) Manager</source><translation>Gestionnaire du filtre d’écriture unifié (UWF)</translation></message>
-    <message><source>Main toolbar</source><translation>Barre d’outils principale</translation></message>
     <message><source>Re-read the current session state and next-session configuration of UWF.</source><translation>Relire l’état actuel d’UWF et la configuration de la prochaine session.</translation></message>
     <message><source>Review and apply</source><translation>Vérifier et appliquer</translation></message>
     <message><source>Review all pending changes and apply them in one batch. Most changes take effect after the next reboot.</source><translation>Vérifier toutes les modifications en attente et les appliquer ensemble. La plupart des modifications prennent effet au prochain redémarrage.</translation></message>
@@ -255,22 +221,13 @@ Prochaine session: %2</translation></message>
     <message><source>Log</source><translation>Journal</translation></message>
     <message><source>View the internal log accumulated during this session, for troubleshooting.</source><translation>Afficher le journal interne de cette session pour le dépannage.</translation></message>
     <message><source>About</source><translation>À propos</translation></message>
-    <message><source>About this program.</source><translation>À propos UWF Manager.</translation></message>
     <message><source>Switch display language</source><translation>Changer la langue d’affichage</translation></message>
     <message><source>Language</source><translation>Langue</translation></message>
     <message><source>Theme</source><translation>Thème</translation></message>
     <message><source>Toggle light / dark theme</source><translation>Basculer entre thème clair et sombre</translation></message>
-    <message><source>&lt;p&gt;A graphical front-end for managing the UWF filter state, overlay, and file / registry exclusions. Most changes take effect after the next reboot.&lt;/p&gt;&lt;p&gt;Source code: &lt;a href="%3"&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href="mailto:%1"&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;This program is released under the &lt;a href="%2"&gt;GNU General Public License v3.0&lt;/a&gt;; the full license text is included in the LICENSE file shipped with this program.&lt;/p&gt;&lt;p&gt;This program is free software: you may redistribute it and / or modify it under the terms of the GPL v3. It is provided "as is", without any warranty.&lt;/p&gt;</source><translation>&lt;p&gt;Interface graphique de gestion du filtre UWF, de l’overlay et des exclusions de fichiers et du Registre. La plupart des modifications prennent effet au prochain redémarrage.&lt;/p&gt;&lt;p&gt;Code source: &lt;a href="%3"&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href="mailto:%1"&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;Licence: &lt;a href="%2"&gt;GNU General Public License v3.0&lt;/a&gt;; Le texte intégral de la licence figure dans le fichier LICENSE fourni avec le programme.&lt;/p&gt;&lt;p&gt;Logiciel libre : redistribution et modification autorisées selon la GPL v3. Fourni « en l’état », sans aucune garantie.&lt;/p&gt;</translation></message>
-    <message><source>About UWF Manager</source><translation>À propos UWF Manager</translation></message>
     <message><source>System information</source><translation>Informations système</translation></message>
     <message><source>Diagnostic snapshot</source><translation>Instantané de diagnostic</translation></message>
-    <message><source>System, security, UWF, enhanced mode, and recent application logs.</source><translation>Diagnostic du système, de la sécurité, d’UWF, du mode avancé et des journaux récents.</translation></message>
     <message><source>Read only</source><translation>Lecture seule</translation></message>
-    <message><source>Diagnostic report</source><translation>Rapport de diagnostic</translation></message>
-    <message><source>Copied</source><translation>Copié</translation></message>
-    <message><source>View system, security, UWF, enhanced mode, and log diagnostics.</source><translation>Diagnostic du système, de la sécurité, d’UWF, du mode avancé et des journaux récents.</translation></message>
-    <message><source>This report may contain account names, device identifiers, file paths, and recent application logs. Review it before sharing.</source><translation>Le rapport peut contenir des noms de comptes, identifiants d’appareils, chemins et journaux récents. Vérifiez-le avant de le partager.</translation></message>
-    <message><source>&lt;p&gt;&lt;b&gt;This program depends on the Windows Unified Write Filter (UWF).&lt;/b&gt; UWF Manager does not perform write filtering itself; the actual write protection is provided by the UWF feature built into Windows. This program only configures and manages UWF, and requires UWF to be installed and enabled on the system.&lt;/p&gt;&lt;p&gt;When UWF is first enabled on a device, it makes the following changes to the system to improve UWF performance:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Paging files are disabled.&lt;/li&gt;&lt;li&gt;System Restore is disabled.&lt;/li&gt;&lt;li&gt;SuperFetch is disabled.&lt;/li&gt;&lt;li&gt;The file indexing service is turned off.&lt;/li&gt;&lt;li&gt;The defragmentation service is turned off.&lt;/li&gt;&lt;li&gt;Fast boot is disabled.&lt;/li&gt;&lt;li&gt;The BCD setting bootstatuspolicy is set to ignoreallfailures.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;After UWF is enabled, these settings can be changed as needed. For example, the paging file can be moved to an unprotected volume and paging re-enabled.&lt;/p&gt;</source><translation>&lt;p&gt;&lt;b&gt;Ce programme dépend du filtre d’écriture unifié de Windows (UWF).&lt;/b&gt; La protection est assurée par UWF, intégré à Windows. UWF Manager ne filtre pas lui-même les écritures : il configure et gère UWF, qui doit être installé et activé sur le système.&lt;/p&gt;&lt;p&gt;À la première activation d’UWF, les paramètres système suivants sont modifiés pour améliorer les performances :&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Les fichiers d’échange sont désactivés.&lt;/li&gt;&lt;li&gt;La restauration du système est désactivée.&lt;/li&gt;&lt;li&gt;SuperFetch est désactivé.&lt;/li&gt;&lt;li&gt;Le service d’indexation des fichiers est arrêté.&lt;/li&gt;&lt;li&gt;Le service de défragmentation est arrêté.&lt;/li&gt;&lt;li&gt;Le démarrage rapide est désactivé.&lt;/li&gt;&lt;li&gt;Le paramètre BCD bootstatuspolicy est défini sur ignoreallfailures.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Ces réglages restent modifiables. Par exemple, déplacez le fichier d’échange vers un volume non protégé et réactivez la pagination.&lt;/p&gt;</translation></message>
     <message><source>The target was not found; there is nothing in the overlay to commit.</source><translation>Cible introuvable ; rien à enregistrer dans l’overlay.</translation></message>
     <message><source>Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It will disappear on reboot; commit-delete is neither needed nor possible.</source><translation>La cible existe uniquement dans l’overlay, créée sous UWF et jamais enregistrée sur le support ou dans le Registre persistant. Elle disparaîtra au redémarrage ; enregistrer sa suppression n’est ni nécessaire ni possible.</translation></message>
     <message><source>A parameter was rejected by the system (invalid path or argument).</source><translation>Le système a refusé un paramètre (chemin ou argument invalide).</translation></message>
@@ -279,16 +236,12 @@ Prochaine session: %2</translation></message>
     <message><source>Operation rejected (code %1).</source><translation>Opération refusée (code %1).</translation></message>
     <message><source>Unknown cause.</source><translation>Inconnu.</translation></message>
     <message><source>Commit canceled</source><translation>Enregistrement annulé</translation></message>
-    <message><source>Commit result</source><translation>Résultat de l’enregistrement</translation></message>
+
     <message><source>Succeeded</source><translation>Réussi</translation></message>
     <message><source>Skipped</source><translation>Ignoré</translation></message>
     <message><source>Failed</source><translation>Échec</translation></message>
     <message><source>%1 succeeded; %2 skipped; %3 failed.</source><translation>Réussi: %1; Ignoré: %2; Échec: %3.</translation></message>
-    <message><source>
-Canceled by user; %1 entries not processed.</source><translation>
-Annulé par l’utilisateur ; %1 entrées non traitées.</translation></message>
-    <message><source>Category</source><translation>Catégorie</translation></message>
-    <message><source>Path</source><translation>Chemin</translation></message>
+
     <message><source>Existed before</source><translation>Présent avant</translation></message>
     <message><source>Exists after</source><translation>Présent après</translation></message>
     <message><source>Error code</source><translation>Code d’erreur</translation></message>
@@ -297,53 +250,16 @@ Annulé par l’utilisateur ; %1 entrées non traitées.</translation></message>
     <message><source>First page</source><translation>Première page</translation></message>
     <message><source>Last page</source><translation>Dernière page</translation></message>
     <message><source>Next page</source><translation>Page suivante</translation></message>
-    <message><source>Page %1 / %2 · %3 entries total</source><translation>Page %1 / %2 · entrées: %3</translation></message>
     <message><source>Copy selected rows</source><translation>Copier les lignes sélectionnées</translation></message>
     <message><source>Copy all</source><translation>Tout copier</translation></message>
     <message><source>This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it.</source><translation>Cette exclusion du Registre est nécessaire tant que la liste d’enregistrement contient des entrées. Fichiers à enregistrer: Effacer → Retrait d’une exclusion du Registre.</translation></message>
-    <message><source>0 lines</source><translation>0 lignes</translation></message>
-    <message><source>%1 lines</source><translation>%1 lignes</translation></message>
-    <message><source>Loading log entries…</source><translation>Chargement du journal…</translation></message>
-    <message><source>No log entries</source><translation>Aucune entrée de journal</translation></message>
-    <message><source>Page %1 / %2 · %3 lines total</source><translation>Page %1 / %2 · lignes: %3</translation></message>
     <message><source>Copy current page</source><translation>Copier la page actuelle</translation></message>
-    <message><source>Clear</source><translation>Effacer</translation></message>
-    <message><source>%1 pending change(s) (not yet written to the system)</source><translation>Modifications en attente: %1</translation></message>
     <message><source>No pending changes</source><translation>Aucune modification en attente</translation></message>
     <message><source> (Also manages global registry exclusions.)</source><translation> (Exclusions du Registre · Paramètres généraux.)</translation></message>
     <message><source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source><translation>Volume %1: Protection UWF / Exclusions de fichiers / Fichiers à enregistrer.%2</translation></message>
     <message><source>UWF namespace is not available</source><translation>UWF: Non pris en charge</translation></message>
-    <message><source>Refreshed · %1 volumes</source><translation>Actualiser · Volume: %1</translation></message>
-    <message><source>· Filter (global) %1</source><translation>· Filtre (UWF): %1</translation></message>
-    <message><source>· Overlay type → %1</source><translation>· Overlay · Type → %1</translation></message>
-    <message><source>· Overlay maximum size → %1 MB</source><translation>· Overlay · Taille maximale → %1 MB</translation></message>
-    <message><source>· Overlay warning threshold → %1 MB</source><translation>· Overlay · Seuil d’avertissement → %1 MB</translation></message>
-    <message><source>· Overlay critical threshold → %1 MB</source><translation>· Overlay · Seuil critique → %1 MB</translation></message>
-    <message><source>⚠ Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>⚠ Pour modifier le type et la taille maximale :
-1. Désactivez le filtre ci-dessus.
-2. Redémarrez pour le désactiver effectivement.
-3. Modifiez le réglage.</translation></message>
-    <message><source>· Volume %1 protection %2</source><translation>· Volume %1 · Protection UWF: %2</translation></message>
-    <message><source>· Volume %1 bind by → %2 (no CLI equivalent; this program only)</source><translation>· Volume %1 · Identification par : %2 (sans équivalent en ligne de commande ; propre à ce programme)</translation></message>
-    <message><source>+ File exclusion  %1</source><translation>+ Exclusions de fichiers  %1</translation></message>
-    <message><source>− File exclusion  %1</source><translation>− Exclusions de fichiers  %1</translation></message>
-    <message><source>+ Registry exclusion  %1</source><translation>+ Exclusions du Registre  %1</translation></message>
-    <message><source>− Registry exclusion  %1</source><translation>− Exclusions du Registre  %1</translation></message>
-    <message><source>Filter (global) %1</source><translation>Filtre (UWF): %1</translation></message>
-    <message><source>Overlay type → %1</source><translation>Overlay · Type → %1</translation></message>
-    <message><source>Overlay maximum size → %1 MB</source><translation>Overlay · Taille maximale → %1 MB</translation></message>
-    <message><source>Overlay warning threshold → %1 MB</source><translation>Overlay · Seuil d’avertissement → %1 MB</translation></message>
-    <message><source>Overlay critical threshold → %1 MB</source><translation>Overlay · Seuil critique → %1 MB</translation></message>
-    <message><source>Volume %1 protection %2</source><translation>Volume %1 · Protection UWF: %2</translation></message>
-    <message><source>File exclusion %1</source><translation>Exclusions de fichiers: %1</translation></message>
-    <message><source>Registry exclusion %1</source><translation>Exclusions du Registre: %1</translation></message>
-    <message><source>Pending changes (%1)</source><translation>Modifications en attente (%1)</translation></message>
-    <message><source>Current session configuration</source><translation>Configuration de la session actuelle</translation></message>
     <message><source>Review and apply changes</source><translation>Vérifier et appliquer les modifications</translation></message>
-    <message><source>Below is the full configuration in uwfmgr command form. &lt;span style='color:%1'&gt;Pending changes&lt;/span&gt;, if any, are shown in a separate section first. Click &lt;span style='color:%2'&gt;Apply&lt;/span&gt; to write the changes to the system (most take effect after the next reboot).</source><translation>Configuration complète sous forme de commandes uwfmgr. Les modifications en attente figurent d’abord dans une section distincte. &lt;span style='color:%1'&gt;Modifications en attente&lt;/span&gt;. &lt;span style='color:%2'&gt;Appliquer&lt;/span&gt;: Cliquer pour écrire les modifications dans le système. La plupart des modifications prennent effet au prochain redémarrage.</translation></message>
     <message><source>Confirm apply</source><translation>Confirmer l’application</translation></message>
-    <message><source>These changes will be &lt;span style='color:%1'&gt;written to the system&lt;/span&gt;; most take effect after the next reboot.&lt;br&gt;&lt;br&gt;Continue?</source><translation>&lt;span style='color:%1'&gt;Ces modifications seront écrites dans le système&lt;/span&gt;. La plupart des modifications prennent effet au prochain redémarrage.&lt;br&gt;&lt;br&gt;Continuer?</translation></message>
-    <message><source>Applied changes</source><translation>Modifications appliquées</translation></message>
     <message><source>Result</source><translation>Résultat</translation></message>
     <message><source>✓ Filter: %1</source><translation>✓ Filtre: %1</translation></message>
     <message><source>✓ Overlay warning threshold set to %1 MB</source><translation>✓ Définition du seuil d’avertissement: %1 MB</translation></message>
@@ -365,41 +281,15 @@ Annulé par l’utilisateur ; %1 entrées non traitées.</translation></message>
     <message><source>Level</source><translation>Niveau</translation></message>
     <message><source>Tag</source><translation>Étiquette</translation></message>
     <message><source>Message</source><translation>Message</translation></message>
-    <message><source>Confirm safe shutdown?</source><translation>Arrêt sécurisé?</translation></message>
-    <message><source>Confirm safe restart?</source><translation>Redémarrage sécurisé?</translation></message>
-    <message><source>Shut down</source><translation>Arrêter</translation></message>
-    <message><source>Restart</source><translation>Redémarrer</translation></message>
-    <message><source>Continue shutdown</source><translation>Poursuivre l’arrêt</translation></message>
-    <message><source>Continue restart</source><translation>Poursuivre le redémarrage</translation></message>
-    <message><source>The system will shut down safely through UWF.</source><translation>Le système s’arrêtera de façon sécurisée via UWF.</translation></message>
-    <message><source>The system will restart safely through UWF.</source><translation>Le système redémarrera de façon sécurisée via UWF.</translation></message>
-    <message><source>UWF protection</source><translation>Protection UWF</translation></message>
-    <message><source>This operation remains available even if the UWF overlay is full.</source><translation>Disponible même si l’overlay UWF est plein.</translation></message>
     <message><source>Calculating files for automatic commit…</source><translation>Calcul des fichiers à enregistrer automatiquement…</translation></message>
-    <message><source>%1 file(s) will be committed automatically before this operation. Files outside currently protected volumes are skipped.</source><translation>%1 fichiers seront enregistrés avant cette opération. Les fichiers hors des volumes actuellement protégés seront ignorés.</translation></message>
     <message><source>Committing staged files</source><translation>Enregistrement des fichiers préparés</translation></message>
-    <message><source>The power action will continue after file staging completes.</source><translation>L’opération d’alimentation se poursuivra après l’enregistrement automatique.</translation></message>
     <message><source>Processed %1 of %2 file(s).</source><translation>%1 fichiers traités sur %2.</translation></message>
-    <message><source>Automatic file staging did not complete</source><translation>Enregistrement automatique incomplet</translation></message>
-    <message><source>Review the operation details before deciding whether to continue.</source><translation>Consultez les détails avant de décider de poursuivre.</translation></message>
-    <message><source>Operation details</source><translation>Détails de l’opération</translation></message>
     <message><source>No additional error details were provided.</source><translation>Aucun détail d’erreur supplémentaire.</translation></message>
-    <message><source>Some changes may not be preserved</source><translation>Certaines modifications risquent d’être perdues</translation></message>
-    <message><source>If you continue, the system will shut down without the files that could not be committed.</source><translation>En poursuivant, le système s’arrêtera sans conserver les fichiers dont l’enregistrement a échoué.</translation></message>
-    <message><source>If you continue, the system will restart without the files that could not be committed.</source><translation>En poursuivant, le système redémarrera sans conserver les fichiers dont l’enregistrement a échoué.</translation></message>
     <message><source>Automatic file staging stopped unexpectedly:
 %1</source><translation>L’enregistrement automatique s’est arrêté de façon inattendue :
 %1</translation></message>
     <message><source>Automatic file staging stopped because of an unknown error.</source><translation>Enregistrement automatique incomplet: Erreur inconnue.</translation></message>
-    <message><source>Uncommitted changes will be lost</source><translation>Les modifications non enregistrées seront perdues</translation></message>
-    <message><source>Before continuing, save your work and commit any changes that you want to keep permanently.</source><translation>Avant de poursuivre, sauvegardez votre travail et enregistrez durablement les modifications à conserver.</translation></message>
-    <message><source>Confirm direct restart?</source><translation>Redémarrage direct?</translation></message>
-    <message><source>Confirm direct shutdown?</source><translation>Arrêt direct?</translation></message>
-    <message><source>The system will restart without committing files in File staging.</source><translation>Redémarrer. Les fichiers de la liste ne seront pas enregistrés avant le redémarrage.</translation></message>
-    <message><source>The system will shut down without committing files in File staging.</source><translation>Arrêter. Les fichiers de la liste ne seront pas enregistrés avant l’arrêt.</translation></message>
     <message><source>File staging will be skipped</source><translation>L’enregistrement automatique sera ignoré</translation></message>
-    <message><source>Files in File staging will not be committed before restart.</source><translation>Les fichiers de la liste ne seront pas enregistrés avant le redémarrage.</translation></message>
-    <message><source>Files in File staging will not be committed before shutdown.</source><translation>Les fichiers de la liste ne seront pas enregistrés avant l’arrêt.</translation></message>
     <message><source>Direct restart skips File staging commits.</source><translation>Redémarrage direct: L’enregistrement automatique sera ignoré.</translation></message>
     <message><source>Direct shutdown skips File staging commits.</source><translation>Arrêt direct: L’enregistrement automatique sera ignoré.</translation></message>
     <message><source>File staging was skipped because a direct power action was selected.</source><translation>Enregistrement automatique ignoré car une opération d’alimentation directe a été choisie.</translation></message>
@@ -429,57 +319,29 @@ Annulé par l’utilisateur ; %1 entrées non traitées.</translation></message>
     <message><source>The UWF provider rejected the commit.</source><translation>Le fournisseur UWF a refusé l’enregistrement.</translation></message>
     <message><source>The commit failed with an unknown error.</source><translation>Échec de l’enregistrement: Erreur inconnue.</translation></message>
     <message><source>%1 additional failure(s) were written to the log.</source><translation>%1 échecs supplémentaires ont été consignés.</translation></message>
-    <message><source>Commit failed</source><translation>Échec de l’enregistrement</translation></message>
+
     <message><source>The path has no drive letter; cannot identify the target volume.</source><translation>Le chemin n’a pas de lettre de lecteur. Identification du volume cible: Échec.</translation></message>
-    <message><source>Failed to read volume information: %1</source><translation>Échec: Lecture des informations du volume (%1)</translation></message>
+
     <message><source>No current-session record found for volume %1.</source><translation>Aucun enregistrement de session actuelle pour le volume %1.</translation></message>
     <message><source>This path is in the file exclusion list.
 Exclusion: %1</source><translation>Ce chemin figure dans les exclusions de fichiers.
 Exclusion : %1</translation></message>
-    <message><source>No files were found under %1.</source><translation>Aucun fichier trouvé dans %1.</translation></message>
-    <message><source>Commit to disk</source><translation>Enregistrer sur disque</translation></message>
-    <message><source>Committing…</source><translation>Enregistrement…</translation></message>
-    <message><source>This action cannot be undone.</source><translation>Cette opération est irréversible.</translation></message>
+
     <message><source>Continue</source><translation>Continuer</translation></message>
     <message><source>Delete and commit</source><translation>Supprimer et enregistrer</translation></message>
-    <message><source>Commit this file's overlay changes to disk</source><translation>Enregistrer sur disque les modifications de ce fichier dans l’overlay</translation></message>
-    <message><source>Commit this folder's overlay changes to disk</source><translation>Enregistrer sur disque les modifications de ce dossier dans l’overlay</translation></message>
-    <message><source>%1 files in this folder and all its subfolders will be committed.</source><translation>fichiers: %1. Tous les sous-dossiers sont inclus.</translation></message>
-    <message><source>Delete this file, and commit the deletion to disk</source><translation>Supprimer ce fichier et enregistrer sa suppression sur disque</translation></message>
-    <message><source>Delete this folder and its contents, and commit the deletions to disk</source><translation>Supprimer ce dossier et son contenu, puis enregistrer les suppressions sur disque</translation></message>
-    <message><source>%1 files and %2 subfolders will be deleted.</source><translation>fichiers: %1; dossiers: %2. Supprimer et enregistrer.</translation></message>
-    <message><source>Commit this registry value to disk</source><translation>Enregistrer cette valeur du Registre sur disque</translation></message>
-    <message><source>Commit this registry key and its whole subtree to disk</source><translation>Enregistrer cette clé du Registre et toute son arborescence sur disque</translation></message>
-    <message><source>%1 values in this key and all its subkeys will be committed.</source><translation>Valeur: %1. (clé entière et toutes ses sous-clés)</translation></message>
-    <message><source>Delete this registry value, and commit the deletion to disk</source><translation>Supprimer cette valeur du Registre et enregistrer la suppression sur disque</translation></message>
-    <message><source>Delete this registry key and its whole subtree, and commit the deletions to disk</source><translation>Supprimer cette clé du Registre et son arborescence, puis enregistrer les suppressions</translation></message>
-    <message><source>Scanning registry keys…</source><translation>Énumération des clés du Registre…</translation></message>
-    <message><source>Scanning registry keys…
-%1 key(s) found</source><translation>Énumération des clés du Registre…
-Clé: %1</translation></message>
-    <message><source>Registry keys that will be deleted:</source><translation>Registre · Clé · Supprimer et enregistrer:</translation></message>
-    <message><source>Copy current entry</source><translation>Copier l’entrée actuelle</translation></message>
-    <message><source>%1 keys and all values they contain will be recursively deleted.</source><translation>%1 clés et toutes leurs valeurs seront supprimées récursivement.</translation></message>
-    <message><source>Commit file deletion failed</source><translation>Échec: Enregistrement de la suppression du fichier</translation></message>
-    <message><source>This path does not exist, so there is nothing to delete.</source><translation>Le chemin n’existe pas ; rien à supprimer.</translation></message>
+
     <message><source>This key is in the registry exclusion list.
 Exclusion: %1</source><translation>Cette clé figure dans les exclusions du Registre.
 Exclusion : %1</translation></message>
-    <message><source>Failed to read registry filter: %1</source><translation>Échec: Lecture du filtre du Registre (%1)</translation></message>
+
     <message><source>No current-session registry filter record found.</source><translation>Aucun enregistrement du filtre du Registre pour la session actuelle.</translation></message>
-    <message><source>This registry value does not exist, so there is nothing to commit.</source><translation>Cette valeur du Registre n’existe pas ; rien à enregistrer.</translation></message>
-    <message><source>This registry key does not exist, so there is nothing to commit.</source><translation>Cette clé du Registre n’existe pas ; rien à enregistrer.</translation></message>
-    <message><source>This registry value does not exist, so there is nothing to delete.</source><translation>Cette valeur du Registre n’existe pas ; rien à supprimer.</translation></message>
-    <message><source>This registry key does not exist, so there is nothing to delete.</source><translation>Cette clé du Registre n’existe pas ; rien à supprimer.</translation></message>
-    <message><source>Export commands…</source><translation>Exporter les commandes…</translation></message>
+
     <message><source>Export commands to file</source><translation>Exporter les commandes dans un fichier</translation></message>
     <message><source>Exported %1 commands to:
 %2</source><translation>Exporter dans un fichier… · Commande: %1
 %2</translation></message>
     <message><source>Import</source><translation>Importer</translation></message>
     <message><source>Paste, type, or load a script of uwfmgr commands and turn each line into a pending UI change. Nothing is written to the system until you click "Review and apply".</source><translation>uwfmgr: Saisissez ou collez une commande par ligne. Charger un texte, journal ou script (.txt, .bat, .ps1) ; les lignes contenant cette commande sont ajoutées. L’importation prépare les modifications. Seul « Vérifier et appliquer » dans la barre d’outils les écrit dans le système.</translation></message>
-    <message><source>Import uwfmgr commands</source><translation>uwfmgr · Importer</translation></message>
-    <message><source>&lt;p&gt;Paste or type &lt;b&gt;uwfmgr&lt;/b&gt; commands below; one command per line. Supported categories: &lt;code&gt;filter&lt;/code&gt; · &lt;code&gt;overlay&lt;/code&gt; · &lt;code&gt;volume&lt;/code&gt; · &lt;code&gt;file&lt;/code&gt; · &lt;code&gt;registry&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;Use &lt;b&gt;Load from file…&lt;/b&gt; to pick any text-like file (logs, scripts, .txt, .bat, .ps1); lines containing &lt;code&gt;uwfmgr&lt;/code&gt; will be appended to the box.&lt;/p&gt;&lt;p&gt;Clicking &lt;b&gt;Import&lt;/b&gt; turns each command into a pending UI change — &lt;b&gt;nothing is written to the system yet&lt;/b&gt;. Use &lt;b&gt;Review and apply&lt;/b&gt; in the toolbar to commit them.&lt;/p&gt;</source><translation>&lt;p&gt;&lt;b&gt;uwfmgr&lt;/b&gt;: Saisissez ou collez une commande par ligne. &lt;code&gt;filter&lt;/code&gt; · &lt;code&gt;overlay&lt;/code&gt; · &lt;code&gt;volume&lt;/code&gt; · &lt;code&gt;file&lt;/code&gt; · &lt;code&gt;registry&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Charger un fichier…&lt;/b&gt;: Charger un texte, journal ou script (.txt, .bat, .ps1) ; les lignes contenant cette commande sont ajoutées. &lt;code&gt;uwfmgr&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Importer&lt;/b&gt;: &lt;b&gt;L’importation prépare les modifications. Seul « Vérifier et appliquer » dans la barre d’outils les écrit dans le système.&lt;/b&gt; &lt;b&gt;Vérifier et appliquer&lt;/b&gt;.&lt;/p&gt;</translation></message>
     <message><source>Load from file…</source><translation>Charger un fichier…</translation></message>
     <message><source>Load recommended configuration</source><translation>Charger une configuration recommandée</translation></message>
     <message><source>Choose recommended configuration</source><translation>Choisir une configuration recommandée</translation></message>
@@ -527,30 +389,15 @@ Exclusion : %1</translation></message>
     <message><source>SCEP: persist antimalware signatures and state</source><translation>SCEP: Conserver durablement: Signatures et état antimalware</translation></message>
     <message><source>SCEP: persist antimalware registry state</source><translation>SCEP: Conserver durablement: État antimalware dans le Registre</translation></message>
     <message><source>Choose files containing uwfmgr commands</source><translation>Choisir des fichiers contenant des commandes uwfmgr</translation></message>
-    <message><source>All files (*);;Text files (*.txt *.bat *.ps1 *.log *.cmd)</source><translation>Tous les fichiers (*);;Fichiers texte (*.txt *.bat *.ps1 *.log *.cmd)</translation></message>
-    <message><source>uwfmgr filter enable
-uwfmgr overlay set-type RAM
-uwfmgr volume protect C:
-uwfmgr file add-exclusion "C:\Users\foo\bar.txt"
-uwfmgr registry add-exclusion HKLM\Software\MyApp</source><translation>uwfmgr filter enable
-uwfmgr overlay set-type RAM
-uwfmgr volume protect C:
-uwfmgr file add-exclusion "C:\Users\foo\bar.txt"
-uwfmgr registry add-exclusion HKLM\Software\MyApp</translation></message>
-    <message><source>#</source><translation>#</translation></message>
+    <message><source>Text files (*.txt *.cmd);;All files (*)</source><translation>Fichiers texte (*.txt *.cmd);;Tous les fichiers (*)</translation></message>
     <message><source>Status</source><translation>État</translation></message>
-    <message><source>Command</source><translation>Commande</translation></message>
-    <message><source>Detail</source><translation>Détail</translation></message>
     <message><source>Import failed</source><translation>Échec de l’importation</translation></message>
     <message><source>Internal error: no applier registered.</source><translation>Erreur interne : aucun gestionnaire d’application enregistré.</translation></message>
     <message><source>Nothing to import</source><translation>Aucune commande à importer</translation></message>
     <message><source>No uwfmgr commands found in the input.</source><translation>Aucune commande uwfmgr trouvée dans la saisie.</translation></message>
-    <message><source>Applied: %1</source><translation>Appliqué: %1</translation></message>
     <message><source>Duplicates: %1</source><translation>Doublon: %1</translation></message>
     <message><source>Unsupported: %1</source><translation>Non pris en charge: %1</translation></message>
-    <message><source>Cumulative after %1 batch(es):</source><translation>Cumul après %1 lots :</translation></message>
     <message><source>── Batch %1 ──</source><translation>── Lot %1 ──</translation></message>
-    <message><source>Applied</source><translation>Appliqué</translation></message>
     <message><source>Duplicate</source><translation>Doublon</translation></message>
     <message><source>Unsupported</source><translation>Non pris en charge</translation></message>
     <message><source>File too large</source><translation>Fichier trop volumineux</translation></message>
@@ -579,7 +426,6 @@ Les abandonner et continuer ?</translation></message>
     <message><source>Already in the target state — no-op</source><translation>État cible déjà atteint ; aucune action nécessaire</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Chemin hors de ce volume, ou exclusions de fichiers non prises en charge (exFAT / ReFS, par exemple)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Refusé par la liste de blocage UWF (fichiers système, Windows, fichier d’échange, etc.)</translation></message>
-    <message><source>Same command was already issued earlier in this batch</source><translation>Cette commande a déjà été traitée dans ce lot</translation></message>
     <message><source>Pending filter %1</source><translation>Modifications en attente: Filtre %1</translation></message>
     <message><source>Filter is already in the target state</source><translation>Filtre: État cible déjà atteint ; aucune action nécessaire</translation></message>
     <message><source>Pending overlay type → %1</source><translation>Modifications en attente: Overlay · Type → %1</translation></message>
@@ -599,7 +445,6 @@ Les abandonner et continuer ?</translation></message>
     <message><source>registry exclusion</source><translation>Exclusions du Registre</translation></message>
     <message><source>Registry exclusions are only available on the registry tab, which is not present</source><translation>Les exclusions du Registre nécessitent l’onglet Registre, qui est absent</translation></message>
     <message><source>Unsupported command</source><translation>Commande: Non pris en charge</translation></message>
-    <message><source>Exit</source><translation>Quitter</translation></message>
     <message><source>Show or hide the overlay hub.</source><translation>HUB: Afficher/masquer.</translation></message>
     <message><source>UWF: Enabled</source><translation>UWF: Activé</translation></message>
     <message><source>UWF: Disabled</source><translation>UWF: Désactivé</translation></message>
@@ -607,26 +452,11 @@ Les abandonner et continuer ?</translation></message>
     <message><source>Used %1 MB / Total %2 MB</source><translation>Utilisé %1 MB / %2 MB</translation></message>
     <message><source>Enhanced mode</source><translation>Mode avancé</translation></message>
     <message><source>Coordinate automatic file staging with Windows shutdown and restart.</source><translation>Coordonner l’enregistrement automatique avec l’arrêt et le redémarrage de Windows.</translation></message>
-    <message><source>Enhanced mode installs an automatically started LocalSystem service. It launches UWF Manager after Windows starts and attempts to commit changes to user-configured staged files before shutdown or restart, improving compatibility for applications that conflict with UWF.</source><translation>Installe un service LocalSystem à démarrage automatique. Il lance UWF Manager au démarrage de Windows et tente d’enregistrer les fichiers préparés avant l’arrêt ou le redémarrage, pour améliorer la compatibilité des applications en conflit avec UWF.</translation></message>
-    <message><source>System changes</source><translation>Modifications du système</translation></message>
-    <message><source>Creates the automatic service UWFManagerEnhanced and binds it to the current executable path</source><translation>Créer le service automatique UWFManagerEnhanced lié à cet exécutable</translation></message>
-    <message><source>Writes and commits the service configuration under HKLM\SYSTEM\CurrentControlSet\Services\UWFManagerEnhanced</source><translation>Configuration: Registre → Enregistrer sur disque (HKLM\SYSTEM\CurrentControlSet\Services\UWFManagerEnhanced)</translation></message>
-    <message><source>Starts UWF Manager automatically after the next Windows startup; moving the executable can break automatic startup</source><translation>Démarrer UWF Manager au prochain démarrage de Windows ; déplacer l’exécutable peut empêcher le démarrage automatique</translation></message>
-    <message><source>Commits eligible staged files during normal Windows shutdown and restart</source><translation>Enregistrer les fichiers préparés admissibles lors de l’arrêt ou du redémarrage normal de Windows</translation></message>
-    <message><source>Operational and security considerations</source><translation>Considérations de fonctionnement et de sécurité</translation></message>
-    <message><source>Registers a service in the system registry when enhanced mode is enabled, so the application no longer remains fully portable</source><translation>Enregistre un service dans le Registre système ; l’application n’est plus entièrement portable</translation></message>
-    <message><source>A large number of staged files can significantly extend shutdown or restart; allow UWF Manager enough time to preserve user changes</source><translation>Un grand nombre de fichiers peut prolonger fortement l’arrêt ou le redémarrage ; laissez le temps nécessaire à leur enregistrement</translation></message>
-    <message><source>Enhanced mode runs this application (UWF Manager) as SYSTEM. If a non-administrator tampers with the application or replaces it with a malicious binary, privileges could be elevated to SYSTEM. Enable enhanced mode only from an administrator-protected location (recommended location: %ProgramFiles%\UWF Manager\Service\UWF.exe)</source><translation>Le mode avancé exécute UWF Manager en tant que SYSTEM. Si un non-administrateur peut modifier ou remplacer l’exécutable par un programme malveillant, il peut obtenir les droits SYSTEM. Activez ce mode uniquement depuis un emplacement protégé par les droits administrateur (recommandé : %ProgramFiles%\UWF Manager\Service\UWF.exe).</translation></message>
-    <message><source>Enhanced mode status could not be read</source><translation>Échec: Lecture de l’état du mode avancé</translation></message>
     <message><source>The enhanced mode status read failed because of an unknown error.</source><translation>Échec: Lecture de l’état du mode avancé (Erreur inconnue).</translation></message>
     <message><source>The current service state could not be read:
 %1</source><translation>Échec: Lecture de l’état du service:
 %1</translation></message>
     <message><source>The current service state could not be read because of an unknown error.</source><translation>Échec: Lecture de l’état du service (Erreur inconnue).</translation></message>
-    <message><source>Status: Disabled</source><translation>État: Désactivé</translation></message>
-    <message><source>Status: Enabled</source><translation>État: Activé</translation></message>
-    <message><source>Status: Service stopped</source><translation>État : service arrêté</translation></message>
-    <message><source>Status: Repair required</source><translation>État : réparation nécessaire</translation></message>
     <message><source>The service is not configured as an independent process.</source><translation>Le service n’est pas configuré en processus indépendant.</translation></message>
     <message><source>The service is not configured for automatic startup.</source><translation>Le service n’est pas configuré pour le démarrage automatique.</translation></message>
     <message><source>The service is not configured to run as LocalSystem.</source><translation>Le service n’est pas configuré pour s’exécuter sous LocalSystem.</translation></message>
@@ -667,10 +497,10 @@ Les abandonner et continuer ?</translation></message>
     <message><source>All staged targets were processed; one or more operations failed.</source><translation>Toutes les cibles ont été traitées ; au moins une opération a échoué.</translation></message>
     <message><source>Show main window</source><translation>Afficher la fenêtre principale</translation></message>
     <message><source>Restore default position</source><translation>Rétablir la position par défaut</translation></message>
+    <message><source>Show overlay hub</source><translation>Afficher le HUB d’overlay</translation></message>
     <message><source>Hide overlay hub</source><translation>Masquer le HUB d’overlay</translation></message>
     <message><source>Exit application</source><translation>Quitter l’application</translation></message>
     <message><source>✘ Failed to connect to the system</source><translation>✘ Échec: Connexion au système</translation></message>
-    <message><source>Registry access failed</source><translation>Échec: Accès au Registre</translation></message>
     <message><source>Failed to read registry values: %1</source><translation>Échec: Lecture des valeurs du Registre (%1)</translation></message>
     <message><source>Unexpected error while enumerating overlay files.</source><translation>Énumération des fichiers de l’overlay: Erreur inconnue.</translation></message>
     <message><source>✘ Failed to %1 filter</source><translation>✘ Échec: Action sur le filtre : %1</translation></message>
@@ -694,7 +524,6 @@ Les abandonner et continuer ?</translation></message>
     <message><source>✘ Failed to read registry filter</source><translation>✘ Échec: Lecture du filtre du Registre</translation></message>
     <message><source>UWF is not available</source><translation>UWF: Non pris en charge</translation></message>
     <message><source>Unknown error while reading the target state.</source><translation>Lecture de l’état de la cible: Erreur inconnue.</translation></message>
-    <message><source>The target state could not be read before the operation: %1</source><translation>Impossible de lire l’état de la cible avant l’opération : %1</translation></message>
     <message><source>The target no longer exists, so there is nothing to delete.</source><translation>Le chemin n’existe pas ; rien à supprimer.</translation></message>
     <message><source>The operation failed with an unknown error.</source><translation>Erreur inconnue.</translation></message>
     <message><source>The operation result could not be confirmed because the target state reread failed: %1</source><translation>Résultat impossible à confirmer : la relecture de l’état de la cible a échoué : %1</translation></message>
@@ -703,13 +532,488 @@ Les abandonner et continuer ?</translation></message>
     <message><source>Failed to load logs: %1</source><translation>Échec: Chargement du journal (%1)</translation></message>
     <message><source>Failed to load logs: unexpected error.</source><translation>Échec: Chargement du journal (Erreur inconnue).</translation></message>
     <message><source>: unknown error</source><translation>: Erreur inconnue</translation></message>
-    <message><source>Failed to read the target state: %1</source><translation>Échec: Lecture de l’état de la cible (%1)</translation></message>
-    <message><source>Failed to read the target state because of an unknown error.</source><translation>Échec: Lecture de l’état de la cible (Erreur inconnue).</translation></message>
+
     <message><source>Failed to resolve the target volume: %1</source><translation>Échec: Identification du volume cible (%1)</translation></message>
-    <message><source>Failed to enumerate registry values: %1</source><translation>Échec: Énumération des valeurs du Registre (%1)</translation></message>
+
     <message><source>Failed to enumerate registry keys: %1</source><translation>Échec: Énumération des clés du Registre (%1)</translation></message>
-    <message><source>Delete and commit failed</source><translation>Supprimer et enregistrer: Échec</translation></message>
+
     <message><source>Failed to resolve the volume for path %1: %2</source><translation>Échec: Identification du volume cible (%1): %2</translation></message>
-    <message><source>%1/%2 slots</source><translation>%1/%2 emplacements</translation></message>
+    <message><source>Skipped because a prerequisite operation failed or could not be confirmed.</source><translation>Opération ignorée, car une opération préalable a échoué ou n’a pas pu être confirmée.</translation></message>
+    <message><source>Copy</source><translation>Copier</translation></message>
+    <message><source>Select All</source><translation>Tout sélectionner</translation></message>
+    <message><source>Display language</source><translation>Langue d’affichage</translation></message>
+    <message><source>Folder</source><translation>Dossier</translation></message>
+    <message><source>File</source><translation>Fichier</translation></message>
+    <message><source>Export commands</source><translation>Exporter les commandes</translation></message>
+    <message><source>Direct restart…</source><translation>Redémarrage direct…</translation></message>
+    <message><source>Clear…</source><translation>Effacer…</translation></message>
+    <message><source>Committing</source><translation>Enregistrement</translation></message>
+    <message><source> · %1 selected</source><translation> · %1 sélectionnés</translation></message>
+    <message><source>%1 changes</source><translation>%1 modifications</translation></message>
+    <message><source>%1 commands</source><translation>%1 commandes</translation></message>
+    <message><source>%1 items</source><translation>%1 éléments</translation></message>
+    <message><source>%1 items · %2</source><translation>%1 éléments · %2</translation></message>
+    <message><source>%1 pending change(s)</source><translation>%1 modifications en attente</translation></message>
+    <message><source>%1 records</source><translation>%1 enregistrements</translation></message>
+    <message><source>%1 records · %2 total</source><translation>%1 enregistrements · %2 au total</translation></message>
+
+
+    <message><source>%1 selected</source><translation>%1 sélectionnés</translation></message>
+    <message><source>/ %1 files</source><translation>/ %1 fichiers</translation></message>
+    <message><source>32-bit</source><translation>32 bits</translation></message>
+    <message><source>64-bit</source><translation>64 bits</translation></message>
+    <message><source>&lt;p&gt;Released under the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public License v3.0&lt;/a&gt;. Full terms are in the LICENSE file included with the application.&lt;/p&gt;&lt;p&gt;You may redistribute or modify it under GPL v3. The software is provided as is, without any warranty.&lt;/p&gt;</source><translation>&lt;p&gt;Distribué sous la &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public License v3.0&lt;/a&gt;. Les conditions complètes figurent dans le fichier LICENSE fourni avec l’application.&lt;/p&gt;&lt;p&gt;Vous pouvez redistribuer ou modifier ce logiciel sous GPL v3. Il est fourni en l’état, sans aucune garantie.&lt;/p&gt;</translation></message>
+    <message><source>&lt;p&gt;Windows disables paging files, System Restore, SuperFetch, file indexing, disk defragmentation, and fast startup. It also sets the BCD bootstatuspolicy to ignoreallfailures.&lt;/p&gt;&lt;p&gt;You can adjust these settings afterwards. For example, move the paging file to an unprotected volume before enabling paging again.&lt;/p&gt;</source><translation>&lt;p&gt;Windows désactive les fichiers d’échange, la restauration du système, SuperFetch, l’indexation des fichiers, la défragmentation et le démarrage rapide. Il définit aussi bootstatuspolicy sur ignoreallfailures dans le BCD.&lt;/p&gt;&lt;p&gt;Vous pouvez modifier ces réglages ensuite. Par exemple, déplacez le fichier d’échange vers un volume non protégé avant de le réactiver.&lt;/p&gt;</translation></message>
+    <message><source>A diagnostic snapshot of the system, privileges, and UWF.</source><translation>Un instantané de diagnostic du système, des privilèges et d’UWF.</translation></message>
+    <message><source>A file already exists at this location:
+%1
+
+Saving will replace its contents.</source><translation>Un fichier existe déjà à cet emplacement :
+%1
+
+L’enregistrement remplacera son contenu.</translation></message>
+    <message><source>A graphical manager for Windows Unified Write Filter.
+Manage volume protection, overlay, exclusions, and staged files.</source><translation>Un gestionnaire graphique de Windows Unified Write Filter.
+Gérez la protection des volumes, la surcouche, les exclusions et les fichiers en attente.</translation></message>
+    <message><source>About this snapshot</source><translation>À propos de cet instantané</translation></message>
+    <message><source>Account</source><translation>Compte</translation></message>
+    <message><source>Add UWF configuration from a script or text.</source><translation>Ajouter une configuration UWF à partir d’un script ou d’un texte.</translation></message>
+    <message><source>Add exclusion</source><translation>Ajouter une exclusion</translation></message>
+    <message><source>Add files or folders</source><translation>Ajouter des fichiers ou dossiers</translation></message>
+    <message><source>Add selected items</source><translation>Ajouter les éléments sélectionnés</translation></message>
+    <message><source>Added</source><translation>Ajouté</translation></message>
+    <message><source>Administrator</source><translation>Administrateur</translation></message>
+    <message><source>All changes have been saved to disk and will persist without a restart.</source><translation>Toutes les modifications ont été enregistrées durablement sur le disque, sans redémarrage nécessaire.</translation></message>
+    <message><source>All files (*)</source><translation>Tous les fichiers (*)</translation></message>
+    <message><source>All levels</source><translation>Tous les niveaux</translation></message>
+
+    <message><source>An empty diagnostic snapshot does not mean that the overlay contains no changes.</source><translation>Un instantané de diagnostic vide ne signifie pas que la surcouche ne contient aucune modification.</translation></message>
+    <message><source>Application path</source><translation>Chemin de l’application</translation></message>
+    <message><source>Application result</source><translation>Résultat de l’application</translation></message>
+    <message><source>Apply changes</source><translation>Appliquer les modifications</translation></message>
+    <message><source>Architecture</source><translation>Architecture</translation></message>
+    <message><source>Automatic</source><translation>Automatique</translation></message>
+    <message><source>Automatic file staging</source><translation>Mise en attente automatique des fichiers</translation></message>
+    <message><source>Automatic saving incomplete</source><translation>Enregistrement automatique incomplet</translation></message>
+    <message><source>Automatically save eligible staged files during normal shutdown and restart.</source><translation>Enregistrer automatiquement les fichiers admissibles en attente lors d’un arrêt ou redémarrage normal.</translation></message>
+    <message><source>Available</source><translation>Disponible</translation></message>
+    <message><source>Back</source><translation>Précédent</translation></message>
+    <message><source>Background service</source><translation>Service en arrière-plan</translation></message>
+    <message><source>Binding</source><translation>Association</translation></message>
+    <message><source>By drive letter</source><translation>Par lettre de lecteur</translation></message>
+    <message><source>By volume ID</source><translation>Par identifiant de volume</translation></message>
+    <message><source>Cancel reading</source><translation>Annuler la lecture</translation></message>
+    <message><source>Changes already committed are retained.</source><translation>Les modifications déjà validées sont conservées.</translation></message>
+    <message><source>Select the registry key to exclude from UWF protection, including its subkeys and values.</source><translation>Sélectionnez la clé de Registre à exclure de la protection UWF, y compris ses sous-clés et ses valeurs.</translation></message>
+    <message><source>Choose a location to save the file.</source><translation>Choisissez où enregistrer le fichier.</translation></message>
+    <message><source>Choose a location within the allowed drive or folder.</source><translation>Choisissez un emplacement dans le lecteur ou dossier autorisé.</translation></message>
+    <message><source>Choose another folder, or check access permissions and retry.</source><translation>Choisissez un autre dossier ou vérifiez les autorisations d’accès, puis réessayez.</translation></message>
+    <message><source>Choose another key, or check access permissions and try again.</source><translation>Choisissez une autre clé ou vérifiez les autorisations d’accès, puis réessayez.</translation></message>
+    <message><source>Clear filters</source><translation>Effacer les filtres</translation></message>
+    <message><source>Clear logs</source><translation>Effacer les journaux</translation></message>
+    <message><source>Clear logs?</source><translation>Effacer les journaux ?</translation></message>
+    <message><source>Collapse</source><translation>Réduire</translation></message>
+    <message><source>Commit changes</source><translation>Valider les modifications</translation></message>
+    <message><source>Commit changes…</source><translation>Valider les modifications…</translation></message>
+    <message><source>Commit complete</source><translation>Validation terminée</translation></message>
+    <message><source>Commit file changes?</source><translation>Valider les modifications du fichier ?</translation></message>
+    <message><source>Commit folder changes?</source><translation>Valider les modifications du dossier ?</translation></message>
+    <message><source>Commit registry key changes?</source><translation>Valider les modifications de la clé de registre ?</translation></message>
+    <message><source>Commit registry value changes?</source><translation>Valider les modifications de la valeur de registre ?</translation></message>
+    <message><source>Commits staged files before normal shutdown and restart</source><translation>Valide les fichiers en attente avant un arrêt ou redémarrage normal</translation></message>
+    <message><source>Compatibility mode</source><translation>Mode de compatibilité</translation></message>
+    <message><source>Configuration applied</source><translation>Configuration appliquée</translation></message>
+    <message><source>Configuration error</source><translation>Erreur de configuration</translation></message>
+    <message><source>Configured</source><translation>Configuré</translation></message>
+    <message><source>Confirm before continuing</source><translation>Confirmer avant de continuer</translation></message>
+    <message><source>Connected and authenticated</source><translation>Connecté et authentifié</translation></message>
+    <message><source>Connecting…</source><translation>Connexion…</translation></message>
+    <message><source>Contact author</source><translation>Contacter l’auteur</translation></message>
+    <message><source>Continue editing</source><translation>Continuer la modification</translation></message>
+    <message><source>Continuing restart will discard changes in files that could not be saved.</source><translation>Poursuivre le redémarrage supprimera les modifications des fichiers qui n’ont pas pu être enregistrés.</translation></message>
+    <message><source>Continuing shutdown will discard changes in files that could not be saved.</source><translation>Poursuivre l’arrêt supprimera les modifications des fichiers qui n’ont pas pu être enregistrés.</translation></message>
+    <message><source>Coordinate with Windows shutdown</source><translation>Coordonner avec l’arrêt de Windows</translation></message>
+    <message><source>Copy all logs</source><translation>Copier tous les journaux</translation></message>
+    <message><source>Copy full report</source><translation>Copier le rapport complet</translation></message>
+    <message><source>Copy name</source><translation>Copier le nom</translation></message>
+    <message><source>Copy path</source><translation>Copier le chemin</translation></message>
+    <message><source>Copy selection</source><translation>Copier la sélection</translation></message>
+    <message><source>Copy version</source><translation>Copier la version</translation></message>
+    <message><source>Counting staged files…</source><translation>Comptage des fichiers en attente…</translation></message>
+    <message><source>Create</source><translation>Créer</translation></message>
+    <message><source>Critical %1 MB</source><translation>Critique %1 Mo</translation></message>
+    <message><source>Current filter</source><translation>Filtre actuel</translation></message>
+    <message><source>Current run</source><translation>Exécution actuelle</translation></message>
+    <message><source>Current selection</source><translation>Sélection actuelle</translation></message>
+    <message><source>Current usage</source><translation>Utilisation actuelle</translation></message>
+    <message><source>Date modified</source><translation>Date de modification</translation></message>
+    <message><source>Debug</source><translation>Débogage</translation></message>
+    <message><source>Delete and commit this file?</source><translation>Supprimer ce fichier et valider sa suppression ?</translation></message>
+    <message><source>Delete and commit this folder?</source><translation>Supprimer ce dossier et valider sa suppression ?</translation></message>
+    <message><source>Delete and commit this registry key?</source><translation>Supprimer cette clé de registre et valider sa suppression ?</translation></message>
+    <message><source>Delete and commit this registry value?</source><translation>Supprimer cette valeur de registre et valider sa suppression ?</translation></message>
+
+    <message><source>Direct restart?</source><translation>Redémarrer directement ?</translation></message>
+    <message><source>Direct shutdown?</source><translation>Arrêter directement ?</translation></message>
+    <message><source>Discard changes</source><translation>Abandonner les modifications</translation></message>
+    <message><source>Disk</source><translation>Disque</translation></message>
+    <message><source>Domain Secret Key persistence</source><translation>Persistance du secret de domaine</translation></message>
+    <message><source>Done</source><translation>Terminé</translation></message>
+    <message><source>Edit commands</source><translation>Modifier les commandes</translation></message>
+    <message><source>Editable</source><translation>Modifiable</translation></message>
+    <message><source>Enable the filter and restart to display live usage</source><translation>Activez le filtre et redémarrez pour afficher l’utilisation réelle</translation></message>
+    <message><source>Enhanced mode adds a background service that starts with Windows. Remove the service before moving or deleting the application.</source><translation>Le mode avancé ajoute un service en arrière-plan qui démarre avec Windows. Supprimez ce service avant de déplacer ou de supprimer l’application.</translation></message>
+    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to save staged files.</source><translation>Le mode avancé est indisponible. Utilisez Arrêt sécurisé ou Redémarrage sécurisé pour enregistrer les fichiers en attente.</translation></message>
+    <message><source>Enter HKLM\SOFTWARE\… and press Enter to navigate</source><translation>Saisissez HKLM\SOFTWARE\… et appuyez sur Entrée pour naviguer</translation></message>
+    <message><source>Enter a file name</source><translation>Saisir un nom de fichier</translation></message>
+    <message><source>Enter a valid file name.</source><translation>Saisissez un nom de fichier valide.</translation></message>
+    <message><source>Enter a valid file or folder name.</source><translation>Saisissez un nom de fichier ou de dossier valide.</translation></message>
+    <message><source>Enter a valid folder name.</source><translation>Saisissez un nom de dossier valide.</translation></message>
+    <message><source>Error</source><translation>Erreur</translation></message>
+    <message><source>Error details</source><translation>Détails de l’erreur</translation></message>
+    <message><source>Error details and suggestions</source><translation>Détails de l’erreur et suggestions</translation></message>
+    <message><source>Expand</source><translation>Développer</translation></message>
+    <message><source>Export list</source><translation>Exporter la liste</translation></message>
+    <message><source>Failed to clear logs: %1</source><translation>Impossible d’effacer les journaux : %1</translation></message>
+    <message><source>Failed to clear logs: unexpected error.</source><translation>Impossible d’effacer les journaux : erreur inattendue.</translation></message>
+    <message><source>File name</source><translation>Nom du fichier</translation></message>
+    <message><source>File or folder</source><translation>Fichier ou dossier</translation></message>
+    <message><source>File saving has started and cannot be canceled.</source><translation>L’enregistrement des fichiers a commencé et ne peut plus être annulé.</translation></message>
+    <message><source>File saving incomplete</source><translation>Enregistrement des fichiers incomplet</translation></message>
+    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after restart.</source><translation>La mise en attente sera ignorée. Les modifications non validées des chemins protégés seront perdues après le redémarrage.</translation></message>
+    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after shutdown.</source><translation>La mise en attente sera ignorée. Les modifications non validées des chemins protégés seront perdues après l’arrêt.</translation></message>
+    <message><source>File type</source><translation>Type de fichier</translation></message>
+    <message><source>Files and folders</source><translation>Fichiers et dossiers</translation></message>
+    <message><source>Files and folders can be selected together.</source><translation>Les fichiers et dossiers peuvent être sélectionnés ensemble.</translation></message>
+    <message><source>Files in File staging will not be saved.</source><translation>Les fichiers en attente ne seront pas enregistrés.</translation></message>
+    <message><source>Filter is disabled</source><translation>Le filtre est désactivé</translation></message>
+    <message><source>Fit columns to contents</source><translation>Ajuster les colonnes au contenu</translation></message>
+    <message><source>Folder address</source><translation>Adresse du dossier</translation></message>
+    <message><source>Folder name</source><translation>Nom du dossier</translation></message>
+    <message><source>Folders</source><translation>Dossiers</translation></message>
+    <message><source>Full configuration</source><translation>Configuration complète</translation></message>
+    <message><source>Future writes to this key will not be protected by UWF.</source><translation>Les futures écritures dans cette clé ne seront pas protégées par UWF.</translation></message>
+    <message><source>Future writes to this path will not be protected by UWF.</source><translation>Les futures écritures dans ce chemin ne seront pas protégées par UWF.</translation></message>
+    <message><source>Global registry exclusion · includes subkeys</source><translation>Exclusion globale du registre · sous-clés incluses</translation></message>
+    <message><source>Go up one folder or choose another location.</source><translation>Remontez d’un dossier ou choisissez un autre emplacement.</translation></message>
+    <message><source>Home</source><translation>Dossier personnel</translation></message>
+    <message><source>Import configuration</source><translation>Importer la configuration</translation></message>
+    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>L’importation crée des modifications en attente. Utilisez Vérifier et appliquer pour les écrire dans le système.</translation></message>
+    <message><source>Import results</source><translation>Résultats d’importation</translation></message>
+    <message><source>Imported</source><translation>Importé</translation></message>
+    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Les commandes importées doivent encore être appliquées. Sélectionnez une ligne pour voir le résultat complet.</translation></message>
+    <message><source>Imported: %1</source><translation>Importé : %1</translation></message>
+    <message><source>Information</source><translation>Information</translation></message>
+    <message><source>Item details</source><translation>Détails de l’élément</translation></message>
+    <message><source>Large staging lists may take longer to save.</source><translation>L’enregistrement d’une longue liste de fichiers en attente peut prendre plus de temps.</translation></message>
+    <message><source>License and copyright</source><translation>Licence et droits d’auteur</translation></message>
+    <message><source>Line</source><translation>Ligne</translation></message>
+    <message><source>Local disk (%1)</source><translation>Disque local (%1)</translation></message>
+    <message><source>Log level</source><translation>Niveau de journalisation</translation></message>
+    <message><source>Log reading failed. Retry or check access to the log file.</source><translation>Échec de lecture des journaux. Réessayez ou vérifiez l’accès au fichier journal.</translation></message>
+    <message><source>Maximize</source><translation>Agrandir</translation></message>
+    <message><source>Message details</source><translation>Détails du message</translation></message>
+    <message><source>Minimize</source><translation>Réduire la fenêtre</translation></message>
+    <message><source>Module</source><translation>Module</translation></message>
+    <message><source>More</source><translation>Plus</translation></message>
+    <message><source>Move</source><translation>Déplacer</translation></message>
+    <message><source>If UWF protects the application drive, first make sure the application files will remain after a restart. Committing many staged files can make shutdown or restart take longer.</source><translation>Si UWF protège le lecteur où se trouve l’application, assurez-vous d’abord que les fichiers de l’application seront conservés après un redémarrage. L’enregistrement définitif d’un grand nombre de fichiers en attente peut prolonger l’arrêt ou le redémarrage.</translation></message>
+    <message><source>Multiple files can be selected.</source><translation>Plusieurs fichiers peuvent être sélectionnés.</translation></message>
+    <message><source>Name and location</source><translation>Nom et emplacement</translation></message>
+    <message><source>Named value: %1 · this value only</source><translation>Valeur nommée : %1 · cette valeur uniquement</translation></message>
+    <message><source>Navigate to registry path</source><translation>Accéder au chemin du registre</translation></message>
+    <message><source>New folder</source><translation>Nouveau dossier</translation></message>
+    <message><source>New records will appear after refreshing.</source><translation>Les nouveaux enregistrements apparaîtront après actualisation.</translation></message>
+    <message><source>Next-session configuration</source><translation>Configuration de la prochaine session</translation></message>
+    <message><source>No files to commit</source><translation>Aucun fichier à valider</translation></message>
+    <message><source>No logs yet</source><translation>Aucun journal pour l’instant</translation></message>
+    <message><source>No matching items</source><translation>Aucun élément correspondant</translation></message>
+    <message><source>No matching logs</source><translation>Aucun journal correspondant</translation></message>
+    <message><source>No overlay files found</source><translation>Aucun fichier de surcouche trouvé</translation></message>
+    <message><source>No registry key selected</source><translation>Aucune clé de registre sélectionnée</translation></message>
+    <message><source>None</source><translation>Aucun</translation></message>
+    <message><source>Not configured</source><translation>Non configuré</translation></message>
+    <message><source>Not connected</source><translation>Non connecté</translation></message>
+    <message><source>Not installed</source><translation>Non installé</translation></message>
+    <message><source>Not written to the system</source><translation>Non écrit dans le système</translation></message>
+    <message><source>Off</source><translation>Désactivé</translation></message>
+    <message><source>On</source><translation>Activé</translation></message>
+    <message><source>One uwfmgr command per line</source><translation>Une commande uwfmgr par ligne</translation></message>
+    <message><source>Keep the application in a fixed folder that standard users cannot modify. Suggested location:</source><translation>Conservez l’application dans un dossier fixe que les utilisateurs standard ne peuvent pas modifier. Emplacement conseillé :</translation></message>
+    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after restart.</source><translation>Seuls les fichiers en attente sont enregistrés automatiquement. Les autres modifications non validées des chemins protégés seront perdues après le redémarrage.</translation></message>
+    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after shutdown.</source><translation>Seuls les fichiers en attente sont enregistrés automatiquement. Les autres modifications non validées des chemins protégés seront perdues après l’arrêt.</translation></message>
+    <message><source>Open</source><translation>Ouvrir</translation></message>
+    <message><source>Open folder</source><translation>Ouvrir le dossier</translation></message>
+    <message><source>Operating system</source><translation>Système d’exploitation</translation></message>
+    <message><source>Operation and security</source><translation>Fonctionnement et sécurité</translation></message>
+    <message><source>Original command</source><translation>Commande d’origine</translation></message>
+    <message><source>Overlay critical threshold reached. Save changes and safely restart.</source><translation>Seuil critique de la surcouche atteint. Enregistrez les modifications et redémarrez en toute sécurité.</translation></message>
+    <message><source>Overlay maximum size</source><translation>Taille maximale de la surcouche</translation></message>
+    <message><source>Overlay type</source><translation>Type de surcouche</translation></message>
+    <message><source>Overlay usage</source><translation>Utilisation de la surcouche</translation></message>
+    <message><source>Overlay warning threshold reached. Save changes and safely restart.</source><translation>Seuil d’avertissement de la surcouche atteint. Enregistrez les modifications et redémarrez en toute sécurité.</translation></message>
+    <message><source>Overview</source><translation>Vue d’ensemble</translation></message>
+    <message><source>Paste commands, or load them from a file…</source><translation>Collez des commandes ou chargez-les depuis un fichier…</translation></message>
+    <message><source>Pending changes</source><translation>Modifications en attente</translation></message>
+    <message><source>Pending removal</source><translation>Suppression en attente</translation></message>
+    <message><source>Permissions and protection</source><translation>Autorisations et protection</translation></message>
+    <message><source>Privileges</source><translation>Privilèges</translation></message>
+    <message><source>Processed %1 / %2 items</source><translation>%1 / %2 éléments traités</translation></message>
+    <message><source>Processing result</source><translation>Résultat du traitement</translation></message>
+    <message><source>Protected</source><translation>Protégé</translation></message>
+    <message><source>Protected volumes</source><translation>Volumes protégés</translation></message>
+    <message><source>Protection and overlay</source><translation>Protection et surcouche</translation></message>
+    <message><source>Quick access</source><translation>Accès rapide</translation></message>
+    <message><source>Raw report</source><translation>Rapport brut</translation></message>
+    <message><source>Read again</source><translation>Relire</translation></message>
+    <message><source>Read again to retrieve a diagnostic snapshot.</source><translation>Relisez pour obtenir un instantané de diagnostic.</translation></message>
+    <message><source>Read the configuration to display live usage</source><translation>Lire la configuration pour afficher l’utilisation réelle</translation></message>
+    <message><source>Read-only</source><translation>Lecture seule</translation></message>
+    <message><source>Reading a large overlay can take longer. You can cancel at any time.</source><translation>La lecture d’une grande surcouche peut être longue. Vous pouvez annuler à tout moment.</translation></message>
+    <message><source>Reading canceled</source><translation>Lecture annulée</translation></message>
+    <message><source>Reading files and subfolders in this location…</source><translation>Lecture des fichiers et sous-dossiers à cet emplacement…</translation></message>
+    <message><source>Reading folder</source><translation>Lecture du dossier</translation></message>
+    <message><source>Reading logs</source><translation>Lecture des journaux</translation></message>
+    <message><source>Reading overlay</source><translation>Lecture de la surcouche</translation></message>
+    <message><source>Ready</source><translation>Prêt</translation></message>
+    <message><source>Ready to save</source><translation>Prêt à enregistrer</translation></message>
+    <message><source>Records from the current run will appear here when reading is complete.</source><translation>Les enregistrements de l’exécution actuelle apparaîtront ici à la fin de la lecture.</translation></message>
+    <message><source>Recursive staging</source><translation>Mise en attente récursive</translation></message>
+    <message><source>Refresh folder</source><translation>Actualiser le dossier</translation></message>
+    <message><source>Registry key or persistence setting</source><translation>Clé de registre ou réglage de persistance</translation></message>
+    <message><source>Remaining tasks can be canceled after the current target finishes.</source><translation>Les tâches restantes peuvent être annulées après le traitement de la cible actuelle.</translation></message>
+    <message><source>Remove this key from the next-session exclusions.</source><translation>Retirer cette clé des exclusions de la prochaine session.</translation></message>
+    <message><source>Remove this path from the next-session exclusions.</source><translation>Retirer ce chemin des exclusions de la prochaine session.</translation></message>
+    <message><source>Removed</source><translation>Supprimé</translation></message>
+    <message><source>Rename</source><translation>Renommer</translation></message>
+    <message><source>Rename…</source><translation>Renommer…</translation></message>
+    <message><source>Repair required</source><translation>Réparation nécessaire</translation></message>
+    <message><source>Replace file</source><translation>Remplacer le fichier</translation></message>
+    <message><source>Replace the existing file?</source><translation>Remplacer le fichier existant ?</translation></message>
+    <message><source>Required configuration</source><translation>Configuration requise</translation></message>
+    <message><source>Restart anyway</source><translation>Redémarrer quand même</translation></message>
+    <message><source>Restart will continue after saving. Keep the application open.</source><translation>Le redémarrage reprendra après l’enregistrement. Gardez l’application ouverte.</translation></message>
+    <message><source>Restore</source><translation>Restaurer</translation></message>
+    <message><source>Retry</source><translation>Réessayer</translation></message>
+    <message><source>Review the failure details before continuing shutdown.</source><translation>Consultez les détails des échecs avant de poursuivre l’arrêt.</translation></message>
+    <message><source>Review the failure details before restarting.</source><translation>Consultez les détails des échecs avant de redémarrer.</translation></message>
+    <message><source>Review the operation details. Read the current system state before retrying changes that may have been written.</source><translation>Consultez les détails de l’opération. Lisez l’état actuel du système avant de réessayer des modifications qui ont pu être écrites.</translation></message>
+    <message><source>Review the result for each target.</source><translation>Vérifiez le résultat pour chaque cible.</translation></message>
+    <message><source>Review these changes before writing them to the system.</source><translation>Vérifiez ces modifications avant de les écrire dans le système.</translation></message>
+    <message><source>Running</source><translation>En cours d’exécution</translation></message>
+    <message><source>Save</source><translation>Enregistrer</translation></message>
+    <message><source>Save staged files to disk, then restart.</source><translation>Enregistrer les fichiers en attente sur le disque, puis redémarrer.</translation></message>
+    <message><source>Save staged files to disk, then shut down.</source><translation>Enregistrer les fichiers en attente sur le disque, puis arrêter.</translation></message>
+    <message><source>Saving staged files</source><translation>Enregistrement des fichiers en attente</translation></message>
+    <message><source>Saving to disk</source><translation>Écriture sur le disque</translation></message>
+    <message><source>Saving…</source><translation>Enregistrement…</translation></message>
+    <message><source>Scanning staged paths</source><translation>Analyse des chemins en attente</translation></message>
+    <message><source>Search logs</source><translation>Rechercher dans les journaux</translation></message>
+    <message><source>Search messages or modules</source><translation>Rechercher des messages ou modules</translation></message>
+    <message><source>Search paths</source><translation>Rechercher des chemins</translation></message>
+    <message><source>Search this folder</source><translation>Rechercher dans ce dossier</translation></message>
+    <message><source>Select a file or enter its name</source><translation>Sélectionner un fichier ou saisir son nom</translation></message>
+    <message><source>Select a file to open.</source><translation>Sélectionnez un fichier à ouvrir.</translation></message>
+    <message><source>Select a folder.</source><translation>Sélectionnez un dossier.</translation></message>
+    <message><source>Select a key to operate on its subtree, or a named value to operate on that value only.</source><translation>Sélectionnez une clé pour agir sur son arborescence, ou une valeur nommée pour agir uniquement sur cette valeur.</translation></message>
+    <message><source>Select an available subkey</source><translation>Sélectionner une sous-clé disponible</translation></message>
+    <message><source>Select files only, or open a folder to browse its contents.</source><translation>Sélectionnez uniquement des fichiers ou ouvrez un dossier pour parcourir son contenu.</translation></message>
+    <message><source>Select files or folders</source><translation>Sélectionner des fichiers ou dossiers</translation></message>
+    <message><source>Select folder</source><translation>Sélectionner un dossier</translation></message>
+    <message><source>Select folders only.</source><translation>Sélectionnez uniquement des dossiers.</translation></message>
+    <message><source>Select registry key or value</source><translation>Sélectionner une clé ou valeur de registre</translation></message>
+    <message><source>Select registry key or value to delete</source><translation>Sélectionner une clé ou valeur de registre à supprimer</translation></message>
+    <message><source>Select the current folder</source><translation>Sélectionner le dossier actuel</translation></message>
+    <message><source>Select this file</source><translation>Sélectionner ce fichier</translation></message>
+    <message><source>Select this registry key</source><translation>Sélectionner cette clé de registre</translation></message>
+    <message><source>Select this registry value</source><translation>Sélectionner cette valeur de registre</translation></message>
+    <message><source>Selected file</source><translation>Fichier sélectionné</translation></message>
+    <message><source>Selected folder</source><translation>Dossier sélectionné</translation></message>
+    <message><source>Selection</source><translation>Sélection</translation></message>
+    <message><source>Service account</source><translation>Compte du service</translation></message>
+    <message><source>Service configuration needs repair</source><translation>La configuration du service nécessite une réparation</translation></message>
+    <message><source>Service details</source><translation>Détails du service</translation></message>
+    <message><source>Service name</source><translation>Nom du service</translation></message>
+    <message><source>Service status</source><translation>État du service</translation></message>
+    <message><source>Service stopped</source><translation>Service arrêté</translation></message>
+    <message><source>Shut down anyway</source><translation>Arrêter quand même</translation></message>
+    <message><source>Shutdown will continue after saving. Keep the application open.</source><translation>L’arrêt reprendra après l’enregistrement. Gardez l’application ouverte.</translation></message>
+    <message><source>Size</source><translation>Taille</translation></message>
+    <message><source>Some changes could not be applied</source><translation>Certaines modifications n’ont pas pu être appliquées</translation></message>
+    <message><source>Some files could not be saved</source><translation>Certains fichiers n’ont pas pu être enregistrés</translation></message>
+    <message><source>Some hardware information could not be read. Other diagnostic information remains available to view and copy.</source><translation>Certaines informations matérielles n’ont pas pu être lues. Les autres informations de diagnostic restent consultables et copiables.</translation></message>
+    <message><source>Source code</source><translation>Code source</translation></message>
+    <message><source>Staged file</source><translation>Fichier en attente</translation></message>
+    <message><source>Staged path</source><translation>Chemin en attente</translation></message>
+    <message><source>Standard user</source><translation>Utilisateur standard</translation></message>
+    <message><source>Starts automatically with Windows</source><translation>Démarre automatiquement avec Windows</translation></message>
+    <message><source>Startup type</source><translation>Type de démarrage</translation></message>
+    <message><source>Status unavailable</source><translation>État indisponible</translation></message>
+    <message><source>Stopped</source><translation>Arrêté</translation></message>
+    <message><source>Storage</source><translation>Stockage</translation></message>
+    <message><source>System</source><translation>Système</translation></message>
+    <message><source>System changes when UWF is first enabled</source><translation>Modifications du système à la première activation d’UWF</translation></message>
+    <message><source>System memory</source><translation>Mémoire système</translation></message>
+    <message><source>System metadata</source><translation>Métadonnées système</translation></message>
+    <message><source>System metadata is for diagnosis only and cannot be committed.</source><translation>Les métadonnées système servent uniquement au diagnostic et ne peuvent pas être validées.</translation></message>
+    <message><source>Takes effect after restart</source><translation>Prend effet après redémarrage</translation></message>
+    <message><source>Target</source><translation>Cible</translation></message>
+    <message><source>Terminal Services license persistence</source><translation>Persistance des licences Terminal Services</translation></message>
+    <message><source>The UWF provider could not complete enumeration. This can occur with a large overlay or insufficient system resources.</source><translation>Le fournisseur UWF n’a pas pu terminer l’énumération. Cela peut arriver avec une grande surcouche ou des ressources système insuffisantes.</translation></message>
+    <message><source>The configuration has been written to the system. Most changes take effect after restart.</source><translation>La configuration a été écrite dans le système. La plupart des modifications prennent effet après redémarrage.</translation></message>
+    <message><source>The configuration matches the next-session target. View or export commands in Full configuration.</source><translation>La configuration correspond à la cible de la prochaine session. Consultez ou exportez les commandes dans Configuration complète.</translation></message>
+    <message><source>The current log records will be cleared and cannot be restored.</source><translation>Les enregistrements actuels du journal seront effacés définitivement.</translation></message>
+    <message><source>The destination folder does not exist.</source><translation>Le dossier de destination n’existe pas.</translation></message>
+    <message><source>The enhanced mode service status could not be read. Check service permissions and retry.</source><translation>L’état du service du mode avancé n’a pas pu être lu. Vérifiez les autorisations du service, puis réessayez.</translation></message>
+    <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>La liste peut omettre des fichiers ou inclure des fichiers déjà validés. Ne l’utilisez pas comme liste de validation.</translation></message>
+
+    <message><source>The selected item no longer exists: %1</source><translation>L’élément sélectionné n’existe plus : %1</translation></message>
+    <message><source>The service is installed but stopped. Start it to restore automatic saving.</source><translation>Le service est installé mais arrêté. Démarrez-le pour rétablir l’enregistrement automatique.</translation></message>
+    <message><source>This PC</source><translation>Ce PC</translation></message>
+    <message><source>This folder is empty</source><translation>Ce dossier est vide</translation></message>
+
+    <message><source>This report may contain account names, device identifiers, and file paths. Review it before sharing.</source><translation>Ce rapport peut contenir des noms de comptes, des identifiants d’appareils et des chemins de fichiers. Vérifiez-le avant de le partager.</translation></message>
+    <message><source>Save this UTF-8 CMD script as a .cmd file and run it in Command Prompt. Export uses the same script.</source><translation>Enregistrez ce script CMD UTF-8 dans un fichier .cmd et exécutez-le dans l’invite de commandes. L’exportation utilise le même script.</translation></message>
+    <message><source>Try another keyword or log level.</source><translation>Essayez un autre mot-clé ou niveau de journalisation.</translation></message>
+    <message><source>Try another search term.</source><translation>Essayez un autre terme de recherche.</translation></message>
+    <message><source>Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>Le type et la taille maximale ne peuvent pas être modifiés lorsque le filtre est actif. Désactivez le filtre et redémarrez d’abord.</translation></message>
+    <message><source>UI agent</source><translation>Agent d’interface</translation></message>
+    <message><source>UTF-8 · %1 lines</source><translation>UTF-8 · %1 lignes</translation></message>
+    <message><source>UWF configuration could not be read. Confirm that Unified Write Filter is installed in Windows, then read again.</source><translation>La configuration UWF n’a pas pu être lue. Vérifiez que Unified Write Filter est installé dans Windows, puis relisez.</translation></message>
+    <message><source>UWF feature</source><translation>Fonctionnalité UWF</translation></message>
+    <message><source>UWF filter</source><translation>Filtre UWF</translation></message>
+    <message><source>UWF is currently unavailable</source><translation>UWF est actuellement indisponible</translation></message>
+    <message><source>UWF safe restart will run directly.</source><translation>Le redémarrage sécurisé UWF sera exécuté directement.</translation></message>
+    <message><source>UWF safe shutdown will run directly.</source><translation>L’arrêt sécurisé UWF sera exécuté directement.</translation></message>
+    <message><source>Unable to access this folder</source><translation>Impossible d’accéder à ce dossier</translation></message>
+    <message><source>Unable to access this registry key</source><translation>Impossible d’accéder à cette clé de registre</translation></message>
+    <message><source>Unable to read logs</source><translation>Impossible de lire les journaux</translation></message>
+    <message><source>Unable to read service status</source><translation>Impossible de lire l’état du service</translation></message>
+    <message><source>Unable to read the overlay right now</source><translation>Impossible de lire la surcouche pour le moment</translation></message>
+    <message><source>Unable to read this folder.</source><translation>Impossible de lire ce dossier.</translation></message>
+    <message><source>Unable to select this item</source><translation>Impossible de sélectionner cet élément</translation></message>
+    <message><source>Unavailable</source><translation>Indisponible</translation></message>
+    <message><source>Undo removal</source><translation>Annuler la suppression</translation></message>
+    <message><source>Unprotected</source><translation>Non protégé</translation></message>
+    <message><source>Unsuccessful items have not been saved. Select a row to view the full path and reason.</source><translation>Les éléments en échec n’ont pas été enregistrés. Sélectionnez une ligne pour voir le chemin complet et la raison.</translation></message>
+    <message><source>Up one folder</source><translation>Dossier parent</translation></message>
+    <message><source>Usage unavailable</source><translation>Utilisation indisponible</translation></message>
+    <message><source>Use the whole key, including all subkeys</source><translation>Utiliser la clé entière, avec toutes ses sous-clés</translation></message>
+    <message><source>Version %1</source><translation>Version %1</translation></message>
+    <message><source>View application records and diagnostic information.</source><translation>Consulter les enregistrements de l’application et les informations de diagnostic.</translation></message>
+    <message><source>View commands for these changes</source><translation>Voir les commandes de ces modifications</translation></message>
+    <message><source>View failure details</source><translation>Voir les détails des échecs</translation></message>
+    <message><source>View overlay</source><translation>Voir la surcouche</translation></message>
+    <message><source>View the file diagnostic snapshot for %1.</source><translation>Afficher l’instantané de diagnostic des fichiers de %1.</translation></message>
+    <message><source>Volume %1 binding</source><translation>Association du volume %1</translation></message>
+    <message><source>Volume %1 protection</source><translation>Protection du volume %1</translation></message>
+    <message><source>Volume identity</source><translation>Identité du volume</translation></message>
+    <message><source>Warning</source><translation>Avertissement</translation></message>
+    <message><source>Warning %1 MB</source><translation>Avertissement %1 Mo</translation></message>
+    <message><source>Whole key and all subkeys · recursive</source><translation>Clé entière et toutes ses sous-clés · récursif</translation></message>
+    <message><source>Windows UWF provides write protection. This application configures and manages it.</source><translation>Windows UWF fournit la protection en écriture. Cette application la configure et la gère.</translation></message>
+    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to save staged files.</source><translation>Sans mode avancé, utilisez Arrêt sécurisé ou Redémarrage sécurisé dans cette application pour enregistrer les fichiers en attente.</translation></message>
+    <message><source>Write protection</source><translation>Protection en écriture</translation></message>
+    <message><source>Write these configuration changes to the system? Most changes take effect after restart.</source><translation>Écrire ces modifications de configuration dans le système ? La plupart prennent effet après redémarrage.</translation></message>
+    <message><source>staged files</source><translation>fichiers en attente</translation></message>
+    <message><source>uwfmgr commands</source><translation>commandes uwfmgr</translation></message>
+    <message><source>Mark selected paths for removal. Takes effect after Apply.</source><translation>Marquer les chemins sélectionnés pour suppression. Prend effet après application.</translation></message>
+    <message><source>Remove from automatic file staging after Apply.</source><translation>Retirer de la liste de préparation automatique des fichiers après application.</translation></message>
+    <message><source>Add to automatic file staging after Apply.</source><translation>Ajouter à la liste de préparation automatique des fichiers après application.</translation></message>
+    <message><source>Applying this plan clears the saved staging list and removes its registry exclusion when no longer required.</source><translation>Appliquer ce plan vide la liste de préparation enregistrée et supprime son exclusion du Registre si elle n’est plus nécessaire.</translation></message>
+    <message><source>File staging changes must be applied in UWF Manager and cannot be exported as uwfmgr commands.</source><translation>Les modifications de préparation des fichiers doivent être appliquées dans UWF Manager et ne peuvent pas être exportées sous forme de commandes uwfmgr.</translation></message>
+    <message><source>File staging is saved after Apply</source><translation>La préparation des fichiers est enregistrée après application</translation></message>
+    <message><source>Overlay snapshot scope</source><translation>Portée de l’instantané de la surcouche</translation></message>
+    <message><source>This list is for diagnostics only. It cannot determine which files must be committed.</source><translation>Cette liste sert uniquement au diagnostic. Elle ne permet pas de déterminer quels fichiers doivent être validés.</translation></message>
+    <message><source>NTFS volumes only</source><translation>Volumes NTFS uniquement</translation></message>
+    <message><source>Large overlays may load slowly or fail because of insufficient resources.</source><translation>La lecture des surcouches volumineuses peut être lente ou échouer par manque de ressources.</translation></message>
+    <message><source>Small files may be missing</source><translation>Des petits fichiers peuvent manquer</translation></message>
+    <message><source>Files smaller than the disk cluster size (typically 4 KB) may not appear in the list.</source><translation>Les fichiers plus petits que la taille d’un cluster du disque (généralement 4 Ko) peuvent ne pas figurer dans la liste.</translation></message>
+    <message><source>Does not indicate pending commits</source><translation>N’indique pas les validations en attente</translation></message>
+    <message><source>Files already committed, excluded paths, and items affected by other operations may also appear.</source><translation>Des fichiers déjà validés, des chemins exclus et des éléments affectés par d’autres opérations peuvent aussi apparaître.</translation></message>
+
+    <message><source>Command processing result</source><translation>Résultat du traitement de la commande</translation></message>
+    <message><source>Copy command</source><translation>Copier la commande</translation></message>
+    <message><source> · %1 branches could not be read</source><translation> · %1 branches n’ont pas pu être lues</translation></message>
+    <message><source>%1 branches could not be read. Continue with discovered content, or retry only the failed items.</source><translation>%1 branches n’ont pas pu être lues. Continuez avec le contenu découvert ou réessayez uniquement les éléments en échec.</translation></message>
+    <message><source>%1 files · %2 folders</source><translation>%1 fichiers · %2 dossiers</translation></message>
+    <message><source>%1 values · %2 keys</source><translation>%1 valeurs · %2 clés</translation></message>
+    <message><source>Attempts</source><translation>Tentatives</translation></message>
+    <message><source>Cancel remaining tasks</source><translation>Annuler les tâches restantes</translation></message>
+    <message><source>Commit only successfully traversed content. Unread branches remain unchanged.</source><translation>Enregistrer uniquement le contenu parcouru avec succès. Les branches illisibles restent inchangées.</translation></message>
+    <message><source>Committing changes</source><translation>Enregistrement des modifications</translation></message>
+    <message><source>Completed deletions and commits cannot be undone.</source><translation>Les suppressions et enregistrements effectués sont irréversibles.</translation></message>
+    <message><source>Continue…</source><translation>Continuer…</translation></message>
+    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>Supprimer et enregistrer uniquement les cibles découvertes. Les branches illisibles et leurs dossiers ou clés parents sont conservés.</translation></message>
+    <message><source>Deleting and committing</source><translation>Suppression et enregistrement</translation></message>
+    <message><source>Deletion and commit cannot be undone. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>La suppression et l’enregistrement sont irréversibles. Seul le périmètre sélectionné est traité ; la configuration UWF en attente n’est pas appliquée.</translation></message>
+    <message><source>Determining the scope. Unread branches are recorded while traversal continues elsewhere.</source><translation>Détermination du périmètre. Les branches illisibles sont consignées et le parcours continue ailleurs.</translation></message>
+    <message><source>Export traversal records</source><translation>Exporter le journal du parcours</translation></message>
+    <message><source>No actionable content</source><translation>Aucun contenu exploitable</translation></message>
+    <message><source>No actionable targets were found. Nothing has been deleted or committed.</source><translation>Aucune cible exploitable trouvée. Rien n’a été supprimé ni enregistré.</translation></message>
+    <message><source>No changes have been committed.</source><translation>Aucune modification enregistrée</translation></message>
+    <message><source>Nothing has been deleted or committed.</source><translation>Rien n’a été supprimé ni enregistré</translation></message>
+    <message><source>Path</source><translation>Chemin</translation></message>
+    <message><source>Permanently delete the selected scope and save the deletions to the protected volume.</source><translation>Supprimer définitivement le périmètre sélectionné et enregistrer les suppressions sur le volume protégé.</translation></message>
+    <message><source>Preparation complete</source><translation>Préparation terminée</translation></message>
+    <message><source>Preparing commit</source><translation>Préparation de l’enregistrement</translation></message>
+    <message><source>Preparing deletion and commit</source><translation>Préparation de la suppression et de l’enregistrement</translation></message>
+    <message><source>Process only successfully traversed content</source><translation>Traiter uniquement le contenu parcouru avec succès</translation></message>
+
+    <message><source>Reparse points are skipped to keep traversal within the selected scope.</source><translation>Les points d’analyse sont ignorés pour rester dans le périmètre sélectionné.</translation></message>
+    <message><source>Restarting cannot undo a commit. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>Un redémarrage n’annule pas un enregistrement. Seul le périmètre sélectionné est traité ; la configuration UWF en attente n’est pas appliquée.</translation></message>
+    <message><source>Retry failed items</source><translation>Réessayer les échecs</translation></message>
+    <message><source>Save changes in the selected scope to the protected volume.</source><translation>Enregistrer les modifications du périmètre sélectionné sur le volume protégé.</translation></message>
+    <message><source>Stopping the operation</source><translation>Arrêt de l’opération</translation></message>
+    <message><source>Successful and failed records are retained</source><translation>Les réussites et les échecs sont consignés</translation></message>
+    <message><source>The folder is not empty; unprocessed content has been retained.</source><translation>Le dossier n’est pas vide ; le contenu non traité est conservé.</translation></message>
+    <message><source>The operation could not be completed</source><translation>L’opération n’a pas pu être terminée</translation></message>
+    <message><source>The registry key has new values; unprocessed content has been retained.</source><translation>La clé de registre contient de nouvelles valeurs ; le contenu non traité est conservé.</translation></message>
+    <message><source>The registry key still has subkeys; unprocessed content has been retained.</source><translation>La clé de registre contient encore des sous-clés ; le contenu non traité est conservé.</translation></message>
+    <message><source>The target no longer exists.</source><translation>La cible n’existe plus.</translation></message>
+    <message><source>Traversal complete</source><translation>Parcours terminé</translation></message>
+    <message><source>Traversal completed with unread content</source><translation>Parcours terminé, certains contenus sont illisibles</translation></message>
+    <message><source>Traversal records are retained and can be exported.</source><translation>Le journal du parcours est conservé et peut être exporté.</translation></message>
+    <message><source>Traverse again</source><translation>Parcourir à nouveau</translation></message>
+    <message><source>Traverse again, or close this window.</source><translation>Parcourez à nouveau ou fermez cette fenêtre.</translation></message>
+    <message><source>Traversing the folder</source><translation>Parcours du dossier</translation></message>
+    <message><source>Traversing the registry</source><translation>Parcours du registre</translation></message>
+    <message><source>Unable to prepare the operation</source><translation>Impossible de préparer l’opération</translation></message>
+    <message><source>View results</source><translation>Afficher les résultats</translation></message>
+
+    <message><source>All changes committed</source><translation>Toutes les modifications ont été enregistrées</translation></message>
+    <message><source>Some changes committed</source><translation>Modifications partiellement enregistrées</translation></message>
+    <message><source>No changes could be committed</source><translation>Aucune modification n’a pu être enregistrée</translation></message>
+    <message><source>No changes to commit</source><translation>Aucune modification à enregistrer</translation></message>
+    <message><source>Commit interrupted</source><translation>Enregistrement interrompu</translation></message>
+    <message><source>%1 items were not processed.</source><translation>%1 éléments n’ont pas été traités.</translation></message>
+    <message><source>%1 registry operation(s) failed.</source><translation>%1 opération(s) du registre ont échoué.</translation></message>
+    <message><source>The folder does not exist.</source><translation>Le dossier n’existe pas.</translation></message>
+    <message><source>Access denied.</source><translation>Accès refusé.</translation></message>
+    <message><source>An item with this name already exists.</source><translation>Un élément portant ce nom existe déjà.</translation></message>
+    <message><source>The folder could not be created. Check the name and permissions.</source><translation>Impossible de créer le dossier. Vérifiez le nom et les autorisations.</translation></message>
+    <message><source>The item could not be renamed. Check the name and permissions.</source><translation>Impossible de renommer cet élément. Vérifiez le nom et les autorisations.</translation></message>
+    <message><source>Renaming is not supported by this browser.</source><translation>Ce navigateur ne prend pas en charge le renommage.</translation></message>
+    <message><source>The file staging draft changed after this plan was opened. Review a new plan.</source><translation>Le brouillon des fichiers à enregistrer a changé depuis l’ouverture de ce plan. Vérifiez un nouveau plan.</translation></message>
+    <message><source>The saved file staging list changed after this plan was opened. Refresh and review the changes.</source><translation>La liste enregistrée des fichiers à enregistrer a changé depuis l’ouverture de ce plan. Actualisez et vérifiez les modifications.</translation></message>
+    <message><source>The saved file staging list does not match the accepted plan.</source><translation>La liste enregistrée des fichiers à enregistrer ne correspond pas au plan accepté.</translation></message>
+    <message><source>Export configuration</source><translation>Exporter la configuration</translation></message>
+    <message><source>Save the current theme, language, and HUB visibility to UWF.ini next to this application.</source><translation>Enregistrer le thème, la langue et la visibilité actuels du HUB dans UWF.ini, à côté de cette application.</translation></message>
+    <message><source>Configuration saved</source><translation>Configuration enregistrée</translation></message>
+    <message><source>Saved the current interface settings to:
+%1</source><translation>Les paramètres actuels de l’interface ont été enregistrés dans :
+%1</translation></message>
+    <message><source>UWF.ini already exists. The existing file was not changed:
+%1</source><translation>UWF.ini existe déjà. Le fichier existant n’a pas été modifié :
+%1</translation></message>
+    <message><source>Could not save UWF.ini:
+%1
+%2</source><translation>Impossible d’enregistrer UWF.ini :
+%1
+%2</translation></message>
+    <message><source>Desktop</source><translation>Bureau</translation></message>
+    <message><source>Downloads</source><translation>Téléchargements</translation></message>
+    <message><source>Documents</source><translation>Documents</translation></message>
+    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>L’enregistrement des fichiers s’est arrêté. Corrigez l’erreur avant de réessayer.</translation></message>
 </context>
 </TS>

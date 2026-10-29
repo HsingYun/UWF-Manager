@@ -1,0 +1,12 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright (c) 2026 HsingYun (iakext@gmail.com) */
+
+QDialog[uwfDialog="true"] {
+    background: @window@;
+    color: @text@;
+}
+QDialog[designDialogSurface="true"] { background: transparent; }
+
+QLabel[dialogTone="muted"] { color: @muted@; }
+QLineEdit[dialogPath="true"] { color: @muted@; background: transparent; border: none; padding: 0; }
+QTextBrowser[dialogTone="muted"] { color: @muted@; }

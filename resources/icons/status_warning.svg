@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#E8EAED" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-  <path d="m12 3 10 17H2z"/>
-  <path d="M12 9v4"/>
-  <circle cx="12" cy="16.5" r="0.8" fill="#E8EAED" stroke="none"/>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 HsingYun (iakext@gmail.com) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#E8EAED" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round">
+  <path d="m10.3 4-8 14a2 2 0 0 0 1.7 3h16a2 2 0 0 0 1.7-3l-8-14a2 2 0 0 0-3.4 0zM12 9v5m0 3h.01"/>
 </svg>

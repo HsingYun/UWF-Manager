@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 HsingYun (iakext@gmail.com) -->
 <!DOCTYPE TS>
 <TS version="2.1" language="ar" sourcelanguage="en">
 <context>
     <name>uwf</name>
-    <message><source>Enable</source><translation>تمكين</translation></message>
-    <message><source>Disable</source><translation>تعطيل</translation></message>
+    <message><source>Preview</source><translation>معاينة</translation></message>
     <message><source>enable</source><translation>تمكين</translation></message>
     <message><source>disable</source><translation>تعطيل</translation></message>
     <message><source>Enabled</source><translation>مُمكّن</translation></message>
@@ -13,7 +14,6 @@
     <message><source>Cancel</source><translation>إلغاء</translation></message>
     <message><source>Close</source><translation>إغلاق</translation></message>
     <message><source>Refresh</source><translation>تحديث</translation></message>
-    <message><source>Apply</source><translation>تطبيق</translation></message>
     <message><source>Add</source><translation>إضافة</translation></message>
     <message><source>Remove</source><translation>إزالة</translation></message>
     <message><source>Yes</source><translation>نعم</translation></message>
@@ -26,21 +26,15 @@
     <message><source>drive letter</source><translation>حرف محرك الأقراص</translation></message>
     <message><source>Drive letter</source><translation>حرف محرك الأقراص</translation></message>
     <message><source>Volume ID</source><translation>معرّف وحدة التخزين</translation></message>
-    <message><source>The current system "%1" (%2) is not a recognized supported Windows 10/11 edition. UWF Manager is running in compatibility mode and some features may be unavailable.</source><translation>لم يُتعرّف على النظام «%1» (%2) كإصدار مدعوم من Windows 10/11. يعمل UWF Manager في وضع التوافق، وقد لا تتوفر بعض الميزات.</translation></message>
     <message><source>Protection state of this volume in the current session (read-only).</source><translation>حالة حماية وحدة التخزين في الجلسة الحالية (للقراءة فقط).</translation></message>
     <message><source>Protect this volume in the next session. Writes to this volume are redirected to the overlay and discarded on reboot.</source><translation>حماية وحدة التخزين في الجلسة التالية. تُوجّه الكتابات إلى التراكب وتُحذف عند إعادة التشغيل.</translation></message>
-    <message><source>Protection:</source><translation>الحماية:</translation></message>
     <message><source>Current session</source><translation>الجلسة الحالية</translation></message>
     <message><source>Next session</source><translation>الجلسة التالية</translation></message>
-    <message><source>The currently active session (read-only). Changes you make never take effect in this session.</source><translation>الجلسة النشطة (للقراءة فقط). لا تسري التغييرات في هذه الجلسة.</translation></message>
-    <message><source>The session that takes effect after a reboot. Changes you make take effect after the system restarts.</source><translation>الجلسة التي تلي إعادة التشغيل. تسري التغييرات بعد إعادة تشغيل النظام.</translation></message>
     <message><source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source><translation>طريقة تعريف وحدة التخزين. حرف المحرك أبسط، لكن الربط يبطل إذا تغيّر الحرف، مثلًا بعد إضافة أقراص أو إزالتها. يبقى معرّف الوحدة ثابتًا.</translation></message>
-    <message><source>Bind by:</source><translation>الربط حسب:</translation></message>
     <message><source>This volume is not supported by UWF: </source><translation>وحدة التخزين غير مدعومة في UWF: </translation></message>
     <message><source>Global settings</source><translation>الإعدادات العامة</translation></message>
     <message><source>UWF filter state in the current session (read-only).</source><translation>حالة عامل تصفية UWF في الجلسة الحالية (للقراءة فقط).</translation></message>
     <message><source>Enable the UWF filter in the next session. Writes to protected volumes are redirected to the overlay and discarded on reboot.</source><translation>تمكين UWF في الجلسة التالية. تُوجّه الكتابات على الوحدات المحمية إلى التراكب وتُحذف عند إعادة التشغيل.</translation></message>
-    <message><source>Filter</source><translation>عامل التصفية</translation></message>
     <message><source>Overlay type and maximum size can only be changed while the filter is disabled:
 1. Disable the filter using the switch above.
 2. Reboot (the filter will be off after reboot).
@@ -54,14 +48,10 @@
     <message><source>Maximum size</source><translation>الحجم الأقصى</translation></message>
     <message><source>Maximum size · RAM %1</source><translation>الحجم الأقصى · RAM %1</translation></message>
     <message><source>Warning threshold</source><translation>حد التحذير</translation></message>
-    <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. Must be lower than the critical threshold. Set to 0 to disable this event.</source><translation>يُسجّل تحذيرًا في سجل الأحداث عند بلوغ الاستخدام هذه القيمة. يجب أن تكون أقل من الحد الحرج. القيمة 0 تعطّل الحدث.</translation></message>
+    <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be lower than the critical threshold. Set to 0 to disable only the warning event.</source><translation>يسجّل إشعارًا بمستوى التحذير في سجل الأحداث عندما يصل استخدام طبقة التراكب إلى هذه القيمة. عند تفعيل الحدثين، يجب أن تكون هذه القيمة أقل من العتبة الحرجة. تؤدي القيمة 0 إلى تعطيل حدث التحذير فقط.</translation></message>
     <message><source>Critical threshold</source><translation>الحد الحرج</translation></message>
-    <message><source>Triggers a critical-level event-log notification when overlay usage reaches this value. Must be higher than the warning threshold. Set to 0 to disable this event.</source><translation>يُسجّل حدثًا حرجًا عند بلوغ الاستخدام هذه القيمة. يجب أن تكون أعلى من حد التحذير. القيمة 0 تعطّل الحدث.</translation></message>
-    <message><source>Used / total</source><translation>المستخدم / الإجمالي</translation></message>
+    <message><source>Triggers a critical-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be higher than the warning threshold. Set to 0 to disable only the critical event.</source><translation>يسجّل إشعارًا بالمستوى الحرج في سجل الأحداث عندما يصل استخدام طبقة التراكب إلى هذه القيمة. عند تفعيل الحدثين، يجب أن تكون هذه القيمة أعلى من عتبة التحذير. تؤدي القيمة 0 إلى تعطيل الحدث الحرج فقط.</translation></message>
     <message><source>Overlay</source><translation>التراكب</translation></message>
-    <message><source>&lt;span style='color:%1'&gt;■&lt;/span&gt; Used &amp;nbsp; &lt;span style='color:%2'&gt;■&lt;/span&gt; Warning &amp;nbsp; &lt;span style='color:%3'&gt;■&lt;/span&gt; Critical</source><translation>&lt;span style='color:%1'&gt;■&lt;/span&gt; المستخدم &amp;nbsp; &lt;span style='color:%2'&gt;■&lt;/span&gt; تحذير &amp;nbsp; &lt;span style='color:%3'&gt;■&lt;/span&gt; حرج</translation></message>
-    <message><source>UWF status unavailable: </source><translation>حالة UWF غير متاحة: </translation></message>
-    <message><source>Administrator privileges are required to change UWF settings. Restart the program via right-click → "Run as administrator".</source><translation>يتطلب تغيير إعدادات UWF صلاحيات المسؤول. أعد فتح البرنامج بالنقر بزر الفأرة الأيمن ← «تشغيل كمسؤول».</translation></message>
     <message><source>Unsupported drive type (only fixed local disks are supported).</source><translation>نوع محرك غير مدعوم (الأقراص المحلية الثابتة فقط).</translation></message>
     <message><source>Volume capacity exceeds the UWF limit of 16 TiB for a single protected volume.</source><translation>تتجاوز الوحدة حد UWF البالغ 16 TiB لكل وحدة محمية.</translation></message>
     <message><source>%1 file system: this volume can be protected, but file exclusions and per-file commit are not supported.</source><translation>%1: يمكن حماية الوحدة، لكن استثناءات الملفات وحفظ كل ملف بشكل دائم غير مدعومين.</translation></message>
@@ -87,11 +77,9 @@
     <message><source>Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is shared across all volumes and shown only once in the disk tabs. Double-click an entry to copy its path.</source><translation>استثناءات السجل عامة وتتبع عامل تصفية UWF، لا حماية هذه الوحدة. القائمة مشتركة بين الوحدات وتُعرض مرة واحدة في علامات تبويب الأقراص. انقر مرتين لنسخ المسار.</translation></message>
     <message><source>File staging</source><translation>الحفظ التلقائي للملفات</translation></message>
     <message><source>Files and folders in this list are committed automatically before safe shutdown or restart. Folders are processed recursively. While the list contains data, UWF Manager excludes HKLM\SOFTWARE\HsingYun\UWF Manager so the list persists across protected sessions.</source><translation>ملفات / مجلدات: تُحفظ دائمًا بشكل تلقائي قبل الإيقاف أو إعادة التشغيل الآمنين. يشمل جميع المجلدات الفرعية. ما دامت القائمة تحتوي على عناصر، يحفظها استثناء السجل التالي بين الجلسات المحمية: HKLM\SOFTWARE\HsingYun\UWF Manager</translation></message>
-    <message><source>Search staged paths…</source><translation>البحث في مسارات الحفظ التلقائي…</translation></message>
     <message><source>Add files or a folder to the automatic commit list.</source><translation>إضافة ملفات أو مجلد إلى قائمة الحفظ التلقائي.</translation></message>
     <message><source>Select one or more files to commit automatically before safe shutdown or restart.</source><translation>اختيار ملف لحفظه دائمًا على القرص. تُحفظ دائمًا بشكل تلقائي قبل الإيقاف أو إعادة التشغيل الآمنين.</translation></message>
     <message><source>Select a folder whose files will be committed recursively before safe shutdown or restart.</source><translation>اختيار مجلد لحفظه دائمًا على القرص. تُحفظ دائمًا بشكل تلقائي قبل الإيقاف أو إعادة التشغيل الآمنين. يشمل جميع المجلدات الفرعية.</translation></message>
-    <message><source>Remove the selected paths from automatic commit immediately.</source><translation>إزالة المسارات المحددة فورًا من الحفظ التلقائي.</translation></message>
     <message><source>Select files for automatic commit</source><translation>اختيار ملف لحفظه دائمًا على القرص · الحفظ التلقائي للملفات</translation></message>
     <message><source>Select a folder for automatic recursive commit</source><translation>اختيار مجلد لحفظه دائمًا على القرص · الحفظ التلقائي للملفات · يشمل جميع المجلدات الفرعية.</translation></message>
     <message><source>Cannot stage this path</source><translation>تعذرت إضافة المسار إلى الحفظ التلقائي</translation></message>
@@ -124,7 +112,8 @@
     <message><source>File staging is unavailable: %1</source><translation>الحفظ التلقائي للملفات: %1</translation></message>
     <message><source>Committed automatically before safe shutdown or restart.</source><translation>تُحفظ دائمًا بشكل تلقائي قبل الإيقاف أو إعادة التشغيل الآمنين.</translation></message>
     <message><source>%1 staged entries · %2 files · %3 folders</source><translation>الحفظ التلقائي للملفات: %1 · ملفات: %2 · مجلدات: %3</translation></message>
-    <message><source>Required by UWF for File staging.</source><translation>مطلوب للحفظ التلقائي للملفات في UWF.</translation></message>
+    <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>يعتمد الحفظ التلقائي للملفات على استثناء السجل هذا للاحتفاظ بقائمته بعد إعادة التشغيل.</translation></message>
+    <message><source>Built-in</source><translation>مدمج</translation></message>
     <message><source>The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit.</source><translation>عامل تصفية UWF معطّل. لم تتراكم تغييرات في التراكب لحفظها دائمًا.</translation></message>
     <message><source>Per-file commit is not supported on the %1 file system.</source><translation>نظام الملفات %1 لا يدعم الحفظ الدائم لكل ملف.</translation></message>
     <message><source>This volume is not supported by UWF.</source><translation>وحدة التخزين هذه غير مدعومة في UWF.</translation></message>
@@ -136,41 +125,23 @@
     <message><source>Select a folder to commit to disk</source><translation>اختيار مجلد لحفظه دائمًا على القرص</translation></message>
     <message><source>Select a file whose deletion you want to commit</source><translation>اختيار ملف لحفظ حذفه دائمًا</translation></message>
     <message><source>Select a folder whose deletion you want to commit</source><translation>اختيار مجلد لحفظ حذفه دائمًا</translation></message>
-    <message><source>Commit registry changes</source><translation>حفظ تغييرات السجل دائمًا</translation></message>
-    <message><source>Commit registry deletion</source><translation>حفظ الحذف من السجل دائمًا</translation></message>
-    <message><source>Key path:</source><translation>المفتاح · المسار:</translation></message>
-    <message><source>HKLM\Software\... — type or paste, press Enter to jump</source><translation>اكتب أو الصق HKLM\Software\... واضغط Enter للانتقال</translation></message>
     <message><source>Name</source><translation>الاسم</translation></message>
     <message><source>Data</source><translation>البيانات</translation></message>
-    <message><source>Key: %1</source><translation>المفتاح: %1</translation></message>
-    <message><source>Value: %1</source><translation>القيمة: %1</translation></message>
-    <message><source>(none)</source><translation>(لا شيء)</translation></message>
     <message><source>(Default)</source><translation>(افتراضي)</translation></message>
     <message><source>(value not set)</source><translation>(لم تُضبط القيمة)</translation></message>
     <message><source>(empty)</source><translation>(فارغ)</translation></message>
     <message><source>Preview unavailable (value is too large)</source><translation>غير معروف (القيمة: الملف كبير جدًا)</translation></message>
-    <message><source>(whole key recursive, including subkeys)</source><translation>(المفتاح كاملًا مع المفاتيح الفرعية)</translation></message>
-    <message><source>Overlay files - %1</source><translation>التراكب · ملفات - %1</translation></message>
-    <message><source>View overlay files</source><translation>عرض ملفات التراكب</translation></message>
     <message><source>Open a diagnostic view of files currently cached in the overlay for this volume.</source><translation>عرض ملفات التراكب. &lt;b&gt;لقطة تشخيصية فقط.&lt;/b&gt; لا تعتمد على هذه القائمة لتحديد ما ينبغي حفظه دائمًا.</translation></message>
     <message><source>Overlay file listing is only supported on NTFS volumes.</source><translation>قائمة ملفات التراكب مدعومة على وحدات NTFS فقط.</translation></message>
     <message><source>The UWF filter is currently disabled, so no volume has an overlay to inspect.</source><translation>عامل UWF معطّل؛ لا يوجد تراكب لفحصه على أي وحدة.</translation></message>
     <message><source>This volume is not currently protected by UWF, so it has no overlay to inspect.</source><translation>الوحدة غير محمية بـ UWF، لذا لا يوجد تراكب لفحصه.</translation></message>
-    <message><source>&lt;b&gt;Diagnostic snapshot only.&lt;/b&gt; Don't use this list to decide what to commit.</source><translation>&lt;b&gt;لقطة تشخيصية فقط.&lt;/b&gt; لا تعتمد على هذه القائمة لتحديد ما ينبغي حفظه دائمًا.</translation></message>
-    <message><source>NTFS volumes only.</source><translation>قائمة ملفات التراكب مدعومة على وحدات NTFS فقط.</translation></message>
-    <message><source>Can be slow or fail when the overlay is large — memory and time grow with overlay size.</source><translation>يزيد التراكب الكبير استهلاك الذاكرة والوقت، وقد يجعل العملية بطيئة أو يؤدي إلى فشلها.</translation></message>
-    <message><source>The list is not exact: files smaller than the disk cluster size (typically 4 KB) may be missing; earlier commits, files in excluded paths, and files affected by unrelated operations may appear.</source><translation>القائمة غير دقيقة: قد تغيب ملفات أصغر من حجم العنقود (عادةً 4 KB)، وتظهر ملفات حُفظت سابقًا أو ضمن مسارات مستثناة أو تأثرت بعمليات أخرى.</translation></message>
-    <message><source>Loading…</source><translation>جارٍ التحميل…</translation></message>
     <message><source>Failed: %1</source><translation>فشل: %1</translation></message>
-    <message><source>%1 file(s) in overlay</source><translation>التراكب · ملفات: %1</translation></message>
-    <message><source>No files</source><translation>لا توجد ملفات</translation></message>
-    <message><source>Page %1 / %2 · %3 file(s) total</source><translation>الصفحة %1 / %2 · ملفات: %3</translation></message>
     <message><source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure.</source><translation>تعطل موفر WMI أثناء السرد. هذا خلل معروف في UWF_Overlay.GetOverlayFiles عند كبر التراكب أو ارتفاع ضغط الإدخال والإخراج.</translation></message>
     <message><source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source><translation>الذاكرة غير كافية أو العملية غير مدعومة من الموفر. يلزم NTFS وذاكرة متاحة. جرّب تراكبًا أصغر أو أغلق التطبيقات كثيفة الذاكرة.</translation></message>
     <message><source>Raw error: %1</source><translation>رمز الخطأ: %1</translation></message>
-    <message><source>Export to file…</source><translation>تصدير إلى ملف…</translation></message>
     <message><source>Export overlay file list</source><translation>تصدير إلى ملف… · التراكب · ملفات</translation></message>
     <message><source>Text files (*.txt);;All files (*)</source><translation>ملفات نصية (*.txt);;كل الملفات (*)</translation></message>
+    <message><source>Command files (*.cmd);;All files (*)</source><translation>ملفات الأوامر (*.cmd);;كل الملفات (*)</translation></message>
     <message><source>Export failed</source><translation>فشل التصدير</translation></message>
     <message><source>Export finished</source><translation>اكتمل التصدير</translation></message>
     <message><source>Could not open file for writing: %1</source><translation>فشل: فتح الملف (%1).</translation></message>
@@ -204,8 +175,6 @@
   HKLM\SAM
   HKLM\SECURITY
   HKLM\COMPONENTS</translation></message>
-    <message><source>Search file paths…</source><translation>البحث في مسارات الملفات…</translation></message>
-    <message><source>Search registry keys…</source><translation>البحث في مفاتيح السجل…</translation></message>
     <message><source>Add a file or folder to the exclusion list. Excluded entries are not protected by UWF.</source><translation>إضافة ملفات أو مجلدات إلى الاستثناءات. لا يحمي UWF العناصر المستثناة.</translation></message>
     <message><source>Pick a file to add to the exclusion list.</source><translation>اختيار ملف لإضافته · استثناءات الملفات.</translation></message>
     <message><source>Pick a folder (and all of its contents) to add to the exclusion list.</source><translation>اختيار مجلد لإضافته · استثناءات الملفات. يشمل جميع المجلدات الفرعية.</translation></message>
@@ -216,7 +185,6 @@
     <message><source>Terminal Services Client Access License (TSCAL)</source><translation>ترخيص وصول العميل لخدمات المحطة الطرفية (TSCAL)</translation></message>
     <message><source>Persist the domain secret key (machine account password) across UWF sessions.</source><translation>استبقاء سر المجال (كلمة مرور حساب الجهاز) بين جلسات UWF.</translation></message>
     <message><source>Persist Terminal Services client access licenses across UWF sessions.</source><translation>استبقاء تراخيص وصول العميل لخدمات المحطة الطرفية بين جلسات UWF.</translation></message>
-    <message><source>· %1 persistence %2</source><translation>· الاستبقاء %1: %2</translation></message>
     <message><source>✓ %1 persistence: %2</source><translation>✓ الاستبقاء %1: %2</translation></message>
     <message><source>Remove selected</source><translation>إزالة المحدد</translation></message>
     <message><source>Remove the selected entries from the exclusion list. Takes effect after Apply.</source><translation>إزالة الاستثناءات المحددة. تسري بعد التطبيق.</translation></message>
@@ -225,7 +193,7 @@
     <message><source>Copy registry path</source><translation>نسخ مسار السجل</translation></message>
     <message><source>Commit folder changes to disk…</source><translation>حفظ تغييرات هذا المجلد من التراكب دائمًا على القرص…</translation></message>
     <message><source>Commit file changes to disk…</source><translation>حفظ تغييرات هذا الملف من التراكب دائمًا على القرص…</translation></message>
-    <message><source>Copied to clipboard: </source><translation>نُسخ إلى الحافظة: </translation></message>
+    <message><source>Copied to clipboard</source><translation>نُسخ إلى الحافظة</translation></message>
     <message><source>Select files to add to the exclusion list (multiple selection allowed)</source><translation>اختيار ملف لإضافته · استثناءات الملفات. يمكن تحديد عدة ملفات.</translation></message>
     <message><source>Select a folder to add to the exclusion list</source><translation>اختيار مجلد لإضافته · استثناءات الملفات</translation></message>
     <message><source>Add registry exclusion</source><translation>إضافة استثناء سجل</translation></message>
@@ -240,9 +208,7 @@
 Next session: %2</source><translation>الجلسة الحالية: %1
 الجلسة التالية: %2</translation></message>
     <message><source>Pending change: %1</source><translation>التغييرات المعلقة: %1</translation></message>
-    <message><source>%1 entries · %2 to add · %3 to remove in next session · %4 pending</source><translation>عناصر: %1 · للإضافة: %2 · للإزالة في الجلسة التالية: %3 · التغييرات المعلقة: %4</translation></message>
     <message><source>Unified Write Filter (UWF) Manager</source><translation>مدير عامل تصفية الكتابة الموحد (UWF)</translation></message>
-    <message><source>Main toolbar</source><translation>شريط الأدوات الرئيسي</translation></message>
     <message><source>Re-read the current session state and next-session configuration of UWF.</source><translation>إعادة قراءة حالة جلسة UWF الحالية وإعدادات الجلسة التالية.</translation></message>
     <message><source>Review and apply</source><translation>مراجعة وتطبيق</translation></message>
     <message><source>Review all pending changes and apply them in one batch. Most changes take effect after the next reboot.</source><translation>مراجعة جميع التغييرات المعلقة وتطبيقها دفعة واحدة. تسري معظم التغييرات بعد إعادة التشغيل التالية.</translation></message>
@@ -255,22 +221,13 @@ Next session: %2</source><translation>الجلسة الحالية: %1
     <message><source>Log</source><translation>السجل التشخيصي</translation></message>
     <message><source>View the internal log accumulated during this session, for troubleshooting.</source><translation>عرض السجل الداخلي المتراكم في هذه الجلسة لاستكشاف المشكلات.</translation></message>
     <message><source>About</source><translation>حول</translation></message>
-    <message><source>About this program.</source><translation>حول UWF Manager.</translation></message>
     <message><source>Switch display language</source><translation>تغيير لغة العرض</translation></message>
     <message><source>Language</source><translation>اللغة</translation></message>
     <message><source>Theme</source><translation>المظهر</translation></message>
     <message><source>Toggle light / dark theme</source><translation>التبديل بين المظهر الفاتح والداكن</translation></message>
-    <message><source>&lt;p&gt;A graphical front-end for managing the UWF filter state, overlay, and file / registry exclusions. Most changes take effect after the next reboot.&lt;/p&gt;&lt;p&gt;Source code: &lt;a href="%3"&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href="mailto:%1"&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;This program is released under the &lt;a href="%2"&gt;GNU General Public License v3.0&lt;/a&gt;; the full license text is included in the LICENSE file shipped with this program.&lt;/p&gt;&lt;p&gt;This program is free software: you may redistribute it and / or modify it under the terms of the GPL v3. It is provided "as is", without any warranty.&lt;/p&gt;</source><translation>&lt;p&gt;واجهة رسومية لإدارة حالة عامل UWF والتراكب واستثناءات الملفات والسجل. تسري معظم التغييرات بعد إعادة التشغيل التالية.&lt;/p&gt;&lt;p&gt;الشيفرة المصدرية: &lt;a href="%3"&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href="mailto:%1"&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;الترخيص: &lt;a href="%2"&gt;GNU General Public License v3.0&lt;/a&gt;; النص الكامل للترخيص موجود في ملف LICENSE المرفق بالبرنامج.&lt;/p&gt;&lt;p&gt;برنامج حر: يجوز إعادة توزيعه وتعديله وفق GPL v3. يُقدّم «كما هو» دون أي ضمان.&lt;/p&gt;</translation></message>
-    <message><source>About UWF Manager</source><translation>حول UWF Manager</translation></message>
     <message><source>System information</source><translation>معلومات النظام</translation></message>
     <message><source>Diagnostic snapshot</source><translation>لقطة تشخيصية</translation></message>
-    <message><source>System, security, UWF, enhanced mode, and recent application logs.</source><translation>تشخيص النظام والأمان وUWF والوضع المتقدم وسجلات التطبيق الحديثة.</translation></message>
     <message><source>Read only</source><translation>للقراءة فقط</translation></message>
-    <message><source>Diagnostic report</source><translation>تقرير تشخيصي</translation></message>
-    <message><source>Copied</source><translation>تم النسخ</translation></message>
-    <message><source>View system, security, UWF, enhanced mode, and log diagnostics.</source><translation>تشخيص النظام والأمان وUWF والوضع المتقدم وسجلات التطبيق الحديثة.</translation></message>
-    <message><source>This report may contain account names, device identifiers, file paths, and recent application logs. Review it before sharing.</source><translation>قد يتضمن التقرير أسماء حسابات ومعرّفات أجهزة ومسارات وسجلات حديثة. راجعه قبل مشاركته.</translation></message>
-    <message><source>&lt;p&gt;&lt;b&gt;This program depends on the Windows Unified Write Filter (UWF).&lt;/b&gt; UWF Manager does not perform write filtering itself; the actual write protection is provided by the UWF feature built into Windows. This program only configures and manages UWF, and requires UWF to be installed and enabled on the system.&lt;/p&gt;&lt;p&gt;When UWF is first enabled on a device, it makes the following changes to the system to improve UWF performance:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Paging files are disabled.&lt;/li&gt;&lt;li&gt;System Restore is disabled.&lt;/li&gt;&lt;li&gt;SuperFetch is disabled.&lt;/li&gt;&lt;li&gt;The file indexing service is turned off.&lt;/li&gt;&lt;li&gt;The defragmentation service is turned off.&lt;/li&gt;&lt;li&gt;Fast boot is disabled.&lt;/li&gt;&lt;li&gt;The BCD setting bootstatuspolicy is set to ignoreallfailures.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;After UWF is enabled, these settings can be changed as needed. For example, the paging file can be moved to an unprotected volume and paging re-enabled.&lt;/p&gt;</source><translation>&lt;p&gt;&lt;b&gt;يعتمد هذا البرنامج على عامل تصفية الكتابة الموحد في Windows (UWF).&lt;/b&gt; يوفر UWF المدمج في Windows حماية الكتابة. لا ينفذ UWF Manager التصفية بنفسه، بل يضبط UWF ويديره فقط. يجب تثبيت UWF وتمكينه على النظام.&lt;/p&gt;&lt;p&gt;عند تمكين UWF لأول مرة، تُغيّر إعدادات النظام التالية لتحسين الأداء:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;تعطيل ملفات ترحيل الصفحات.&lt;/li&gt;&lt;li&gt;تعطيل استعادة النظام.&lt;/li&gt;&lt;li&gt;تعطيل SuperFetch.&lt;/li&gt;&lt;li&gt;إيقاف خدمة فهرسة الملفات.&lt;/li&gt;&lt;li&gt;إيقاف خدمة إلغاء التجزئة.&lt;/li&gt;&lt;li&gt;تعطيل بدء التشغيل السريع.&lt;/li&gt;&lt;li&gt;ضبط إعداد BCD المسمى bootstatuspolicy على ignoreallfailures.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;يمكن تعديل هذه الإعدادات بعد التمكين. مثلًا، انقل ملف الترحيل إلى وحدة غير محمية وأعد تمكين الترحيل.&lt;/p&gt;</translation></message>
     <message><source>The target was not found; there is nothing in the overlay to commit.</source><translation>لم يُعثر على الهدف؛ لا يوجد شيء في التراكب لحفظه دائمًا.</translation></message>
     <message><source>Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It will disappear on reboot; commit-delete is neither needed nor possible.</source><translation>الهدف موجود في التراكب فقط؛ أُنشئ تحت حماية UWF ولم يُحفظ على القرص أو في السجل الدائم. سيختفي بإعادة التشغيل؛ حفظ حذفه دائمًا غير مطلوب وغير ممكن.</translation></message>
     <message><source>A parameter was rejected by the system (invalid path or argument).</source><translation>رفض النظام معلمة (مسار أو وسيطة غير صالحة).</translation></message>
@@ -279,16 +236,12 @@ Next session: %2</source><translation>الجلسة الحالية: %1
     <message><source>Operation rejected (code %1).</source><translation>رُفضت العملية (الرمز %1).</translation></message>
     <message><source>Unknown cause.</source><translation>غير معروف.</translation></message>
     <message><source>Commit canceled</source><translation>أُلغي الحفظ الدائم</translation></message>
-    <message><source>Commit result</source><translation>نتيجة الحفظ الدائم</translation></message>
+
     <message><source>Succeeded</source><translation>نجح</translation></message>
     <message><source>Skipped</source><translation>تم التخطي</translation></message>
     <message><source>Failed</source><translation>فشل</translation></message>
     <message><source>%1 succeeded; %2 skipped; %3 failed.</source><translation>نجح: %1; تم التخطي: %2; فشل: %3.</translation></message>
-    <message><source>
-Canceled by user; %1 entries not processed.</source><translation>
-ألغى المستخدم العملية؛ لم يُعالَج %1 عنصر.</translation></message>
-    <message><source>Category</source><translation>الفئة</translation></message>
-    <message><source>Path</source><translation>المسار</translation></message>
+
     <message><source>Existed before</source><translation>موجود قبل العملية</translation></message>
     <message><source>Exists after</source><translation>موجود بعد العملية</translation></message>
     <message><source>Error code</source><translation>رمز الخطأ</translation></message>
@@ -297,53 +250,16 @@ Canceled by user; %1 entries not processed.</source><translation>
     <message><source>First page</source><translation>الصفحة الأولى</translation></message>
     <message><source>Last page</source><translation>الصفحة الأخيرة</translation></message>
     <message><source>Next page</source><translation>الصفحة التالية</translation></message>
-    <message><source>Page %1 / %2 · %3 entries total</source><translation>الصفحة %1 / %2 · عناصر: %3</translation></message>
     <message><source>Copy selected rows</source><translation>نسخ الصفوف المحددة</translation></message>
     <message><source>Copy all</source><translation>نسخ الكل</translation></message>
     <message><source>This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it.</source><translation>استثناء السجل هذا مطلوب ما دامت قائمة الحفظ التلقائي تحتوي على عناصر محفوظة. الحفظ التلقائي للملفات: مسح → إزالة استثناء سجل.</translation></message>
-    <message><source>0 lines</source><translation>0 أسطر</translation></message>
-    <message><source>%1 lines</source><translation>%1 أسطر</translation></message>
-    <message><source>Loading log entries…</source><translation>جارٍ تحميل السجل…</translation></message>
-    <message><source>No log entries</source><translation>لا توجد إدخالات في السجل</translation></message>
-    <message><source>Page %1 / %2 · %3 lines total</source><translation>الصفحة %1 / %2 · أسطر: %3</translation></message>
     <message><source>Copy current page</source><translation>نسخ الصفحة الحالية</translation></message>
-    <message><source>Clear</source><translation>مسح</translation></message>
-    <message><source>%1 pending change(s) (not yet written to the system)</source><translation>التغييرات المعلقة: %1</translation></message>
     <message><source>No pending changes</source><translation>لا توجد تغييرات معلقة</translation></message>
     <message><source> (Also manages global registry exclusions.)</source><translation> (استثناءات السجل · الإعدادات العامة.)</translation></message>
     <message><source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source><translation>وحدة التخزين %1: حماية UWF / استثناءات الملفات / الحفظ التلقائي للملفات.%2</translation></message>
     <message><source>UWF namespace is not available</source><translation>UWF: غير مدعوم</translation></message>
-    <message><source>Refreshed · %1 volumes</source><translation>تحديث · وحدة التخزين: %1</translation></message>
-    <message><source>· Filter (global) %1</source><translation>· عامل التصفية (UWF): %1</translation></message>
-    <message><source>· Overlay type → %1</source><translation>· التراكب · النوع → %1</translation></message>
-    <message><source>· Overlay maximum size → %1 MB</source><translation>· التراكب · الحجم الأقصى → %1 MB</translation></message>
-    <message><source>· Overlay warning threshold → %1 MB</source><translation>· التراكب · حد التحذير → %1 MB</translation></message>
-    <message><source>· Overlay critical threshold → %1 MB</source><translation>· التراكب · الحد الحرج → %1 MB</translation></message>
-    <message><source>⚠ Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>⚠ لتغيير النوع والحجم الأقصى:
-1. عطّل عامل التصفية أعلاه.
-2. أعد التشغيل ليصبح معطّلًا.
-3. غيّر الإعداد.</translation></message>
-    <message><source>· Volume %1 protection %2</source><translation>· وحدة التخزين %1 · حماية UWF: %2</translation></message>
-    <message><source>· Volume %1 bind by → %2 (no CLI equivalent; this program only)</source><translation>· وحدة التخزين %1 · الربط حسب: %2 (لا يوجد مكافئ في CLI؛ خاص بهذا البرنامج)</translation></message>
-    <message><source>+ File exclusion  %1</source><translation>+ استثناءات الملفات  %1</translation></message>
-    <message><source>− File exclusion  %1</source><translation>− استثناءات الملفات  %1</translation></message>
-    <message><source>+ Registry exclusion  %1</source><translation>+ استثناءات السجل  %1</translation></message>
-    <message><source>− Registry exclusion  %1</source><translation>− استثناءات السجل  %1</translation></message>
-    <message><source>Filter (global) %1</source><translation>عامل التصفية (UWF): %1</translation></message>
-    <message><source>Overlay type → %1</source><translation>التراكب · النوع → %1</translation></message>
-    <message><source>Overlay maximum size → %1 MB</source><translation>التراكب · الحجم الأقصى → %1 MB</translation></message>
-    <message><source>Overlay warning threshold → %1 MB</source><translation>التراكب · حد التحذير → %1 MB</translation></message>
-    <message><source>Overlay critical threshold → %1 MB</source><translation>التراكب · الحد الحرج → %1 MB</translation></message>
-    <message><source>Volume %1 protection %2</source><translation>وحدة التخزين %1 · حماية UWF: %2</translation></message>
-    <message><source>File exclusion %1</source><translation>استثناءات الملفات: %1</translation></message>
-    <message><source>Registry exclusion %1</source><translation>استثناءات السجل: %1</translation></message>
-    <message><source>Pending changes (%1)</source><translation>التغييرات المعلقة (%1)</translation></message>
-    <message><source>Current session configuration</source><translation>إعدادات الجلسة الحالية</translation></message>
     <message><source>Review and apply changes</source><translation>مراجعة التغييرات وتطبيقها</translation></message>
-    <message><source>Below is the full configuration in uwfmgr command form. &lt;span style='color:%1'&gt;Pending changes&lt;/span&gt;, if any, are shown in a separate section first. Click &lt;span style='color:%2'&gt;Apply&lt;/span&gt; to write the changes to the system (most take effect after the next reboot).</source><translation>الإعدادات الكاملة بصيغة أوامر uwfmgr. تظهر التغييرات المعلقة أولًا في قسم منفصل. &lt;span style='color:%1'&gt;التغييرات المعلقة&lt;/span&gt;. &lt;span style='color:%2'&gt;تطبيق&lt;/span&gt;: انقر لكتابة التغييرات إلى النظام. تسري معظم التغييرات بعد إعادة التشغيل التالية.</translation></message>
     <message><source>Confirm apply</source><translation>تأكيد التطبيق</translation></message>
-    <message><source>These changes will be &lt;span style='color:%1'&gt;written to the system&lt;/span&gt;; most take effect after the next reboot.&lt;br&gt;&lt;br&gt;Continue?</source><translation>&lt;span style='color:%1'&gt;ستُكتب هذه التغييرات إلى النظام&lt;/span&gt;. تسري معظم التغييرات بعد إعادة التشغيل التالية.&lt;br&gt;&lt;br&gt;متابعة?</translation></message>
-    <message><source>Applied changes</source><translation>التغييرات المطبقة</translation></message>
     <message><source>Result</source><translation>النتيجة</translation></message>
     <message><source>✓ Filter: %1</source><translation>✓ عامل التصفية: %1</translation></message>
     <message><source>✓ Overlay warning threshold set to %1 MB</source><translation>✓ ضبط حد التحذير: %1 MB</translation></message>
@@ -365,41 +281,15 @@ Canceled by user; %1 entries not processed.</source><translation>
     <message><source>Level</source><translation>المستوى</translation></message>
     <message><source>Tag</source><translation>الوسم</translation></message>
     <message><source>Message</source><translation>الرسالة</translation></message>
-    <message><source>Confirm safe shutdown?</source><translation>إيقاف آمن?</translation></message>
-    <message><source>Confirm safe restart?</source><translation>إعادة تشغيل آمنة?</translation></message>
-    <message><source>Shut down</source><translation>إيقاف التشغيل</translation></message>
-    <message><source>Restart</source><translation>إعادة التشغيل</translation></message>
-    <message><source>Continue shutdown</source><translation>متابعة إيقاف التشغيل</translation></message>
-    <message><source>Continue restart</source><translation>متابعة إعادة التشغيل</translation></message>
-    <message><source>The system will shut down safely through UWF.</source><translation>سيُوقف النظام بأمان عبر UWF.</translation></message>
-    <message><source>The system will restart safely through UWF.</source><translation>سيُعاد تشغيل النظام بأمان عبر UWF.</translation></message>
-    <message><source>UWF protection</source><translation>حماية UWF</translation></message>
-    <message><source>This operation remains available even if the UWF overlay is full.</source><translation>متاح حتى إذا امتلأ تراكب UWF.</translation></message>
     <message><source>Calculating files for automatic commit…</source><translation>جارٍ حساب الملفات للحفظ التلقائي…</translation></message>
-    <message><source>%1 file(s) will be committed automatically before this operation. Files outside currently protected volumes are skipped.</source><translation>سيُحفظ %1 ملف تلقائيًا قبل العملية. تُتخطّى الملفات خارج الوحدات المحمية حاليًا.</translation></message>
     <message><source>Committing staged files</source><translation>جارٍ حفظ الملفات المُعدّة</translation></message>
-    <message><source>The power action will continue after file staging completes.</source><translation>ستستمر عملية الطاقة بعد اكتمال الحفظ التلقائي.</translation></message>
     <message><source>Processed %1 of %2 file(s).</source><translation>عولج %1 من %2 ملف.</translation></message>
-    <message><source>Automatic file staging did not complete</source><translation>لم يكتمل الحفظ التلقائي للملفات</translation></message>
-    <message><source>Review the operation details before deciding whether to continue.</source><translation>راجع تفاصيل العملية قبل اتخاذ قرار المتابعة.</translation></message>
-    <message><source>Operation details</source><translation>تفاصيل العملية</translation></message>
     <message><source>No additional error details were provided.</source><translation>لم تُقدّم تفاصيل خطأ إضافية.</translation></message>
-    <message><source>Some changes may not be preserved</source><translation>قد لا تُحفَظ بعض التغييرات</translation></message>
-    <message><source>If you continue, the system will shut down without the files that could not be committed.</source><translation>إذا تابعت، فسيُوقف النظام دون الاحتفاظ بالملفات التي تعذر حفظها دائمًا.</translation></message>
-    <message><source>If you continue, the system will restart without the files that could not be committed.</source><translation>إذا تابعت، فسيُعاد تشغيل النظام دون الاحتفاظ بالملفات التي تعذر حفظها دائمًا.</translation></message>
     <message><source>Automatic file staging stopped unexpectedly:
 %1</source><translation>توقف الحفظ التلقائي بشكل غير متوقع:
 %1</translation></message>
     <message><source>Automatic file staging stopped because of an unknown error.</source><translation>لم يكتمل الحفظ التلقائي للملفات: خطأ غير معروف.</translation></message>
-    <message><source>Uncommitted changes will be lost</source><translation>ستُفقد التغييرات التي لم تُحفَظ دائمًا</translation></message>
-    <message><source>Before continuing, save your work and commit any changes that you want to keep permanently.</source><translation>قبل المتابعة، احفظ عملك واحفظ دائمًا كل التغييرات التي تريد الاحتفاظ بها.</translation></message>
-    <message><source>Confirm direct restart?</source><translation>إعادة تشغيل مباشرة?</translation></message>
-    <message><source>Confirm direct shutdown?</source><translation>إيقاف مباشر?</translation></message>
-    <message><source>The system will restart without committing files in File staging.</source><translation>إعادة التشغيل. لن تُحفَظ ملفات القائمة دائمًا قبل إعادة التشغيل.</translation></message>
-    <message><source>The system will shut down without committing files in File staging.</source><translation>إيقاف التشغيل. لن تُحفَظ ملفات القائمة دائمًا قبل إيقاف التشغيل.</translation></message>
     <message><source>File staging will be skipped</source><translation>سيُتخطّى الحفظ التلقائي للملفات</translation></message>
-    <message><source>Files in File staging will not be committed before restart.</source><translation>لن تُحفَظ ملفات القائمة دائمًا قبل إعادة التشغيل.</translation></message>
-    <message><source>Files in File staging will not be committed before shutdown.</source><translation>لن تُحفَظ ملفات القائمة دائمًا قبل إيقاف التشغيل.</translation></message>
     <message><source>Direct restart skips File staging commits.</source><translation>إعادة تشغيل مباشرة: سيُتخطّى الحفظ التلقائي للملفات.</translation></message>
     <message><source>Direct shutdown skips File staging commits.</source><translation>إيقاف مباشر: سيُتخطّى الحفظ التلقائي للملفات.</translation></message>
     <message><source>File staging was skipped because a direct power action was selected.</source><translation>تُخطّي الحفظ التلقائي لاختيار إجراء طاقة مباشر.</translation></message>
@@ -429,57 +319,29 @@ Canceled by user; %1 entries not processed.</source><translation>
     <message><source>The UWF provider rejected the commit.</source><translation>رفض موفر UWF الحفظ الدائم.</translation></message>
     <message><source>The commit failed with an unknown error.</source><translation>فشل الحفظ الدائم: خطأ غير معروف.</translation></message>
     <message><source>%1 additional failure(s) were written to the log.</source><translation>سُجّل %1 فشل إضافي في السجل.</translation></message>
-    <message><source>Commit failed</source><translation>فشل الحفظ الدائم</translation></message>
+
     <message><source>The path has no drive letter; cannot identify the target volume.</source><translation>لا يحتوي المسار على حرف محرك أقراص. تحديد وحدة التخزين المستهدفة: فشل.</translation></message>
-    <message><source>Failed to read volume information: %1</source><translation>فشل: قراءة معلومات وحدة التخزين (%1)</translation></message>
+
     <message><source>No current-session record found for volume %1.</source><translation>لا يوجد سجل للجلسة الحالية للوحدة %1.</translation></message>
     <message><source>This path is in the file exclusion list.
 Exclusion: %1</source><translation>المسار ضمن استثناءات الملفات.
 الاستثناء: %1</translation></message>
-    <message><source>No files were found under %1.</source><translation>لم يُعثر على ملفات ضمن %1.</translation></message>
-    <message><source>Commit to disk</source><translation>حفظ دائم على القرص</translation></message>
-    <message><source>Committing…</source><translation>جارٍ الحفظ الدائم…</translation></message>
-    <message><source>This action cannot be undone.</source><translation>لا يمكن التراجع عن هذا الإجراء.</translation></message>
+
     <message><source>Continue</source><translation>متابعة</translation></message>
     <message><source>Delete and commit</source><translation>حذف وحفظ دائم</translation></message>
-    <message><source>Commit this file's overlay changes to disk</source><translation>حفظ تغييرات هذا الملف من التراكب دائمًا على القرص</translation></message>
-    <message><source>Commit this folder's overlay changes to disk</source><translation>حفظ تغييرات هذا المجلد من التراكب دائمًا على القرص</translation></message>
-    <message><source>%1 files in this folder and all its subfolders will be committed.</source><translation>ملفات: %1. يشمل جميع المجلدات الفرعية.</translation></message>
-    <message><source>Delete this file, and commit the deletion to disk</source><translation>حذف الملف وحفظ الحذف دائمًا على القرص</translation></message>
-    <message><source>Delete this folder and its contents, and commit the deletions to disk</source><translation>حذف المجلد ومحتوياته وحفظ عمليات الحذف دائمًا على القرص</translation></message>
-    <message><source>%1 files and %2 subfolders will be deleted.</source><translation>ملفات: %1; مجلدات: %2. حذف وحفظ دائم.</translation></message>
-    <message><source>Commit this registry value to disk</source><translation>حفظ قيمة السجل دائمًا على القرص</translation></message>
-    <message><source>Commit this registry key and its whole subtree to disk</source><translation>حفظ مفتاح السجل وكامل شجرته الفرعية دائمًا على القرص</translation></message>
-    <message><source>%1 values in this key and all its subkeys will be committed.</source><translation>القيمة: %1. (المفتاح كاملًا مع المفاتيح الفرعية)</translation></message>
-    <message><source>Delete this registry value, and commit the deletion to disk</source><translation>حذف قيمة السجل وحفظ الحذف دائمًا على القرص</translation></message>
-    <message><source>Delete this registry key and its whole subtree, and commit the deletions to disk</source><translation>حذف مفتاح السجل وكامل شجرته الفرعية وحفظ الحذف دائمًا</translation></message>
-    <message><source>Scanning registry keys…</source><translation>سرد مفاتيح السجل…</translation></message>
-    <message><source>Scanning registry keys…
-%1 key(s) found</source><translation>سرد مفاتيح السجل…
-المفتاح: %1</translation></message>
-    <message><source>Registry keys that will be deleted:</source><translation>سجل النظام · المفتاح · حذف وحفظ دائم:</translation></message>
-    <message><source>Copy current entry</source><translation>نسخ العنصر الحالي</translation></message>
-    <message><source>%1 keys and all values they contain will be recursively deleted.</source><translation>سيُحذف %1 مفتاح وكل قيمه بشكل متكرر.</translation></message>
-    <message><source>Commit file deletion failed</source><translation>فشل: حفظ حذف الملف بشكل دائم</translation></message>
-    <message><source>This path does not exist, so there is nothing to delete.</source><translation>المسار غير موجود؛ لا يوجد ما يمكن حذفه.</translation></message>
+
     <message><source>This key is in the registry exclusion list.
 Exclusion: %1</source><translation>المفتاح ضمن استثناءات السجل.
 الاستثناء: %1</translation></message>
-    <message><source>Failed to read registry filter: %1</source><translation>فشل: قراءة عامل تصفية السجل (%1)</translation></message>
+
     <message><source>No current-session registry filter record found.</source><translation>لا يوجد سجل لعامل تصفية السجل في الجلسة الحالية.</translation></message>
-    <message><source>This registry value does not exist, so there is nothing to commit.</source><translation>قيمة السجل غير موجودة؛ لا يوجد ما يمكن حفظه دائمًا.</translation></message>
-    <message><source>This registry key does not exist, so there is nothing to commit.</source><translation>مفتاح السجل غير موجود؛ لا يوجد ما يمكن حفظه دائمًا.</translation></message>
-    <message><source>This registry value does not exist, so there is nothing to delete.</source><translation>قيمة السجل غير موجودة؛ لا يوجد ما يمكن حذفه.</translation></message>
-    <message><source>This registry key does not exist, so there is nothing to delete.</source><translation>مفتاح السجل غير موجود؛ لا يوجد ما يمكن حذفه.</translation></message>
-    <message><source>Export commands…</source><translation>تصدير الأوامر…</translation></message>
+
     <message><source>Export commands to file</source><translation>تصدير الأوامر إلى ملف</translation></message>
     <message><source>Exported %1 commands to:
 %2</source><translation>تصدير إلى ملف… · الأمر: %1
 %2</translation></message>
     <message><source>Import</source><translation>استيراد</translation></message>
     <message><source>Paste, type, or load a script of uwfmgr commands and turn each line into a pending UI change. Nothing is written to the system until you click "Review and apply".</source><translation>uwfmgr: اكتب أو الصق أمرًا واحدًا في كل سطر. حمّل نصًا أو سجلًا أو نصًا برمجيًا (.txt أو .bat أو .ps1)؛ تُضاف الأسطر التي تحتوي على هذا الأمر. الاستيراد يُعدّ التغييرات فقط. لا تُكتب إلى النظام إلا عبر «مراجعة وتطبيق» في شريط الأدوات.</translation></message>
-    <message><source>Import uwfmgr commands</source><translation>uwfmgr · استيراد</translation></message>
-    <message><source>&lt;p&gt;Paste or type &lt;b&gt;uwfmgr&lt;/b&gt; commands below; one command per line. Supported categories: &lt;code&gt;filter&lt;/code&gt; · &lt;code&gt;overlay&lt;/code&gt; · &lt;code&gt;volume&lt;/code&gt; · &lt;code&gt;file&lt;/code&gt; · &lt;code&gt;registry&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;Use &lt;b&gt;Load from file…&lt;/b&gt; to pick any text-like file (logs, scripts, .txt, .bat, .ps1); lines containing &lt;code&gt;uwfmgr&lt;/code&gt; will be appended to the box.&lt;/p&gt;&lt;p&gt;Clicking &lt;b&gt;Import&lt;/b&gt; turns each command into a pending UI change — &lt;b&gt;nothing is written to the system yet&lt;/b&gt;. Use &lt;b&gt;Review and apply&lt;/b&gt; in the toolbar to commit them.&lt;/p&gt;</source><translation>&lt;p&gt;&lt;b&gt;uwfmgr&lt;/b&gt;: اكتب أو الصق أمرًا واحدًا في كل سطر. &lt;code&gt;filter&lt;/code&gt; · &lt;code&gt;overlay&lt;/code&gt; · &lt;code&gt;volume&lt;/code&gt; · &lt;code&gt;file&lt;/code&gt; · &lt;code&gt;registry&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;تحميل من ملف…&lt;/b&gt;: حمّل نصًا أو سجلًا أو نصًا برمجيًا (.txt أو .bat أو .ps1)؛ تُضاف الأسطر التي تحتوي على هذا الأمر. &lt;code&gt;uwfmgr&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;استيراد&lt;/b&gt;: &lt;b&gt;الاستيراد يُعدّ التغييرات فقط. لا تُكتب إلى النظام إلا عبر «مراجعة وتطبيق» في شريط الأدوات.&lt;/b&gt; &lt;b&gt;مراجعة وتطبيق&lt;/b&gt;.&lt;/p&gt;</translation></message>
     <message><source>Load from file…</source><translation>تحميل من ملف…</translation></message>
     <message><source>Load recommended configuration</source><translation>تحميل الإعدادات الموصى بها</translation></message>
     <message><source>Choose recommended configuration</source><translation>اختيار الإعدادات الموصى بها</translation></message>
@@ -527,30 +389,15 @@ Exclusion: %1</source><translation>المفتاح ضمن استثناءات ال
     <message><source>SCEP: persist antimalware signatures and state</source><translation>SCEP: استبقاء دائم: تواقيع مكافحة البرامج الضارة وحالتها</translation></message>
     <message><source>SCEP: persist antimalware registry state</source><translation>SCEP: استبقاء دائم: حالة مكافحة البرامج الضارة في السجل</translation></message>
     <message><source>Choose files containing uwfmgr commands</source><translation>اختيار ملفات تتضمن أوامر uwfmgr</translation></message>
-    <message><source>All files (*);;Text files (*.txt *.bat *.ps1 *.log *.cmd)</source><translation>كل الملفات (*);;ملفات نصية (*.txt *.bat *.ps1 *.log *.cmd)</translation></message>
-    <message><source>uwfmgr filter enable
-uwfmgr overlay set-type RAM
-uwfmgr volume protect C:
-uwfmgr file add-exclusion "C:\Users\foo\bar.txt"
-uwfmgr registry add-exclusion HKLM\Software\MyApp</source><translation>uwfmgr filter enable
-uwfmgr overlay set-type RAM
-uwfmgr volume protect C:
-uwfmgr file add-exclusion "C:\Users\foo\bar.txt"
-uwfmgr registry add-exclusion HKLM\Software\MyApp</translation></message>
-    <message><source>#</source><translation>#</translation></message>
+    <message><source>Text files (*.txt *.cmd);;All files (*)</source><translation>ملفات نصية (*.txt *.cmd);;كل الملفات (*)</translation></message>
     <message><source>Status</source><translation>الحالة</translation></message>
-    <message><source>Command</source><translation>الأمر</translation></message>
-    <message><source>Detail</source><translation>التفاصيل</translation></message>
     <message><source>Import failed</source><translation>فشل الاستيراد</translation></message>
     <message><source>Internal error: no applier registered.</source><translation>خطأ داخلي: لم يُسجّل معالج للتطبيق.</translation></message>
     <message><source>Nothing to import</source><translation>لا توجد أوامر لاستيرادها</translation></message>
     <message><source>No uwfmgr commands found in the input.</source><translation>لم يُعثر على أوامر uwfmgr في الإدخال.</translation></message>
-    <message><source>Applied: %1</source><translation>تم التطبيق: %1</translation></message>
     <message><source>Duplicates: %1</source><translation>مكرر: %1</translation></message>
     <message><source>Unsupported: %1</source><translation>غير مدعوم: %1</translation></message>
-    <message><source>Cumulative after %1 batch(es):</source><translation>الإجمالي بعد %1 دفعة:</translation></message>
     <message><source>── Batch %1 ──</source><translation>── الدفعة %1 ──</translation></message>
-    <message><source>Applied</source><translation>تم التطبيق</translation></message>
     <message><source>Duplicate</source><translation>مكرر</translation></message>
     <message><source>Unsupported</source><translation>غير مدعوم</translation></message>
     <message><source>File too large</source><translation>الملف كبير جدًا</translation></message>
@@ -579,7 +426,6 @@ Continue and discard them?</source><translation>هناك %1 تغيير لم يُ
     <message><source>Already in the target state — no-op</source><translation>الحالة المطلوبة متحققة؛ لا حاجة إلى إجراء</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>المسار خارج هذه الوحدة أو أنها لا تدعم استثناءات الملفات (مثل exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>مرفوض من قائمة حظر UWF (ملفات النظام أو Windows أو ملف الترحيل وغيرها)</translation></message>
-    <message><source>Same command was already issued earlier in this batch</source><translation>سبق إصدار هذا الأمر في الدفعة نفسها</translation></message>
     <message><source>Pending filter %1</source><translation>التغييرات المعلقة: عامل التصفية %1</translation></message>
     <message><source>Filter is already in the target state</source><translation>عامل التصفية: الحالة المطلوبة متحققة؛ لا حاجة إلى إجراء</translation></message>
     <message><source>Pending overlay type → %1</source><translation>التغييرات المعلقة: التراكب · النوع → %1</translation></message>
@@ -599,7 +445,6 @@ Continue and discard them?</source><translation>هناك %1 تغيير لم يُ
     <message><source>registry exclusion</source><translation>استثناءات السجل</translation></message>
     <message><source>Registry exclusions are only available on the registry tab, which is not present</source><translation>استثناءات السجل متاحة فقط في علامة تبويب السجل، وهي غير موجودة</translation></message>
     <message><source>Unsupported command</source><translation>الأمر: غير مدعوم</translation></message>
-    <message><source>Exit</source><translation>خروج</translation></message>
     <message><source>Show or hide the overlay hub.</source><translation>HUB: إظهار أو إخفاء.</translation></message>
     <message><source>UWF: Enabled</source><translation>UWF: مُمكّن</translation></message>
     <message><source>UWF: Disabled</source><translation>UWF: مُعطّل</translation></message>
@@ -607,26 +452,11 @@ Continue and discard them?</source><translation>هناك %1 تغيير لم يُ
     <message><source>Used %1 MB / Total %2 MB</source><translation>المستخدم %1 MB / %2 MB</translation></message>
     <message><source>Enhanced mode</source><translation>الوضع المتقدم</translation></message>
     <message><source>Coordinate automatic file staging with Windows shutdown and restart.</source><translation>تنسيق الحفظ التلقائي مع إيقاف Windows وإعادة تشغيله.</translation></message>
-    <message><source>Enhanced mode installs an automatically started LocalSystem service. It launches UWF Manager after Windows starts and attempts to commit changes to user-configured staged files before shutdown or restart, improving compatibility for applications that conflict with UWF.</source><translation>يثبّت خدمة LocalSystem تلقائية التشغيل. تشغّل UWF Manager عند بدء Windows وتحاول حفظ الملفات المُعدّة دائمًا قبل الإيقاف أو إعادة التشغيل لتحسين توافق التطبيقات المتعارضة مع UWF.</translation></message>
-    <message><source>System changes</source><translation>تغييرات النظام</translation></message>
-    <message><source>Creates the automatic service UWFManagerEnhanced and binds it to the current executable path</source><translation>إنشاء خدمة تلقائية باسم UWFManagerEnhanced مرتبطة بمسار الملف التنفيذي الحالي</translation></message>
-    <message><source>Writes and commits the service configuration under HKLM\SYSTEM\CurrentControlSet\Services\UWFManagerEnhanced</source><translation>الإعدادات: سجل النظام → حفظ دائم (HKLM\SYSTEM\CurrentControlSet\Services\UWFManagerEnhanced)</translation></message>
-    <message><source>Starts UWF Manager automatically after the next Windows startup; moving the executable can break automatic startup</source><translation>تشغيل UWF Manager من بدء Windows التالي؛ قد يمنع نقل الملف التنفيذي التشغيل التلقائي</translation></message>
-    <message><source>Commits eligible staged files during normal Windows shutdown and restart</source><translation>حفظ الملفات المُعدّة المؤهلة أثناء إيقاف Windows أو إعادة تشغيله بالطريقة المعتادة</translation></message>
-    <message><source>Operational and security considerations</source><translation>اعتبارات التشغيل والأمان</translation></message>
-    <message><source>Registers a service in the system registry when enhanced mode is enabled, so the application no longer remains fully portable</source><translation>تسجيل خدمة في سجل النظام، فلا يعود التطبيق محمولًا بالكامل</translation></message>
-    <message><source>A large number of staged files can significantly extend shutdown or restart; allow UWF Manager enough time to preserve user changes</source><translation>قد تطيل كثرة الملفات الإيقاف أو إعادة التشغيل كثيرًا؛ اترك وقتًا كافيًا لحفظ التغييرات</translation></message>
-    <message><source>Enhanced mode runs this application (UWF Manager) as SYSTEM. If a non-administrator tampers with the application or replaces it with a malicious binary, privileges could be elevated to SYSTEM. Enable enhanced mode only from an administrator-protected location (recommended location: %ProgramFiles%\UWF Manager\Service\UWF.exe)</source><translation>يشغّل الوضع المتقدم UWF Manager بحساب SYSTEM. إذا عدّل مستخدم غير مسؤول البرنامج أو استبدله بملف ضار، فقد يحصل على صلاحيات SYSTEM. فعّل الوضع من موقع محمي بصلاحيات المسؤول فقط (الموصى به: %ProgramFiles%\UWF Manager\Service\UWF.exe).</translation></message>
-    <message><source>Enhanced mode status could not be read</source><translation>فشل: قراءة حالة الوضع المتقدم</translation></message>
     <message><source>The enhanced mode status read failed because of an unknown error.</source><translation>فشل: قراءة حالة الوضع المتقدم (خطأ غير معروف).</translation></message>
     <message><source>The current service state could not be read:
 %1</source><translation>فشل: قراءة حالة الخدمة:
 %1</translation></message>
     <message><source>The current service state could not be read because of an unknown error.</source><translation>فشل: قراءة حالة الخدمة (خطأ غير معروف).</translation></message>
-    <message><source>Status: Disabled</source><translation>الحالة: مُعطّل</translation></message>
-    <message><source>Status: Enabled</source><translation>الحالة: مُمكّن</translation></message>
-    <message><source>Status: Service stopped</source><translation>الحالة: الخدمة متوقفة</translation></message>
-    <message><source>Status: Repair required</source><translation>الحالة: يلزم الإصلاح</translation></message>
     <message><source>The service is not configured as an independent process.</source><translation>الخدمة غير مهيّأة كعملية مستقلة.</translation></message>
     <message><source>The service is not configured for automatic startup.</source><translation>الخدمة غير مهيّأة للتشغيل التلقائي.</translation></message>
     <message><source>The service is not configured to run as LocalSystem.</source><translation>الخدمة غير مهيّأة للعمل بحساب LocalSystem.</translation></message>
@@ -667,10 +497,10 @@ Continue and discard them?</source><translation>هناك %1 تغيير لم يُ
     <message><source>All staged targets were processed; one or more operations failed.</source><translation>عُولجت جميع الأهداف؛ فشلت عملية واحدة أو أكثر.</translation></message>
     <message><source>Show main window</source><translation>إظهار النافذة الرئيسية</translation></message>
     <message><source>Restore default position</source><translation>استعادة الموضع الافتراضي</translation></message>
+    <message><source>Show overlay hub</source><translation>إظهار HUB التراكب</translation></message>
     <message><source>Hide overlay hub</source><translation>إخفاء HUB التراكب</translation></message>
     <message><source>Exit application</source><translation>إنهاء التطبيق</translation></message>
     <message><source>✘ Failed to connect to the system</source><translation>✘ فشل: الاتصال بالنظام</translation></message>
-    <message><source>Registry access failed</source><translation>فشل: الوصول إلى السجل</translation></message>
     <message><source>Failed to read registry values: %1</source><translation>فشل: قراءة قيم السجل (%1)</translation></message>
     <message><source>Unexpected error while enumerating overlay files.</source><translation>سرد ملفات التراكب: خطأ غير معروف.</translation></message>
     <message><source>✘ Failed to %1 filter</source><translation>✘ فشل: إجراء عامل التصفية: %1</translation></message>
@@ -694,7 +524,6 @@ Continue and discard them?</source><translation>هناك %1 تغيير لم يُ
     <message><source>✘ Failed to read registry filter</source><translation>✘ فشل: قراءة عامل تصفية السجل</translation></message>
     <message><source>UWF is not available</source><translation>UWF: غير مدعوم</translation></message>
     <message><source>Unknown error while reading the target state.</source><translation>قراءة حالة الهدف: خطأ غير معروف.</translation></message>
-    <message><source>The target state could not be read before the operation: %1</source><translation>تعذرت قراءة حالة الهدف قبل العملية: %1</translation></message>
     <message><source>The target no longer exists, so there is nothing to delete.</source><translation>المسار غير موجود؛ لا يوجد ما يمكن حذفه.</translation></message>
     <message><source>The operation failed with an unknown error.</source><translation>خطأ غير معروف.</translation></message>
     <message><source>The operation result could not be confirmed because the target state reread failed: %1</source><translation>تعذر تأكيد النتيجة لفشل إعادة قراءة حالة الهدف: %1</translation></message>
@@ -703,13 +532,487 @@ Continue and discard them?</source><translation>هناك %1 تغيير لم يُ
     <message><source>Failed to load logs: %1</source><translation>فشل: تحميل السجل التشخيصي (%1)</translation></message>
     <message><source>Failed to load logs: unexpected error.</source><translation>فشل: تحميل السجل التشخيصي (خطأ غير معروف).</translation></message>
     <message><source>: unknown error</source><translation>: خطأ غير معروف</translation></message>
-    <message><source>Failed to read the target state: %1</source><translation>فشل: قراءة حالة الهدف (%1)</translation></message>
-    <message><source>Failed to read the target state because of an unknown error.</source><translation>فشل: قراءة حالة الهدف (خطأ غير معروف).</translation></message>
+
     <message><source>Failed to resolve the target volume: %1</source><translation>فشل: تحديد وحدة التخزين المستهدفة (%1)</translation></message>
-    <message><source>Failed to enumerate registry values: %1</source><translation>فشل: سرد قيم السجل (%1)</translation></message>
+
     <message><source>Failed to enumerate registry keys: %1</source><translation>فشل: سرد مفاتيح السجل (%1)</translation></message>
-    <message><source>Delete and commit failed</source><translation>حذف وحفظ دائم: فشل</translation></message>
+
     <message><source>Failed to resolve the volume for path %1: %2</source><translation>فشل: تحديد وحدة التخزين المستهدفة (%1): %2</translation></message>
-    <message><source>%1/%2 slots</source><translation>فتحات الذاكرة: %1/%2</translation></message>
+    <message><source>Skipped because a prerequisite operation failed or could not be confirmed.</source><translation>تم تخطي العملية لأن عملية مسبقة مطلوبة فشلت أو تعذّر تأكيد نتيجتها.</translation></message>
+    <message><source>Current selection</source><translation>التحديد الحالي</translation></message>
+    <message><source>Use the whole key, including all subkeys</source><translation>اختيار المفتاح بالكامل مع جميع المفاتيح الفرعية</translation></message>
+    <message><source>Select this registry key</source><translation>اختيار مفتاح التسجيل هذا</translation></message>
+    <message><source>Select this registry value</source><translation>اختيار قيمة التسجيل هذه</translation></message>
+    <message><source>Choose a location within the allowed drive or folder.</source><translation>اختر موقعًا داخل محرك الأقراص أو المجلد المحدد.</translation></message>
+    <message><source>Registry key or persistence setting</source><translation>مفتاح تسجيل أو إعداد استبقاء</translation></message>
+    <message><source>Staged path</source><translation>المسار المرحلي</translation></message>
+    <message><source>Required configuration</source><translation>إعداد مطلوب</translation></message>
+    <message><source>Recursive staging</source><translation>حفظ مرحلي متكرر</translation></message>
+    <message><source>Staged file</source><translation>ملف مرحلي</translation></message>
+    <message><source>Home</source><translation>المجلد الرئيسي</translation></message>
+    <message><source>Unavailable</source><translation>غير متاح</translation></message>
+    <message><source>Compatibility mode</source><translation>وضع التوافق</translation></message>
+    <message><source>Overlay warning threshold reached. Save changes and safely restart.</source><translation>وصل استخدام طبقة التراكب إلى حد التحذير. احفظ التغييرات ثم أعد التشغيل بأمان.</translation></message>
+    <message><source>Overlay critical threshold reached. Save changes and safely restart.</source><translation>وصل استخدام طبقة التراكب إلى الحد الحرج. احفظ التغييرات وأعد التشغيل بأمان في أقرب وقت.</translation></message>
+    <message><source>Rename</source><translation>إعادة تسمية</translation></message>
+    <message><source>Rename…</source><translation>إعادة تسمية…</translation></message>
+    <message><source>Open folder</source><translation>فتح المجلد</translation></message>
+    <message><source>Select this file</source><translation>اختيار هذا الملف</translation></message>
+    <message><source>Enter a valid file or folder name.</source><translation>أدخل اسماً صالحاً للملف أو المجلد.</translation></message>
+    <message><source>Copy all logs</source><translation>نسخ جميع السجلات</translation></message>
+    <message><source>Copy name</source><translation>نسخ الاسم</translation></message>
+    <message><source>Fit columns to contents</source><translation>ملاءمة الأعمدة للمحتوى</translation></message>
+    <message><source>Restore</source><translation>استعادة</translation></message>
+    <message><source>Move</source><translation>نقل</translation></message>
+    <message><source>Size</source><translation>تغيير الحجم</translation></message>
+    <message><source>Expand</source><translation>توسيع</translation></message>
+    <message><source>Collapse</source><translation>طي</translation></message>
+    <message><source>Undo removal</source><translation>التراجع عن الإزالة</translation></message>
+
+    <message><source>32-bit</source><translation>32 بت</translation></message>
+    <message><source>64-bit</source><translation>64 بت</translation></message>
+    <message><source>All files (*)</source><translation>كل الملفات (*)</translation></message>
+
+    <message><source>Changes already committed are retained.</source><translation>تُحتفظ بالتغييرات التي حُفظت بالفعل.</translation></message>
+    <message><source>Commit changes</source><translation>حفظ التغييرات</translation></message>
+    <message><source>Commit file changes?</source><translation>هل تريد حفظ تغييرات الملف؟</translation></message>
+    <message><source>Commit folder changes?</source><translation>هل تريد حفظ تغييرات المجلد؟</translation></message>
+    <message><source>Commit registry key changes?</source><translation>هل تريد حفظ تغييرات مفتاح السجل؟</translation></message>
+    <message><source>Commit registry value changes?</source><translation>هل تريد حفظ تغييرات قيمة السجل؟</translation></message>
+    <message><source>Copy selection</source><translation>نسخ التحديد</translation></message>
+    <message><source>Delete and commit this file?</source><translation>هل تريد حذف الملف وحفظ حذفه؟</translation></message>
+    <message><source>Delete and commit this folder?</source><translation>هل تريد حذف المجلد وحفظ حذفه؟</translation></message>
+    <message><source>Delete and commit this registry key?</source><translation>هل تريد حذف مفتاح السجل وحفظ حذفه؟</translation></message>
+    <message><source>Delete and commit this registry value?</source><translation>هل تريد حذف قيمة السجل وحفظ حذفها؟</translation></message>
+
+    <message><source>Direct restart?</source><translation>هل تريد إعادة التشغيل مباشرةً؟</translation></message>
+    <message><source>Direct shutdown?</source><translation>هل تريد إيقاف التشغيل مباشرةً؟</translation></message>
+    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after restart.</source><translation>سيتم تخطي الملفات المجهزة. ستُفقد التغييرات غير المحفوظة في المسارات المحمية بعد إعادة التشغيل.</translation></message>
+    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after shutdown.</source><translation>سيتم تخطي الملفات المجهزة. ستُفقد التغييرات غير المحفوظة في المسارات المحمية بعد إيقاف التشغيل.</translation></message>
+    <message><source>Processed %1 / %2 items</source><translation>تمت معالجة %1 / %2 عنصر</translation></message>
+    <message><source>Remaining tasks can be canceled after the current target finishes.</source><translation>يمكن إلغاء المهام المتبقية بعد انتهاء معالجة الهدف الحالي.</translation></message>
+    <message><source>Target</source><translation>الهدف</translation></message>
+
+    <message><source>Select registry key or value</source><translation>تحديد مفتاح سجل أو قيمة</translation></message>
+    <message><source>Select registry key or value to delete</source><translation>تحديد مفتاح سجل أو قيمة لحذفها</translation></message>
+    <message><source>The service is installed but stopped. Start it to restore automatic saving.</source><translation>الخدمة مثبتة لكنها متوقفة. شغّلها لاستعادة الحفظ التلقائي.</translation></message>
+    <message><source>The enhanced mode service status could not be read. Check service permissions and retry.</source><translation>تعذرت قراءة حالة خدمة الوضع المحسّن. تحقق من أذونات الخدمة وأعد المحاولة.</translation></message>
+    <message><source>Committing</source><translation>جارٍ الحفظ</translation></message>
+    <message><source>Confirm before continuing</source><translation>أكد قبل المتابعة</translation></message>
+    <message><source>Automatic saving incomplete</source><translation>لم يكتمل الحفظ التلقائي</translation></message>
+    <message><source>Choose another folder, or check access permissions and retry.</source><translation>اختر مجلدًا آخر أو تحقق من أذونات الوصول وأعد المحاولة.</translation></message>
+    <message><source>UWF is currently unavailable</source><translation>UWF غير متاح حاليًا</translation></message>
+    <message><source>UWF configuration could not be read. Confirm that Unified Write Filter is installed in Windows, then read again.</source><translation>تعذرت قراءة إعدادات UWF. تأكد من تثبيت عامل تصفية الكتابة الموحد في Windows ثم أعد القراءة.</translation></message>
+    <message><source>Enable the filter and restart to display live usage</source><translation>فعّل عامل التصفية وأعد التشغيل لعرض الاستخدام المباشر</translation></message>
+    <message><source>Read the configuration to display live usage</source><translation>اقرأ الإعدادات لعرض الاستخدام المباشر</translation></message>
+    <message><source>Filter is disabled</source><translation>عامل التصفية معطّل</translation></message>
+    <message><source>Usage unavailable</source><translation>الاستخدام غير متاح</translation></message>
+    <message><source>More</source><translation>المزيد</translation></message>
+    <message><source>UWF filter</source><translation>عامل التصفية UWF</translation></message>
+    <message><source>On</source><translation>تشغيل</translation></message>
+    <message><source>Off</source><translation>إيقاف</translation></message>
+    <message><source>Binding</source><translation>الربط</translation></message>
+    <message><source>Protected</source><translation>محمي</translation></message>
+    <message><source>View overlay</source><translation>عرض التراكب</translation></message>
+    <message><source>Current usage</source><translation>الاستخدام الحالي</translation></message>
+    <message><source>Search paths</source><translation>البحث في المسارات</translation></message>
+    <message><source>File or folder</source><translation>ملف أو مجلد</translation></message>
+    <message><source>Configured</source><translation>مُعدّ</translation></message>
+    <message><source>Ready</source><translation>جاهز</translation></message>
+    <message><source>%1 items</source><translation>%1 عناصر</translation></message>
+    <message><source> · %1 selected</source><translation> · %1 محدد</translation></message>
+    <message><source>%1 selected</source><translation>%1 محدد</translation></message>
+    <message><source>%1 changes</source><translation>%1 تغييرات</translation></message>
+    <message><source>%1 commands</source><translation>%1 أوامر</translation></message>
+    <message><source>%1 records</source><translation>%1 سجلات</translation></message>
+    <message><source>%1 records · %2 total</source><translation>%1 سجلات · الإجمالي %2</translation></message>
+    <message><source>%1 pending change(s)</source><translation>%1 تغييرات قيد الانتظار</translation></message>
+    <message><source>Pending removal</source><translation>بانتظار الإزالة</translation></message>
+    <message><source>Added</source><translation>مضاف</translation></message>
+    <message><source>Warning %1 MB</source><translation>تحذير عند %1 MB</translation></message>
+    <message><source>Critical %1 MB</source><translation>حد حرج %1 MB</translation></message>
+    <message><source>Read-only</source><translation>للقراءة فقط</translation></message>
+    <message><source>Read again</source><translation>قراءة مجدداً</translation></message>
+    <message><source>Add exclusion</source><translation>إضافة استثناء</translation></message>
+    <message><source>No matching items</source><translation>لا توجد عناصر مطابقة</translation></message>
+    <message><source>Try another search term.</source><translation>جرّب عبارة بحث أخرى.</translation></message>
+    <message><source>Navigate to registry path</source><translation>الانتقال إلى مسار السجل</translation></message>
+    <message><source>Copy path</source><translation>نسخ المسار</translation></message>
+    <message><source>Minimize</source><translation>تصغير</translation></message>
+    <message><source>Maximize</source><translation>تكبير</translation></message>
+    <message><source>Quick access</source><translation>الوصول السريع</translation></message>
+    <message><source>This folder is empty</source><translation>هذا المجلد فارغ</translation></message>
+    <message><source>Choose a location to save the file.</source><translation>اختر موقعاً لحفظ الملف.</translation></message>
+    <message><source>Add UWF configuration from a script or text.</source><translation>أضف إعدادات UWF من برنامج نصي أو نص.</translation></message>
+    <message><source>Edit commands</source><translation>تحرير الأوامر</translation></message>
+    <message><source>Import results</source><translation>نتائج الاستيراد</translation></message>
+    <message><source>Imported</source><translation>مستورد</translation></message>
+    <message><source>Line</source><translation>السطر</translation></message>
+    <message><source>Continue editing</source><translation>متابعة التحرير</translation></message>
+    <message><source>Pending changes</source><translation>التغييرات المعلقة</translation></message>
+    <message><source>Full configuration</source><translation>الإعدادات الكاملة</translation></message>
+    <message><source>Apply changes</source><translation>تطبيق التغييرات</translation></message>
+    <message><source>All changes have been saved to disk and will persist without a restart.</source><translation>حُفظت جميع التغييرات على القرص وستبقى دون إعادة تشغيل.</translation></message>
+    <message><source>Service details</source><translation>تفاصيل الخدمة</translation></message>
+    <message><source>Background service</source><translation>خدمة الخلفية</translation></message>
+    <message><source>Automatic file staging</source><translation>الحفظ التلقائي للملفات</translation></message>
+    <message><source>Running</source><translation>قيد التشغيل</translation></message>
+    <message><source>Stopped</source><translation>متوقف</translation></message>
+    <message><source>Repair required</source><translation>يلزم الإصلاح</translation></message>
+    <message><source>Account</source><translation>الحساب</translation></message>
+    <message><source>Application path</source><translation>مسار التطبيق</translation></message>
+    <message><source>Overview</source><translation>نظرة عامة</translation></message>
+    <message><source>Raw report</source><translation>التقرير الأصلي</translation></message>
+    <message><source>A diagnostic snapshot of the system, privileges, and UWF.</source><translation>لقطة تشخيصية للنظام والصلاحيات وUWF.</translation></message>
+    <message><source>System</source><translation>النظام</translation></message>
+    <message><source>Architecture</source><translation>بنية النظام</translation></message>
+    <message><source>System memory</source><translation>ذاكرة النظام</translation></message>
+    <message><source>All levels</source><translation>جميع المستويات</translation></message>
+    <message><source>Search messages or modules</source><translation>البحث في الرسائل أو الوحدات</translation></message>
+    <message><source>No logs yet</source><translation>لا توجد سجلات بعد</translation></message>
+    <message><source>Unable to read logs</source><translation>تعذرت قراءة السجلات</translation></message>
+    <message><source>Error details</source><translation>تفاصيل الخطأ</translation></message>
+    <message><source>Cancel reading</source><translation>إلغاء القراءة</translation></message>
+    <message><source>Clear…</source><translation>مسح…</translation></message>
+    <message><source>Selected file</source><translation>الملف المحدد</translation></message>
+    <message><source>No overlay files found</source><translation>لم يُعثر على ملفات في التراكب</translation></message>
+    <message><source>Done</source><translation>تم</translation></message>
+    <message><source>License and copyright</source><translation>الترخيص وحقوق النشر</translation></message>
+    <message><source>Source code</source><translation>الشيفرة المصدرية</translation></message>
+    <message><source>Contact author</source><translation>التواصل مع المطوّر</translation></message>
+    <message><source>Copy version</source><translation>نسخ الإصدار</translation></message>
+    <message><source>Copy</source><translation>انسخ</translation></message>
+    <message><source>Select All</source><translation>حدّد الكلّ</translation></message>
+    <message><source>Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>لا يمكن تغيير النوع والحجم الأقصى أثناء تفعيل عامل التصفية. عطّل عامل التصفية وأعد التشغيل أولاً.</translation></message>
+    <message><source>Disk</source><translation>القرص</translation></message>
+    <message><source>Protection and overlay</source><translation>الحماية والتراكب</translation></message>
+    <message><source>Write protection</source><translation>الحماية من الكتابة</translation></message>
+    <message><source>Overlay type</source><translation>نوع التراكب</translation></message>
+    <message><source>Storage</source><translation>التخزين</translation></message>
+    <message><source>Overlay maximum size</source><translation>الحجم الأقصى للتراكب</translation></message>
+    <message><source>Volume %1 protection</source><translation>حماية وحدة التخزين %1</translation></message>
+    <message><source>By volume ID</source><translation>حسب معرّف وحدة التخزين</translation></message>
+    <message><source>By drive letter</source><translation>حسب حرف محرك الأقراص</translation></message>
+    <message><source>Volume %1 binding</source><translation>ربط وحدة التخزين %1</translation></message>
+    <message><source>Volume identity</source><translation>هوية وحدة التخزين</translation></message>
+    <message><source>Removed</source><translation>أُزيل</translation></message>
+    <message><source>Future writes to this path will not be protected by UWF.</source><translation>لن يحمي UWF عمليات الكتابة اللاحقة إلى هذا المسار.</translation></message>
+    <message><source>Remove this path from the next-session exclusions.</source><translation>إزالة هذا المسار من استثناءات الجلسة التالية.</translation></message>
+    <message><source>Future writes to this key will not be protected by UWF.</source><translation>لن يحمي UWF عمليات الكتابة اللاحقة إلى هذا المفتاح.</translation></message>
+    <message><source>Remove this key from the next-session exclusions.</source><translation>إزالة هذا المفتاح من استثناءات الجلسة التالية.</translation></message>
+    <message><source>Domain Secret Key persistence</source><translation>الحفظ الدائم للمفتاح السري للمجال</translation></message>
+    <message><source>Terminal Services license persistence</source><translation>الحفظ الدائم لترخيص خدمات المحطة الطرفية</translation></message>
+    <message><source>Original command</source><translation>الأمر الأصلي</translation></message>
+    <message><source>Processing result</source><translation>نتيجة المعالجة</translation></message>
+    <message><source>Error</source><translation>خطأ</translation></message>
+    <message><source>Warning</source><translation>تحذير</translation></message>
+    <message><source>Information</source><translation>معلومات</translation></message>
+    <message><source>Debug</source><translation>تصحيح الأخطاء</translation></message>
+    <message><source>Module</source><translation>الوحدة</translation></message>
+    <message><source>Failed to clear logs: %1</source><translation>تعذّر مسح السجلات: %1</translation></message>
+    <message><source>Failed to clear logs: unexpected error.</source><translation>تعذّر مسح السجلات: خطأ غير متوقع.</translation></message>
+    <message><source>Name and location</source><translation>الاسم والموقع</translation></message>
+    <message><source>System metadata</source><translation>بيانات النظام الوصفية</translation></message>
+    <message><source>Date modified</source><translation>تاريخ التعديل</translation></message>
+    <message><source>Folder</source><translation>مجلد</translation></message>
+    <message><source>File</source><translation>ملف</translation></message>
+    <message><source>Unable to read this folder.</source><translation>تعذّرت قراءة هذا المجلد.</translation></message>
+    <message><source>The destination folder does not exist.</source><translation>مجلد الوجهة غير موجود.</translation></message>
+    <message><source>Enter a valid file name.</source><translation>أدخل اسم ملف صالحاً.</translation></message>
+    <message><source>The selected item no longer exists: %1</source><translation>العنصر المحدد لم يعد موجوداً: %1</translation></message>
+    <message><source>Select files only, or open a folder to browse its contents.</source><translation>حدّد ملفات فقط، أو افتح مجلداً لاستعراض محتوياته.</translation></message>
+    <message><source>Select a folder.</source><translation>حدّد مجلداً.</translation></message>
+    <message><source>Enter a valid folder name.</source><translation>أدخل اسم مجلد صالحاً.</translation></message>
+    <message><source>Commit complete</source><translation>اكتمل الحفظ الدائم</translation></message>
+    <message><source>Review the result for each target.</source><translation>راجع نتيجة كل عنصر مستهدف.</translation></message>
+
+    <message><source>Unsuccessful items have not been saved. Select a row to view the full path and reason.</source><translation>لم تُحفظ العناصر غير الناجحة. حدّد صفاً لعرض المسار الكامل والسبب.</translation></message>
+    <message><source>Item details</source><translation>تفاصيل العنصر</translation></message>
+    <message><source>Review these changes before writing them to the system.</source><translation>راجع هذه التغييرات قبل كتابتها إلى النظام.</translation></message>
+    <message><source>Takes effect after restart</source><translation>يسري بعد إعادة التشغيل</translation></message>
+    <message><source>View commands for these changes</source><translation>عرض أوامر هذه التغييرات</translation></message>
+    <message><source>The configuration matches the next-session target. View or export commands in Full configuration.</source><translation>يطابق التكوين إعدادات الجلسة التالية المستهدفة. اعرض الأوامر أو صدّرها من التكوين الكامل.</translation></message>
+    <message><source>Next-session configuration</source><translation>تكوين الجلسة التالية</translation></message>
+    <message><source>Save this UTF-8 CMD script as a .cmd file and run it in Command Prompt. Export uses the same script.</source><translation>احفظ برنامج CMD النصي هذا بترميز UTF-8 في ملف .cmd وشغّله في موجه الأوامر. يستخدم التصدير البرنامج النصي نفسه.</translation></message>
+    <message><source>Export commands</source><translation>تصدير الأوامر</translation></message>
+    <message><source>Direct restart…</source><translation>إعادة تشغيل مباشرة…</translation></message>
+    <message><source>Some changes could not be applied</source><translation>تعذّر تطبيق بعض التغييرات</translation></message>
+    <message><source>Configuration applied</source><translation>طُبّق التكوين</translation></message>
+    <message><source>Review the operation details. Read the current system state before retrying changes that may have been written.</source><translation>راجع تفاصيل العملية. اقرأ حالة النظام الحالية قبل إعادة محاولة التغييرات التي ربما كُتبت بالفعل.</translation></message>
+    <message><source>The configuration has been written to the system. Most changes take effect after restart.</source><translation>كُتب التكوين إلى النظام. تسري معظم التغييرات بعد إعادة التشغيل.</translation></message>
+    <message><source>Application result</source><translation>نتيجة التطبيق</translation></message>
+    <message><source>Write these configuration changes to the system? Most changes take effect after restart.</source><translation>هل تريد كتابة تغييرات التكوين هذه إلى النظام؟ تسري معظم التغييرات بعد إعادة التشغيل.</translation></message>
+    <message><source>Add files or folders</source><translation>إضافة ملفات أو مجلدات</translation></message>
+    <message><source>Overlay usage</source><translation>استخدام التراكب</translation></message>
+    <message><source>Import configuration</source><translation>استيراد التكوين</translation></message>
+    <message><source>One uwfmgr command per line</source><translation>أمر uwfmgr واحد في كل سطر</translation></message>
+    <message><source>uwfmgr commands</source><translation>أوامر uwfmgr</translation></message>
+    <message><source>Editable</source><translation>قابل للتحرير</translation></message>
+    <message><source>Paste commands, or load them from a file…</source><translation>الصق الأوامر، أو حمّلها من ملف…</translation></message>
+    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>ينشئ الاستيراد تغييرات معلّقة. استخدم المراجعة والتطبيق لكتابتها إلى النظام.</translation></message>
+    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>لا تزال الأوامر المستوردة بحاجة إلى التطبيق. حدّد صفاً لعرض النتيجة الكاملة.</translation></message>
+    <message><source>Not written to the system</source><translation>لم يُكتب إلى النظام</translation></message>
+    <message><source>UTF-8 · %1 lines</source><translation>UTF-8 · %1 من الأسطر</translation></message>
+    <message><source>Imported: %1</source><translation>تم الاستيراد: %1</translation></message>
+    <message><source>Unprotected</source><translation>غير محمي</translation></message>
+    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to save staged files.</source><translation>الوضع المتقدم غير متاح. استخدم إيقاف التشغيل الآمن أو إعادة التشغيل الآمنة لحفظ الملفات المرحّلة.</translation></message>
+    <message><source>Version %1</source><translation>الإصدار %1</translation></message>
+    <message><source>A graphical manager for Windows Unified Write Filter.
+Manage volume protection, overlay, exclusions, and staged files.</source><translation>مدير رسومي لعامل تصفية الكتابة الموحد في Windows.
+إدارة حماية وحدات التخزين والتراكب والاستثناءات والملفات المرحّلة.</translation></message>
+    <message><source>Windows UWF provides write protection. This application configures and manages it.</source><translation>يوفر Windows UWF الحماية من الكتابة. يتولى هذا التطبيق تكوينها وإدارتها.</translation></message>
+    <message><source>System changes when UWF is first enabled</source><translation>تغييرات النظام عند تفعيل UWF لأول مرة</translation></message>
+    <message><source>&lt;p&gt;Windows disables paging files, System Restore, SuperFetch, file indexing, disk defragmentation, and fast startup. It also sets the BCD bootstatuspolicy to ignoreallfailures.&lt;/p&gt;&lt;p&gt;You can adjust these settings afterwards. For example, move the paging file to an unprotected volume before enabling paging again.&lt;/p&gt;</source><translation>&lt;p&gt;يعطّل Windows ملفات ترحيل الصفحات واستعادة النظام وSuperFetch وفهرسة الملفات وإلغاء تجزئة القرص وبدء التشغيل السريع. كما يضبط bootstatuspolicy في BCD على ignoreallfailures.&lt;/p&gt;&lt;p&gt;يمكنك تعديل هذه الإعدادات لاحقاً. على سبيل المثال، انقل ملف ترحيل الصفحات إلى وحدة تخزين غير محمية قبل تفعيل ترحيل الصفحات مجدداً.&lt;/p&gt;</translation></message>
+    <message><source>&lt;p&gt;Released under the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public License v3.0&lt;/a&gt;. Full terms are in the LICENSE file included with the application.&lt;/p&gt;&lt;p&gt;You may redistribute or modify it under GPL v3. The software is provided as is, without any warranty.&lt;/p&gt;</source><translation>&lt;p&gt;صدر بموجب &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;رخصة GNU العمومية العامة، الإصدار 3.0&lt;/a&gt;. تتوفر الشروط الكاملة في ملف LICENSE المرفق بالتطبيق.&lt;/p&gt;&lt;p&gt;يمكنك إعادة توزيعه أو تعديله بموجب GPL v3. يُقدَّم البرنامج كما هو، دون أي ضمان.&lt;/p&gt;</translation></message>
+    <message><source>View application records and diagnostic information.</source><translation>عرض سجلات التطبيق ومعلومات التشخيص.</translation></message>
+    <message><source>Log level</source><translation>مستوى السجل</translation></message>
+    <message><source>Current run</source><translation>التشغيل الحالي</translation></message>
+    <message><source>Search logs</source><translation>البحث في السجلات</translation></message>
+    <message><source>Message details</source><translation>تفاصيل الرسالة</translation></message>
+    <message><source>Clear logs?</source><translation>هل تريد مسح السجلات؟</translation></message>
+    <message><source>The current log records will be cleared and cannot be restored.</source><translation>ستُمسح السجلات الحالية ولن يمكن استعادتها.</translation></message>
+    <message><source>Clear logs</source><translation>مسح السجلات</translation></message>
+    <message><source>Reading logs</source><translation>جارٍ قراءة السجلات</translation></message>
+    <message><source>Records from the current run will appear here when reading is complete.</source><translation>ستظهر سجلات التشغيل الحالي هنا عند اكتمال القراءة.</translation></message>
+    <message><source>Log reading failed. Retry or check access to the log file.</source><translation>فشلت قراءة السجلات. أعد المحاولة أو تحقّق من صلاحية الوصول إلى ملف السجل.</translation></message>
+    <message><source>No matching logs</source><translation>لا توجد سجلات مطابقة</translation></message>
+    <message><source>Try another keyword or log level.</source><translation>جرّب كلمة بحث أو مستوى سجل آخر.</translation></message>
+    <message><source>New records will appear after refreshing.</source><translation>ستظهر السجلات الجديدة بعد التحديث.</translation></message>
+    <message><source>Clear filters</source><translation>مسح عوامل التصفية</translation></message>
+    <message><source>This report may contain account names, device identifiers, and file paths. Review it before sharing.</source><translation>قد يحتوي هذا التقرير على أسماء الحسابات ومعرّفات الأجهزة ومسارات الملفات. راجعه قبل مشاركته.</translation></message>
+    <message><source>Some hardware information could not be read. Other diagnostic information remains available to view and copy.</source><translation>تعذّرت قراءة بعض معلومات العتاد. تظل معلومات التشخيص الأخرى متاحة للعرض والنسخ.</translation></message>
+    <message><source>Copy full report</source><translation>نسخ التقرير الكامل</translation></message>
+    <message><source>Service stopped</source><translation>الخدمة متوقفة</translation></message>
+    <message><source>Coordinate with Windows shutdown</source><translation>التنسيق مع إيقاف تشغيل Windows</translation></message>
+    <message><source>Automatically save eligible staged files during normal shutdown and restart.</source><translation>حفظ الملفات المرحّلة المؤهلة تلقائياً أثناء إيقاف التشغيل وإعادة التشغيل العاديين.</translation></message>
+    <message><source>Starts automatically with Windows</source><translation>تبدأ تلقائياً مع Windows</translation></message>
+    <message><source>Commits staged files before normal shutdown and restart</source><translation>تحفظ الملفات المرحّلة قبل إيقاف التشغيل وإعادة التشغيل العاديين</translation></message>
+    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to save staged files.</source><translation>بدون الوضع المتقدم، استخدم إيقاف التشغيل الآمن أو إعادة التشغيل الآمنة في هذا التطبيق لحفظ الملفات المرحّلة.</translation></message>
+    <message><source>Operation and security</source><translation>التشغيل والأمان</translation></message>
+    <message><source>Enhanced mode adds a background service that starts with Windows. Remove the service before moving or deleting the application.</source><translation>يضيف الوضع المتقدم خدمة تعمل في الخلفية وتبدأ مع Windows. أزِل الخدمة قبل نقل التطبيق أو حذفه.</translation></message>
+    <message><source>Keep the application in a fixed folder that standard users cannot modify. Suggested location:</source><translation>احتفظ بالتطبيق في مجلد ثابت لا يستطيع المستخدمون العاديون تعديله. الموقع المقترح:</translation></message>
+    <message><source>If UWF protects the application drive, first make sure the application files will remain after a restart. Committing many staged files can make shutdown or restart take longer.</source><translation>إذا كان UWF يحمي محرك الأقراص الذي يحتوي على التطبيق، فتأكد أولًا من بقاء ملفات التطبيق بعد إعادة التشغيل. قد يستغرق إيقاف التشغيل أو إعادة التشغيل وقتًا أطول عند حفظ عدد كبير من الملفات المرحّلة بشكل دائم.</translation></message>
+    <message><source>Configuration error</source><translation>خطأ في التكوين</translation></message>
+    <message><source>Service status</source><translation>حالة الخدمة</translation></message>
+    <message><source>Not installed</source><translation>غير مثبّتة</translation></message>
+    <message><source>Service name</source><translation>اسم الخدمة</translation></message>
+    <message><source>Startup type</source><translation>نوع بدء التشغيل</translation></message>
+    <message><source>Automatic</source><translation>تلقائي</translation></message>
+    <message><source>Not configured</source><translation>غير مكوّن</translation></message>
+    <message><source>UI agent</source><translation>وكيل واجهة المستخدم</translation></message>
+    <message><source>Connected and authenticated</source><translation>متصل وتم التحقق من هويته</translation></message>
+    <message><source>Operating system</source><translation>نظام التشغيل</translation></message>
+    <message><source>Permissions and protection</source><translation>الأذونات والحماية</translation></message>
+    <message><source>Privileges</source><translation>الصلاحيات</translation></message>
+    <message><source>Standard user</source><translation>مستخدم عادي</translation></message>
+    <message><source>UWF feature</source><translation>ميزة UWF</translation></message>
+    <message><source>Available</source><translation>متاح</translation></message>
+    <message><source>Current filter</source><translation>عامل التصفية الحالي</translation></message>
+    <message><source>Protected volumes</source><translation>وحدات التخزين المحمية</translation></message>
+    <message><source>None</source><translation>لا يوجد</translation></message>
+    <message><source>Connecting…</source><translation>جارٍ الاتصال…</translation></message>
+    <message><source>Not connected</source><translation>غير متصل</translation></message>
+    <message><source>Service account</source><translation>حساب الخدمة</translation></message>
+    <message><source>Service configuration needs repair</source><translation>يحتاج تكوين الخدمة إلى إصلاح</translation></message>
+    <message><source>Retry</source><translation>إعادة المحاولة</translation></message>
+    <message><source>Status unavailable</source><translation>الحالة غير متاحة</translation></message>
+    <message><source>Unable to read service status</source><translation>تعذّرت قراءة حالة الخدمة</translation></message>
+    <message><source>View the file diagnostic snapshot for %1.</source><translation>عرض لقطة تشخيص الملفات لوحدة التخزين %1.</translation></message>
+    <message><source>Local disk (%1)</source><translation>القرص المحلي (%1)</translation></message>
+    <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>قد تُسقط القائمة بعض الملفات أو تتضمن ملفات حُفظت بالفعل. لا تستخدمها قائمةً للحفظ الدائم.</translation></message>
+    <message><source>About this snapshot</source><translation>حول هذه اللقطة</translation></message>
+    <message><source>Commit changes…</source><translation>حفظ التغييرات…</translation></message>
+    <message><source>System metadata is for diagnosis only and cannot be committed.</source><translation>بيانات النظام الوصفية للتشخيص فقط ولا يمكن حفظها دائماً.</translation></message>
+    <message><source>Error details and suggestions</source><translation>تفاصيل الخطأ والاقتراحات</translation></message>
+    <message><source>Export list</source><translation>تصدير القائمة</translation></message>
+    <message><source>Reading overlay</source><translation>جارٍ قراءة التراكب</translation></message>
+    <message><source>Unable to read the overlay right now</source><translation>تتعذّر قراءة التراكب حالياً</translation></message>
+    <message><source>Reading canceled</source><translation>أُلغيت القراءة</translation></message>
+    <message><source>Reading a large overlay can take longer. You can cancel at any time.</source><translation>قد تستغرق قراءة تراكب كبير وقتاً أطول. يمكنك الإلغاء في أي وقت.</translation></message>
+    <message><source>The UWF provider could not complete enumeration. This can occur with a large overlay or insufficient system resources.</source><translation>تعذّر على موفّر UWF إكمال التعداد. قد يحدث ذلك مع تراكب كبير أو عند عدم كفاية موارد النظام.</translation></message>
+    <message><source>Read again to retrieve a diagnostic snapshot.</source><translation>اقرأ مجدداً للحصول على لقطة تشخيصية.</translation></message>
+    <message><source>An empty diagnostic snapshot does not mean that the overlay contains no changes.</source><translation>لا تعني لقطة التشخيص الفارغة أن التراكب لا يحتوي على تغييرات.</translation></message>
+    <message><source>%1 items · %2</source><translation>%1 من العناصر · %2</translation></message>
+    <message><source>Selected folder</source><translation>المجلد المحدد</translation></message>
+    <message><source>Files in File staging will not be saved.</source><translation>لن تُحفظ الملفات الموجودة في قسم الملفات المرحّلة.</translation></message>
+    <message><source>Save staged files to disk, then shut down.</source><translation>حفظ الملفات المرحّلة إلى القرص، ثم إيقاف التشغيل.</translation></message>
+    <message><source>Save staged files to disk, then restart.</source><translation>حفظ الملفات المرحّلة إلى القرص، ثم إعادة التشغيل.</translation></message>
+    <message><source>staged files</source><translation>من الملفات المرحّلة</translation></message>
+    <message><source>View failure details</source><translation>عرض تفاصيل الفشل</translation></message>
+    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after shutdown.</source><translation>تُحفظ الملفات المرحّلة فقط تلقائياً. ستُفقد التغييرات الأخرى غير المحفوظة في المسارات المحمية بعد إيقاف التشغيل.</translation></message>
+    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after restart.</source><translation>تُحفظ الملفات المرحّلة فقط تلقائياً. ستُفقد التغييرات الأخرى غير المحفوظة في المسارات المحمية بعد إعادة التشغيل.</translation></message>
+    <message><source>Ready to save</source><translation>جاهز للحفظ</translation></message>
+    <message><source>No files to commit</source><translation>لا توجد ملفات للحفظ الدائم</translation></message>
+    <message><source>Large staging lists may take longer to save.</source><translation>قد تستغرق قوائم الملفات المرحّلة الكبيرة وقتاً أطول للحفظ.</translation></message>
+    <message><source>UWF safe shutdown will run directly.</source><translation>سيُنفَّذ إيقاف التشغيل الآمن لـ UWF مباشرةً.</translation></message>
+    <message><source>UWF safe restart will run directly.</source><translation>ستُنفَّذ إعادة التشغيل الآمنة لـ UWF مباشرةً.</translation></message>
+    <message><source>/ %1 files</source><translation>/ %1 من الملفات</translation></message>
+    <message><source>Saving staged files</source><translation>جارٍ حفظ الملفات المرحّلة</translation></message>
+    <message><source>Shutdown will continue after saving. Keep the application open.</source><translation>سيستمر إيقاف التشغيل بعد الحفظ. أبقِ التطبيق مفتوحاً.</translation></message>
+    <message><source>Restart will continue after saving. Keep the application open.</source><translation>ستستمر إعادة التشغيل بعد الحفظ. أبقِ التطبيق مفتوحاً.</translation></message>
+    <message><source>Saving to disk</source><translation>جارٍ الحفظ إلى القرص</translation></message>
+    <message><source>Saving…</source><translation>جارٍ الحفظ…</translation></message>
+    <message><source>File saving has started and cannot be canceled.</source><translation>بدأ حفظ الملفات ولا يمكن إلغاؤه.</translation></message>
+    <message><source>Some files could not be saved</source><translation>تعذّر حفظ بعض الملفات</translation></message>
+    <message><source>Review the failure details before continuing shutdown.</source><translation>راجع تفاصيل الفشل قبل متابعة إيقاف التشغيل.</translation></message>
+    <message><source>Review the failure details before restarting.</source><translation>راجع تفاصيل الفشل قبل إعادة التشغيل.</translation></message>
+    <message><source>File saving incomplete</source><translation>حفظ الملفات غير مكتمل</translation></message>
+    <message><source>Continuing shutdown will discard changes in files that could not be saved.</source><translation>ستؤدي متابعة إيقاف التشغيل إلى فقدان التغييرات في الملفات التي تعذّر حفظها.</translation></message>
+    <message><source>Continuing restart will discard changes in files that could not be saved.</source><translation>ستؤدي متابعة إعادة التشغيل إلى فقدان التغييرات في الملفات التي تعذّر حفظها.</translation></message>
+    <message><source>Shut down anyway</source><translation>إيقاف التشغيل على أي حال</translation></message>
+    <message><source>Restart anyway</source><translation>إعادة التشغيل على أي حال</translation></message>
+    <message><source>Counting staged files…</source><translation>جارٍ عدّ الملفات المرحّلة…</translation></message>
+    <message><source>Scanning staged paths</source><translation>جارٍ فحص المسارات المرحّلة</translation></message>
+    <message><source>Select a key to operate on its subtree, or a named value to operate on that value only.</source><translation>حدّد مفتاحاً للعمل على شجرته الفرعية، أو قيمةً مسمّاة للعمل على تلك القيمة فقط.</translation></message>
+    <message><source>Select the registry key to exclude from UWF protection, including its subkeys and values.</source><translation>اختر مفتاح السجل المراد استثناؤه من حماية UWF، بما في ذلك مفاتيحه الفرعية وقيمه.</translation></message>
+    <message><source>Enter HKLM\SOFTWARE\… and press Enter to navigate</source><translation>أدخل HKLM\SOFTWARE\… واضغط Enter للانتقال</translation></message>
+    <message><source>Unable to access this registry key</source><translation>تعذّر الوصول إلى مفتاح السجل هذا</translation></message>
+    <message><source>Choose another key, or check access permissions and try again.</source><translation>اختر مفتاحاً آخر، أو تحقّق من أذونات الوصول وأعد المحاولة.</translation></message>
+    <message><source>Back</source><translation>رجوع</translation></message>
+    <message><source>Up one folder</source><translation>المجلد الأعلى</translation></message>
+    <message><source>Refresh folder</source><translation>تحديث المجلد</translation></message>
+    <message><source>Folder address</source><translation>عنوان المجلد</translation></message>
+    <message><source>Search this folder</source><translation>البحث في هذا المجلد</translation></message>
+    <message><source>This PC</source><translation>هذا الكمبيوتر</translation></message>
+    <message><source>Folders</source><translation>المجلدات</translation></message>
+    <message><source>Files and folders</source><translation>الملفات والمجلدات</translation></message>
+    <message><source>New folder</source><translation>مجلد جديد</translation></message>
+    <message><source>Selection</source><translation>التحديد</translation></message>
+    <message><source>File name</source><translation>اسم الملف</translation></message>
+    <message><source>Select the current folder</source><translation>تحديد المجلد الحالي</translation></message>
+    <message><source>Select files or folders</source><translation>تحديد ملفات أو مجلدات</translation></message>
+    <message><source>Enter a file name</source><translation>أدخل اسم ملف</translation></message>
+    <message><source>Select a file or enter its name</source><translation>حدّد ملفاً أو أدخل اسمه</translation></message>
+    <message><source>File type</source><translation>نوع الملف</translation></message>
+    <message><source>Files and folders can be selected together.</source><translation>يمكن تحديد الملفات والمجلدات معاً.</translation></message>
+    <message><source>Select folders only.</source><translation>حدّد مجلدات فقط.</translation></message>
+    <message><source>Multiple files can be selected.</source><translation>يمكن تحديد ملفات متعددة.</translation></message>
+    <message><source>Select a file to open.</source><translation>حدّد ملفاً لفتحه.</translation></message>
+    <message><source>Save</source><translation>حفظ</translation></message>
+    <message><source>Add selected items</source><translation>إضافة العناصر المحددة</translation></message>
+    <message><source>Select folder</source><translation>تحديد مجلد</translation></message>
+    <message><source>Open</source><translation>فتح</translation></message>
+    <message><source>Unable to select this item</source><translation>تعذّر تحديد هذا العنصر</translation></message>
+    <message><source>Reading folder</source><translation>جارٍ قراءة المجلد</translation></message>
+    <message><source>Unable to access this folder</source><translation>تعذّر الوصول إلى هذا المجلد</translation></message>
+    <message><source>Reading files and subfolders in this location…</source><translation>جارٍ قراءة الملفات والمجلدات الفرعية في هذا الموقع…</translation></message>
+    <message><source>Go up one folder or choose another location.</source><translation>انتقل إلى المجلد الأعلى أو اختر موقعاً آخر.</translation></message>
+    <message><source>Replace the existing file?</source><translation>هل تريد استبدال الملف الموجود؟</translation></message>
+    <message><source>A file already exists at this location:
+%1
+
+Saving will replace its contents.</source><translation>يوجد ملف بالفعل في هذا الموقع:
+%1
+
+سيؤدي الحفظ إلى استبدال محتوياته.</translation></message>
+    <message><source>Replace file</source><translation>استبدال الملف</translation></message>
+    <message><source>Folder name</source><translation>اسم المجلد</translation></message>
+    <message><source>Create</source><translation>إنشاء</translation></message>
+    <message><source>No registry key selected</source><translation>لم يُحدَّد مفتاح سجل</translation></message>
+    <message><source>Select an available subkey</source><translation>حدّد مفتاحاً فرعياً متاحاً</translation></message>
+    <message><source>Global registry exclusion · includes subkeys</source><translation>استثناء عام للسجل · يشمل المفاتيح الفرعية</translation></message>
+    <message><source>Named value: %1 · this value only</source><translation>القيمة المسمّاة: %1 · هذه القيمة فقط</translation></message>
+    <message><source>Whole key and all subkeys · recursive</source><translation>المفتاح بالكامل وجميع مفاتيحه الفرعية · بشكل متكرر</translation></message>
+    <message><source>Discard changes</source><translation>تجاهل التغييرات</translation></message>
+    <message><source>Administrator</source><translation>المسؤول</translation></message>
+    <message><source>Display language</source><translation>لغة العرض</translation></message>
+    <message><source>Mark selected paths for removal. Takes effect after Apply.</source><translation>حدّد المسارات المحددة للإزالة. تسري التغييرات بعد التطبيق.</translation></message>
+    <message><source>Remove from automatic file staging after Apply.</source><translation>إزالة من قائمة تجهيز الملفات تلقائيًا بعد التطبيق.</translation></message>
+    <message><source>Add to automatic file staging after Apply.</source><translation>إضافة إلى قائمة تجهيز الملفات تلقائيًا بعد التطبيق.</translation></message>
+    <message><source>Applying this plan clears the saved staging list and removes its registry exclusion when no longer required.</source><translation>يؤدي تطبيق هذه الخطة إلى إفراغ قائمة تجهيز الملفات المحفوظة وإزالة استثناء السجل المرتبط بها عندما لا تعود هناك حاجة إليه.</translation></message>
+    <message><source>File staging changes must be applied in UWF Manager and cannot be exported as uwfmgr commands.</source><translation>يجب تطبيق تغييرات تجهيز الملفات في UWF Manager ولا يمكن تصديرها كأوامر uwfmgr.</translation></message>
+    <message><source>File staging is saved after Apply</source><translation>تُحفظ قائمة تجهيز الملفات بعد التطبيق</translation></message>
+    <message><source>Overlay snapshot scope</source><translation>نطاق لقطة التراكب</translation></message>
+    <message><source>This list is for diagnostics only. It cannot determine which files must be committed.</source><translation>هذه القائمة للتشخيص فقط. لا يمكن استخدامها لتحديد الملفات التي يجب تثبيت تغييراتها.</translation></message>
+    <message><source>NTFS volumes only</source><translation>وحدات تخزين NTFS فقط</translation></message>
+    <message><source>Large overlays may load slowly or fail because of insufficient resources.</source><translation>قد تكون قراءة التراكبات الكبيرة بطيئة أو تفشل بسبب عدم كفاية الموارد.</translation></message>
+    <message><source>Small files may be missing</source><translation>قد لا تظهر الملفات الصغيرة</translation></message>
+    <message><source>Files smaller than the disk cluster size (typically 4 KB) may not appear in the list.</source><translation>قد لا تظهر الملفات الأصغر من حجم مجموعة القرص (عادةً 4 كيلوبايت) في القائمة.</translation></message>
+    <message><source>Does not indicate pending commits</source><translation>لا تشير إلى تغييرات تنتظر التثبيت</translation></message>
+    <message><source>Files already committed, excluded paths, and items affected by other operations may also appear.</source><translation>قد تظهر أيضًا الملفات المثبتة مسبقًا والمسارات المستثناة والعناصر المتأثرة بعمليات أخرى.</translation></message>
+
+    <message><source>Command processing result</source><translation>نتيجة معالجة الأمر</translation></message>
+    <message><source>Copy command</source><translation>نسخ الأمر</translation></message>
+    <message><source> · %1 branches could not be read</source><translation> · تعذرت قراءة %1 من الفروع</translation></message>
+    <message><source>%1 branches could not be read. Continue with discovered content, or retry only the failed items.</source><translation>تعذرت قراءة %1 من الفروع. تابع بالمحتوى المكتشف أو أعد محاولة العناصر التي فشلت فقط.</translation></message>
+    <message><source>%1 files · %2 folders</source><translation>%1 من الملفات · %2 من المجلدات</translation></message>
+    <message><source>%1 values · %2 keys</source><translation>%1 من القيم · %2 من المفاتيح</translation></message>
+    <message><source>Attempts</source><translation>المحاولات</translation></message>
+    <message><source>Cancel remaining tasks</source><translation>إلغاء المهام المتبقية</translation></message>
+    <message><source>Commit only successfully traversed content. Unread branches remain unchanged.</source><translation>تثبيت المحتوى الذي تم استعراضه بنجاح فقط. تبقى الفروع غير المقروءة دون تغيير.</translation></message>
+    <message><source>Committing changes</source><translation>جارٍ تثبيت التغييرات</translation></message>
+    <message><source>Completed deletions and commits cannot be undone.</source><translation>لا يمكن التراجع عن عمليات الحذف والتثبيت المكتملة.</translation></message>
+    <message><source>Continue…</source><translation>متابعة…</translation></message>
+    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>حذف الأهداف المكتشفة وتثبيتها فقط. تُحفظ الفروع غير المقروءة والمجلدات أو المفاتيح الأصلية التي تحتويها.</translation></message>
+    <message><source>Deleting and committing</source><translation>جارٍ الحذف والتثبيت</translation></message>
+    <message><source>Deletion and commit cannot be undone. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>لا يمكن التراجع عن الحذف والتثبيت. يُعالج النطاق المحدد فقط ولا يُطبّق إعداد UWF المعلّق.</translation></message>
+    <message><source>Determining the scope. Unread branches are recorded while traversal continues elsewhere.</source><translation>جارٍ تحديد النطاق. تُسجّل الفروع غير المقروءة ويستمر استعراض بقية المحتوى.</translation></message>
+    <message><source>Export traversal records</source><translation>تصدير سجل الاستعراض</translation></message>
+    <message><source>No actionable content</source><translation>لا يوجد محتوى قابل للمعالجة</translation></message>
+    <message><source>No actionable targets were found. Nothing has been deleted or committed.</source><translation>لم يُعثر على أهداف قابلة للمعالجة. لم يُحذف أو يُثبّت أي محتوى.</translation></message>
+    <message><source>No changes have been committed.</source><translation>لم تُثبّت أي تغييرات بعد</translation></message>
+    <message><source>Nothing has been deleted or committed.</source><translation>لم يُحذف أو يُثبّت أي محتوى</translation></message>
+    <message><source>Path</source><translation>المسار</translation></message>
+    <message><source>Permanently delete the selected scope and save the deletions to the protected volume.</source><translation>حذف النطاق المحدد نهائيًا وحفظ عمليات الحذف على وحدة التخزين المحمية.</translation></message>
+    <message><source>Preparation complete</source><translation>اكتمل الإعداد</translation></message>
+    <message><source>Preparing commit</source><translation>جارٍ إعداد التثبيت</translation></message>
+    <message><source>Preparing deletion and commit</source><translation>جارٍ إعداد الحذف والتثبيت</translation></message>
+    <message><source>Process only successfully traversed content</source><translation>معالجة المحتوى الذي تم استعراضه بنجاح فقط</translation></message>
+
+    <message><source>Reparse points are skipped to keep traversal within the selected scope.</source><translation>يتم تخطي نقاط إعادة التحليل للحفاظ على الاستعراض ضمن النطاق المحدد.</translation></message>
+    <message><source>Restarting cannot undo a commit. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>لا تُلغي إعادة التشغيل التثبيت. يُعالج النطاق المحدد فقط ولا يُطبّق إعداد UWF المعلّق.</translation></message>
+    <message><source>Retry failed items</source><translation>إعادة محاولة العناصر الفاشلة</translation></message>
+    <message><source>Save changes in the selected scope to the protected volume.</source><translation>حفظ تغييرات النطاق المحدد على وحدة التخزين المحمية.</translation></message>
+    <message><source>Stopping the operation</source><translation>جارٍ إيقاف العملية</translation></message>
+    <message><source>Successful and failed records are retained</source><translation>حُفظت سجلات النجاح والفشل</translation></message>
+    <message><source>The folder is not empty; unprocessed content has been retained.</source><translation>المجلد غير فارغ؛ تم الاحتفاظ بالمحتوى غير المعالج.</translation></message>
+    <message><source>The operation could not be completed</source><translation>تعذر إكمال العملية</translation></message>
+    <message><source>The registry key has new values; unprocessed content has been retained.</source><translation>يحتوي مفتاح السجل على قيم جديدة؛ تم الاحتفاظ بالمحتوى غير المعالج.</translation></message>
+    <message><source>The registry key still has subkeys; unprocessed content has been retained.</source><translation>لا يزال مفتاح السجل يحتوي على مفاتيح فرعية؛ تم الاحتفاظ بالمحتوى غير المعالج.</translation></message>
+    <message><source>The target no longer exists.</source><translation>لم يعد الهدف موجودًا.</translation></message>
+    <message><source>Traversal complete</source><translation>اكتمل الاستعراض</translation></message>
+    <message><source>Traversal completed with unread content</source><translation>اكتمل الاستعراض مع وجود محتوى غير مقروء</translation></message>
+    <message><source>Traversal records are retained and can be exported.</source><translation>تم الاحتفاظ بسجل الاستعراض ويمكن تصديره.</translation></message>
+    <message><source>Traverse again</source><translation>استعراض مجددًا</translation></message>
+    <message><source>Traverse again, or close this window.</source><translation>استعرض مجددًا أو أغلق هذه النافذة.</translation></message>
+    <message><source>Traversing the folder</source><translation>جارٍ استعراض المجلد</translation></message>
+    <message><source>Traversing the registry</source><translation>جارٍ استعراض السجل</translation></message>
+    <message><source>Unable to prepare the operation</source><translation>تعذر إعداد العملية</translation></message>
+    <message><source>View results</source><translation>عرض النتائج</translation></message>
+
+    <message><source>All changes committed</source><translation>تم تثبيت جميع التغييرات</translation></message>
+    <message><source>Some changes committed</source><translation>تم تثبيت بعض التغييرات</translation></message>
+    <message><source>No changes could be committed</source><translation>تعذر تثبيت أي تغييرات</translation></message>
+    <message><source>No changes to commit</source><translation>لا توجد تغييرات لتثبيتها</translation></message>
+    <message><source>Commit interrupted</source><translation>انقطعت عملية التثبيت</translation></message>
+    <message><source>%1 items were not processed.</source><translation>لم تتم معالجة %1 من العناصر.</translation></message>
+    <message><source>%1 registry operation(s) failed.</source><translation>فشلت %1 عملية في السجل.</translation></message>
+    <message><source>The folder does not exist.</source><translation>المجلد غير موجود.</translation></message>
+    <message><source>Access denied.</source><translation>تم رفض الوصول.</translation></message>
+    <message><source>An item with this name already exists.</source><translation>يوجد عنصر بهذا الاسم بالفعل.</translation></message>
+    <message><source>The folder could not be created. Check the name and permissions.</source><translation>تعذر إنشاء المجلد. تحقق من الاسم والأذونات.</translation></message>
+    <message><source>The item could not be renamed. Check the name and permissions.</source><translation>تعذرت إعادة تسمية العنصر. تحقق من الاسم والأذونات.</translation></message>
+    <message><source>Renaming is not supported by this browser.</source><translation>لا يدعم هذا المستعرض إعادة التسمية.</translation></message>
+    <message><source>The file staging draft changed after this plan was opened. Review a new plan.</source><translation>تغيرت مسودة قائمة الملفات المجهزة بعد فتح هذه الخطة. راجع خطة جديدة.</translation></message>
+    <message><source>The saved file staging list changed after this plan was opened. Refresh and review the changes.</source><translation>تغيرت قائمة الملفات المجهزة المحفوظة بعد فتح هذه الخطة. حدّث البيانات وراجع التغييرات.</translation></message>
+    <message><source>The saved file staging list does not match the accepted plan.</source><translation>قائمة الملفات المجهزة المحفوظة لا تطابق الخطة المعتمدة.</translation></message>
+    <message><source>Export configuration</source><translation>تصدير الإعدادات</translation></message>
+    <message><source>Save the current theme, language, and HUB visibility to UWF.ini next to this application.</source><translation>احفظ السمة واللغة وحالة إظهار HUB الحالية في ملف UWF.ini بجوار هذا التطبيق.</translation></message>
+    <message><source>Configuration saved</source><translation>تم حفظ الإعدادات</translation></message>
+    <message><source>Saved the current interface settings to:
+%1</source><translation>تم حفظ إعدادات الواجهة الحالية في:
+%1</translation></message>
+    <message><source>UWF.ini already exists. The existing file was not changed:
+%1</source><translation>ملف UWF.ini موجود بالفعل. لم يتم تغيير الملف الموجود:
+%1</translation></message>
+    <message><source>Could not save UWF.ini:
+%1
+%2</source><translation>تعذّر حفظ UWF.ini:
+%1
+%2</translation></message>
+    <message><source>Desktop</source><translation>سطح المكتب</translation></message>
+    <message><source>Downloads</source><translation>التنزيلات</translation></message>
+    <message><source>Documents</source><translation>المستندات</translation></message>
+    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>توقّف الحفظ التلقائي للملفات. عالج الخطأ قبل المحاولة مرة أخرى.</translation></message>
 </context>
 </TS>

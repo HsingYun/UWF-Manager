@@ -1,0 +1,489 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2026 HsingYun (iakext@gmail.com)
+#include "OverlayHubView.h"
+
+#include <QTimer>
+#include <array>
+
+#include "OverlayContextMenu.h"
+#include "shared/Log.h"
+
+namespace uwf::ui {
+
+namespace {
+
+const char* displayStateName(const OverlayHubView::DisplayState state) {
+  switch (state) {
+    case OverlayHubView::DisplayState::Disabled:
+      return "disabled";
+    case OverlayHubView::DisplayState::Withdrawn:
+      return "withdrawn";
+    case OverlayHubView::DisplayState::Unavailable:
+      return "unavailable";
+    case OverlayHubView::DisplayState::Incompatible:
+      return "incompatible";
+    case OverlayHubView::DisplayState::Probing:
+      return "probing";
+    case OverlayHubView::DisplayState::Activating:
+      return "activating";
+    case OverlayHubView::DisplayState::Attaching:
+      return "attaching";
+    case OverlayHubView::DisplayState::Refreshing:
+      return "refreshing";
+    case OverlayHubView::DisplayState::Withdrawing:
+      return "withdrawing";
+    case OverlayHubView::DisplayState::Failing:
+      return "failing";
+    case OverlayHubView::DisplayState::Blocked:
+      return "blocked";
+    case OverlayHubView::DisplayState::BlockedWithdrawn:
+      return "blocked-withdrawn";
+    case OverlayHubView::DisplayState::Recovering:
+      return "recovering";
+    case OverlayHubView::DisplayState::Confirmed:
+      return "confirmed";
+  }
+  return "unknown";
+}
+
+const char* attachResultName(const OverlayHubView::AttachResult result) {
+  switch (result) {
+    case OverlayHubView::AttachResult::Prepared:
+      return "prepared";
+    case OverlayHubView::AttachResult::Attached:
+      return "attached";
+    case OverlayHubView::AttachResult::Retained:
+      return "retained";
+    case OverlayHubView::AttachResult::TemporarilyUnavailable:
+      return "temporarily-unavailable";
+    case OverlayHubView::AttachResult::Incompatible:
+      return "incompatible";
+    case OverlayHubView::AttachResult::ReleasePending:
+      return "release-pending";
+    case OverlayHubView::AttachResult::ReleaseBlocked:
+      return "release-blocked";
+    case OverlayHubView::AttachResult::Failed:
+      return "failed";
+  }
+  return "unknown";
+}
+
+const char* verificationResultName(const OverlayHubView::VerificationResult result) {
+  switch (result) {
+    case OverlayHubView::VerificationResult::Confirmed:
+      return "confirmed";
+    case OverlayHubView::VerificationResult::Pending:
+      return "pending";
+    case OverlayHubView::VerificationResult::Retained:
+      return "retained";
+    case OverlayHubView::VerificationResult::RefreshRequired:
+      return "refresh-required";
+    case OverlayHubView::VerificationResult::Invalid:
+      return "invalid";
+  }
+  return "unknown";
+}
+
+}  // namespace
+
+OverlayHubView::OverlayHubView(QWidget* parent, const Qt::WindowFlags flags)
+    : QWidget(parent, flags), m_confirmationTimer(new QTimer(this)), m_retryTimer(new QTimer(this)), m_healthTimer(new QTimer(this)) {
+  m_confirmationTimer->setSingleShot(true);
+  m_confirmationTimer->setTimerType(Qt::CoarseTimer);
+  connect(m_confirmationTimer, &QTimer::timeout, this, [this]() { postEvent(Event::plain(EventType::ConfirmationDue)); });
+
+  m_retryTimer->setSingleShot(true);
+  m_retryTimer->setTimerType(Qt::CoarseTimer);
+  connect(m_retryTimer, &QTimer::timeout, this, [this]() { postEvent(Event::plain(EventType::RetryDue)); });
+
+  m_healthTimer->setTimerType(Qt::CoarseTimer);
+  connect(m_healthTimer, &QTimer::timeout, this, [this]() { postEvent(Event::plain(EventType::HealthDue)); });
+}
+
+void OverlayHubView::setPresentationRequested(const bool requested) {
+  postEvent(Event::plain(requested ? EventType::RequestEnabled : EventType::RequestDisabled));
+}
+
+void OverlayHubView::authorizePresentationActivation() { postEvent(Event::plain(EventType::ActivationAuthorized)); }
+
+OverlayHubView::AttachResult OverlayHubView::acquirePresentation() { return AttachResult::Prepared; }
+
+OverlayHubView::AttachResult OverlayHubView::activatePresentation() {
+  show();
+  return AttachResult::Attached;
+}
+
+void OverlayHubView::suspendPresentation() { hide(); }
+
+OverlayHubView::ReleaseResult OverlayHubView::detachPresentation(ReleaseReason) {
+  hide();
+  return ReleaseResult::Complete;
+}
+
+void OverlayHubView::connectContextMenu(OverlayContextMenu& menu) {
+  menu.setOperationAvailability(m_powerAllowed, m_exitAllowed);
+  connect(this, &OverlayHubView::operationAvailabilityChanged, &menu, &OverlayContextMenu::setOperationAvailability);
+  connect(this, &OverlayHubView::displayStateChanged, &menu, [this, &menu] {
+    // A withdrawn endpoint cannot keep a modal menu alive after another
+    // endpoint takes over its presentation.
+    if (!presentationRequested()) menu.close();
+  });
+  connect(&menu, &OverlayContextMenu::showMainWindowRequested, this, &OverlayHubView::showMainWindowRequested);
+  connect(&menu, &OverlayContextMenu::toggleHubRequested, this, &OverlayHubView::hideHubRequested);
+  connect(&menu, &OverlayContextMenu::safeShutdownRequested, this, &OverlayHubView::safeShutdownRequested);
+  connect(&menu, &OverlayContextMenu::safeRestartRequested, this, &OverlayHubView::safeRestartRequested);
+  connect(&menu, &OverlayContextMenu::exitApplicationRequested, this, &OverlayHubView::exitApplicationRequested);
+}
+void OverlayHubView::setOperationAvailability(const bool powerAllowed, const bool exitAllowed) {
+  if (m_powerAllowed == powerAllowed && m_exitAllowed == exitAllowed) return;
+  m_powerAllowed = powerAllowed;
+  m_exitAllowed = exitAllowed;
+  emit operationAvailabilityChanged(powerAllowed, exitAllowed);
+}
+
+void OverlayHubView::requestPresentationRefresh() { postEvent(Event::plain(EventType::ExternalRefresh)); }
+
+void OverlayHubView::notifyPresentationChanged() { postEvent(Event::plain(EventType::PresentationChanged)); }
+
+void OverlayHubView::notifyHostPresentationReleaseStarted() { postEvent(Event::plain(EventType::HostReleaseStarted)); }
+
+void OverlayHubView::notifyHostPresentationReleaseCompleted() { postEvent(Event::plain(EventType::HostReleaseCompleted)); }
+
+void OverlayHubView::notifyPresentationReleaseBlocked() { postEvent(Event::plain(EventType::ReleaseBlocked)); }
+
+void OverlayHubView::notifyPresentationReleaseCompleted() { postEvent(Event::plain(EventType::ReleaseCompleted)); }
+
+OverlayHubView::Transition OverlayHubView::reduce(const DisplayState state, const Event& event) {
+  constexpr std::size_t stateCount = static_cast<std::size_t>(DisplayState::Confirmed) + 1;
+  constexpr std::size_t eventCount = static_cast<std::size_t>(EventType::HostReleaseCompleted) + 1;
+  using TransitionTable = std::array<std::array<TransitionHandler, eventCount>, stateCount>;
+
+  static const TransitionTable table = [] {
+    TransitionTable result{};
+    for (auto& row : result) row.fill(&OverlayHubView::ignoreEvent);
+    const auto set = [&result](const DisplayState state, const EventType event, const TransitionHandler handler) {
+      result[static_cast<std::size_t>(state)][static_cast<std::size_t>(event)] = handler;
+    };
+    const auto setPresenting = [&set](const EventType event, const TransitionHandler handler) {
+      for (const DisplayState current : {DisplayState::Unavailable, DisplayState::Probing, DisplayState::Activating, DisplayState::Attaching,
+                                         DisplayState::Refreshing, DisplayState::Withdrawing, DisplayState::Failing, DisplayState::Blocked,
+                                         DisplayState::BlockedWithdrawn, DisplayState::Recovering, DisplayState::Confirmed})
+        set(current, event, handler);
+    };
+
+    set(DisplayState::Disabled, EventType::RequestEnabled, &OverlayHubView::probePresentation);
+    set(DisplayState::Withdrawn, EventType::RequestEnabled, &OverlayHubView::enableFromWithdrawn);
+    set(DisplayState::Withdrawing, EventType::RequestEnabled, &OverlayHubView::enableDuringWithdraw);
+    set(DisplayState::BlockedWithdrawn, EventType::RequestEnabled, &OverlayHubView::requestBlockedPresentation);
+
+    setPresenting(EventType::RequestDisabled, &OverlayHubView::disablePresentation);
+    set(DisplayState::Withdrawn, EventType::RequestDisabled, &OverlayHubView::disablePresentation);
+    set(DisplayState::Withdrawing, EventType::RequestDisabled, &OverlayHubView::disablePresentation);
+    set(DisplayState::Failing, EventType::RequestDisabled, &OverlayHubView::withdrawFailingPresentation);
+    set(DisplayState::Blocked, EventType::RequestDisabled, &OverlayHubView::withdrawBlockedPresentation);
+    set(DisplayState::BlockedWithdrawn, EventType::RequestDisabled, &OverlayHubView::ignoreEvent);
+
+    set(DisplayState::Unavailable, EventType::ExternalRefresh, &OverlayHubView::probePresentation);
+    set(DisplayState::Unavailable, EventType::RetryDue, &OverlayHubView::probePresentation);
+    set(DisplayState::Recovering, EventType::RetryDue, &OverlayHubView::recoverHost);
+    set(DisplayState::Attaching, EventType::ExternalRefresh, &OverlayHubView::refreshPresentation);
+    set(DisplayState::Confirmed, EventType::ExternalRefresh, &OverlayHubView::refreshPresentation);
+    set(DisplayState::Attaching, EventType::ConfirmationDue, &OverlayHubView::verifyConfirmation);
+    set(DisplayState::Confirmed, EventType::HealthDue, &OverlayHubView::verifyHealth);
+    set(DisplayState::Activating, EventType::ActivationAuthorized, &OverlayHubView::activatePrepared);
+    for (const DisplayState current : {DisplayState::Attaching, DisplayState::Refreshing, DisplayState::Confirmed}) {
+      set(current, EventType::PresentationChanged, &OverlayHubView::verifyChanged);
+      set(current, EventType::VerificationObserved, &OverlayHubView::handleVerificationObserved);
+    }
+    set(DisplayState::Probing, EventType::AttachFinished, &OverlayHubView::handleAttachFinished);
+    set(DisplayState::Refreshing, EventType::AttachFinished, &OverlayHubView::handleAttachFinished);
+    set(DisplayState::Recovering, EventType::AttachFinished, &OverlayHubView::handleAttachFinished);
+    set(DisplayState::Activating, EventType::ActivationFinished, &OverlayHubView::handleActivationFinished);
+    set(DisplayState::Refreshing, EventType::ActivationFinished, &OverlayHubView::handleActivationFinished);
+
+    setPresenting(EventType::ReleaseStarted, &OverlayHubView::handleReleaseStarted);
+    setPresenting(EventType::ReleaseBlocked, &OverlayHubView::handleReleaseBlocked);
+    set(DisplayState::Recovering, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::Withdrawing, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::Failing, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::Blocked, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::BlockedWithdrawn, EventType::ReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+
+    // HostReleaseStarted 不进入正在清理或已阻塞的状态：清理中途不能被拉回独占
+    // Recovering。但 HostReleaseCompleted 必须收敛清理——Coordinator 把普通
+    // detach 升级为 HostInvalidated 后只发布 Host 完成事件。
+    for (const DisplayState current : {DisplayState::Unavailable, DisplayState::Probing, DisplayState::Activating, DisplayState::Attaching,
+                                       DisplayState::Refreshing, DisplayState::Recovering, DisplayState::Confirmed}) {
+      set(current, EventType::HostReleaseStarted, &OverlayHubView::enterRecovering);
+      set(current, EventType::HostReleaseCompleted, &OverlayHubView::probePresentation);
+    }
+    set(DisplayState::Recovering, EventType::HostReleaseCompleted, &OverlayHubView::recoverHost);
+    set(DisplayState::Withdrawing, EventType::HostReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::Failing, EventType::HostReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::Blocked, EventType::HostReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    set(DisplayState::BlockedWithdrawn, EventType::HostReleaseCompleted, &OverlayHubView::handleReleaseCompleted);
+    return result;
+  }();
+
+  return table[static_cast<std::size_t>(state)][static_cast<std::size_t>(event.type)](state, event);
+}
+
+OverlayHubView::Transition OverlayHubView::ignoreEvent(const DisplayState state, const Event&) { return {state}; }
+
+OverlayHubView::Transition OverlayHubView::probePresentation(DisplayState, const Event&) { return {DisplayState::Probing, Action::AttachAcquire}; }
+
+OverlayHubView::Transition OverlayHubView::refreshPresentation(DisplayState, const Event&) { return {DisplayState::Refreshing, Action::AttachRefresh}; }
+
+OverlayHubView::Transition OverlayHubView::disablePresentation(const DisplayState state, const Event&) {
+  if (state == DisplayState::Disabled || state == DisplayState::Withdrawn || state == DisplayState::Withdrawing) return {state};
+  return {DisplayState::Withdrawing, Action::ReleaseRequest, true};
+}
+
+OverlayHubView::Transition OverlayHubView::withdrawFailingPresentation(DisplayState, const Event&) { return {DisplayState::Withdrawing}; }
+
+OverlayHubView::Transition OverlayHubView::enableFromWithdrawn(DisplayState, const Event&) { return {DisplayState::Recovering, Action::AttachAcquire}; }
+
+OverlayHubView::Transition OverlayHubView::enableDuringWithdraw(DisplayState, const Event&) { return {DisplayState::Recovering}; }
+
+OverlayHubView::Transition OverlayHubView::verifyConfirmation(const DisplayState state, const Event&) { return {state, Action::VerifyConfirmation}; }
+
+OverlayHubView::Transition OverlayHubView::verifyHealth(const DisplayState state, const Event&) { return {state, Action::VerifyHealth}; }
+
+OverlayHubView::Transition OverlayHubView::verifyChanged(const DisplayState state, const Event&) { return {state, Action::VerifyChanged}; }
+
+OverlayHubView::Transition OverlayHubView::activatePrepared(const DisplayState state, const Event&) { return {state, Action::Activate}; }
+
+OverlayHubView::Transition OverlayHubView::handleAttachFinished(const DisplayState state, const Event& event) {
+  switch (event.attachResult) {
+    case AttachResult::Prepared:
+      return state == DisplayState::Refreshing ? Transition{state, Action::Activate} : Transition{DisplayState::Activating};
+    case AttachResult::Attached:
+      return {DisplayState::Failing, Action::ReleaseRecovery, true};
+    case AttachResult::Retained:
+      return state == DisplayState::Refreshing ? Transition{DisplayState::Confirmed} : Transition{DisplayState::Failing, Action::ReleaseRecovery, true};
+    case AttachResult::TemporarilyUnavailable:
+      if (state == DisplayState::Recovering) return {state, Action::ScheduleRecoverRetry};
+      return {DisplayState::Unavailable, Action::Suspend, true};
+    case AttachResult::Incompatible:
+      return {DisplayState::Incompatible, Action::Suspend, true};
+    case AttachResult::ReleasePending:
+      return {DisplayState::Recovering};
+    case AttachResult::ReleaseBlocked:
+      return {DisplayState::Blocked};
+    case AttachResult::Failed:
+      if (state == DisplayState::Recovering) return {state, Action::ScheduleRecoverRetry};
+      return {DisplayState::Failing, Action::ReleaseRecovery, true};
+  }
+  return {state};
+}
+
+OverlayHubView::Transition OverlayHubView::handleActivationFinished(const DisplayState state, const Event& event) {
+  switch (event.attachResult) {
+    case AttachResult::Attached:
+      return state == DisplayState::Refreshing ? Transition{state, Action::VerifyAttach} : Transition{DisplayState::Attaching, Action::VerifyAttach};
+    case AttachResult::Retained:
+      return state == DisplayState::Refreshing ? Transition{DisplayState::Confirmed} : Transition{DisplayState::Failing, Action::ReleaseRecovery, true};
+    case AttachResult::TemporarilyUnavailable:
+      return {DisplayState::Unavailable, Action::Suspend, true};
+    case AttachResult::Incompatible:
+      return {DisplayState::Incompatible, Action::Suspend, true};
+    case AttachResult::ReleasePending:
+      return {DisplayState::Recovering};
+    case AttachResult::ReleaseBlocked:
+      return {DisplayState::Blocked};
+    case AttachResult::Prepared:
+    case AttachResult::Failed:
+      return {DisplayState::Failing, Action::ReleaseRecovery, true};
+  }
+  return {state};
+}
+
+OverlayHubView::Transition OverlayHubView::handleVerificationObserved(const DisplayState state, const Event& event) {
+  const VerificationResult result = event.verificationResult;
+  if (state == DisplayState::Attaching) {
+    if (result == VerificationResult::Confirmed) return {DisplayState::Confirmed};
+    if (result == VerificationResult::Invalid) return {DisplayState::Failing, Action::ReleaseRecovery, true};
+    if (result == VerificationResult::RefreshRequired) return {DisplayState::Refreshing, Action::AttachRefresh};
+    if (event.verificationSource == VerificationSource::Confirmation && (result == VerificationResult::Pending || result == VerificationResult::Retained))
+      return {DisplayState::Unavailable, Action::Suspend, true};
+    return {state};
+  }
+  if (state == DisplayState::Refreshing) {
+    if (result == VerificationResult::Confirmed || result == VerificationResult::Retained) return {DisplayState::Confirmed};
+    if (result == VerificationResult::Pending) return {DisplayState::Attaching};
+    return {DisplayState::Failing, Action::ReleaseRecovery, true};
+  }
+  if (result == VerificationResult::Confirmed || result == VerificationResult::Retained) return {state};
+  if (result == VerificationResult::RefreshRequired) return {DisplayState::Refreshing, Action::AttachRefresh};
+  return {DisplayState::Failing, Action::ReleaseRecovery, true};
+}
+
+OverlayHubView::Transition OverlayHubView::handleReleaseStarted(const DisplayState state, const Event& event) {
+  // 保持已进入的清理状态；同步完成时直接让出展示权。
+  if (event.releaseResult == ReleaseResult::Complete) return {DisplayState::Unavailable};
+  if (state == DisplayState::Withdrawing || state == DisplayState::Failing || state == DisplayState::Blocked || state == DisplayState::BlockedWithdrawn)
+    return {state};
+  return {DisplayState::Failing};
+}
+
+OverlayHubView::Transition OverlayHubView::handleReleaseBlocked(const DisplayState state, const Event&) {
+  return {state == DisplayState::Withdrawing || state == DisplayState::BlockedWithdrawn ? DisplayState::BlockedWithdrawn : DisplayState::Blocked};
+}
+
+OverlayHubView::Transition OverlayHubView::requestBlockedPresentation(DisplayState, const Event&) { return {DisplayState::Blocked}; }
+
+OverlayHubView::Transition OverlayHubView::withdrawBlockedPresentation(DisplayState, const Event&) { return {DisplayState::BlockedWithdrawn}; }
+
+OverlayHubView::Transition OverlayHubView::handleReleaseCompleted(const DisplayState state, const Event&) {
+  if (state == DisplayState::Recovering) return {state, Action::AttachAcquire};
+  if (state == DisplayState::Withdrawing || state == DisplayState::BlockedWithdrawn) return {DisplayState::Withdrawn};
+  if (state == DisplayState::Failing || state == DisplayState::Blocked) return {DisplayState::Unavailable};
+  return {state};
+}
+
+OverlayHubView::Transition OverlayHubView::enterRecovering(DisplayState, const Event&) { return {DisplayState::Recovering}; }
+
+OverlayHubView::Transition OverlayHubView::recoverHost(const DisplayState state, const Event&) { return {state, Action::AttachAcquire}; }
+
+void OverlayHubView::postEvent(Event event) {
+  m_events.push_back(event);
+  if (!m_processingEvents) processEvents();
+}
+
+void OverlayHubView::processEvents() {
+  m_processingEvents = true;
+  while (!m_events.empty()) {
+    const Event event = m_events.front();
+    m_events.pop_front();
+    if (event.type == EventType::RequestEnabled) m_requested = true;
+    if (event.type == EventType::RequestDisabled) m_requested = false;
+    logOutcome(event);
+    const Transition transition = reduce(m_displayState, event);
+    if (transition.actionBeforeStateChange) execute(transition.action);
+    if (transition.nextState != m_displayState) enterState(transition.nextState);
+    if (!transition.actionBeforeStateChange) execute(transition.action);
+  }
+  m_processingEvents = false;
+}
+
+void OverlayHubView::execute(const Action action) {
+  switch (action) {
+    case Action::None:
+      return;
+    case Action::AttachAcquire:
+    case Action::AttachRefresh:
+      postEvent(Event::attachFinished(acquirePresentation()));
+      return;
+    case Action::Activate:
+      postEvent(Event::activationFinished(activatePresentation()));
+      return;
+    case Action::VerifyAttach:
+      observeVerification(VerificationSource::Attach);
+      return;
+    case Action::VerifyConfirmation:
+      observeVerification(VerificationSource::Confirmation, true);
+      return;
+    case Action::VerifyHealth:
+      observeVerification(VerificationSource::Health);
+      return;
+    case Action::VerifyChanged:
+      observeVerification(VerificationSource::PresentationChanged);
+      return;
+    case Action::Suspend:
+      suspendPresentation();
+      return;
+    case Action::ReleaseRecovery:
+      beginPresentationRelease(ReleaseReason::Recovery);
+      return;
+    case Action::ReleaseRequest:
+      beginPresentationRelease(ReleaseReason::RequestRevoked);
+      return;
+    case Action::ScheduleRecoverRetry: {
+      ++m_consecutiveFailures;
+      if (m_consecutiveFailures > maxExclusiveRecoverAttempts()) {
+        UWF_LOG_W("hub") << "recovery exhausted: view=" << metaObject()->className() << " failures=" << m_consecutiveFailures << " action=yield-fallback";
+        postEvent(Event::plain(EventType::ReleaseBlocked));
+        beginPresentationRelease(ReleaseReason::Recovery);
+        return;
+      }
+      const int interval = retryIntervalMs(m_consecutiveFailures);
+      if (interval > 0) {
+        UWF_LOG_D("hub") << "recovery retry scheduled: view=" << metaObject()->className() << " failures=" << m_consecutiveFailures << " delayMs=" << interval;
+        m_retryTimer->setInterval(interval);
+        m_retryTimer->start();
+      } else {
+        postEvent(Event::plain(EventType::RetryDue));
+      }
+      return;
+    }
+  }
+}
+
+void OverlayHubView::beginPresentationRelease(const ReleaseReason reason) {
+  postEvent(Event::releaseStarted(ReleaseResult::Pending));
+  if (detachPresentation(reason) == ReleaseResult::Complete) postEvent(Event::plain(EventType::ReleaseCompleted));
+}
+
+void OverlayHubView::observeVerification(const VerificationSource source, const bool repaintFirst) {
+  if (repaintFirst) repaint();
+  postEvent(Event::verificationObserved(verifyPresentation(), source));
+}
+
+void OverlayHubView::enterState(const DisplayState state) {
+  const DisplayState previous = m_displayState;
+  m_confirmationTimer->stop();
+  m_retryTimer->stop();
+  m_healthTimer->stop();
+  m_displayState = state;
+
+  if (state == DisplayState::Disabled || state == DisplayState::Withdrawn || state == DisplayState::Confirmed || state == DisplayState::Recovering)
+    m_consecutiveFailures = 0;
+  if (state == DisplayState::Attaching) {
+    m_confirmationTimer->setInterval(confirmationTimeoutMs());
+    m_confirmationTimer->start();
+  } else if (state == DisplayState::Confirmed) {
+    const int interval = healthCheckIntervalMs();
+    if (interval > 0) {
+      m_healthTimer->setInterval(interval);
+      m_healthTimer->start();
+    }
+  } else if (state == DisplayState::Unavailable) {
+    ++m_consecutiveFailures;
+    const int interval = retryIntervalMs(m_consecutiveFailures);
+    if (interval > 0) {
+      UWF_LOG_D("hub") << "attach retry scheduled: view=" << metaObject()->className() << " failures=" << m_consecutiveFailures << " delayMs=" << interval;
+      m_retryTimer->setInterval(interval);
+      m_retryTimer->start();
+    }
+  }
+
+  UWF_LOG_D("hub") << "display state: view=" << metaObject()->className() << " from=" << displayStateName(previous) << " to=" << displayStateName(state)
+                   << " requested=" << presentationRequested();
+  if (state == DisplayState::Confirmed) {
+    UWF_LOG_I("hub") << "presentation confirmed: view=" << metaObject()->className();
+  } else if (previous == DisplayState::Confirmed) {
+    UWF_LOG_I("hub") << "presentation released: view=" << metaObject()->className() << " nextState=" << displayStateName(state)
+                     << " requested=" << presentationRequested();
+  }
+  emit displayStateChanged();
+}
+
+void OverlayHubView::logOutcome(const Event& event) const {
+  const bool unexpectedAttach = (event.type == EventType::AttachFinished && event.attachResult != AttachResult::Prepared) ||
+                                (event.type == EventType::ActivationFinished && event.attachResult != AttachResult::Attached);
+  if (unexpectedAttach) {
+    const bool normallyRetained = event.attachResult == AttachResult::Retained && m_displayState == DisplayState::Refreshing;
+    if (normallyRetained)
+      UWF_LOG_I("hub") << "attach outcome: view=" << metaObject()->className() << " result=" << attachResultName(event.attachResult);
+    else
+      UWF_LOG_W("hub") << "attach outcome: view=" << metaObject()->className() << " result=" << attachResultName(event.attachResult);
+  }
+  if (event.type == EventType::VerificationObserved &&
+      (event.verificationResult == VerificationResult::RefreshRequired || event.verificationResult == VerificationResult::Invalid))
+    UWF_LOG_W("hub") << "verification outcome: view=" << metaObject()->className() << " state=" << displayStateName(m_displayState)
+                     << " result=" << verificationResultName(event.verificationResult);
+}
+
+}  // namespace uwf::ui
+
+#include "moc_OverlayHubView.cpp"

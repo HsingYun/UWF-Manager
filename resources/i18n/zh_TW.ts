@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 HsingYun (iakext@gmail.com) -->
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_TW" sourcelanguage="en">
 <context>
     <name>uwf</name>
-    <message><source>Enable</source><translation>啟用</translation></message>
-    <message><source>Disable</source><translation>停用</translation></message>
+    <message><source>Preview</source><translation>預覽</translation></message>
     <message><source>enable</source><translation>啟用</translation></message>
     <message><source>disable</source><translation>停用</translation></message>
     <message><source>Enabled</source><translation>啟用</translation></message>
@@ -13,7 +14,6 @@
     <message><source>Cancel</source><translation>取消</translation></message>
     <message><source>Close</source><translation>關閉</translation></message>
     <message><source>Refresh</source><translation>重新整理</translation></message>
-    <message><source>Apply</source><translation>應用</translation></message>
     <message><source>Add</source><translation>新增</translation></message>
     <message><source>Remove</source><translation>移除</translation></message>
     <message><source>Yes</source><translation>是</translation></message>
@@ -26,21 +26,15 @@
     <message><source>drive letter</source><translation>磁碟機代號</translation></message>
     <message><source>Drive letter</source><translation>按磁碟機代號</translation></message>
     <message><source>Volume ID</source><translation>按磁碟區 ID</translation></message>
-    <message><source>The current system "%1" (%2) is not a recognized supported Windows 10/11 edition. UWF Manager is running in compatibility mode and some features may be unavailable.</source><translation>當前系統「%1」（%2）不是已知的受支援 Windows 10/11 版本，UWF 管理器正以相容模式執行，部分功能可能不可用。</translation></message>
     <message><source>Protection state of this volume in the current session (read-only).</source><translation>此磁碟區在當前工作階段中的保護狀態（只讀）。</translation></message>
     <message><source>Protect this volume in the next session. Writes to this volume are redirected to the overlay and discarded on reboot.</source><translation>下次工作階段保護此磁碟區。此磁碟區的所有寫入都會被重定向到覆寫層，重啟後丟棄。</translation></message>
-    <message><source>Protection:</source><translation>保護狀態：</translation></message>
     <message><source>Current session</source><translation>目前工作階段</translation></message>
     <message><source>Next session</source><translation>下次工作階段</translation></message>
-    <message><source>The currently active session (read-only). Changes you make never take effect in this session.</source><translation>當前生效工作階段（只讀），使用者所作的修改均不會在本次工作階段生效。</translation></message>
-    <message><source>The session that takes effect after a reboot. Changes you make take effect after the system restarts.</source><translation>重啟後生效的工作階段，使用者所作的修改將會在系統重啟後生效。</translation></message>
     <message><source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source><translation>UWF 識別此磁碟區的方式。磁碟機代號直觀，但增減其他磁碟等情況下磁碟機代號可能被重新分配，繫結會失效；磁碟區 ID 不隨磁碟機代號變化，更穩定。</translation></message>
-    <message><source>Bind by:</source><translation>繫結方式：</translation></message>
     <message><source>This volume is not supported by UWF: </source><translation>此磁碟區不支援 UWF：</translation></message>
     <message><source>Global settings</source><translation>全域設定</translation></message>
     <message><source>UWF filter state in the current session (read-only).</source><translation>UWF 篩選器在當前工作階段中的啟用狀態（只讀）。</translation></message>
     <message><source>Enable the UWF filter in the next session. Writes to protected volumes are redirected to the overlay and discarded on reboot.</source><translation>下次工作階段啟用 UWF 篩選器。對受保護卷的所有寫入都會被重定向到覆寫層，重啟後丟棄。</translation></message>
-    <message><source>Filter</source><translation>篩選器</translation></message>
     <message><source>Overlay type and maximum size can only be changed while the filter is disabled:
 1. Disable the filter using the switch above.
 2. Reboot (the filter will be off after reboot).
@@ -54,14 +48,10 @@
     <message><source>Maximum size</source><translation>最大大小</translation></message>
     <message><source>Maximum size · RAM %1</source><translation>最大大小 · RAM %1</translation></message>
     <message><source>Warning threshold</source><translation>警告閾值</translation></message>
-    <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. Must be lower than the critical threshold. Set to 0 to disable this event.</source><translation>覆寫層佔用達到此值時向事件日誌寫入警告級別通知。必須低於嚴重閾值。設為 0 可關閉該事件。</translation></message>
+    <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be lower than the critical threshold. Set to 0 to disable only the warning event.</source><translation>覆寫層使用量達到此值時，會將警告層級通知寫入事件記錄。兩個事件皆啟用時，此值必須低於嚴重閾值。設為 0 只會停用警告事件。</translation></message>
     <message><source>Critical threshold</source><translation>嚴重閾值</translation></message>
-    <message><source>Triggers a critical-level event-log notification when overlay usage reaches this value. Must be higher than the warning threshold. Set to 0 to disable this event.</source><translation>覆寫層佔用達到此值時向事件日誌寫入嚴重級別通知。必須高於警告閾值。設為 0 可關閉該事件。</translation></message>
-    <message><source>Used / total</source><translation>已用 / 總計</translation></message>
+    <message><source>Triggers a critical-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be higher than the warning threshold. Set to 0 to disable only the critical event.</source><translation>覆寫層使用量達到此值時，會將嚴重層級通知寫入事件記錄。兩個事件皆啟用時，此值必須高於警告閾值。設為 0 只會停用嚴重事件。</translation></message>
     <message><source>Overlay</source><translation>覆寫層</translation></message>
-    <message><source>&lt;span style='color:%1'&gt;■&lt;/span&gt; Used &amp;nbsp; &lt;span style='color:%2'&gt;■&lt;/span&gt; Warning &amp;nbsp; &lt;span style='color:%3'&gt;■&lt;/span&gt; Critical</source><translation>&lt;span style='color:%1'&gt;■&lt;/span&gt; 已佔用 &amp;nbsp; &lt;span style='color:%2'&gt;■&lt;/span&gt; 警告 &amp;nbsp; &lt;span style='color:%3'&gt;■&lt;/span&gt; 嚴重</translation></message>
-    <message><source>UWF status unavailable: </source><translation>UWF 狀態不可用：</translation></message>
-    <message><source>Administrator privileges are required to change UWF settings. Restart the program via right-click → "Run as administrator".</source><translation>需要管理員許可權才能修改 UWF 設定。請右鍵選擇「以管理員身份執行」重新啟動本程式。</translation></message>
     <message><source>Unsupported drive type (only fixed local disks are supported).</source><translation>不支援的驅動器型別（僅支援本地固定磁碟）。</translation></message>
     <message><source>Volume capacity exceeds the UWF limit of 16 TiB for a single protected volume.</source><translation>卷容量超過 UWF 單個受保護卷 16 TiB 的上限。</translation></message>
     <message><source>%1 file system: this volume can be protected, but file exclusions and per-file commit are not supported.</source><translation>%1 檔案系統：可以保護此磁碟區，但不支援檔案排除和單檔案提交。</translation></message>
@@ -87,11 +77,9 @@
     <message><source>Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is shared across all volumes and shown only once in the disk tabs. Double-click an entry to copy its path.</source><translation>登錄檔排除是全域性的：由全域性 UWF 篩選器開關控制，與此磁碟區的保護狀態無關。該列表跨所有卷共享，並且只會在磁碟標籤頁中顯示一次。雙擊條目可複製路徑。</translation></message>
     <message><source>File staging</source><translation>檔案暫存</translation></message>
     <message><source>Files and folders in this list are committed automatically before safe shutdown or restart. Folders are processed recursively. While the list contains data, UWF Manager excludes HKLM\SOFTWARE\HsingYun\UWF Manager so the list persists across protected sessions.</source><translation>列表中的檔案和資料夾會在安全關機或重啟前自動提交，資料夾將遞迴處理。列表中存在資料時，UWF Manager 會排除 HKLM\SOFTWARE\HsingYun\UWF Manager，以確保該列表在受保護工作階段之間保持有效。</translation></message>
-    <message><source>Search staged paths…</source><translation>搜尋暫存路徑…</translation></message>
     <message><source>Add files or a folder to the automatic commit list.</source><translation>將檔案或資料夾加入自動提交列表。</translation></message>
     <message><source>Select one or more files to commit automatically before safe shutdown or restart.</source><translation>選擇一個或多個檔案，在安全關機或重啟前自動提交。</translation></message>
     <message><source>Select a folder whose files will be committed recursively before safe shutdown or restart.</source><translation>選擇一個資料夾，在安全關機或重啟前遞迴提交其中的檔案。</translation></message>
-    <message><source>Remove the selected paths from automatic commit immediately.</source><translation>立即從自動提交列表中移除所選路徑。</translation></message>
     <message><source>Select files for automatic commit</source><translation>選擇需要自動提交的檔案</translation></message>
     <message><source>Select a folder for automatic recursive commit</source><translation>選擇需要自動遞迴提交的資料夾</translation></message>
     <message><source>Cannot stage this path</source><translation>無法暫存此路徑</translation></message>
@@ -124,7 +112,8 @@
     <message><source>File staging is unavailable: %1</source><translation>檔案暫存不可用：%1</translation></message>
     <message><source>Committed automatically before safe shutdown or restart.</source><translation>將在安全關機或重啟前自動提交。</translation></message>
     <message><source>%1 staged entries · %2 files · %3 folders</source><translation>%1 個暫存項 · %2 個檔案 · %3 個資料夾</translation></message>
-    <message><source>Required by UWF for File staging.</source><translation>UWF 檔案暫存功能需要此項。</translation></message>
+    <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>檔案暫存依賴此登錄排除項，以便在重新啟動後保留暫存清單。</translation></message>
+    <message><source>Built-in</source><translation>內建</translation></message>
     <message><source>The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit.</source><translation>UWF 篩選器當前已停用，覆寫層中不會累積修改，沒有可提交的內容。</translation></message>
     <message><source>Per-file commit is not supported on the %1 file system.</source><translation>%1 檔案系統不支援單檔案提交。</translation></message>
     <message><source>This volume is not supported by UWF.</source><translation>此磁碟區不受 UWF 支援。</translation></message>
@@ -136,41 +125,23 @@
     <message><source>Select a folder to commit to disk</source><translation>選擇要提交到磁碟的目錄</translation></message>
     <message><source>Select a file whose deletion you want to commit</source><translation>選擇要提交刪除的檔案</translation></message>
     <message><source>Select a folder whose deletion you want to commit</source><translation>選擇要提交刪除的資料夾</translation></message>
-    <message><source>Commit registry changes</source><translation>提交登錄檔修改</translation></message>
-    <message><source>Commit registry deletion</source><translation>提交登錄檔刪除</translation></message>
-    <message><source>Key path:</source><translation>鍵路徑：</translation></message>
-    <message><source>HKLM\Software\... — type or paste, press Enter to jump</source><translation>HKLM\Software\… —— 可輸入或貼上，按回車跳轉</translation></message>
     <message><source>Name</source><translation>名稱</translation></message>
     <message><source>Data</source><translation>資料</translation></message>
-    <message><source>Key: %1</source><translation>鍵：%1</translation></message>
-    <message><source>Value: %1</source><translation>值：%1</translation></message>
-    <message><source>(none)</source><translation>（無）</translation></message>
     <message><source>(Default)</source><translation>（預設）</translation></message>
     <message><source>(value not set)</source><translation>（數值未設定）</translation></message>
     <message><source>(empty)</source><translation>（空）</translation></message>
     <message><source>Preview unavailable (value is too large)</source><translation>無法預覽（值過大）</translation></message>
-    <message><source>(whole key recursive, including subkeys)</source><translation>（整鍵遞迴，遞迴包含子鍵）</translation></message>
-    <message><source>Overlay files - %1</source><translation>覆寫層檔案 - %1</translation></message>
-    <message><source>View overlay files</source><translation>檢視覆寫層檔案</translation></message>
     <message><source>Open a diagnostic view of files currently cached in the overlay for this volume.</source><translation>開啟診斷檢視，檢視當前在此磁碟區覆寫層中快取的檔案。</translation></message>
     <message><source>Overlay file listing is only supported on NTFS volumes.</source><translation>僅 NTFS 卷支援檢視覆寫層檔案列表。</translation></message>
     <message><source>The UWF filter is currently disabled, so no volume has an overlay to inspect.</source><translation>UWF 篩選器當前處於禁用狀態，沒有任何卷存在可檢視的覆寫層。</translation></message>
     <message><source>This volume is not currently protected by UWF, so it has no overlay to inspect.</source><translation>此磁碟區當前未被 UWF 保護，沒有可檢視的覆寫層。</translation></message>
-    <message><source>&lt;b&gt;Diagnostic snapshot only.&lt;/b&gt; Don't use this list to decide what to commit.</source><translation>&lt;b&gt;僅作診斷快照。&lt;/b&gt;請勿根據此列表決定要提交的內容。</translation></message>
-    <message><source>NTFS volumes only.</source><translation>僅支援 NTFS 卷。</translation></message>
-    <message><source>Can be slow or fail when the overlay is large — memory and time grow with overlay size.</source><translation>覆寫層較大時可能非常慢，甚至失敗——記憶體佔用和耗時都隨覆寫層大小增長。</translation></message>
-    <message><source>The list is not exact: files smaller than the disk cluster size (typically 4 KB) may be missing; earlier commits, files in excluded paths, and files affected by unrelated operations may appear.</source><translation>列表並不精確：小於磁碟簇大小（通常 4 KB）的檔案可能缺失；此前的提交、排除路徑下的檔案，以及看似不相關操作影響到的檔案都可能出現在列表裡。</translation></message>
-    <message><source>Loading…</source><translation>載入中…</translation></message>
     <message><source>Failed: %1</source><translation>失敗：%1</translation></message>
-    <message><source>%1 file(s) in overlay</source><translation>覆寫層中共 %1 個檔案</translation></message>
-    <message><source>No files</source><translation>無檔案</translation></message>
-    <message><source>Page %1 / %2 · %3 file(s) total</source><translation>第 %1 / %2 頁 · 共 %3 個檔案</translation></message>
     <message><source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure.</source><translation>WMI 提供程式在列舉覆寫層檔案時崩潰。這是 UWF_Overlay.GetOverlayFiles 在覆寫層較大或磁碟 I/O 繁忙時的已知不穩定行為。</translation></message>
     <message><source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source><translation>記憶體不足或提供程式不支援此操作。覆寫層檔案列舉僅在 NTFS 捲上可用，且需要一定的可用記憶體；請減小覆寫層容量或關閉佔用記憶體較多的程式後再試。</translation></message>
     <message><source>Raw error: %1</source><translation>原始錯誤：%1</translation></message>
-    <message><source>Export to file…</source><translation>匯出到檔案…</translation></message>
     <message><source>Export overlay file list</source><translation>匯出覆寫層檔案列表</translation></message>
     <message><source>Text files (*.txt);;All files (*)</source><translation>文字檔案 (*.txt);;所有檔案 (*)</translation></message>
+    <message><source>Command files (*.cmd);;All files (*)</source><translation>命令檔案 (*.cmd);;所有檔案 (*)</translation></message>
     <message><source>Export failed</source><translation>匯出失敗</translation></message>
     <message><source>Export finished</source><translation>匯出完成</translation></message>
     <message><source>Could not open file for writing: %1</source><translation>無法開啟檔案寫入：%1</translation></message>
@@ -204,8 +175,6 @@
   HKLM\SAM
   HKLM\SECURITY
   HKLM\COMPONENTS</translation></message>
-    <message><source>Search file paths…</source><translation>搜尋檔案路徑…</translation></message>
-    <message><source>Search registry keys…</source><translation>搜尋登錄檔項…</translation></message>
     <message><source>Add a file or folder to the exclusion list. Excluded entries are not protected by UWF.</source><translation>把檔案或資料夾加入排除列表。排除的物件不受 UWF 保護。</translation></message>
     <message><source>Pick a file to add to the exclusion list.</source><translation>選擇一個檔案加入排除列表。</translation></message>
     <message><source>Pick a folder (and all of its contents) to add to the exclusion list.</source><translation>選擇一個資料夾（包含其中所有內容）加入排除列表。</translation></message>
@@ -216,7 +185,6 @@
     <message><source>Terminal Services Client Access License (TSCAL)</source><translation>終端服務客戶端訪問許可證 (TSCAL)</translation></message>
     <message><source>Persist the domain secret key (machine account password) across UWF sessions.</source><translation>跨 UWF 工作階段持久化域機密金鑰（計算機賬戶密碼）。</translation></message>
     <message><source>Persist Terminal Services client access licenses across UWF sessions.</source><translation>跨 UWF 工作階段持久化終端服務客戶端訪問許可證。</translation></message>
-    <message><source>· %1 persistence %2</source><translation>· %1 持久化 %2</translation></message>
     <message><source>✓ %1 persistence: %2</source><translation>✓ %1 持久化：%2</translation></message>
     <message><source>Remove selected</source><translation>移除所選</translation></message>
     <message><source>Remove the selected entries from the exclusion list. Takes effect after Apply.</source><translation>從排除列表中移除選中項（應用後生效）。</translation></message>
@@ -225,7 +193,7 @@
     <message><source>Copy registry path</source><translation>複製登錄檔路徑</translation></message>
     <message><source>Commit folder changes to disk…</source><translation>提交資料夾改動到磁碟…</translation></message>
     <message><source>Commit file changes to disk…</source><translation>提交檔案改動到磁碟…</translation></message>
-    <message><source>Copied to clipboard: </source><translation>已複製到剪貼簿：</translation></message>
+    <message><source>Copied to clipboard</source><translation>已複製到剪貼簿</translation></message>
     <message><source>Select files to add to the exclusion list (multiple selection allowed)</source><translation>選擇要加入排除的檔案（可多選）</translation></message>
     <message><source>Select a folder to add to the exclusion list</source><translation>選擇要加入排除的資料夾</translation></message>
     <message><source>Add registry exclusion</source><translation>新增登錄檔排除</translation></message>
@@ -240,9 +208,7 @@
 Next session: %2</source><translation>當前工作階段：%1
 下次工作階段：%2</translation></message>
     <message><source>Pending change: %1</source><translation>本次待應用：%1</translation></message>
-    <message><source>%1 entries · %2 to add · %3 to remove in next session · %4 pending</source><translation>共 %1 項 · 下次工作階段將新增 %2 · 移除 %3 · 待應用 %4</translation></message>
     <message><source>Unified Write Filter (UWF) Manager</source><translation>統一寫入篩選器 (UWF) 管理員</translation></message>
-    <message><source>Main toolbar</source><translation>主工具欄</translation></message>
     <message><source>Re-read the current session state and next-session configuration of UWF.</source><translation>重新讀取 UWF 的當前工作階段狀態和下次工作階段配置。</translation></message>
     <message><source>Review and apply</source><translation>預覽並應用</translation></message>
     <message><source>Review all pending changes and apply them in one batch. Most changes take effect after the next reboot.</source><translation>預覽本次所有待應用的變更，確認後一次性應用（多數變更在下次重啟後生效）。</translation></message>
@@ -255,22 +221,13 @@ Next session: %2</source><translation>當前工作階段：%1
     <message><source>Log</source><translation>日誌</translation></message>
     <message><source>View the internal log accumulated during this session, for troubleshooting.</source><translation>檢視本次工作階段累積的內部日誌（用於排查問題）。</translation></message>
     <message><source>About</source><translation>關於</translation></message>
-    <message><source>About this program.</source><translation>關於本程式。</translation></message>
     <message><source>Switch display language</source><translation>切換顯示語言</translation></message>
     <message><source>Language</source><translation>語言</translation></message>
     <message><source>Theme</source><translation>主題</translation></message>
     <message><source>Toggle light / dark theme</source><translation>切換淺色 / 深色主題</translation></message>
-    <message><source>&lt;p&gt;A graphical front-end for managing the UWF filter state, overlay, and file / registry exclusions. Most changes take effect after the next reboot.&lt;/p&gt;&lt;p&gt;Source code: &lt;a href="%3"&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href="mailto:%1"&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;This program is released under the &lt;a href="%2"&gt;GNU General Public License v3.0&lt;/a&gt;; the full license text is included in the LICENSE file shipped with this program.&lt;/p&gt;&lt;p&gt;This program is free software: you may redistribute it and / or modify it under the terms of the GPL v3. It is provided "as is", without any warranty.&lt;/p&gt;</source><translation>&lt;p&gt;UWF 的圖形化管理介面：篩選器狀態、覆寫層、檔案與登錄檔排除。多數變更在下次重啟後生效。&lt;/p&gt;&lt;p&gt;原始碼倉庫：&lt;a href="%3"&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href="mailto:%1"&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;本程式採用 &lt;a href="%2"&gt;GNU General Public License v3.0&lt;/a&gt; 協議釋出；完整協議文字見隨程式分發的 LICENSE 檔案。&lt;/p&gt;&lt;p&gt;本程式為自由軟體，您可以在 GPL v3 條款下重新分發或修改本程式。本程式按「原樣」提供，不附帶任何形式的擔保。&lt;/p&gt;</translation></message>
-    <message><source>About UWF Manager</source><translation>關於 UWF 管理器</translation></message>
     <message><source>System information</source><translation>系統資訊</translation></message>
     <message><source>Diagnostic snapshot</source><translation>診斷快照</translation></message>
-    <message><source>System, security, UWF, enhanced mode, and recent application logs.</source><translation>系統、安全、UWF、增強模式及近期應用日誌。</translation></message>
     <message><source>Read only</source><translation>只讀</translation></message>
-    <message><source>Diagnostic report</source><translation>診斷報告</translation></message>
-    <message><source>Copied</source><translation>已複製</translation></message>
-    <message><source>View system, security, UWF, enhanced mode, and log diagnostics.</source><translation>檢視系統、安全、UWF、增強模式和日誌診斷資訊。</translation></message>
-    <message><source>This report may contain account names, device identifiers, file paths, and recent application logs. Review it before sharing.</source><translation>此報告可能包含賬戶名、裝置標識、檔案路徑和近期應用日誌。分享前請先檢查內容。</translation></message>
-    <message><source>&lt;p&gt;&lt;b&gt;This program depends on the Windows Unified Write Filter (UWF).&lt;/b&gt; UWF Manager does not perform write filtering itself; the actual write protection is provided by the UWF feature built into Windows. This program only configures and manages UWF, and requires UWF to be installed and enabled on the system.&lt;/p&gt;&lt;p&gt;When UWF is first enabled on a device, it makes the following changes to the system to improve UWF performance:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Paging files are disabled.&lt;/li&gt;&lt;li&gt;System Restore is disabled.&lt;/li&gt;&lt;li&gt;SuperFetch is disabled.&lt;/li&gt;&lt;li&gt;The file indexing service is turned off.&lt;/li&gt;&lt;li&gt;The defragmentation service is turned off.&lt;/li&gt;&lt;li&gt;Fast boot is disabled.&lt;/li&gt;&lt;li&gt;The BCD setting bootstatuspolicy is set to ignoreallfailures.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;After UWF is enabled, these settings can be changed as needed. For example, the paging file can be moved to an unprotected volume and paging re-enabled.&lt;/p&gt;</source><translation>&lt;p&gt;&lt;b&gt;本程式依賴 Windows 統一寫入篩選器（UWF）。&lt;/b&gt;UWF Manager 自身不執行寫入過濾；實際的寫入保護由 Windows 內建的 UWF 功能提供。本程式僅用於配置和管理 UWF，需系統已安裝並啟用 UWF 才能使用。&lt;/p&gt;&lt;p&gt;首次在裝置上啟用 UWF 時，為提升 UWF 效能，UWF 會對系統做以下更改：&lt;/p&gt;&lt;ul&gt;&lt;li&gt;禁用頁面檔案（paging files）。&lt;/li&gt;&lt;li&gt;禁用系統還原（System Restore）。&lt;/li&gt;&lt;li&gt;禁用 SuperFetch。&lt;/li&gt;&lt;li&gt;關閉檔案索引服務（File indexing service）。&lt;/li&gt;&lt;li&gt;關閉碎片整理服務（Defragmentation service）。&lt;/li&gt;&lt;li&gt;禁用快速啟動（Fast boot）。&lt;/li&gt;&lt;li&gt;將 BCD 設定 bootstatuspolicy 設為 ignoreallfailures。&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;啟用 UWF 後，可以按需更改這些設定。例如可把頁面檔案移到未保護捲上並重新啟用頁面檔案。&lt;/p&gt;</translation></message>
     <message><source>The target was not found; there is nothing in the overlay to commit.</source><translation>未找到目標，覆寫層中沒有可提交的內容。</translation></message>
     <message><source>Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It will disappear on reboot; commit-delete is neither needed nor possible.</source><translation>目標不在物理卷 / 持久化登錄檔上——它只存在於覆寫層中（在 UWF 保護下新建，從未提交過）。重啟後會自動消失，無需也無法用「提交刪除」處理。</translation></message>
     <message><source>A parameter was rejected by the system (invalid path or argument).</source><translation>系統拒絕了傳入的引數（路徑或引數非法）。</translation></message>
@@ -279,16 +236,12 @@ Next session: %2</source><translation>當前工作階段：%1
     <message><source>Operation rejected (code %1).</source><translation>操作被拒絕（程式碼 %1）。</translation></message>
     <message><source>Unknown cause.</source><translation>未知原因。</translation></message>
     <message><source>Commit canceled</source><translation>提交已取消</translation></message>
-    <message><source>Commit result</source><translation>提交結果</translation></message>
+
     <message><source>Succeeded</source><translation>成功</translation></message>
     <message><source>Skipped</source><translation>跳過</translation></message>
     <message><source>Failed</source><translation>失敗</translation></message>
     <message><source>%1 succeeded; %2 skipped; %3 failed.</source><translation>成功 %1 個；跳過 %2 個；失敗 %3 個。</translation></message>
-    <message><source>
-Canceled by user; %1 entries not processed.</source><translation>
-使用者取消，剩餘 %1 個未處理。</translation></message>
-    <message><source>Category</source><translation>類別</translation></message>
-    <message><source>Path</source><translation>路徑</translation></message>
+
     <message><source>Existed before</source><translation>執行前存在</translation></message>
     <message><source>Exists after</source><translation>執行後存在</translation></message>
     <message><source>Error code</source><translation>錯誤碼</translation></message>
@@ -297,50 +250,16 @@ Canceled by user; %1 entries not processed.</source><translation>
     <message><source>First page</source><translation>首頁</translation></message>
     <message><source>Last page</source><translation>末頁</translation></message>
     <message><source>Next page</source><translation>下一頁</translation></message>
-    <message><source>Page %1 / %2 · %3 entries total</source><translation>第 %1 / %2 頁 · 共 %3 條</translation></message>
     <message><source>Copy selected rows</source><translation>複製選中行</translation></message>
     <message><source>Copy all</source><translation>複製全部</translation></message>
     <message><source>This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it.</source><translation>檔案暫存中存在已儲存的條目時必須保留此登錄檔排除項。請先清空檔案暫存列表，再移除此項。</translation></message>
-    <message><source>0 lines</source><translation>0 行</translation></message>
-    <message><source>%1 lines</source><translation>共 %1 行</translation></message>
-    <message><source>Loading log entries…</source><translation>正在載入日誌…</translation></message>
-    <message><source>No log entries</source><translation>無日誌條目</translation></message>
-    <message><source>Page %1 / %2 · %3 lines total</source><translation>第 %1 / %2 頁 · 共 %3 行</translation></message>
     <message><source>Copy current page</source><translation>複製當前頁</translation></message>
-    <message><source>Clear</source><translation>清空</translation></message>
-    <message><source>%1 pending change(s) (not yet written to the system)</source><translation>有 %1 項待應用變更（尚未寫入系統）</translation></message>
     <message><source>No pending changes</source><translation>無待應用變更</translation></message>
     <message><source> (Also manages global registry exclusions.)</source><translation>（同時管理全域性登錄檔排除）</translation></message>
     <message><source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source><translation>切換到卷 %1 的保護設定、檔案排除與檔案暫存。%2</translation></message>
     <message><source>UWF namespace is not available</source><translation>UWF 名稱空間不可用</translation></message>
-    <message><source>Refreshed · %1 volumes</source><translation>已重新整理 · 共 %1 個卷</translation></message>
-    <message><source>· Filter (global) %1</source><translation>· 篩選器（全域性） %1</translation></message>
-    <message><source>· Overlay type → %1</source><translation>· 覆寫層 型別 → %1</translation></message>
-    <message><source>· Overlay maximum size → %1 MB</source><translation>· 覆寫層 最大大小 → %1 MB</translation></message>
-    <message><source>· Overlay warning threshold → %1 MB</source><translation>· 覆寫層 警告閾值 → %1 MB</translation></message>
-    <message><source>· Overlay critical threshold → %1 MB</source><translation>· 覆寫層 嚴重閾值 → %1 MB</translation></message>
-    <message><source>⚠ Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>⚠ 啟用篩選器期間無法修改型別 / 最大大小，需先停用篩選器並重啟。</translation></message>
-    <message><source>· Volume %1 protection %2</source><translation>· 卷 %1 保護 %2</translation></message>
-    <message><source>· Volume %1 bind by → %2 (no CLI equivalent; this program only)</source><translation>· 卷 %1 繫結方式 → %2（命令列不支援，僅本程式內可改）</translation></message>
-    <message><source>+ File exclusion  %1</source><translation>+ 檔案排除  %1</translation></message>
-    <message><source>− File exclusion  %1</source><translation>− 檔案排除  %1</translation></message>
-    <message><source>+ Registry exclusion  %1</source><translation>+ 登錄檔排除  %1</translation></message>
-    <message><source>− Registry exclusion  %1</source><translation>− 登錄檔排除  %1</translation></message>
-    <message><source>Filter (global) %1</source><translation>篩選器（全域性） %1</translation></message>
-    <message><source>Overlay type → %1</source><translation>覆寫層 型別 → %1</translation></message>
-    <message><source>Overlay maximum size → %1 MB</source><translation>覆寫層 最大大小 → %1 MB</translation></message>
-    <message><source>Overlay warning threshold → %1 MB</source><translation>覆寫層 警告閾值 → %1 MB</translation></message>
-    <message><source>Overlay critical threshold → %1 MB</source><translation>覆寫層 嚴重閾值 → %1 MB</translation></message>
-    <message><source>Volume %1 protection %2</source><translation>卷 %1 保護 %2</translation></message>
-    <message><source>File exclusion %1</source><translation>檔案排除 %1</translation></message>
-    <message><source>Registry exclusion %1</source><translation>登錄檔排除 %1</translation></message>
-    <message><source>Pending changes (%1)</source><translation>待應用的變更 (%1)</translation></message>
-    <message><source>Current session configuration</source><translation>當前工作階段配置</translation></message>
     <message><source>Review and apply changes</source><translation>變更預覽 · 應用</translation></message>
-    <message><source>Below is the full configuration in uwfmgr command form. &lt;span style='color:%1'&gt;Pending changes&lt;/span&gt;, if any, are shown in a separate section first. Click &lt;span style='color:%2'&gt;Apply&lt;/span&gt; to write the changes to the system (most take effect after the next reboot).</source><translation>以下以 uwfmgr 命令形式列出當前所有配置；若有&lt;span style='color:%1'&gt;待應用的變更&lt;/span&gt;會先單獨成段。確認後點選 &lt;span style='color:%2'&gt;應用&lt;/span&gt;，本程式會真實寫入系統（多數在下次重啟後生效）。</translation></message>
     <message><source>Confirm apply</source><translation>確認應用</translation></message>
-    <message><source>These changes will be &lt;span style='color:%1'&gt;written to the system&lt;/span&gt;; most take effect after the next reboot.&lt;br&gt;&lt;br&gt;Continue?</source><translation>即將&lt;span style='color:%1'&gt;真實寫入系統&lt;/span&gt;，多數變更在下次重啟後才生效。&lt;br&gt;&lt;br&gt;確定要繼續嗎？</translation></message>
-    <message><source>Applied changes</source><translation>已應用的變更</translation></message>
     <message><source>Result</source><translation>應用結果</translation></message>
     <message><source>✓ Filter: %1</source><translation>✓ 篩選器：%1</translation></message>
     <message><source>✓ Overlay warning threshold set to %1 MB</source><translation>✓ 覆寫層 警告閾值設為 %1 MB</translation></message>
@@ -359,41 +278,15 @@ Canceled by user; %1 entries not processed.</source><translation>
     <message><source>Level</source><translation>級別</translation></message>
     <message><source>Tag</source><translation>TAG</translation></message>
     <message><source>Message</source><translation>內容</translation></message>
-    <message><source>Confirm safe shutdown?</source><translation>確定要安全關機嗎？</translation></message>
-    <message><source>Confirm safe restart?</source><translation>確定要安全重啟嗎？</translation></message>
-    <message><source>Shut down</source><translation>關機</translation></message>
-    <message><source>Restart</source><translation>重啟</translation></message>
-    <message><source>Continue shutdown</source><translation>仍然關機</translation></message>
-    <message><source>Continue restart</source><translation>仍然重啟</translation></message>
-    <message><source>The system will shut down safely through UWF.</source><translation>系統將透過 UWF 安全關機。</translation></message>
-    <message><source>The system will restart safely through UWF.</source><translation>系統將透過 UWF 安全重啟。</translation></message>
-    <message><source>UWF protection</source><translation>UWF 保護</translation></message>
-    <message><source>This operation remains available even if the UWF overlay is full.</source><translation>即使 UWF 覆寫層已滿，仍可安全執行此操作。</translation></message>
     <message><source>Calculating files for automatic commit…</source><translation>正在計算需要自動提交的檔案…</translation></message>
-    <message><source>%1 file(s) will be committed automatically before this operation. Files outside currently protected volumes are skipped.</source><translation>執行此操作前將自動提交 %1 個檔案；當前未受 UWF 保護的卷將被跳過。</translation></message>
     <message><source>Committing staged files</source><translation>正在提交暫存檔案</translation></message>
-    <message><source>The power action will continue after file staging completes.</source><translation>檔案暫存完成後，將繼續執行電源操作。</translation></message>
     <message><source>Processed %1 of %2 file(s).</source><translation>已處理 %1 / %2 個檔案。</translation></message>
-    <message><source>Automatic file staging did not complete</source><translation>檔案暫存未能全部提交</translation></message>
-    <message><source>Review the operation details before deciding whether to continue.</source><translation>請檢視操作詳情，再決定是否仍要繼續。</translation></message>
-    <message><source>Operation details</source><translation>操作詳情</translation></message>
     <message><source>No additional error details were provided.</source><translation>未提供更多錯誤詳情。</translation></message>
-    <message><source>Some changes may not be preserved</source><translation>部分更改可能無法保留</translation></message>
-    <message><source>If you continue, the system will shut down without the files that could not be committed.</source><translation>如果仍然繼續，系統將關機，未能提交的檔案更改不會被保留。</translation></message>
-    <message><source>If you continue, the system will restart without the files that could not be committed.</source><translation>如果仍然繼續，系統將重啟，未能提交的檔案更改不會被保留。</translation></message>
     <message><source>Automatic file staging stopped unexpectedly:
 %1</source><translation>檔案暫存意外中止：
 %1</translation></message>
     <message><source>Automatic file staging stopped because of an unknown error.</source><translation>檔案暫存因未知錯誤中止。</translation></message>
-    <message><source>Uncommitted changes will be lost</source><translation>尚未提交的更改將會丟失</translation></message>
-    <message><source>Before continuing, save your work and commit any changes that you want to keep permanently.</source><translation>繼續前，請儲存當前工作，並透過 UWF 提交需要永久保留的更改。</translation></message>
-    <message><source>Confirm direct restart?</source><translation>確認直接重啟？</translation></message>
-    <message><source>Confirm direct shutdown?</source><translation>確認直接關機？</translation></message>
-    <message><source>The system will restart without committing files in File staging.</source><translation>系統將跳過檔案暫存區的提交併直接重啟。</translation></message>
-    <message><source>The system will shut down without committing files in File staging.</source><translation>系統將跳過檔案暫存區的提交併直接關機。</translation></message>
     <message><source>File staging will be skipped</source><translation>將跳過檔案暫存區</translation></message>
-    <message><source>Files in File staging will not be committed before restart.</source><translation>重啟前不會提交檔案暫存區中的檔案。</translation></message>
-    <message><source>Files in File staging will not be committed before shutdown.</source><translation>關機前不會提交檔案暫存區中的檔案。</translation></message>
     <message><source>Direct restart skips File staging commits.</source><translation>直接重啟會跳過檔案暫存區提交。</translation></message>
     <message><source>Direct shutdown skips File staging commits.</source><translation>直接關機會跳過檔案暫存區提交。</translation></message>
     <message><source>File staging was skipped because a direct power action was selected.</source><translation>已選擇直接操作，因此跳過檔案暫存區提交。</translation></message>
@@ -423,57 +316,29 @@ Canceled by user; %1 entries not processed.</source><translation>
     <message><source>The UWF provider rejected the commit.</source><translation>UWF 提供程式拒絕了提交請求。</translation></message>
     <message><source>The commit failed with an unknown error.</source><translation>提交因未知錯誤失敗。</translation></message>
     <message><source>%1 additional failure(s) were written to the log.</source><translation>另有 %1 項失敗已寫入日誌。</translation></message>
-    <message><source>Commit failed</source><translation>提交失敗</translation></message>
+
     <message><source>The path has no drive letter; cannot identify the target volume.</source><translation>路徑缺少磁碟機代號，無法確定目標卷。</translation></message>
-    <message><source>Failed to read volume information: %1</source><translation>讀取磁碟區資訊失敗：%1</translation></message>
+
     <message><source>No current-session record found for volume %1.</source><translation>找不到卷 %1 的當前工作階段記錄。</translation></message>
     <message><source>This path is in the file exclusion list.
 Exclusion: %1</source><translation>此路徑在檔案排除列表中。
 排除項：%1</translation></message>
-    <message><source>No files were found under %1.</source><translation>目錄 %1 下沒有任何檔案。</translation></message>
-    <message><source>Commit to disk</source><translation>提交到磁碟</translation></message>
-    <message><source>Committing…</source><translation>正在提交…</translation></message>
-    <message><source>This action cannot be undone.</source><translation>此操作不可撤銷。</translation></message>
+
     <message><source>Continue</source><translation>繼續</translation></message>
     <message><source>Delete and commit</source><translation>刪除並提交</translation></message>
-    <message><source>Commit this file's overlay changes to disk</source><translation>把這個檔案在覆寫層中的修改提交到磁碟</translation></message>
-    <message><source>Commit this folder's overlay changes to disk</source><translation>把這個資料夾在覆寫層中的修改提交到磁碟</translation></message>
-    <message><source>%1 files in this folder and all its subfolders will be committed.</source><translation>將提交該資料夾及其所有子資料夾中的 %1 個檔案。</translation></message>
-    <message><source>Delete this file, and commit the deletion to disk</source><translation>刪除這個檔案，並把刪除提交到磁碟</translation></message>
-    <message><source>Delete this folder and its contents, and commit the deletions to disk</source><translation>刪除這個資料夾及其全部內容，並把刪除提交到磁碟</translation></message>
-    <message><source>%1 files and %2 subfolders will be deleted.</source><translation>將刪除 %1 個檔案和 %2 個子資料夾。</translation></message>
-    <message><source>Commit this registry value to disk</source><translation>把這個登錄檔值提交到磁碟</translation></message>
-    <message><source>Commit this registry key and its whole subtree to disk</source><translation>把這個登錄檔鍵及其整棵子樹提交到磁碟</translation></message>
-    <message><source>%1 values in this key and all its subkeys will be committed.</source><translation>將提交該鍵及其所有子鍵中的 %1 個值。</translation></message>
-    <message><source>Delete this registry value, and commit the deletion to disk</source><translation>刪除這個登錄檔值，並把刪除提交到磁碟</translation></message>
-    <message><source>Delete this registry key and its whole subtree, and commit the deletions to disk</source><translation>刪除這個登錄檔鍵及其整棵子樹，並把刪除提交到磁碟</translation></message>
-    <message><source>Scanning registry keys…</source><translation>正在掃描登錄檔鍵…</translation></message>
-    <message><source>Scanning registry keys…
-%1 key(s) found</source><translation>正在掃描登錄檔鍵…
-已找到 %1 個鍵</translation></message>
-    <message><source>Registry keys that will be deleted:</source><translation>將刪除的登錄檔鍵：</translation></message>
-    <message><source>Copy current entry</source><translation>複製當前條目</translation></message>
-    <message><source>%1 keys and all values they contain will be recursively deleted.</source><translation>將遞迴刪除 %1 個子鍵以及其包含的全部值。</translation></message>
-    <message><source>Commit file deletion failed</source><translation>提交檔案刪除失敗</translation></message>
-    <message><source>This path does not exist, so there is nothing to delete.</source><translation>此路徑不存在，沒有可刪除的內容。</translation></message>
+
     <message><source>This key is in the registry exclusion list.
 Exclusion: %1</source><translation>此鍵在登錄檔排除列表中。
 排除項：%1</translation></message>
-    <message><source>Failed to read registry filter: %1</source><translation>讀取登錄檔篩選器失敗：%1</translation></message>
+
     <message><source>No current-session registry filter record found.</source><translation>找不到當前工作階段的登錄檔篩選記錄。</translation></message>
-    <message><source>This registry value does not exist, so there is nothing to commit.</source><translation>此登錄檔值不存在，沒有可提交的內容。</translation></message>
-    <message><source>This registry key does not exist, so there is nothing to commit.</source><translation>此登錄檔鍵不存在，沒有可提交的內容。</translation></message>
-    <message><source>This registry value does not exist, so there is nothing to delete.</source><translation>此登錄檔值不存在，沒有可刪除的內容。</translation></message>
-    <message><source>This registry key does not exist, so there is nothing to delete.</source><translation>此登錄檔鍵不存在，沒有可刪除的內容。</translation></message>
-    <message><source>Export commands…</source><translation>匯出命令…</translation></message>
+
     <message><source>Export commands to file</source><translation>匯出命令到檔案</translation></message>
     <message><source>Exported %1 commands to:
 %2</source><translation>已匯出 %1 條命令到：
 %2</translation></message>
     <message><source>Import</source><translation>匯入</translation></message>
     <message><source>Paste, type, or load a script of uwfmgr commands and turn each line into a pending UI change. Nothing is written to the system until you click "Review and apply".</source><translation>貼上、鍵入或從檔案載入一段 uwfmgr 命令指令碼，把每一行翻譯成 UI 上的待應用變更。點選「預覽並應用」之前不會真的寫入系統。</translation></message>
-    <message><source>Import uwfmgr commands</source><translation>匯入 uwfmgr 命令</translation></message>
-    <message><source>&lt;p&gt;Paste or type &lt;b&gt;uwfmgr&lt;/b&gt; commands below; one command per line. Supported categories: &lt;code&gt;filter&lt;/code&gt; · &lt;code&gt;overlay&lt;/code&gt; · &lt;code&gt;volume&lt;/code&gt; · &lt;code&gt;file&lt;/code&gt; · &lt;code&gt;registry&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;Use &lt;b&gt;Load from file…&lt;/b&gt; to pick any text-like file (logs, scripts, .txt, .bat, .ps1); lines containing &lt;code&gt;uwfmgr&lt;/code&gt; will be appended to the box.&lt;/p&gt;&lt;p&gt;Clicking &lt;b&gt;Import&lt;/b&gt; turns each command into a pending UI change — &lt;b&gt;nothing is written to the system yet&lt;/b&gt;. Use &lt;b&gt;Review and apply&lt;/b&gt; in the toolbar to commit them.&lt;/p&gt;</source><translation>&lt;p&gt;在下方貼上或鍵入 &lt;b&gt;uwfmgr&lt;/b&gt; 命令，每行一條。支援的類別：&lt;code&gt;filter&lt;/code&gt; · &lt;code&gt;overlay&lt;/code&gt; · &lt;code&gt;volume&lt;/code&gt; · &lt;code&gt;file&lt;/code&gt; · &lt;code&gt;registry&lt;/code&gt;。&lt;/p&gt;&lt;p&gt;點選 &lt;b&gt;從檔案載入…&lt;/b&gt; 選擇任意文字類檔案（日誌、指令碼、.txt / .bat / .ps1），其中包含 &lt;code&gt;uwfmgr&lt;/code&gt; 的行會被追加到下面的輸入框。&lt;/p&gt;&lt;p&gt;點選 &lt;b&gt;匯入&lt;/b&gt; 會把每條命令轉成 UI 上的待應用變更——&lt;b&gt;此時還不會寫入系統&lt;/b&gt;。需要真正生效請用工具欄上的 &lt;b&gt;預覽並應用&lt;/b&gt;。&lt;/p&gt;</translation></message>
     <message><source>Load from file…</source><translation>從檔案載入…</translation></message>
     <message><source>Load recommended configuration</source><translation>載入推薦配置</translation></message>
     <message><source>Choose recommended configuration</source><translation>選擇推薦配置</translation></message>
@@ -521,30 +386,15 @@ Exclusion: %1</source><translation>此鍵在登錄檔排除列表中。
     <message><source>SCEP: persist antimalware signatures and state</source><translation>SCEP：持久化反惡意軟體簽名和狀態</translation></message>
     <message><source>SCEP: persist antimalware registry state</source><translation>SCEP：持久化反惡意軟體登錄檔狀態</translation></message>
     <message><source>Choose files containing uwfmgr commands</source><translation>選擇包含 uwfmgr 命令的檔案</translation></message>
-    <message><source>All files (*);;Text files (*.txt *.bat *.ps1 *.log *.cmd)</source><translation>所有檔案 (*);;文字檔案 (*.txt *.bat *.ps1 *.log *.cmd)</translation></message>
-    <message><source>uwfmgr filter enable
-uwfmgr overlay set-type RAM
-uwfmgr volume protect C:
-uwfmgr file add-exclusion "C:\Users\foo\bar.txt"
-uwfmgr registry add-exclusion HKLM\Software\MyApp</source><translation>uwfmgr filter enable
-uwfmgr overlay set-type RAM
-uwfmgr volume protect C:
-uwfmgr file add-exclusion "C:\Users\foo\bar.txt"
-uwfmgr registry add-exclusion HKLM\Software\MyApp</translation></message>
-    <message><source>#</source><translation>#</translation></message>
+    <message><source>Text files (*.txt *.cmd);;All files (*)</source><translation>文字檔案 (*.txt *.cmd);;所有檔案 (*)</translation></message>
     <message><source>Status</source><translation>狀態</translation></message>
-    <message><source>Command</source><translation>命令</translation></message>
-    <message><source>Detail</source><translation>詳情</translation></message>
     <message><source>Import failed</source><translation>匯入失敗</translation></message>
     <message><source>Internal error: no applier registered.</source><translation>內部錯誤：未註冊命令應用器。</translation></message>
     <message><source>Nothing to import</source><translation>沒有可匯入的內容</translation></message>
     <message><source>No uwfmgr commands found in the input.</source><translation>輸入中未找到任何 uwfmgr 命令。</translation></message>
-    <message><source>Applied: %1</source><translation>已應用：%1</translation></message>
     <message><source>Duplicates: %1</source><translation>重複：%1</translation></message>
     <message><source>Unsupported: %1</source><translation>不支援：%1</translation></message>
-    <message><source>Cumulative after %1 batch(es):</source><translation>累計 %1 批後：</translation></message>
     <message><source>── Batch %1 ──</source><translation>── 第 %1 批 ──</translation></message>
-    <message><source>Applied</source><translation>已應用</translation></message>
     <message><source>Duplicate</source><translation>重複</translation></message>
     <message><source>Unsupported</source><translation>不支援</translation></message>
     <message><source>File too large</source><translation>檔案過大</translation></message>
@@ -573,7 +423,6 @@ Continue and discard them?</source><translation>還有 %1 個待應用變更尚�
     <message><source>Already in the target state — no-op</source><translation>已經處於目標狀態——無須變更</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>路徑不在此磁碟區，或此磁碟區不支援檔案排除（如 exFAT / ReFS）</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>被 UWF 黑名單拒絕（系統檔案 / Windows / 分頁檔案等）</translation></message>
-    <message><source>Same command was already issued earlier in this batch</source><translation>本次匯入中此前已出現過相同命令</translation></message>
     <message><source>Pending filter %1</source><translation>待應用：%1 篩選器</translation></message>
     <message><source>Filter is already in the target state</source><translation>篩選器已經處於目標狀態</translation></message>
     <message><source>Pending overlay type → %1</source><translation>待應用：覆寫層型別 → %1</translation></message>
@@ -593,7 +442,6 @@ Continue and discard them?</source><translation>還有 %1 個待應用變更尚�
     <message><source>registry exclusion</source><translation>登錄檔排除</translation></message>
     <message><source>Registry exclusions are only available on the registry tab, which is not present</source><translation>登錄檔排除只能在登錄檔標籤頁中配置，但當前沒有該標籤頁</translation></message>
     <message><source>Unsupported command</source><translation>不支援的命令</translation></message>
-    <message><source>Exit</source><translation>退出</translation></message>
     <message><source>Show or hide the overlay hub.</source><translation>顯示或隱藏覆寫層 Hub。</translation></message>
     <message><source>UWF: Enabled</source><translation>UWF：已啟用</translation></message>
     <message><source>UWF: Disabled</source><translation>UWF：已禁用</translation></message>
@@ -601,26 +449,11 @@ Continue and discard them?</source><translation>還有 %1 個待應用變更尚�
     <message><source>Used %1 MB / Total %2 MB</source><translation>已用 %1 MB / 總計 %2 MB</translation></message>
     <message><source>Enhanced mode</source><translation>增強模式</translation></message>
     <message><source>Coordinate automatic file staging with Windows shutdown and restart.</source><translation>將檔案暫存自動提交與 Windows 關機、重啟流程聯動。</translation></message>
-    <message><source>Enhanced mode installs an automatically started LocalSystem service. It launches UWF Manager after Windows starts and attempts to commit changes to user-configured staged files before shutdown or restart, improving compatibility for applications that conflict with UWF.</source><translation>增強模式會安裝一項以 LocalSystem 身份執行的自動啟動服務。系統啟動後，服務會啟動 UWF 管理器；關機或重啟前，會嘗試提交使用者預先配置的暫存檔案的變更，以改善部分與 UWF 存在相容性衝突的軟體執行體驗。</translation></message>
-    <message><source>System changes</source><translation>系統變更</translation></message>
-    <message><source>Creates the automatic service UWFManagerEnhanced and binds it to the current executable path</source><translation>建立自動啟動服務 UWFManagerEnhanced，並將其繫結到當前可執行檔案路徑</translation></message>
-    <message><source>Writes and commits the service configuration under HKLM\SYSTEM\CurrentControlSet\Services\UWFManagerEnhanced</source><translation>在登錄檔 HKLM\SYSTEM\CurrentControlSet\Services\UWFManagerEnhanced 下寫入服務配置，並提交</translation></message>
-    <message><source>Starts UWF Manager automatically after the next Windows startup; moving the executable can break automatic startup</source><translation>下次 Windows 啟動時自動執行 UWF 管理器；移動當前可執行檔案可能導致自啟動失效</translation></message>
-    <message><source>Commits eligible staged files during normal Windows shutdown and restart</source><translation>在 Windows 正常關機或重啟過程中，提交符合條件的暫存檔案</translation></message>
-    <message><source>Operational and security considerations</source><translation>執行與安全注意事項</translation></message>
-    <message><source>Registers a service in the system registry when enhanced mode is enabled, so the application no longer remains fully portable</source><translation>啟用增強模式後會在系統登錄檔註冊服務，打破純綠色執行的約束</translation></message>
-    <message><source>A large number of staged files can significantly extend shutdown or restart; allow UWF Manager enough time to preserve user changes</source><translation>暫存區包含大量檔案時，關機或重啟耗時可能顯著增加；UWF Manager 需要充足時間完成使用者變更的持久化</translation></message>
-    <message><source>Enhanced mode runs this application (UWF Manager) as SYSTEM. If a non-administrator tampers with the application or replaces it with a malicious binary, privileges could be elevated to SYSTEM. Enable enhanced mode only from an administrator-protected location (recommended location: %ProgramFiles%\UWF Manager\Service\UWF.exe)</source><translation>增強模式會以 SYSTEM 身份執行本程式。如果程式被非管理員使用者篡改或者被替換為惡意二進位制檔案，可能導致惡意程式許可權提升至 SYSTEM。請僅在受管理員許可權保護的位置啟用增強模式（建議複製本程式至系統保護的目錄：%ProgramFiles%\UWF Manager\Service\UWF.exe 執行）</translation></message>
-    <message><source>Enhanced mode status could not be read</source><translation>無法讀取增強模式狀態</translation></message>
     <message><source>The enhanced mode status read failed because of an unknown error.</source><translation>讀取增強模式狀態時發生未知錯誤。</translation></message>
     <message><source>The current service state could not be read:
 %1</source><translation>無法讀取服務的當前狀態：
 %1</translation></message>
     <message><source>The current service state could not be read because of an unknown error.</source><translation>讀取服務當前狀態時發生未知錯誤。</translation></message>
-    <message><source>Status: Disabled</source><translation>狀態：未啟用</translation></message>
-    <message><source>Status: Enabled</source><translation>狀態：已啟用</translation></message>
-    <message><source>Status: Service stopped</source><translation>狀態：服務未執行</translation></message>
-    <message><source>Status: Repair required</source><translation>狀態：需要修復</translation></message>
     <message><source>The service is not configured as an independent process.</source><translation>服務未配置為獨立程序。</translation></message>
     <message><source>The service is not configured for automatic startup.</source><translation>服務未配置為自動啟動。</translation></message>
     <message><source>The service is not configured to run as LocalSystem.</source><translation>服務未配置為以 LocalSystem 身份執行。</translation></message>
@@ -661,10 +494,10 @@ Continue and discard them?</source><translation>還有 %1 個待應用變更尚�
     <message><source>All staged targets were processed; one or more operations failed.</source><translation>所有暫存目標均已處理，但部分操作失敗。</translation></message>
     <message><source>Show main window</source><translation>顯示主介面</translation></message>
     <message><source>Restore default position</source><translation>恢復預設位置</translation></message>
+    <message><source>Show overlay hub</source><translation>顯示覆寫層 Hub</translation></message>
     <message><source>Hide overlay hub</source><translation>隱藏覆寫層 Hub</translation></message>
     <message><source>Exit application</source><translation>退出應用</translation></message>
     <message><source>✘ Failed to connect to the system</source><translation>✘ 連線系統失敗</translation></message>
-    <message><source>Registry access failed</source><translation>登錄檔訪問失敗</translation></message>
     <message><source>Failed to read registry values: %1</source><translation>讀取登錄檔值失敗：%1</translation></message>
     <message><source>Unexpected error while enumerating overlay files.</source><translation>列舉覆寫層檔案時發生意外錯誤。</translation></message>
     <message><source>✘ Failed to %1 filter</source><translation>✘ %1 篩選器失敗</translation></message>
@@ -688,7 +521,6 @@ Continue and discard them?</source><translation>還有 %1 個待應用變更尚�
     <message><source>✘ Failed to read registry filter</source><translation>✘ 讀取登錄檔篩選器失敗</translation></message>
     <message><source>UWF is not available</source><translation>UWF 不可用</translation></message>
     <message><source>Unknown error while reading the target state.</source><translation>讀取目標狀態時發生未知錯誤。</translation></message>
-    <message><source>The target state could not be read before the operation: %1</source><translation>操作前無法讀取目標狀態：%1</translation></message>
     <message><source>The target no longer exists, so there is nothing to delete.</source><translation>目標已不存在，無需刪除。</translation></message>
     <message><source>The operation failed with an unknown error.</source><translation>操作因未知錯誤而失敗。</translation></message>
     <message><source>The operation result could not be confirmed because the target state reread failed: %1</source><translation>重新讀取目標狀態失敗，無法確認操作結果：%1</translation></message>
@@ -697,13 +529,486 @@ Continue and discard them?</source><translation>還有 %1 個待應用變更尚�
     <message><source>Failed to load logs: %1</source><translation>載入日誌失敗：%1</translation></message>
     <message><source>Failed to load logs: unexpected error.</source><translation>載入日誌時發生意外錯誤。</translation></message>
     <message><source>: unknown error</source><translation>：未知錯誤</translation></message>
-    <message><source>Failed to read the target state: %1</source><translation>讀取目標狀態失敗：%1</translation></message>
-    <message><source>Failed to read the target state because of an unknown error.</source><translation>讀取目標狀態時發生未知錯誤。</translation></message>
+
     <message><source>Failed to resolve the target volume: %1</source><translation>解析目標卷失敗：%1</translation></message>
-    <message><source>Failed to enumerate registry values: %1</source><translation>列舉登錄檔值失敗：%1</translation></message>
+
     <message><source>Failed to enumerate registry keys: %1</source><translation>列舉登錄檔鍵失敗：%1</translation></message>
-    <message><source>Delete and commit failed</source><translation>刪除並提交失敗</translation></message>
+
     <message><source>Failed to resolve the volume for path %1: %2</source><translation>無法解析路徑 %1 所在的卷：%2</translation></message>
-    <message><source>%1/%2 slots</source><translation>%1/%2 插槽</translation></message>
+    <message><source>Skipped because a prerequisite operation failed or could not be confirmed.</source><translation>前置操作失敗或無法確認，已略過此操作。</translation></message>
+    <message><source>Copy</source><translation>複製</translation></message>
+    <message><source>Select All</source><translation>全部選擇</translation></message>
+    <message><source>Display language</source><translation>顯示語言</translation></message>
+    <message><source>Folder</source><translation>資料夾</translation></message>
+    <message><source>File</source><translation>檔案</translation></message>
+    <message><source>Export commands</source><translation>導出命令</translation></message>
+    <message><source>Direct restart…</source><translation>直接重啟…</translation></message>
+    <message><source>Clear…</source><translation>清空…</translation></message>
+    <message><source>Committing</source><translation>提交中</translation></message>
+    <message><source>Target</source><translation>目標</translation></message>
+    <message><source>Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>停用篩選器并重啟後，可調整類型與大小。</translation></message>
+    <message><source>Disk</source><translation>磁碟</translation></message>
+    <message><source>Protection and overlay</source><translation>保護與覆寫層</translation></message>
+    <message><source>Write protection</source><translation>寫入保護</translation></message>
+    <message><source>Overlay type</source><translation>覆寫層類型</translation></message>
+    <message><source>Storage</source><translation>存儲介質</translation></message>
+    <message><source>Overlay maximum size</source><translation>覆寫層最大大小</translation></message>
+    <message><source>Volume %1 protection</source><translation>磁碟區 %1 保護</translation></message>
+    <message><source>By volume ID</source><translation>按磁碟區 ID</translation></message>
+    <message><source>By drive letter</source><translation>按磁碟機代號</translation></message>
+    <message><source>Volume %1 binding</source><translation>磁碟區 %1 繫結</translation></message>
+    <message><source>Volume identity</source><translation>磁碟區標識</translation></message>
+    <message><source>Removed</source><translation>移除</translation></message>
+    <message><source>Future writes to this path will not be protected by UWF.</source><translation>此路徑的后續寫入不受 UWF 保護。</translation></message>
+    <message><source>Remove this path from the next-session exclusions.</source><translation>從下次啟動的排除項中移除此路徑。</translation></message>
+    <message><source>Future writes to this key will not be protected by UWF.</source><translation>此鍵的后續寫入不受 UWF 保護。</translation></message>
+    <message><source>Remove this key from the next-session exclusions.</source><translation>從下次啟動的排除項中移除此鍵。</translation></message>
+    <message><source>Domain Secret Key persistence</source><translation>域密鑰持久化</translation></message>
+    <message><source>Terminal Services license persistence</source><translation>終端服務許可證持久化</translation></message>
+    <message><source>Line</source><translation>行</translation></message>
+    <message><source>Original command</source><translation>原始命令</translation></message>
+    <message><source>Processing result</source><translation>處理結果</translation></message>
+    <message><source>Imported</source><translation>已導入</translation></message>
+    <message><source>Error</source><translation>錯誤</translation></message>
+    <message><source>Warning</source><translation>警告</translation></message>
+    <message><source>Information</source><translation>信息</translation></message>
+    <message><source>Debug</source><translation>調試</translation></message>
+    <message><source>Module</source><translation>模塊</translation></message>
+    <message><source>Failed to clear logs: %1</source><translation>清空記錄失敗：%1</translation></message>
+    <message><source>Failed to clear logs: unexpected error.</source><translation>清空記錄失敗：發生意外錯誤。</translation></message>
+    <message><source>Name and location</source><translation>名稱與位置</translation></message>
+    <message><source>Size</source><translation>大小</translation></message>
+    <message><source>System metadata</source><translation>系統元數據</translation></message>
+    <message><source>Date modified</source><translation>修改日期</translation></message>
+    <message><source>Choose a location within the allowed drive or folder.</source><translation>請選擇限定磁碟或資料夾內的位置。</translation></message>
+    <message><source>Unable to read this folder.</source><translation>無法讀取此資料夾。</translation></message>
+    <message><source>All files (*)</source><translation>所有檔案 (*)</translation></message>
+    <message><source>The destination folder does not exist.</source><translation>目標資料夾不存在。</translation></message>
+    <message><source>Enter a valid file name.</source><translation>請輸入有效的檔案名。</translation></message>
+    <message><source>The selected item no longer exists: %1</source><translation>所選項目已不存在：%1</translation></message>
+    <message><source>Select files only, or open a folder to browse its contents.</source><translation>請選擇檔案，或打開資料夾瀏覽其內容。</translation></message>
+    <message><source>Select a folder.</source><translation>請選擇資料夾。</translation></message>
+    <message><source>Enter a valid folder name.</source><translation>請輸入有效的資料夾名稱。</translation></message>
+    <message><source>Enter a valid file or folder name.</source><translation>請輸入有效的檔案或資料夾名稱。</translation></message>
+    <message><source>Commit complete</source><translation>提交完成</translation></message>
+    <message><source>Review the result for each target.</source><translation>查看各目標的操作結果。</translation></message>
+
+    <message><source>Unsuccessful items have not been saved. Select a row to view the full path and reason.</source><translation>失敗項的更改尚未儲存。選擇一行查看完整路徑和原因。</translation></message>
+    <message><source>All changes have been saved to disk and will persist without a restart.</source><translation>所有更改已提交到磁碟，無需重啟即可持久儲存。</translation></message>
+    <message><source>Item details</source><translation>項目詳情</translation></message>
+    <message><source>Done</source><translation>完成</translation></message>
+    <message><source>Review these changes before writing them to the system.</source><translation>核對本次變更，確認后寫入系統。</translation></message>
+    <message><source>%1 changes</source><translation>%1 項變更</translation></message>
+    <message><source>Takes effect after restart</source><translation>下次啟動生效</translation></message>
+    <message><source>View commands for these changes</source><translation>查看本次變更的命令</translation></message>
+    <message><source>The configuration matches the next-session target. View or export commands in Full configuration.</source><translation>設定與下一會話目標一致。可在“完整設定”中查看或導出命令。</translation></message>
+    <message><source>Pending changes</source><translation>待應用變更</translation></message>
+    <message><source>Next-session configuration</source><translation>下一會話設定</translation></message>
+    <message><source>%1 commands</source><translation>%1 條命令</translation></message>
+    <message><source>Save this UTF-8 CMD script as a .cmd file and run it in Command Prompt. Export uses the same script.</source><translation>將此 UTF-8 CMD 指令碼儲存為 .cmd 檔案，並在命令提示字元中執行。匯出使用相同的指令碼。</translation></message>
+    <message><source>Full configuration</source><translation>完整設定</translation></message>
+    <message><source>Apply changes</source><translation>應用更改</translation></message>
+    <message><source>Some changes could not be applied</source><translation>部分變更未能應用</translation></message>
+    <message><source>Configuration applied</source><translation>設定已應用</translation></message>
+    <message><source>Review the operation details. Read the current system state before retrying changes that may have been written.</source><translation>請查看操作詳情；重新讀取系統狀態后，再修正未完成項。</translation></message>
+    <message><source>The configuration has been written to the system. Most changes take effect after restart.</source><translation>設定已寫入系統，大部分變更在下次啟動時生效。</translation></message>
+    <message><source>Application result</source><translation>應用結果</translation></message>
+    <message><source>Write these configuration changes to the system? Most changes take effect after restart.</source><translation>將這些設定變更寫入系統？大部分設定將在下次啟動時生效。</translation></message>
+    <message><source>Search paths</source><translation>搜索路徑</translation></message>
+    <message><source>Add files or folders</source><translation>添加檔案或資料夾</translation></message>
+    <message><source>File or folder</source><translation>檔案或資料夾</translation></message>
+    <message><source>Registry key or persistence setting</source><translation>登錄檔項或持久化設置</translation></message>
+    <message><source>%1 selected</source><translation>已選擇 %1 項</translation></message>
+    <message><source>Undo removal</source><translation>撤銷移除</translation></message>
+    <message><source>%1 items</source><translation>%1 項</translation></message>
+    <message><source>Filter is disabled</source><translation>篩選器未啟用</translation></message>
+    <message><source>Usage unavailable</source><translation>用量不可用</translation></message>
+    <message><source>Overlay critical threshold reached. Save changes and safely restart.</source><translation>覆寫層已達到嚴重臨界值。請儲存更改，并盡快安全重啟。</translation></message>
+    <message><source>Overlay warning threshold reached. Save changes and safely restart.</source><translation>覆寫層已達到警告臨界值。請儲存更改，再安全重啟。</translation></message>
+    <message><source>UWF filter</source><translation>UWF 篩選器</translation></message>
+    <message><source>Overlay usage</source><translation>覆寫層使用量</translation></message>
+    <message><source>Current usage</source><translation>目前使用量</translation></message>
+    <message><source>Warning %1 MB</source><translation>警告 %1 MB</translation></message>
+    <message><source>Enable the filter and restart to display live usage</source><translation>啟用并重啟後顯示實時用量</translation></message>
+    <message><source>Read the configuration to display live usage</source><translation>讀取設定后顯示實時用量</translation></message>
+    <message><source>Critical %1 MB</source><translation>嚴重 %1 MB</translation></message>
+    <message><source>On</source><translation>開啟</translation></message>
+    <message><source>Off</source><translation>關閉</translation></message>
+    <message><source>Import configuration</source><translation>導入設定</translation></message>
+    <message><source>Add UWF configuration from a script or text.</source><translation>從腳本或文本中添加 UWF 設定。</translation></message>
+    <message><source>One uwfmgr command per line</source><translation>每行一條 uwfmgr 命令</translation></message>
+    <message><source>uwfmgr commands</source><translation>uwfmgr 命令</translation></message>
+    <message><source>Editable</source><translation>可編輯</translation></message>
+    <message><source>Paste commands, or load them from a file…</source><translation>粘貼命令，或從檔案載入…</translation></message>
+    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>導入后生成待應用變更，點擊“預覽并應用”才會寫入系統。</translation></message>
+    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>已導入的命令仍需應用。選擇一行可查看完整命令和處理結果。</translation></message>
+    <message><source>Edit commands</source><translation>編輯命令</translation></message>
+    <message><source>Import results</source><translation>導入結果</translation></message>
+    <message><source>Not written to the system</source><translation>尚未寫入系統</translation></message>
+    <message><source>UTF-8 · %1 lines</source><translation>UTF-8 · %1 行</translation></message>
+    <message><source>Continue editing</source><translation>繼續編輯</translation></message>
+    <message><source>Imported: %1</source><translation>已導入 %1</translation></message>
+    <message><source>Binding</source><translation>繫結</translation></message>
+    <message><source>Protected</source><translation>已保護</translation></message>
+    <message><source>Unprotected</source><translation>未保護</translation></message>
+    <message><source>View overlay</source><translation>查看覆寫層</translation></message>
+    <message><source>UWF is currently unavailable</source><translation>UWF 目前不可用</translation></message>
+    <message><source>Select registry key or value</source><translation>選擇登錄檔鍵或值</translation></message>
+    <message><source>Select registry key or value to delete</source><translation>選擇要刪除的登錄檔鍵或值</translation></message>
+    <message><source>UWF configuration could not be read. Confirm that Unified Write Filter is installed in Windows, then read again.</source><translation>未能讀取 UWF 設定。確認 Windows 已安裝統一寫入篩選器后重新讀取。</translation></message>
+    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to save staged files.</source><translation>增強模式不可用；請使用安全關機或安全重啟儲存暫存檔案。</translation></message>
+    <message><source>Version %1</source><translation>版本 %1</translation></message>
+    <message><source>A graphical manager for Windows Unified Write Filter.
+Manage volume protection, overlay, exclusions, and staged files.</source><translation>Windows 統一寫入篩選器的圖形管理工具。
+管理磁碟區保護、覆寫層、排除項與檔案暫存。</translation></message>
+    <message><source>Source code</source><translation>源代碼</translation></message>
+    <message><source>Contact author</source><translation>聯系作者</translation></message>
+    <message><source>Windows UWF provides write protection. This application configures and manages it.</source><translation>寫入保護由 Windows 內置 UWF 提供，本程式負責設定與管理。</translation></message>
+    <message><source>System changes when UWF is first enabled</source><translation>首次啟用 UWF 對系統的影響</translation></message>
+    <message><source>&lt;p&gt;Windows disables paging files, System Restore, SuperFetch, file indexing, disk defragmentation, and fast startup. It also sets the BCD bootstatuspolicy to ignoreallfailures.&lt;/p&gt;&lt;p&gt;You can adjust these settings afterwards. For example, move the paging file to an unprotected volume before enabling paging again.&lt;/p&gt;</source><translation>&lt;p&gt;Windows 會停用分頁檔案、系統還原、SuperFetch、檔案索引、磁碟碎片整理和快速啟動，并將 BCD 的 bootstatuspolicy 設為 ignoreallfailures。&lt;/p&gt;&lt;p&gt;之後可按需調整。例如，將分頁檔案移至未保護磁碟區后重新啟用分頁。&lt;/p&gt;</translation></message>
+    <message><source>License and copyright</source><translation>許可與版權</translation></message>
+    <message><source>&lt;p&gt;Released under the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public License v3.0&lt;/a&gt;. Full terms are in the LICENSE file included with the application.&lt;/p&gt;&lt;p&gt;You may redistribute or modify it under GPL v3. The software is provided as is, without any warranty.&lt;/p&gt;</source><translation>&lt;p&gt;采用 &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public License v3.0&lt;/a&gt; 發布，完整條款見程式隨附的 LICENSE 檔案。&lt;/p&gt;&lt;p&gt;可按 GPL v3 條款再分發或修改。軟件按原樣提供，不附帶任何保證。&lt;/p&gt;</translation></message>
+    <message><source>Copy version</source><translation>復制版本</translation></message>
+    <message><source>View application records and diagnostic information.</source><translation>查看運行記錄與診斷信息。</translation></message>
+    <message><source>Log level</source><translation>記錄等級</translation></message>
+    <message><source>All levels</source><translation>全部等級</translation></message>
+    <message><source>Current run</source><translation>本次運行</translation></message>
+    <message><source>Search messages or modules</source><translation>搜索消息或模塊</translation></message>
+    <message><source>Search logs</source><translation>搜索記錄</translation></message>
+    <message><source>Message details</source><translation>消息詳情</translation></message>
+    <message><source>Error details</source><translation>錯誤詳情</translation></message>
+    <message><source>Clear logs?</source><translation>清空記錄？</translation></message>
+    <message><source>The current log records will be cleared and cannot be restored.</source><translation>目前記錄記錄將被清空，無法恢復。</translation></message>
+    <message><source>Clear logs</source><translation>清空記錄</translation></message>
+    <message><source>Copy all logs</source><translation>復制全部記錄</translation></message>
+    <message><source>Reading logs</source><translation>正在讀取記錄</translation></message>
+    <message><source>Unable to read logs</source><translation>無法讀取記錄</translation></message>
+    <message><source>Records from the current run will appear here when reading is complete.</source><translation>讀取完成後將在此顯示本次運行記錄。</translation></message>
+    <message><source>Log reading failed. Retry or check access to the log file.</source><translation>記錄讀取失敗。請重試，或檢查記錄檔案的訪問權限。</translation></message>
+    <message><source>Cancel reading</source><translation>取消讀取</translation></message>
+    <message><source>Read again</source><translation>重新讀取</translation></message>
+    <message><source>No matching logs</source><translation>沒有匹配的記錄</translation></message>
+    <message><source>No logs yet</source><translation>暫無記錄</translation></message>
+    <message><source>Try another keyword or log level.</source><translation>嘗試調整關鍵詞或記錄等級。</translation></message>
+    <message><source>New records will appear after refreshing.</source><translation>新的運行記錄將在刷新后顯示。</translation></message>
+    <message><source>Clear filters</source><translation>清除篩選</translation></message>
+    <message><source>%1 records</source><translation>%1 條記錄</translation></message>
+    <message><source>%1 records · %2 total</source><translation>%1 條記錄 · 共 %2 條</translation></message>
+    <message><source>A diagnostic snapshot of the system, privileges, and UWF.</source><translation>系統、權限與 UWF 的診斷快照。</translation></message>
+    <message><source>This report may contain account names, device identifiers, and file paths. Review it before sharing.</source><translation>報告可能包含賬戶名、裝置標識和檔案路徑，分享前請先檢查。</translation></message>
+    <message><source>Some hardware information could not be read. Other diagnostic information remains available to view and copy.</source><translation>部分硬件信息未能讀取，其余診斷信息仍可查看和復制。</translation></message>
+    <message><source>Overview</source><translation>概覽</translation></message>
+    <message><source>Raw report</source><translation>原始報告</translation></message>
+    <message><source>Copy full report</source><translation>復制完整報告</translation></message>
+    <message><source>Delete and commit this file?</source><translation>刪除并提交檔案？</translation></message>
+    <message><source>Commit file changes?</source><translation>提交檔案更改？</translation></message>
+    <message><source>Delete and commit this folder?</source><translation>刪除并提交資料夾？</translation></message>
+    <message><source>Commit folder changes?</source><translation>提交資料夾更改？</translation></message>
+    <message><source>Delete and commit this registry key?</source><translation>刪除并提交登錄檔鍵？</translation></message>
+    <message><source>Commit registry key changes?</source><translation>提交登錄檔鍵更改？</translation></message>
+    <message><source>Delete and commit this registry value?</source><translation>刪除并提交登錄檔值？</translation></message>
+    <message><source>Commit registry value changes?</source><translation>提交登錄檔值更改？</translation></message>
+
+    <message><source>Commit changes</source><translation>提交更改</translation></message>
+    <message><source>Service stopped</source><translation>服務已停止</translation></message>
+    <message><source>Repair required</source><translation>需要修復</translation></message>
+    <message><source>The service is installed but stopped. Start it to restore automatic saving.</source><translation>服務已安裝但未運行。啟動服務以恢復自動儲存。</translation></message>
+    <message><source>The enhanced mode service status could not be read. Check service permissions and retry.</source><translation>無法讀取增強模式服務狀態。請檢查服務權限后重試。</translation></message>
+    <message><source>Coordinate with Windows shutdown</source><translation>與 Windows 關機流程協同</translation></message>
+    <message><source>Automatically save eligible staged files during normal shutdown and restart.</source><translation>正常關機或重啟時，自動儲存符合條件的暫存檔案。</translation></message>
+    <message><source>Background service</source><translation>后臺服務</translation></message>
+    <message><source>Starts automatically with Windows</source><translation>隨 Windows 自動啟動</translation></message>
+    <message><source>Automatic file staging</source><translation>自動儲存暫存檔案</translation></message>
+    <message><source>Commits staged files before normal shutdown and restart</source><translation>接管正常關機與重啟前的檔案提交</translation></message>
+    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to save staged files.</source><translation>未啟用時，仍可使用程式內的“安全關機”和“安全重啟”儲存暫存檔案。</translation></message>
+    <message><source>Operation and security</source><translation>運行與安全說明</translation></message>
+    <message><source>Enhanced mode adds a background service that starts with Windows. Remove the service before moving or deleting the application.</source><translation>增強模式會新增一個隨 Windows 啟動的背景服務。移動或刪除程式前，請先移除該服務。</translation></message>
+    <message><source>Keep the application in a fixed folder that standard users cannot modify. Suggested location:</source><translation>請將程式放在一般使用者無法修改的固定資料夾中。建議位置：</translation></message>
+    <message><source>If UWF protects the application drive, first make sure the application files will remain after a restart. Committing many staged files can make shutdown or restart take longer.</source><translation>如果程式所在磁碟受 UWF 保護，啟用前請先確保程式檔案在重新啟動後仍會保留。暫存檔案較多時，關機或重新啟動可能需要更長時間。</translation></message>
+    <message><source>Service details</source><translation>服務詳情</translation></message>
+    <message><source>Configuration error</source><translation>設定異常</translation></message>
+    <message><source>Running</source><translation>正在運行</translation></message>
+    <message><source>Service status</source><translation>服務狀態</translation></message>
+    <message><source>Stopped</source><translation>已停止</translation></message>
+    <message><source>Not installed</source><translation>尚未安裝</translation></message>
+    <message><source>Ready</source><translation>就緒</translation></message>
+    <message><source>Unavailable</source><translation>不可用</translation></message>
+    <message><source>Service name</source><translation>服務名稱</translation></message>
+    <message><source>Account</source><translation>運行賬戶</translation></message>
+    <message><source>Startup type</source><translation>啟動類型</translation></message>
+    <message><source>Automatic</source><translation>自動</translation></message>
+    <message><source>Not configured</source><translation>尚未設定</translation></message>
+    <message><source>Application path</source><translation>程式路徑</translation></message>
+    <message><source>UI agent</source><translation>界面代理</translation></message>
+    <message><source>Connected and authenticated</source><translation>已連接 · 身份已驗證</translation></message>
+    <message><source>64-bit</source><translation>64 位</translation></message>
+    <message><source>32-bit</source><translation>32 位</translation></message>
+    <message><source>System</source><translation>系統</translation></message>
+    <message><source>Operating system</source><translation>操作系統</translation></message>
+    <message><source>Architecture</source><translation>體系結構</translation></message>
+    <message><source>System memory</source><translation>系統記憶體</translation></message>
+    <message><source>Permissions and protection</source><translation>權限與保護</translation></message>
+    <message><source>Privileges</source><translation>運行權限</translation></message>
+    <message><source>Standard user</source><translation>標準使用者</translation></message>
+    <message><source>UWF feature</source><translation>UWF 功能</translation></message>
+    <message><source>Available</source><translation>可用</translation></message>
+    <message><source>Current filter</source><translation>目前篩選器</translation></message>
+    <message><source>Protected volumes</source><translation>已保護磁碟區</translation></message>
+    <message><source>None</source><translation>無</translation></message>
+    <message><source>Connecting…</source><translation>正在連接…</translation></message>
+    <message><source>Not connected</source><translation>未連接</translation></message>
+    <message><source>Service account</source><translation>服務賬戶</translation></message>
+    <message><source>Service configuration needs repair</source><translation>服務設定需要修復</translation></message>
+    <message><source>Retry</source><translation>重試</translation></message>
+    <message><source>Status unavailable</source><translation>狀態不可用</translation></message>
+    <message><source>Unable to read service status</source><translation>服務狀態讀取失敗</translation></message>
+    <message><source>View the file diagnostic snapshot for %1.</source><translation>查看 %1 的檔案診斷快照。</translation></message>
+    <message><source>Local disk (%1)</source><translation>本地磁碟 (%1)</translation></message>
+    <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>列表可能遺漏或包含已提交檔案，請勿將其作為提交清單。</translation></message>
+    <message><source>About this snapshot</source><translation>了解範圍</translation></message>
+    <message><source>Commit changes…</source><translation>提交更改…</translation></message>
+    <message><source>System metadata is for diagnosis only and cannot be committed.</source><translation>系統元數據僅供診斷，不提供提交操作。</translation></message>
+    <message><source>Error details and suggestions</source><translation>錯誤詳情與建議</translation></message>
+    <message><source>Export list</source><translation>導出列表</translation></message>
+    <message><source>Reading overlay</source><translation>正在讀取覆寫層</translation></message>
+    <message><source>Unable to read the overlay right now</source><translation>暫時無法讀取覆寫層</translation></message>
+    <message><source>Reading canceled</source><translation>已取消讀取</translation></message>
+    <message><source>No overlay files found</source><translation>未發現覆寫層檔案</translation></message>
+    <message><source>Reading a large overlay can take longer. You can cancel at any time.</source><translation>大覆寫層的讀取可能較慢，可隨時取消。</translation></message>
+    <message><source>The UWF provider could not complete enumeration. This can occur with a large overlay or insufficient system resources.</source><translation>UWF 提供程式未能完成枚舉。覆寫層較大或系統資源不足時可能發生此問題。</translation></message>
+    <message><source>Read again to retrieve a diagnostic snapshot.</source><translation>重新讀取以獲取診斷快照。</translation></message>
+    <message><source>An empty diagnostic snapshot does not mean that the overlay contains no changes.</source><translation>該診斷快照未返回檔案，不代表覆寫層中沒有更改。</translation></message>
+    <message><source>%1 items · %2</source><translation>%1 項 · %2</translation></message>
+    <message><source>Selected folder</source><translation>所選資料夾</translation></message>
+    <message><source>Selected file</source><translation>所選檔案</translation></message>
+    <message><source>Direct shutdown?</source><translation>直接關機？</translation></message>
+    <message><source>Direct restart?</source><translation>直接重啟？</translation></message>
+    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after shutdown.</source><translation>將跳過檔案暫存。受保護路徑中尚未提交的更改會在關機後丟失。</translation></message>
+    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after restart.</source><translation>將跳過檔案暫存。受保護路徑中尚未提交的更改會在重啟後丟失。</translation></message>
+    <message><source>Files in File staging will not be saved.</source><translation>不會儲存暫存檔案。</translation></message>
+    <message><source>Save staged files to disk, then shut down.</source><translation>先將暫存檔案提交到磁碟，再關機。</translation></message>
+    <message><source>Save staged files to disk, then restart.</source><translation>先將暫存檔案提交到磁碟，再重啟。</translation></message>
+    <message><source>staged files</source><translation>個暫存檔案</translation></message>
+    <message><source>View failure details</source><translation>查看失敗詳情</translation></message>
+    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after shutdown.</source><translation>僅暫存檔案會自動提交。其他受保護路徑中的未提交更改將在關機後丟失。</translation></message>
+    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after restart.</source><translation>僅暫存檔案會自動提交。其他受保護路徑中的未提交更改將在重啟後丟失。</translation></message>
+    <message><source>Ready to save</source><translation>即將儲存</translation></message>
+    <message><source>No files to commit</source><translation>沒有待提交檔案</translation></message>
+    <message><source>Large staging lists may take longer to save.</source><translation>檔案較多時可能需要更長時間。</translation></message>
+    <message><source>UWF safe shutdown will run directly.</source><translation>將直接執行 UWF 安全關機。</translation></message>
+    <message><source>UWF safe restart will run directly.</source><translation>將直接執行 UWF 安全重啟。</translation></message>
+    <message><source>/ %1 files</source><translation>/ %1 個檔案</translation></message>
+    <message><source>Saving staged files</source><translation>正在儲存暫存檔案</translation></message>
+    <message><source>Shutdown will continue after saving. Keep the application open.</source><translation>儲存完成後將繼續關機。請勿關閉程式。</translation></message>
+    <message><source>Restart will continue after saving. Keep the application open.</source><translation>儲存完成後將繼續重啟。請勿關閉程式。</translation></message>
+    <message><source>Saving to disk</source><translation>正在提交到磁碟</translation></message>
+    <message><source>Saving…</source><translation>正在儲存…</translation></message>
+    <message><source>File saving has started and cannot be canceled.</source><translation>檔案提交已開始，暫時無法取消。</translation></message>
+    <message><source>Confirm before continuing</source><translation>請確認是否繼續</translation></message>
+    <message><source>Some files could not be saved</source><translation>部分檔案未能儲存</translation></message>
+    <message><source>Review the failure details before continuing shutdown.</source><translation>請查看失敗詳情，再決定是否繼續關機。</translation></message>
+    <message><source>Review the failure details before restarting.</source><translation>請查看失敗詳情，再決定是否繼續重啟。</translation></message>
+    <message><source>File saving incomplete</source><translation>檔案提交未完成</translation></message>
+    <message><source>Automatic saving incomplete</source><translation>自動儲存未完成</translation></message>
+    <message><source>Continuing shutdown will discard changes in files that could not be saved.</source><translation>繼續關機將丟失未能儲存的檔案更改。</translation></message>
+    <message><source>Continuing restart will discard changes in files that could not be saved.</source><translation>繼續重啟將丟失未能儲存的檔案更改。</translation></message>
+    <message><source>Shut down anyway</source><translation>仍然關機</translation></message>
+    <message><source>Restart anyway</source><translation>仍然重啟</translation></message>
+    <message><source>Counting staged files…</source><translation>正在統計暫存檔案…</translation></message>
+    <message><source>Scanning staged paths</source><translation>正在掃描暫存路徑</translation></message>
+    <message><source>Select a key to operate on its subtree, or a named value to operate on that value only.</source><translation>選擇鍵可操作整個子樹，選擇命名值僅操作此值。</translation></message>
+    <message><source>Select the registry key to exclude from UWF protection, including its subkeys and values.</source><translation>選擇要從 UWF 寫入保護中排除的登錄機碼（包含子機碼與值）。</translation></message>
+    <message><source>Enter HKLM\SOFTWARE\… and press Enter to navigate</source><translation>輸入 HKLM\SOFTWARE\…，按 Enter 跳轉</translation></message>
+    <message><source>Navigate to registry path</source><translation>轉到登錄檔路徑</translation></message>
+    <message><source>Collapse</source><translation>折疊</translation></message>
+    <message><source>Expand</source><translation>展開</translation></message>
+    <message><source>Copy name</source><translation>復制名稱</translation></message>
+    <message><source>Unable to access this registry key</source><translation>無法訪問此登錄檔鍵</translation></message>
+    <message><source>Choose another key, or check access permissions and try again.</source><translation>請選擇其他鍵，或檢查訪問權限后重試。</translation></message>
+    <message><source>Current selection</source><translation>目前選擇</translation></message>
+    <message><source>Copy selection</source><translation>復制所選內容</translation></message>
+    <message><source>Use the whole key, including all subkeys</source><translation>改選整個鍵（含全部子鍵）</translation></message>
+    <message><source>Select this registry value</source><translation>選擇此登錄檔值</translation></message>
+    <message><source>Home</source><translation>主目錄</translation></message>
+    <message><source>Back</source><translation>返回上一個資料夾</translation></message>
+    <message><source>Up one folder</source><translation>上一級資料夾</translation></message>
+    <message><source>Refresh folder</source><translation>刷新資料夾</translation></message>
+    <message><source>Folder address</source><translation>資料夾地址</translation></message>
+    <message><source>Search this folder</source><translation>搜索此資料夾</translation></message>
+    <message><source>Quick access</source><translation>快速訪問</translation></message>
+    <message><source>This PC</source><translation>此電腦</translation></message>
+    <message><source>Folders</source><translation>資料夾</translation></message>
+    <message><source>Files and folders</source><translation>檔案與資料夾</translation></message>
+    <message><source>New folder</source><translation>新建資料夾</translation></message>
+    <message><source>Open folder</source><translation>打開資料夾</translation></message>
+    <message><source>Select this file</source><translation>選擇此檔案</translation></message>
+    <message><source>Copy path</source><translation>復制路徑</translation></message>
+    <message><source>Rename…</source><translation>重命名…</translation></message>
+    <message><source>Selection</source><translation>所選項</translation></message>
+    <message><source>File name</source><translation>檔案名</translation></message>
+    <message><source>Select the current folder</source><translation>選擇目前資料夾</translation></message>
+    <message><source>Select files or folders</source><translation>選擇檔案或資料夾</translation></message>
+    <message><source>Enter a file name</source><translation>輸入檔案名</translation></message>
+    <message><source>Select a file or enter its name</source><translation>選擇檔案或輸入名稱</translation></message>
+    <message><source>File type</source><translation>檔案類型</translation></message>
+    <message><source>Files and folders can be selected together.</source><translation>可同時選擇檔案與資料夾</translation></message>
+    <message><source>Select folders only.</source><translation>僅選擇資料夾</translation></message>
+    <message><source>Choose a location to save the file.</source><translation>選擇檔案儲存位置</translation></message>
+    <message><source>Multiple files can be selected.</source><translation>支持多選</translation></message>
+    <message><source>Select a file to open.</source><translation>選擇要載入的設定檔案</translation></message>
+    <message><source>Save</source><translation>儲存</translation></message>
+    <message><source>Add selected items</source><translation>添加所選項</translation></message>
+    <message><source>Select folder</source><translation>選擇資料夾</translation></message>
+    <message><source>Open</source><translation>打開</translation></message>
+    <message><source>Unable to select this item</source><translation>無法選擇此項目</translation></message>
+    <message><source>Reading folder</source><translation>正在讀取資料夾</translation></message>
+    <message><source>Unable to access this folder</source><translation>無法訪問此資料夾</translation></message>
+    <message><source>This folder is empty</source><translation>此資料夾為空</translation></message>
+    <message><source>No matching items</source><translation>沒有匹配的項目</translation></message>
+    <message><source>Reading files and subfolders in this location…</source><translation>正在讀取此位置的檔案與子資料夾…</translation></message>
+    <message><source>Choose another folder, or check access permissions and retry.</source><translation>請選擇其他資料夾，或檢查訪問權限后重試。</translation></message>
+    <message><source>Go up one folder or choose another location.</source><translation>可以返回上一級，或選擇其他位置。</translation></message>
+    <message><source>Try another search term.</source><translation>嘗試其他關鍵詞。</translation></message>
+    <message><source> · %1 selected</source><translation> · 已選擇 %1 項</translation></message>
+    <message><source>Replace the existing file?</source><translation>替換現有檔案？</translation></message>
+    <message><source>A file already exists at this location:
+%1
+
+Saving will replace its contents.</source><translation>此位置已存在檔案：
+%1
+
+儲存將覆蓋原檔案。</translation></message>
+    <message><source>Replace file</source><translation>替換檔案</translation></message>
+    <message><source>Folder name</source><translation>資料夾名稱</translation></message>
+    <message><source>Create</source><translation>創建</translation></message>
+    <message><source>Rename</source><translation>重命名</translation></message>
+    <message><source>Add exclusion</source><translation>添加排除</translation></message>
+    <message><source>Select this registry key</source><translation>選擇此登錄檔鍵</translation></message>
+    <message><source>No registry key selected</source><translation>尚未選擇登錄檔鍵</translation></message>
+    <message><source>Select an available subkey</source><translation>請選擇可用子鍵</translation></message>
+    <message><source>Global registry exclusion · includes subkeys</source><translation>全局登錄檔排除項 · 包含子鍵</translation></message>
+    <message><source>Named value: %1 · this value only</source><translation>命名值：%1 · 僅操作此值</translation></message>
+    <message><source>Whole key and all subkeys · recursive</source><translation>整鍵及全部子鍵 · 遞歸操作</translation></message>
+    <message><source>More</source><translation>更多</translation></message>
+    <message><source>Compatibility mode</source><translation>相容模式</translation></message>
+    <message><source>Discard changes</source><translation>放棄變更</translation></message>
+    <message><source>%1 pending change(s)</source><translation>%1 項待應用</translation></message>
+    <message><source>Administrator</source><translation>管理員</translation></message>
+    <message><source>Read-only</source><translation>唯讀</translation></message>
+    <message><source>Restore</source><translation>還原</translation></message>
+    <message><source>Move</source><translation>移動</translation></message>
+    <message><source>Minimize</source><translation>最小化</translation></message>
+    <message><source>Maximize</source><translation>最大化</translation></message>
+    <message><source>Staged path</source><translation>暫存路徑</translation></message>
+    <message><source>Required configuration</source><translation>必要設定</translation></message>
+    <message><source>Pending removal</source><translation>待移除</translation></message>
+    <message><source>Recursive staging</source><translation>遞歸暫存</translation></message>
+    <message><source>Staged file</source><translation>暫存檔案</translation></message>
+    <message><source>Added</source><translation>新增</translation></message>
+    <message><source>Configured</source><translation>已設定</translation></message>
+
+    <message><source>Changes already committed are retained.</source><translation>已提交的更改會保留。</translation></message>
+    <message><source>Processed %1 / %2 items</source><translation>已處理 %1 / %2 項</translation></message>
+    <message><source>Remaining tasks can be canceled after the current target finishes.</source><translation>目前目標處理完成後，可取消剩餘任務。</translation></message>
+
+    <message><source>Fit columns to contents</source><translation>根據內容調整列寬</translation></message>
+    <message><source>Mark selected paths for removal. Takes effect after Apply.</source><translation>將所選路徑標記為待移除，套用後生效。</translation></message>
+    <message><source>Remove from automatic file staging after Apply.</source><translation>套用後從自動暫存清單中移除此路徑。</translation></message>
+    <message><source>Add to automatic file staging after Apply.</source><translation>套用後將此路徑新增至自動暫存清單。</translation></message>
+    <message><source>Applying this plan clears the saved staging list and removes its registry exclusion when no longer required.</source><translation>套用此計畫將清空已儲存的暫存清單，並在不再需要時移除相關的登錄排除項目。</translation></message>
+    <message><source>File staging changes must be applied in UWF Manager and cannot be exported as uwfmgr commands.</source><translation>暫存清單的變更須在 UWF 管理員中套用，無法匯出為 uwfmgr 命令。</translation></message>
+    <message><source>File staging is saved after Apply</source><translation>暫存清單在套用後儲存</translation></message>
+    <message><source>Overlay snapshot scope</source><translation>覆寫層快照的範圍</translation></message>
+    <message><source>This list is for diagnostics only. It cannot determine which files must be committed.</source><translation>此清單僅供診斷，不能用來判斷哪些檔案必須提交。</translation></message>
+    <message><source>NTFS volumes only</source><translation>僅支援 NTFS 磁碟區</translation></message>
+    <message><source>Large overlays may load slowly or fail because of insufficient resources.</source><translation>大型覆寫層可能讀取緩慢或因資源不足而失敗。</translation></message>
+    <message><source>Small files may be missing</source><translation>可能遺漏小型檔案</translation></message>
+    <message><source>Files smaller than the disk cluster size (typically 4 KB) may not appear in the list.</source><translation>小於磁碟叢集大小（通常為 4 KB）的檔案可能不在清單中。</translation></message>
+    <message><source>Does not indicate pending commits</source><translation>不代表待提交狀態</translation></message>
+    <message><source>Files already committed, excluded paths, and items affected by other operations may also appear.</source><translation>已提交的檔案、排除路徑及受其他操作影響的項目也可能出現。</translation></message>
+
+    <message><source>Command processing result</source><translation>命令處理結果</translation></message>
+    <message><source>Copy command</source><translation>複製命令</translation></message>
+    <message><source> · %1 branches could not be read</source><translation> · %1 個分支讀取失敗</translation></message>
+    <message><source>%1 branches could not be read. Continue with discovered content, or retry only the failed items.</source><translation>%1 個分支無法讀取。可繼續處理已發現內容，或僅重試失敗項目。</translation></message>
+    <message><source>%1 files · %2 folders</source><translation>%1 個檔案 · %2 個目錄</translation></message>
+    <message><source>%1 values · %2 keys</source><translation>%1 個值 · %2 個機碼</translation></message>
+    <message><source>Attempts</source><translation>嘗試次數</translation></message>
+    <message><source>Cancel remaining tasks</source><translation>取消剩餘工作</translation></message>
+    <message><source>Commit only successfully traversed content. Unread branches remain unchanged.</source><translation>僅提交已成功走訪的內容；讀取失敗的分支維持原樣。</translation></message>
+    <message><source>Committing changes</source><translation>正在提交變更</translation></message>
+    <message><source>Completed deletions and commits cannot be undone.</source><translation>已完成的刪除及提交無法復原。</translation></message>
+    <message><source>Continue…</source><translation>繼續…</translation></message>
+    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>僅刪除已成功走訪的目標並儲存刪除結果；讀取失敗的分支及其上層目錄或機碼會保留。</translation></message>
+    <message><source>Deleting and committing</source><translation>正在刪除並提交</translation></message>
+    <message><source>Deletion and commit cannot be undone. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>刪除及提交無法復原。僅處理所選範圍，不會套用待套用的 UWF 設定。</translation></message>
+    <message><source>Determining the scope. Unread branches are recorded while traversal continues elsewhere.</source><translation>正在確定操作範圍。讀取失敗的分支會記錄下來，並繼續走訪其餘內容。</translation></message>
+    <message><source>Export traversal records</source><translation>匯出走訪記錄</translation></message>
+    <message><source>No actionable content</source><translation>沒有可操作的內容</translation></message>
+    <message><source>No actionable targets were found. Nothing has been deleted or committed.</source><translation>所選範圍中沒有找到可操作的目標，未執行刪除或提交。</translation></message>
+    <message><source>No changes have been committed.</source><translation>尚未提交任何變更</translation></message>
+    <message><source>Nothing has been deleted or committed.</source><translation>尚未刪除或提交任何內容</translation></message>
+    <message><source>Path</source><translation>路徑</translation></message>
+    <message><source>Permanently delete the selected scope and save the deletions to the protected volume.</source><translation>將永久刪除所選範圍，並將刪除結果儲存至受保護磁碟區。</translation></message>
+    <message><source>Preparation complete</source><translation>準備完成</translation></message>
+    <message><source>Preparing commit</source><translation>準備提交</translation></message>
+    <message><source>Preparing deletion and commit</source><translation>準備刪除並提交</translation></message>
+    <message><source>Process only successfully traversed content</source><translation>僅處理已成功走訪的內容</translation></message>
+
+    <message><source>Reparse points are skipped to keep traversal within the selected scope.</source><translation>略過重新剖析點，確保走訪不超出所選範圍。</translation></message>
+    <message><source>Restarting cannot undo a commit. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>提交後無法透過重新啟動復原。僅處理所選範圍，不會套用待套用的 UWF 設定。</translation></message>
+    <message><source>Retry failed items</source><translation>重試失敗項目</translation></message>
+    <message><source>Save changes in the selected scope to the protected volume.</source><translation>將所選範圍的變更儲存至受保護磁碟區。</translation></message>
+    <message><source>Stopping the operation</source><translation>正在停止操作</translation></message>
+    <message><source>Successful and failed records are retained</source><translation>已保留成功與失敗記錄</translation></message>
+    <message><source>The folder is not empty; unprocessed content has been retained.</source><translation>資料夾不是空的，未處理的內容已保留。</translation></message>
+    <message><source>The operation could not be completed</source><translation>無法完成操作</translation></message>
+    <message><source>The registry key has new values; unprocessed content has been retained.</source><translation>登錄機碼中出現了新值，未處理的內容已保留。</translation></message>
+    <message><source>The registry key still has subkeys; unprocessed content has been retained.</source><translation>登錄機碼中仍有子機碼，未處理的內容已保留。</translation></message>
+    <message><source>The target no longer exists.</source><translation>目標已不存在。</translation></message>
+    <message><source>Traversal complete</source><translation>走訪完成</translation></message>
+    <message><source>Traversal completed with unread content</source><translation>走訪完成，部分內容無法讀取</translation></message>
+    <message><source>Traversal records are retained and can be exported.</source><translation>走訪記錄已保留，可匯出檢視。</translation></message>
+    <message><source>Traverse again</source><translation>重新走訪</translation></message>
+    <message><source>Traverse again, or close this window.</source><translation>可重新走訪，或關閉此視窗。</translation></message>
+    <message><source>Traversing the folder</source><translation>正在走訪資料夾</translation></message>
+    <message><source>Traversing the registry</source><translation>正在走訪登錄</translation></message>
+    <message><source>Unable to prepare the operation</source><translation>無法完成操作準備</translation></message>
+    <message><source>View results</source><translation>檢視結果</translation></message>
+
+    <message><source>All changes committed</source><translation>全部提交成功</translation></message>
+    <message><source>Some changes committed</source><translation>部分提交成功</translation></message>
+    <message><source>No changes could be committed</source><translation>提交失敗，未能提交任何變更</translation></message>
+    <message><source>No changes to commit</source><translation>沒有需要提交的變更</translation></message>
+    <message><source>Commit interrupted</source><translation>提交已中斷</translation></message>
+    <message><source>%1 items were not processed.</source><translation>%1 項未處理。</translation></message>
+    <message><source>%1 registry operation(s) failed.</source><translation>%1 項登錄操作失敗。</translation></message>
+    <message><source>The folder does not exist.</source><translation>資料夾不存在。</translation></message>
+    <message><source>Access denied.</source><translation>拒絕存取。</translation></message>
+    <message><source>An item with this name already exists.</source><translation>已存在同名項目。</translation></message>
+    <message><source>The folder could not be created. Check the name and permissions.</source><translation>無法建立資料夾。請檢查名稱和權限。</translation></message>
+    <message><source>The item could not be renamed. Check the name and permissions.</source><translation>無法重新命名此項目。請檢查名稱和權限。</translation></message>
+    <message><source>Renaming is not supported by this browser.</source><translation>此瀏覽器不支援重新命名。</translation></message>
+    <message><source>The file staging draft changed after this plan was opened. Review a new plan.</source><translation>開啟此計畫後，檔案暫存草稿已變更。請重新檢視計畫。</translation></message>
+    <message><source>The saved file staging list changed after this plan was opened. Refresh and review the changes.</source><translation>開啟此計畫後，已儲存的檔案暫存清單已變更。請重新整理並檢視變更。</translation></message>
+    <message><source>The saved file staging list does not match the accepted plan.</source><translation>已儲存的檔案暫存清單與確認的計畫不一致。</translation></message>
+    <message><source>Export configuration</source><translation>匯出設定</translation></message>
+    <message><source>Save the current theme, language, and HUB visibility to UWF.ini next to this application.</source><translation>將目前的主題、語言和 HUB 顯示狀態儲存至程式所在目錄的 UWF.ini。</translation></message>
+    <message><source>Configuration saved</source><translation>配置已保存</translation></message>
+    <message><source>Saved the current interface settings to:
+%1</source><translation>已將目前的介面設定儲存至：
+%1</translation></message>
+    <message><source>UWF.ini already exists. The existing file was not changed:
+%1</source><translation>UWF.ini 已存在，未變更現有檔案：
+%1</translation></message>
+    <message><source>Could not save UWF.ini:
+%1
+%2</source><translation>無法儲存 UWF.ini：
+%1
+%2</translation></message>
+    <message><source>Desktop</source><translation>桌面</translation></message>
+    <message><source>Downloads</source><translation>下載</translation></message>
+    <message><source>Documents</source><translation>文件</translation></message>
+    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>檔案暫存已中止。請先解決錯誤，再重試。</translation></message>
 </context>
 </TS>

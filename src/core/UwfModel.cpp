@@ -1,19 +1,5 @@
-/*
- * Copyright (c) 2026 HsingYun (iakext@gmail.com)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "UwfModel.h"
 
 #include <algorithm>
@@ -42,8 +28,7 @@ bool caseInsensitiveEqual(const std::string& left, const std::string& right) {
 
 void sortExclusions(std::vector<std::string>& items) {
   std::stable_sort(items.begin(), items.end(), caseInsensitiveLess);
-  // 必须传与排序一致的大小写不敏感谓词，否则 "C:\Foo" 与 "c:\foo"
-  // 会排到一起但 std::ranges::unique 默认 operator== 判不等，留两份。
+  // 去重必须沿用排序的大小写不敏感比较，避免同一路径保留不同大小写的副本。
   const auto dup = std::ranges::unique(items, caseInsensitiveEqual);
   items.erase(dup.begin(), dup.end());
 }

@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<!-- Copyright (c) 2026 HsingYun (iakext@gmail.com) -->
 <!DOCTYPE TS>
 <TS version="2.1" language="id" sourcelanguage="en">
 <context>
     <name>uwf</name>
-    <message><source>Enable</source><translation>Aktifkan</translation></message>
-    <message><source>Disable</source><translation>Nonaktifkan</translation></message>
+    <message><source>Preview</source><translation>Pratinjau</translation></message>
     <message><source>enable</source><translation>aktifkan</translation></message>
     <message><source>disable</source><translation>nonaktifkan</translation></message>
     <message><source>Enabled</source><translation>Aktif</translation></message>
@@ -13,7 +14,6 @@
     <message><source>Cancel</source><translation>Batal</translation></message>
     <message><source>Close</source><translation>Tutup</translation></message>
     <message><source>Refresh</source><translation>Segarkan</translation></message>
-    <message><source>Apply</source><translation>Terapkan</translation></message>
     <message><source>Add</source><translation>Tambah</translation></message>
     <message><source>Remove</source><translation>Hapus</translation></message>
     <message><source>Yes</source><translation>Ya</translation></message>
@@ -26,21 +26,15 @@
     <message><source>drive letter</source><translation>huruf drive</translation></message>
     <message><source>Drive letter</source><translation>Huruf drive</translation></message>
     <message><source>Volume ID</source><translation>ID volume</translation></message>
-    <message><source>The current system "%1" (%2) is not a recognized supported Windows 10/11 edition. UWF Manager is running in compatibility mode and some features may be unavailable.</source><translation>Sistem “%1” (%2) tidak dikenali sebagai edisi Windows 10/11 yang didukung. UWF Manager berjalan dalam mode kompatibilitas; beberapa fitur mungkin tidak tersedia.</translation></message>
     <message><source>Protection state of this volume in the current session (read-only).</source><translation>Status perlindungan volume pada sesi saat ini (hanya baca).</translation></message>
     <message><source>Protect this volume in the next session. Writes to this volume are redirected to the overlay and discarded on reboot.</source><translation>Lindungi volume pada sesi berikutnya. Penulisan dialihkan ke overlay dan dibuang saat mulai ulang.</translation></message>
-    <message><source>Protection:</source><translation>Perlindungan:</translation></message>
     <message><source>Current session</source><translation>Sesi saat ini</translation></message>
     <message><source>Next session</source><translation>Sesi berikutnya</translation></message>
-    <message><source>The currently active session (read-only). Changes you make never take effect in this session.</source><translation>Sesi aktif (hanya baca). Perubahan tidak berlaku pada sesi ini.</translation></message>
-    <message><source>The session that takes effect after a reboot. Changes you make take effect after the system restarts.</source><translation>Sesi setelah mulai ulang. Perubahan berlaku setelah sistem dimulai ulang.</translation></message>
     <message><source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source><translation>Cara mengenali volume. Huruf drive lebih sederhana, tetapi ikatan terputus jika huruf berubah, misalnya setelah menambah atau melepas disk. ID volume tetap stabil.</translation></message>
-    <message><source>Bind by:</source><translation>Identifikasi melalui:</translation></message>
     <message><source>This volume is not supported by UWF: </source><translation>Volume tidak didukung UWF: </translation></message>
     <message><source>Global settings</source><translation>Pengaturan global</translation></message>
     <message><source>UWF filter state in the current session (read-only).</source><translation>Status filter UWF pada sesi saat ini (hanya baca).</translation></message>
     <message><source>Enable the UWF filter in the next session. Writes to protected volumes are redirected to the overlay and discarded on reboot.</source><translation>Aktifkan UWF pada sesi berikutnya. Penulisan ke volume terlindungi masuk ke overlay dan dibuang saat mulai ulang.</translation></message>
-    <message><source>Filter</source><translation>Filter</translation></message>
     <message><source>Overlay type and maximum size can only be changed while the filter is disabled:
 1. Disable the filter using the switch above.
 2. Reboot (the filter will be off after reboot).
@@ -54,14 +48,10 @@
     <message><source>Maximum size</source><translation>Ukuran maksimum</translation></message>
     <message><source>Maximum size · RAM %1</source><translation>Ukuran maksimum · RAM %1</translation></message>
     <message><source>Warning threshold</source><translation>Ambang peringatan</translation></message>
-    <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. Must be lower than the critical threshold. Set to 0 to disable this event.</source><translation>Saat pemakaian mencapai nilai ini, catat peringatan di log peristiwa. Harus di bawah ambang kritis. 0 menonaktifkan peristiwa.</translation></message>
+    <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be lower than the critical threshold. Set to 0 to disable only the warning event.</source><translation>Mencatat pemberitahuan tingkat peringatan ke log peristiwa saat penggunaan overlay mencapai nilai ini. Jika kedua peristiwa diaktifkan, nilai ini harus lebih rendah daripada ambang kritis. Nilai 0 hanya menonaktifkan peristiwa peringatan.</translation></message>
     <message><source>Critical threshold</source><translation>Ambang kritis</translation></message>
-    <message><source>Triggers a critical-level event-log notification when overlay usage reaches this value. Must be higher than the warning threshold. Set to 0 to disable this event.</source><translation>Saat pemakaian mencapai nilai ini, catat peristiwa kritis di log. Harus di atas ambang peringatan. 0 menonaktifkan peristiwa.</translation></message>
-    <message><source>Used / total</source><translation>Terpakai / total</translation></message>
+    <message><source>Triggers a critical-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be higher than the warning threshold. Set to 0 to disable only the critical event.</source><translation>Mencatat pemberitahuan tingkat kritis ke log peristiwa saat penggunaan overlay mencapai nilai ini. Jika kedua peristiwa diaktifkan, nilai ini harus lebih tinggi daripada ambang peringatan. Nilai 0 hanya menonaktifkan peristiwa kritis.</translation></message>
     <message><source>Overlay</source><translation>Overlay</translation></message>
-    <message><source>&lt;span style='color:%1'&gt;■&lt;/span&gt; Used &amp;nbsp; &lt;span style='color:%2'&gt;■&lt;/span&gt; Warning &amp;nbsp; &lt;span style='color:%3'&gt;■&lt;/span&gt; Critical</source><translation>&lt;span style='color:%1'&gt;■&lt;/span&gt; Terpakai &amp;nbsp; &lt;span style='color:%2'&gt;■&lt;/span&gt; Peringatan &amp;nbsp; &lt;span style='color:%3'&gt;■&lt;/span&gt; Kritis</translation></message>
-    <message><source>UWF status unavailable: </source><translation>Status UWF tidak tersedia: </translation></message>
-    <message><source>Administrator privileges are required to change UWF settings. Restart the program via right-click → "Run as administrator".</source><translation>Hak administrator diperlukan untuk mengubah UWF. Jalankan ulang program melalui klik kanan → “Run as administrator”.</translation></message>
     <message><source>Unsupported drive type (only fixed local disks are supported).</source><translation>Jenis drive tidak didukung (hanya disk lokal tetap).</translation></message>
     <message><source>Volume capacity exceeds the UWF limit of 16 TiB for a single protected volume.</source><translation>Volume melebihi batas UWF sebesar 16 TiB per volume terlindungi.</translation></message>
     <message><source>%1 file system: this volume can be protected, but file exclusions and per-file commit are not supported.</source><translation>%1: volume dapat dilindungi, tetapi pengecualian dan penyimpanan per file tidak didukung.</translation></message>
@@ -87,11 +77,9 @@
     <message><source>Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is shared across all volumes and shown only once in the disk tabs. Double-click an entry to copy its path.</source><translation>Pengecualian registri bersifat global dan mengikuti filter UWF, bukan perlindungan volume. Daftar bersama hanya ditampilkan sekali di tab disk. Klik dua kali untuk menyalin jalur.</translation></message>
     <message><source>File staging</source><translation>Penyimpanan file otomatis</translation></message>
     <message><source>Files and folders in this list are committed automatically before safe shutdown or restart. Folders are processed recursively. While the list contains data, UWF Manager excludes HKLM\SOFTWARE\HsingYun\UWF Manager so the list persists across protected sessions.</source><translation>file / folder: Disimpan permanen secara otomatis sebelum mematikan atau memulai ulang dengan aman. Termasuk semua subfolder. Selama daftar berisi entri, pengecualian registri berikut mempertahankan daftar antar sesi terlindungi: HKLM\SOFTWARE\HsingYun\UWF Manager</translation></message>
-    <message><source>Search staged paths…</source><translation>Cari jalur penyimpanan otomatis…</translation></message>
     <message><source>Add files or a folder to the automatic commit list.</source><translation>Tambahkan file atau folder ke daftar penyimpanan otomatis.</translation></message>
     <message><source>Select one or more files to commit automatically before safe shutdown or restart.</source><translation>Pilih file untuk disimpan permanen ke disk. Disimpan permanen secara otomatis sebelum mematikan atau memulai ulang dengan aman.</translation></message>
     <message><source>Select a folder whose files will be committed recursively before safe shutdown or restart.</source><translation>Pilih folder untuk disimpan permanen ke disk. Disimpan permanen secara otomatis sebelum mematikan atau memulai ulang dengan aman. Termasuk semua subfolder.</translation></message>
-    <message><source>Remove the selected paths from automatic commit immediately.</source><translation>Segera hapus jalur terpilih dari penyimpanan otomatis.</translation></message>
     <message><source>Select files for automatic commit</source><translation>Pilih file untuk disimpan permanen ke disk · Penyimpanan file otomatis</translation></message>
     <message><source>Select a folder for automatic recursive commit</source><translation>Pilih folder untuk disimpan permanen ke disk · Penyimpanan file otomatis · Termasuk semua subfolder.</translation></message>
     <message><source>Cannot stage this path</source><translation>Jalur tidak dapat ditambahkan ke penyimpanan otomatis</translation></message>
@@ -124,7 +112,8 @@
     <message><source>File staging is unavailable: %1</source><translation>Penyimpanan file otomatis: %1</translation></message>
     <message><source>Committed automatically before safe shutdown or restart.</source><translation>Disimpan permanen secara otomatis sebelum mematikan atau memulai ulang dengan aman.</translation></message>
     <message><source>%1 staged entries · %2 files · %3 folders</source><translation>Penyimpanan file otomatis: %1 · file: %2 · folder: %3</translation></message>
-    <message><source>Required by UWF for File staging.</source><translation>Diperlukan untuk penyimpanan otomatis UWF.</translation></message>
+    <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>Penyimpanan file otomatis memerlukan pengecualian registri ini agar daftarnya tetap tersimpan setelah memulai ulang.</translation></message>
+    <message><source>Built-in</source><translation>Bawaan</translation></message>
     <message><source>The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit.</source><translation>Filter UWF nonaktif. Tidak ada perubahan overlay yang terkumpul untuk disimpan.</translation></message>
     <message><source>Per-file commit is not supported on the %1 file system.</source><translation>Sistem file %1 tidak mendukung penyimpanan per file.</translation></message>
     <message><source>This volume is not supported by UWF.</source><translation>Volume ini tidak didukung UWF.</translation></message>
@@ -136,41 +125,23 @@
     <message><source>Select a folder to commit to disk</source><translation>Pilih folder untuk disimpan permanen ke disk</translation></message>
     <message><source>Select a file whose deletion you want to commit</source><translation>Pilih file untuk dihapus permanen</translation></message>
     <message><source>Select a folder whose deletion you want to commit</source><translation>Pilih folder untuk dihapus permanen</translation></message>
-    <message><source>Commit registry changes</source><translation>Simpan perubahan registri secara permanen</translation></message>
-    <message><source>Commit registry deletion</source><translation>Simpan penghapusan registri secara permanen</translation></message>
-    <message><source>Key path:</source><translation>Kunci · Jalur:</translation></message>
-    <message><source>HKLM\Software\... — type or paste, press Enter to jump</source><translation>Ketik atau tempel HKLM\Software\... lalu tekan Enter</translation></message>
     <message><source>Name</source><translation>Nama</translation></message>
     <message><source>Data</source><translation>Data</translation></message>
-    <message><source>Key: %1</source><translation>Kunci: %1</translation></message>
-    <message><source>Value: %1</source><translation>Nilai: %1</translation></message>
-    <message><source>(none)</source><translation>(tidak ada)</translation></message>
     <message><source>(Default)</source><translation>(Default)</translation></message>
     <message><source>(value not set)</source><translation>(nilai belum diatur)</translation></message>
     <message><source>(empty)</source><translation>(kosong)</translation></message>
     <message><source>Preview unavailable (value is too large)</source><translation>Tidak diketahui (Nilai: File terlalu besar)</translation></message>
-    <message><source>(whole key recursive, including subkeys)</source><translation>(seluruh kunci beserta subkuncinya)</translation></message>
-    <message><source>Overlay files - %1</source><translation>Overlay · file - %1</translation></message>
-    <message><source>View overlay files</source><translation>Lihat file overlay</translation></message>
     <message><source>Open a diagnostic view of files currently cached in the overlay for this volume.</source><translation>Lihat file overlay. &lt;b&gt;Hanya cuplikan diagnostik.&lt;/b&gt; Jangan gunakan daftar ini untuk menentukan file yang disimpan.</translation></message>
     <message><source>Overlay file listing is only supported on NTFS volumes.</source><translation>Daftar file overlay hanya didukung pada volume NTFS.</translation></message>
     <message><source>The UWF filter is currently disabled, so no volume has an overlay to inspect.</source><translation>UWF nonaktif; tidak ada overlay untuk diperiksa.</translation></message>
     <message><source>This volume is not currently protected by UWF, so it has no overlay to inspect.</source><translation>Volume tidak dilindungi UWF sehingga tidak memiliki overlay untuk diperiksa.</translation></message>
-    <message><source>&lt;b&gt;Diagnostic snapshot only.&lt;/b&gt; Don't use this list to decide what to commit.</source><translation>&lt;b&gt;Hanya cuplikan diagnostik.&lt;/b&gt; Jangan gunakan daftar ini untuk menentukan file yang disimpan.</translation></message>
-    <message><source>NTFS volumes only.</source><translation>Daftar file overlay hanya didukung pada volume NTFS.</translation></message>
-    <message><source>Can be slow or fail when the overlay is large — memory and time grow with overlay size.</source><translation>Overlay besar membutuhkan lebih banyak memori dan waktu; operasi bisa lambat atau gagal.</translation></message>
-    <message><source>The list is not exact: files smaller than the disk cluster size (typically 4 KB) may be missing; earlier commits, files in excluded paths, and files affected by unrelated operations may appear.</source><translation>Daftar tidak persis: file di bawah ukuran kluster (biasanya 4 KB) bisa hilang; file yang sudah disimpan, dikecualikan, atau dipengaruhi operasi lain bisa muncul.</translation></message>
-    <message><source>Loading…</source><translation>Memuat…</translation></message>
     <message><source>Failed: %1</source><translation>Gagal: %1</translation></message>
-    <message><source>%1 file(s) in overlay</source><translation>Overlay · file: %1</translation></message>
-    <message><source>No files</source><translation>Tidak ada file</translation></message>
-    <message><source>Page %1 / %2 · %3 file(s) total</source><translation>Halaman %1 / %2 · file: %3</translation></message>
     <message><source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure.</source><translation>Penyedia WMI berhenti saat enumerasi. Ini ketidakstabilan UWF_Overlay.GetOverlayFiles yang diketahui pada overlay besar atau beban I/O tinggi.</translation></message>
     <message><source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source><translation>Memori tidak cukup atau operasi tidak didukung penyedia. Memerlukan NTFS dan cadangan memori. Coba overlay lebih kecil atau tutup aplikasi boros memori.</translation></message>
     <message><source>Raw error: %1</source><translation>Kode kesalahan: %1</translation></message>
-    <message><source>Export to file…</source><translation>Ekspor ke file…</translation></message>
     <message><source>Export overlay file list</source><translation>Ekspor ke file… · Overlay · file</translation></message>
     <message><source>Text files (*.txt);;All files (*)</source><translation>File teks (*.txt);;Semua file (*)</translation></message>
+    <message><source>Command files (*.cmd);;All files (*)</source><translation>File perintah (*.cmd);;Semua file (*)</translation></message>
     <message><source>Export failed</source><translation>Ekspor gagal</translation></message>
     <message><source>Export finished</source><translation>Ekspor selesai</translation></message>
     <message><source>Could not open file for writing: %1</source><translation>Gagal: Membuka file (%1).</translation></message>
@@ -204,8 +175,6 @@
   HKLM\SAM
   HKLM\SECURITY
   HKLM\COMPONENTS</translation></message>
-    <message><source>Search file paths…</source><translation>Cari jalur file…</translation></message>
-    <message><source>Search registry keys…</source><translation>Cari kunci registri…</translation></message>
     <message><source>Add a file or folder to the exclusion list. Excluded entries are not protected by UWF.</source><translation>Tambahkan file atau folder ke pengecualian. Item yang dikecualikan tidak dilindungi UWF.</translation></message>
     <message><source>Pick a file to add to the exclusion list.</source><translation>Pilih file untuk ditambahkan · Pengecualian file.</translation></message>
     <message><source>Pick a folder (and all of its contents) to add to the exclusion list.</source><translation>Pilih folder untuk ditambahkan · Pengecualian file. Termasuk semua subfolder.</translation></message>
@@ -216,7 +185,6 @@
     <message><source>Terminal Services Client Access License (TSCAL)</source><translation>Lisensi akses klien Terminal Services (TSCAL)</translation></message>
     <message><source>Persist the domain secret key (machine account password) across UWF sessions.</source><translation>Simpan rahasia domain (kata sandi akun komputer) antar sesi UWF.</translation></message>
     <message><source>Persist Terminal Services client access licenses across UWF sessions.</source><translation>Simpan lisensi akses klien Terminal Services antar sesi UWF.</translation></message>
-    <message><source>· %1 persistence %2</source><translation>· Persistensi %1: %2</translation></message>
     <message><source>✓ %1 persistence: %2</source><translation>✓ Persistensi %1: %2</translation></message>
     <message><source>Remove selected</source><translation>Hapus yang dipilih</translation></message>
     <message><source>Remove the selected entries from the exclusion list. Takes effect after Apply.</source><translation>Hapus pengecualian terpilih. Berlaku setelah diterapkan.</translation></message>
@@ -225,7 +193,7 @@
     <message><source>Copy registry path</source><translation>Salin jalur registri</translation></message>
     <message><source>Commit folder changes to disk…</source><translation>Simpan perubahan overlay folder ini secara permanen ke disk…</translation></message>
     <message><source>Commit file changes to disk…</source><translation>Simpan perubahan overlay file ini secara permanen ke disk…</translation></message>
-    <message><source>Copied to clipboard: </source><translation>Disalin ke papan klip: </translation></message>
+    <message><source>Copied to clipboard</source><translation>Disalin ke papan klip</translation></message>
     <message><source>Select files to add to the exclusion list (multiple selection allowed)</source><translation>Pilih file untuk ditambahkan · Pengecualian file. Beberapa file dapat dipilih.</translation></message>
     <message><source>Select a folder to add to the exclusion list</source><translation>Pilih folder untuk ditambahkan · Pengecualian file</translation></message>
     <message><source>Add registry exclusion</source><translation>Menambah pengecualian registri</translation></message>
@@ -240,9 +208,7 @@
 Next session: %2</source><translation>Sesi saat ini: %1
 Sesi berikutnya: %2</translation></message>
     <message><source>Pending change: %1</source><translation>Perubahan tertunda: %1</translation></message>
-    <message><source>%1 entries · %2 to add · %3 to remove in next session · %4 pending</source><translation>entri: %1 · Akan ditambah: %2 · Dihapus pada sesi berikutnya: %3 · Perubahan tertunda: %4</translation></message>
     <message><source>Unified Write Filter (UWF) Manager</source><translation>Pengelola Filter Tulis Terpadu (UWF)</translation></message>
-    <message><source>Main toolbar</source><translation>Bilah alat utama</translation></message>
     <message><source>Re-read the current session state and next-session configuration of UWF.</source><translation>Baca ulang status UWF saat ini dan konfigurasi sesi berikutnya.</translation></message>
     <message><source>Review and apply</source><translation>Tinjau dan terapkan</translation></message>
     <message><source>Review all pending changes and apply them in one batch. Most changes take effect after the next reboot.</source><translation>Tinjau semua perubahan tertunda dan terapkan sekaligus. Sebagian besar perubahan berlaku setelah mulai ulang berikutnya.</translation></message>
@@ -255,22 +221,13 @@ Sesi berikutnya: %2</translation></message>
     <message><source>Log</source><translation>Log</translation></message>
     <message><source>View the internal log accumulated during this session, for troubleshooting.</source><translation>Lihat log internal sesi ini untuk pemecahan masalah.</translation></message>
     <message><source>About</source><translation>Tentang</translation></message>
-    <message><source>About this program.</source><translation>Tentang UWF Manager.</translation></message>
     <message><source>Switch display language</source><translation>Ganti bahasa tampilan</translation></message>
     <message><source>Language</source><translation>Bahasa</translation></message>
     <message><source>Theme</source><translation>Tema</translation></message>
     <message><source>Toggle light / dark theme</source><translation>Ganti tema terang/gelap</translation></message>
-    <message><source>&lt;p&gt;A graphical front-end for managing the UWF filter state, overlay, and file / registry exclusions. Most changes take effect after the next reboot.&lt;/p&gt;&lt;p&gt;Source code: &lt;a href="%3"&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href="mailto:%1"&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;This program is released under the &lt;a href="%2"&gt;GNU General Public License v3.0&lt;/a&gt;; the full license text is included in the LICENSE file shipped with this program.&lt;/p&gt;&lt;p&gt;This program is free software: you may redistribute it and / or modify it under the terms of the GPL v3. It is provided "as is", without any warranty.&lt;/p&gt;</source><translation>&lt;p&gt;Antarmuka grafis untuk mengelola filter UWF, overlay, serta pengecualian file dan registri. Sebagian besar perubahan berlaku setelah mulai ulang berikutnya.&lt;/p&gt;&lt;p&gt;Kode sumber: &lt;a href="%3"&gt;%3&lt;/a&gt;&lt;/p&gt;&lt;p&gt;Copyright © 2026 HsingYun &amp;lt;&lt;a href="mailto:%1"&gt;%1&lt;/a&gt;&amp;gt;&lt;/p&gt;&lt;p&gt;Lisensi: &lt;a href="%2"&gt;GNU General Public License v3.0&lt;/a&gt;; Teks lisensi lengkap tersedia dalam file LICENSE yang disertakan.&lt;/p&gt;&lt;p&gt;Perangkat lunak bebas: boleh didistribusikan dan dimodifikasi menurut GPL v3. Disediakan “apa adanya”, tanpa jaminan apa pun.&lt;/p&gt;</translation></message>
-    <message><source>About UWF Manager</source><translation>Tentang UWF Manager</translation></message>
     <message><source>System information</source><translation>Informasi sistem</translation></message>
     <message><source>Diagnostic snapshot</source><translation>Cuplikan diagnostik</translation></message>
-    <message><source>System, security, UWF, enhanced mode, and recent application logs.</source><translation>Diagnostik sistem, keamanan, UWF, mode lanjutan, dan log aplikasi terbaru.</translation></message>
     <message><source>Read only</source><translation>Hanya baca</translation></message>
-    <message><source>Diagnostic report</source><translation>Laporan diagnostik</translation></message>
-    <message><source>Copied</source><translation>Disalin</translation></message>
-    <message><source>View system, security, UWF, enhanced mode, and log diagnostics.</source><translation>Diagnostik sistem, keamanan, UWF, mode lanjutan, dan log aplikasi terbaru.</translation></message>
-    <message><source>This report may contain account names, device identifiers, file paths, and recent application logs. Review it before sharing.</source><translation>Laporan dapat berisi nama akun, ID perangkat, jalur, dan log terbaru. Tinjau sebelum dibagikan.</translation></message>
-    <message><source>&lt;p&gt;&lt;b&gt;This program depends on the Windows Unified Write Filter (UWF).&lt;/b&gt; UWF Manager does not perform write filtering itself; the actual write protection is provided by the UWF feature built into Windows. This program only configures and manages UWF, and requires UWF to be installed and enabled on the system.&lt;/p&gt;&lt;p&gt;When UWF is first enabled on a device, it makes the following changes to the system to improve UWF performance:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Paging files are disabled.&lt;/li&gt;&lt;li&gt;System Restore is disabled.&lt;/li&gt;&lt;li&gt;SuperFetch is disabled.&lt;/li&gt;&lt;li&gt;The file indexing service is turned off.&lt;/li&gt;&lt;li&gt;The defragmentation service is turned off.&lt;/li&gt;&lt;li&gt;Fast boot is disabled.&lt;/li&gt;&lt;li&gt;The BCD setting bootstatuspolicy is set to ignoreallfailures.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;After UWF is enabled, these settings can be changed as needed. For example, the paging file can be moved to an unprotected volume and paging re-enabled.&lt;/p&gt;</source><translation>&lt;p&gt;&lt;b&gt;Program ini bergantung pada Windows Unified Write Filter (UWF).&lt;/b&gt; Perlindungan tulis dilakukan UWF bawaan Windows. UWF Manager tidak memfilter sendiri, hanya mengatur dan mengelola UWF. UWF harus terpasang dan aktif pada sistem.&lt;/p&gt;&lt;p&gt;Saat pertama kali diaktifkan, UWF mengubah pengaturan berikut untuk meningkatkan performa:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;File paging dinonaktifkan.&lt;/li&gt;&lt;li&gt;Pemulihan Sistem dinonaktifkan.&lt;/li&gt;&lt;li&gt;SuperFetch dinonaktifkan.&lt;/li&gt;&lt;li&gt;Layanan pengindeksan file dinonaktifkan.&lt;/li&gt;&lt;li&gt;Layanan defragmentasi dinonaktifkan.&lt;/li&gt;&lt;li&gt;Startup cepat dinonaktifkan.&lt;/li&gt;&lt;li&gt;Pengaturan BCD bootstatuspolicy diatur ke ignoreallfailures.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Setelah aktif, pengaturan dapat diubah sesuai kebutuhan. Misalnya, pindahkan file paging ke volume tidak terlindungi lalu aktifkan kembali paging.&lt;/p&gt;</translation></message>
     <message><source>The target was not found; there is nothing in the overlay to commit.</source><translation>Target tidak ditemukan; tidak ada yang disimpan dari overlay.</translation></message>
     <message><source>Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It will disappear on reboot; commit-delete is neither needed nor possible.</source><translation>Target hanya ada di overlay: dibuat dalam perlindungan UWF dan belum disimpan ke disk atau registri permanen. Hilang saat mulai ulang; penyimpanan penghapusan tidak diperlukan dan tidak mungkin.</translation></message>
     <message><source>A parameter was rejected by the system (invalid path or argument).</source><translation>Sistem menolak parameter (jalur atau argumen tidak valid).</translation></message>
@@ -279,16 +236,12 @@ Sesi berikutnya: %2</translation></message>
     <message><source>Operation rejected (code %1).</source><translation>Operasi ditolak (kode %1).</translation></message>
     <message><source>Unknown cause.</source><translation>Tidak diketahui.</translation></message>
     <message><source>Commit canceled</source><translation>Penyimpanan dibatalkan</translation></message>
-    <message><source>Commit result</source><translation>Hasil penyimpanan</translation></message>
+
     <message><source>Succeeded</source><translation>Berhasil</translation></message>
     <message><source>Skipped</source><translation>Dilewati</translation></message>
     <message><source>Failed</source><translation>Gagal</translation></message>
     <message><source>%1 succeeded; %2 skipped; %3 failed.</source><translation>Berhasil: %1; Dilewati: %2; Gagal: %3.</translation></message>
-    <message><source>
-Canceled by user; %1 entries not processed.</source><translation>
-Dibatalkan pengguna; %1 entri belum diproses.</translation></message>
-    <message><source>Category</source><translation>Kategori</translation></message>
-    <message><source>Path</source><translation>Jalur</translation></message>
+
     <message><source>Existed before</source><translation>Ada sebelum</translation></message>
     <message><source>Exists after</source><translation>Ada sesudah</translation></message>
     <message><source>Error code</source><translation>Kode kesalahan</translation></message>
@@ -297,53 +250,16 @@ Dibatalkan pengguna; %1 entri belum diproses.</translation></message>
     <message><source>First page</source><translation>Halaman pertama</translation></message>
     <message><source>Last page</source><translation>Halaman terakhir</translation></message>
     <message><source>Next page</source><translation>Halaman berikutnya</translation></message>
-    <message><source>Page %1 / %2 · %3 entries total</source><translation>Halaman %1 / %2 · entri: %3</translation></message>
     <message><source>Copy selected rows</source><translation>Salin baris terpilih</translation></message>
     <message><source>Copy all</source><translation>Salin semua</translation></message>
     <message><source>This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it.</source><translation>Pengecualian registri ini diperlukan selama daftar penyimpanan otomatis berisi entri. Penyimpanan file otomatis: Bersihkan → Menghapus pengecualian registri.</translation></message>
-    <message><source>0 lines</source><translation>0 baris</translation></message>
-    <message><source>%1 lines</source><translation>%1 baris</translation></message>
-    <message><source>Loading log entries…</source><translation>Memuat log…</translation></message>
-    <message><source>No log entries</source><translation>Tidak ada entri log</translation></message>
-    <message><source>Page %1 / %2 · %3 lines total</source><translation>Halaman %1 / %2 · baris: %3</translation></message>
     <message><source>Copy current page</source><translation>Salin halaman saat ini</translation></message>
-    <message><source>Clear</source><translation>Bersihkan</translation></message>
-    <message><source>%1 pending change(s) (not yet written to the system)</source><translation>Perubahan tertunda: %1</translation></message>
     <message><source>No pending changes</source><translation>Tidak ada perubahan tertunda</translation></message>
     <message><source> (Also manages global registry exclusions.)</source><translation> (Pengecualian registri · Pengaturan global.)</translation></message>
     <message><source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source><translation>Volume %1: Perlindungan UWF / Pengecualian file / Penyimpanan file otomatis.%2</translation></message>
     <message><source>UWF namespace is not available</source><translation>UWF: Tidak didukung</translation></message>
-    <message><source>Refreshed · %1 volumes</source><translation>Segarkan · Volume: %1</translation></message>
-    <message><source>· Filter (global) %1</source><translation>· Filter (UWF): %1</translation></message>
-    <message><source>· Overlay type → %1</source><translation>· Overlay · Jenis → %1</translation></message>
-    <message><source>· Overlay maximum size → %1 MB</source><translation>· Overlay · Ukuran maksimum → %1 MB</translation></message>
-    <message><source>· Overlay warning threshold → %1 MB</source><translation>· Overlay · Ambang peringatan → %1 MB</translation></message>
-    <message><source>· Overlay critical threshold → %1 MB</source><translation>· Overlay · Ambang kritis → %1 MB</translation></message>
-    <message><source>⚠ Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>⚠ Untuk mengubah jenis dan ukuran maksimum:
-1. Nonaktifkan filter di atas.
-2. Mulai ulang agar filter nonaktif.
-3. Ubah pengaturan.</translation></message>
-    <message><source>· Volume %1 protection %2</source><translation>· Volume %1 · Perlindungan UWF: %2</translation></message>
-    <message><source>· Volume %1 bind by → %2 (no CLI equivalent; this program only)</source><translation>· Volume %1 · Identifikasi melalui: %2 (tanpa padanan CLI; khusus program ini)</translation></message>
-    <message><source>+ File exclusion  %1</source><translation>+ Pengecualian file  %1</translation></message>
-    <message><source>− File exclusion  %1</source><translation>− Pengecualian file  %1</translation></message>
-    <message><source>+ Registry exclusion  %1</source><translation>+ Pengecualian registri  %1</translation></message>
-    <message><source>− Registry exclusion  %1</source><translation>− Pengecualian registri  %1</translation></message>
-    <message><source>Filter (global) %1</source><translation>Filter (UWF): %1</translation></message>
-    <message><source>Overlay type → %1</source><translation>Overlay · Jenis → %1</translation></message>
-    <message><source>Overlay maximum size → %1 MB</source><translation>Overlay · Ukuran maksimum → %1 MB</translation></message>
-    <message><source>Overlay warning threshold → %1 MB</source><translation>Overlay · Ambang peringatan → %1 MB</translation></message>
-    <message><source>Overlay critical threshold → %1 MB</source><translation>Overlay · Ambang kritis → %1 MB</translation></message>
-    <message><source>Volume %1 protection %2</source><translation>Volume %1 · Perlindungan UWF: %2</translation></message>
-    <message><source>File exclusion %1</source><translation>Pengecualian file: %1</translation></message>
-    <message><source>Registry exclusion %1</source><translation>Pengecualian registri: %1</translation></message>
-    <message><source>Pending changes (%1)</source><translation>Perubahan tertunda (%1)</translation></message>
-    <message><source>Current session configuration</source><translation>Konfigurasi sesi saat ini</translation></message>
     <message><source>Review and apply changes</source><translation>Tinjau dan terapkan perubahan</translation></message>
-    <message><source>Below is the full configuration in uwfmgr command form. &lt;span style='color:%1'&gt;Pending changes&lt;/span&gt;, if any, are shown in a separate section first. Click &lt;span style='color:%2'&gt;Apply&lt;/span&gt; to write the changes to the system (most take effect after the next reboot).</source><translation>Konfigurasi lengkap dalam bentuk perintah uwfmgr. Perubahan tertunda ditampilkan lebih dulu di bagian terpisah. &lt;span style='color:%1'&gt;Perubahan tertunda&lt;/span&gt;. &lt;span style='color:%2'&gt;Terapkan&lt;/span&gt;: Klik untuk menulis perubahan ke sistem. Sebagian besar perubahan berlaku setelah mulai ulang berikutnya.</translation></message>
     <message><source>Confirm apply</source><translation>Konfirmasi penerapan</translation></message>
-    <message><source>These changes will be &lt;span style='color:%1'&gt;written to the system&lt;/span&gt;; most take effect after the next reboot.&lt;br&gt;&lt;br&gt;Continue?</source><translation>&lt;span style='color:%1'&gt;Perubahan ini akan ditulis ke sistem&lt;/span&gt;. Sebagian besar perubahan berlaku setelah mulai ulang berikutnya.&lt;br&gt;&lt;br&gt;Lanjutkan?</translation></message>
-    <message><source>Applied changes</source><translation>Perubahan diterapkan</translation></message>
     <message><source>Result</source><translation>Hasil</translation></message>
     <message><source>✓ Filter: %1</source><translation>✓ Filter: %1</translation></message>
     <message><source>✓ Overlay warning threshold set to %1 MB</source><translation>✓ Mengatur ambang peringatan: %1 MB</translation></message>
@@ -365,41 +281,15 @@ Dibatalkan pengguna; %1 entri belum diproses.</translation></message>
     <message><source>Level</source><translation>Tingkat</translation></message>
     <message><source>Tag</source><translation>Tag</translation></message>
     <message><source>Message</source><translation>Pesan</translation></message>
-    <message><source>Confirm safe shutdown?</source><translation>Matikan dengan aman?</translation></message>
-    <message><source>Confirm safe restart?</source><translation>Mulai ulang dengan aman?</translation></message>
-    <message><source>Shut down</source><translation>Matikan</translation></message>
-    <message><source>Restart</source><translation>Mulai ulang</translation></message>
-    <message><source>Continue shutdown</source><translation>Lanjutkan mematikan</translation></message>
-    <message><source>Continue restart</source><translation>Lanjutkan mulai ulang</translation></message>
-    <message><source>The system will shut down safely through UWF.</source><translation>Sistem akan dimatikan dengan aman melalui UWF.</translation></message>
-    <message><source>The system will restart safely through UWF.</source><translation>Sistem akan dimulai ulang dengan aman melalui UWF.</translation></message>
-    <message><source>UWF protection</source><translation>Perlindungan UWF</translation></message>
-    <message><source>This operation remains available even if the UWF overlay is full.</source><translation>Tetap tersedia meski overlay UWF penuh.</translation></message>
     <message><source>Calculating files for automatic commit…</source><translation>Menghitung file untuk penyimpanan otomatis…</translation></message>
-    <message><source>%1 file(s) will be committed automatically before this operation. Files outside currently protected volumes are skipped.</source><translation>%1 file akan disimpan otomatis sebelum operasi. File di luar volume yang sedang dilindungi dilewati.</translation></message>
     <message><source>Committing staged files</source><translation>Menyimpan file yang disiapkan</translation></message>
-    <message><source>The power action will continue after file staging completes.</source><translation>Tindakan daya berlanjut setelah penyimpanan otomatis selesai.</translation></message>
     <message><source>Processed %1 of %2 file(s).</source><translation>%1 dari %2 file diproses.</translation></message>
-    <message><source>Automatic file staging did not complete</source><translation>Penyimpanan otomatis tidak selesai</translation></message>
-    <message><source>Review the operation details before deciding whether to continue.</source><translation>Tinjau detail operasi sebelum memutuskan untuk melanjutkan.</translation></message>
-    <message><source>Operation details</source><translation>Detail operasi</translation></message>
     <message><source>No additional error details were provided.</source><translation>Tidak ada detail kesalahan tambahan.</translation></message>
-    <message><source>Some changes may not be preserved</source><translation>Sebagian perubahan mungkin tidak tersimpan</translation></message>
-    <message><source>If you continue, the system will shut down without the files that could not be committed.</source><translation>Jika dilanjutkan, sistem mati tanpa mempertahankan file yang gagal disimpan permanen.</translation></message>
-    <message><source>If you continue, the system will restart without the files that could not be committed.</source><translation>Jika dilanjutkan, sistem dimulai ulang tanpa mempertahankan file yang gagal disimpan permanen.</translation></message>
     <message><source>Automatic file staging stopped unexpectedly:
 %1</source><translation>Penyimpanan otomatis berhenti tiba-tiba:
 %1</translation></message>
     <message><source>Automatic file staging stopped because of an unknown error.</source><translation>Penyimpanan otomatis tidak selesai: Kesalahan tidak diketahui.</translation></message>
-    <message><source>Uncommitted changes will be lost</source><translation>Perubahan yang belum disimpan permanen akan hilang</translation></message>
-    <message><source>Before continuing, save your work and commit any changes that you want to keep permanently.</source><translation>Sebelum melanjutkan, simpan pekerjaan dan simpan permanen semua perubahan yang ingin dipertahankan.</translation></message>
-    <message><source>Confirm direct restart?</source><translation>Langsung mulai ulang?</translation></message>
-    <message><source>Confirm direct shutdown?</source><translation>Langsung matikan?</translation></message>
-    <message><source>The system will restart without committing files in File staging.</source><translation>Mulai ulang. File yang disiapkan tidak akan disimpan permanen sebelum mulai ulang.</translation></message>
-    <message><source>The system will shut down without committing files in File staging.</source><translation>Matikan. File yang disiapkan tidak akan disimpan permanen sebelum mematikan.</translation></message>
     <message><source>File staging will be skipped</source><translation>Penyimpanan otomatis akan dilewati</translation></message>
-    <message><source>Files in File staging will not be committed before restart.</source><translation>File yang disiapkan tidak akan disimpan permanen sebelum mulai ulang.</translation></message>
-    <message><source>Files in File staging will not be committed before shutdown.</source><translation>File yang disiapkan tidak akan disimpan permanen sebelum mematikan.</translation></message>
     <message><source>Direct restart skips File staging commits.</source><translation>Langsung mulai ulang: Penyimpanan otomatis akan dilewati.</translation></message>
     <message><source>Direct shutdown skips File staging commits.</source><translation>Langsung matikan: Penyimpanan otomatis akan dilewati.</translation></message>
     <message><source>File staging was skipped because a direct power action was selected.</source><translation>Penyimpanan otomatis dilewati karena tindakan daya langsung dipilih.</translation></message>
@@ -429,57 +319,29 @@ Dibatalkan pengguna; %1 entri belum diproses.</translation></message>
     <message><source>The UWF provider rejected the commit.</source><translation>Penyedia UWF menolak penyimpanan permanen.</translation></message>
     <message><source>The commit failed with an unknown error.</source><translation>Penyimpanan gagal: Kesalahan tidak diketahui.</translation></message>
     <message><source>%1 additional failure(s) were written to the log.</source><translation>%1 kegagalan tambahan dicatat di log.</translation></message>
-    <message><source>Commit failed</source><translation>Penyimpanan gagal</translation></message>
+
     <message><source>The path has no drive letter; cannot identify the target volume.</source><translation>Jalur tidak memiliki huruf drive. Menentukan volume target: Gagal.</translation></message>
-    <message><source>Failed to read volume information: %1</source><translation>Gagal: Membaca informasi volume (%1)</translation></message>
+
     <message><source>No current-session record found for volume %1.</source><translation>Tidak ada catatan sesi saat ini untuk volume %1.</translation></message>
     <message><source>This path is in the file exclusion list.
 Exclusion: %1</source><translation>Jalur ada dalam pengecualian file.
 Pengecualian: %1</translation></message>
-    <message><source>No files were found under %1.</source><translation>Tidak ada file di bawah %1.</translation></message>
-    <message><source>Commit to disk</source><translation>Simpan permanen ke disk</translation></message>
-    <message><source>Committing…</source><translation>Menyimpan…</translation></message>
-    <message><source>This action cannot be undone.</source><translation>Tindakan ini tidak dapat dibatalkan.</translation></message>
+
     <message><source>Continue</source><translation>Lanjutkan</translation></message>
     <message><source>Delete and commit</source><translation>Hapus dan simpan permanen</translation></message>
-    <message><source>Commit this file's overlay changes to disk</source><translation>Simpan perubahan overlay file ini secara permanen ke disk</translation></message>
-    <message><source>Commit this folder's overlay changes to disk</source><translation>Simpan perubahan overlay folder ini secara permanen ke disk</translation></message>
-    <message><source>%1 files in this folder and all its subfolders will be committed.</source><translation>file: %1. Termasuk semua subfolder.</translation></message>
-    <message><source>Delete this file, and commit the deletion to disk</source><translation>Hapus file dan simpan penghapusannya secara permanen ke disk</translation></message>
-    <message><source>Delete this folder and its contents, and commit the deletions to disk</source><translation>Hapus folder beserta isinya dan simpan penghapusannya secara permanen</translation></message>
-    <message><source>%1 files and %2 subfolders will be deleted.</source><translation>file: %1; folder: %2. Hapus dan simpan permanen.</translation></message>
-    <message><source>Commit this registry value to disk</source><translation>Simpan nilai registri secara permanen ke disk</translation></message>
-    <message><source>Commit this registry key and its whole subtree to disk</source><translation>Simpan kunci registri beserta seluruh subpohonnya secara permanen</translation></message>
-    <message><source>%1 values in this key and all its subkeys will be committed.</source><translation>Nilai: %1. (seluruh kunci beserta subkuncinya)</translation></message>
-    <message><source>Delete this registry value, and commit the deletion to disk</source><translation>Hapus nilai registri dan simpan penghapusannya secara permanen</translation></message>
-    <message><source>Delete this registry key and its whole subtree, and commit the deletions to disk</source><translation>Hapus kunci registri beserta subpohonnya dan simpan penghapusannya</translation></message>
-    <message><source>Scanning registry keys…</source><translation>Mencantumkan kunci registri…</translation></message>
-    <message><source>Scanning registry keys…
-%1 key(s) found</source><translation>Mencantumkan kunci registri…
-Kunci: %1</translation></message>
-    <message><source>Registry keys that will be deleted:</source><translation>Registri · Kunci · Hapus dan simpan permanen:</translation></message>
-    <message><source>Copy current entry</source><translation>Salin entri saat ini</translation></message>
-    <message><source>%1 keys and all values they contain will be recursively deleted.</source><translation>%1 kunci beserta seluruh nilainya akan dihapus secara rekursif.</translation></message>
-    <message><source>Commit file deletion failed</source><translation>Gagal: Menyimpan penghapusan file secara permanen</translation></message>
-    <message><source>This path does not exist, so there is nothing to delete.</source><translation>Jalur tidak ada; tidak ada yang dihapus.</translation></message>
+
     <message><source>This key is in the registry exclusion list.
 Exclusion: %1</source><translation>Kunci ada dalam pengecualian registri.
 Pengecualian: %1</translation></message>
-    <message><source>Failed to read registry filter: %1</source><translation>Gagal: Membaca filter registri (%1)</translation></message>
+
     <message><source>No current-session registry filter record found.</source><translation>Tidak ada catatan filter registri untuk sesi saat ini.</translation></message>
-    <message><source>This registry value does not exist, so there is nothing to commit.</source><translation>Nilai registri tidak ada; tidak ada yang disimpan.</translation></message>
-    <message><source>This registry key does not exist, so there is nothing to commit.</source><translation>Kunci registri tidak ada; tidak ada yang disimpan.</translation></message>
-    <message><source>This registry value does not exist, so there is nothing to delete.</source><translation>Nilai registri tidak ada; tidak ada yang dihapus.</translation></message>
-    <message><source>This registry key does not exist, so there is nothing to delete.</source><translation>Kunci registri tidak ada; tidak ada yang dihapus.</translation></message>
-    <message><source>Export commands…</source><translation>Ekspor perintah…</translation></message>
+
     <message><source>Export commands to file</source><translation>Ekspor perintah ke file</translation></message>
     <message><source>Exported %1 commands to:
 %2</source><translation>Ekspor ke file… · Perintah: %1
 %2</translation></message>
     <message><source>Import</source><translation>Impor</translation></message>
     <message><source>Paste, type, or load a script of uwfmgr commands and turn each line into a pending UI change. Nothing is written to the system until you click "Review and apply".</source><translation>uwfmgr: Ketik atau tempel satu perintah per baris. Muat teks, log, atau skrip (.txt, .bat, .ps1); baris yang berisi perintah ini ditambahkan. Impor menyiapkan perubahan. Hanya “Tinjau dan terapkan” di bilah alat yang menuliskannya ke sistem.</translation></message>
-    <message><source>Import uwfmgr commands</source><translation>uwfmgr · Impor</translation></message>
-    <message><source>&lt;p&gt;Paste or type &lt;b&gt;uwfmgr&lt;/b&gt; commands below; one command per line. Supported categories: &lt;code&gt;filter&lt;/code&gt; · &lt;code&gt;overlay&lt;/code&gt; · &lt;code&gt;volume&lt;/code&gt; · &lt;code&gt;file&lt;/code&gt; · &lt;code&gt;registry&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;Use &lt;b&gt;Load from file…&lt;/b&gt; to pick any text-like file (logs, scripts, .txt, .bat, .ps1); lines containing &lt;code&gt;uwfmgr&lt;/code&gt; will be appended to the box.&lt;/p&gt;&lt;p&gt;Clicking &lt;b&gt;Import&lt;/b&gt; turns each command into a pending UI change — &lt;b&gt;nothing is written to the system yet&lt;/b&gt;. Use &lt;b&gt;Review and apply&lt;/b&gt; in the toolbar to commit them.&lt;/p&gt;</source><translation>&lt;p&gt;&lt;b&gt;uwfmgr&lt;/b&gt;: Ketik atau tempel satu perintah per baris. &lt;code&gt;filter&lt;/code&gt; · &lt;code&gt;overlay&lt;/code&gt; · &lt;code&gt;volume&lt;/code&gt; · &lt;code&gt;file&lt;/code&gt; · &lt;code&gt;registry&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Muat dari file…&lt;/b&gt;: Muat teks, log, atau skrip (.txt, .bat, .ps1); baris yang berisi perintah ini ditambahkan. &lt;code&gt;uwfmgr&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Impor&lt;/b&gt;: &lt;b&gt;Impor menyiapkan perubahan. Hanya “Tinjau dan terapkan” di bilah alat yang menuliskannya ke sistem.&lt;/b&gt; &lt;b&gt;Tinjau dan terapkan&lt;/b&gt;.&lt;/p&gt;</translation></message>
     <message><source>Load from file…</source><translation>Muat dari file…</translation></message>
     <message><source>Load recommended configuration</source><translation>Muat konfigurasi yang disarankan</translation></message>
     <message><source>Choose recommended configuration</source><translation>Pilih konfigurasi yang disarankan</translation></message>
@@ -527,30 +389,15 @@ Pengecualian: %1</translation></message>
     <message><source>SCEP: persist antimalware signatures and state</source><translation>SCEP: Simpan permanen: Tanda tangan dan status antimalware</translation></message>
     <message><source>SCEP: persist antimalware registry state</source><translation>SCEP: Simpan permanen: Status antimalware di registri</translation></message>
     <message><source>Choose files containing uwfmgr commands</source><translation>Pilih file yang berisi perintah uwfmgr</translation></message>
-    <message><source>All files (*);;Text files (*.txt *.bat *.ps1 *.log *.cmd)</source><translation>Semua file (*);;File teks (*.txt *.bat *.ps1 *.log *.cmd)</translation></message>
-    <message><source>uwfmgr filter enable
-uwfmgr overlay set-type RAM
-uwfmgr volume protect C:
-uwfmgr file add-exclusion "C:\Users\foo\bar.txt"
-uwfmgr registry add-exclusion HKLM\Software\MyApp</source><translation>uwfmgr filter enable
-uwfmgr overlay set-type RAM
-uwfmgr volume protect C:
-uwfmgr file add-exclusion "C:\Users\foo\bar.txt"
-uwfmgr registry add-exclusion HKLM\Software\MyApp</translation></message>
-    <message><source>#</source><translation>#</translation></message>
+    <message><source>Text files (*.txt *.cmd);;All files (*)</source><translation>File teks (*.txt *.cmd);;Semua file (*)</translation></message>
     <message><source>Status</source><translation>Status</translation></message>
-    <message><source>Command</source><translation>Perintah</translation></message>
-    <message><source>Detail</source><translation>Detail</translation></message>
     <message><source>Import failed</source><translation>Impor gagal</translation></message>
     <message><source>Internal error: no applier registered.</source><translation>Kesalahan internal: tidak ada penangan penerapan terdaftar.</translation></message>
     <message><source>Nothing to import</source><translation>Tidak ada perintah untuk diimpor</translation></message>
     <message><source>No uwfmgr commands found in the input.</source><translation>Tidak ada perintah uwfmgr dalam masukan.</translation></message>
-    <message><source>Applied: %1</source><translation>Diterapkan: %1</translation></message>
     <message><source>Duplicates: %1</source><translation>Duplikat: %1</translation></message>
     <message><source>Unsupported: %1</source><translation>Tidak didukung: %1</translation></message>
-    <message><source>Cumulative after %1 batch(es):</source><translation>Akumulasi setelah %1 kelompok:</translation></message>
     <message><source>── Batch %1 ──</source><translation>── Kelompok %1 ──</translation></message>
-    <message><source>Applied</source><translation>Diterapkan</translation></message>
     <message><source>Duplicate</source><translation>Duplikat</translation></message>
     <message><source>Unsupported</source><translation>Tidak didukung</translation></message>
     <message><source>File too large</source><translation>File terlalu besar</translation></message>
@@ -579,7 +426,6 @@ Buang dan lanjutkan?</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Sudah dalam status target; tidak perlu tindakan</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Jalur bukan pada volume ini atau volume tidak mendukung pengecualian (mis. exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Ditolak daftar blokir UWF (file sistem / Windows / paging / dll.)</translation></message>
-    <message><source>Same command was already issued earlier in this batch</source><translation>Perintah yang sama sudah diproses dalam kelompok ini</translation></message>
     <message><source>Pending filter %1</source><translation>Perubahan tertunda: Filter %1</translation></message>
     <message><source>Filter is already in the target state</source><translation>Filter: Sudah dalam status target; tidak perlu tindakan</translation></message>
     <message><source>Pending overlay type → %1</source><translation>Perubahan tertunda: Overlay · Jenis → %1</translation></message>
@@ -599,7 +445,6 @@ Buang dan lanjutkan?</translation></message>
     <message><source>registry exclusion</source><translation>Pengecualian registri</translation></message>
     <message><source>Registry exclusions are only available on the registry tab, which is not present</source><translation>Tab registri tidak ada; pengecualian registri tidak tersedia</translation></message>
     <message><source>Unsupported command</source><translation>Perintah: Tidak didukung</translation></message>
-    <message><source>Exit</source><translation>Keluar</translation></message>
     <message><source>Show or hide the overlay hub.</source><translation>HUB: Tampilkan/sembunyikan.</translation></message>
     <message><source>UWF: Enabled</source><translation>UWF: Aktif</translation></message>
     <message><source>UWF: Disabled</source><translation>UWF: Nonaktif</translation></message>
@@ -607,26 +452,11 @@ Buang dan lanjutkan?</translation></message>
     <message><source>Used %1 MB / Total %2 MB</source><translation>Terpakai %1 MB / %2 MB</translation></message>
     <message><source>Enhanced mode</source><translation>Mode lanjutan</translation></message>
     <message><source>Coordinate automatic file staging with Windows shutdown and restart.</source><translation>Koordinasikan penyimpanan otomatis dengan mematikan dan memulai ulang Windows.</translation></message>
-    <message><source>Enhanced mode installs an automatically started LocalSystem service. It launches UWF Manager after Windows starts and attempts to commit changes to user-configured staged files before shutdown or restart, improving compatibility for applications that conflict with UWF.</source><translation>Memasang layanan LocalSystem otomatis. Layanan membuka UWF Manager saat Windows mulai dan mencoba menyimpan file yang disiapkan sebelum mematikan atau mulai ulang, untuk meningkatkan kompatibilitas aplikasi yang berkonflik dengan UWF.</translation></message>
-    <message><source>System changes</source><translation>Perubahan sistem</translation></message>
-    <message><source>Creates the automatic service UWFManagerEnhanced and binds it to the current executable path</source><translation>Membuat layanan otomatis UWFManagerEnhanced yang terikat ke program saat ini</translation></message>
-    <message><source>Writes and commits the service configuration under HKLM\SYSTEM\CurrentControlSet\Services\UWFManagerEnhanced</source><translation>Konfigurasi: Registri → Simpan permanen (HKLM\SYSTEM\CurrentControlSet\Services\UWFManagerEnhanced)</translation></message>
-    <message><source>Starts UWF Manager automatically after the next Windows startup; moving the executable can break automatic startup</source><translation>Menjalankan UWF Manager pada startup Windows berikutnya; memindahkan program dapat merusak startup otomatis</translation></message>
-    <message><source>Commits eligible staged files during normal Windows shutdown and restart</source><translation>Menyimpan file yang memenuhi syarat saat mematikan dan memulai ulang Windows secara normal</translation></message>
-    <message><source>Operational and security considerations</source><translation>Pertimbangan operasi dan keamanan</translation></message>
-    <message><source>Registers a service in the system registry when enhanced mode is enabled, so the application no longer remains fully portable</source><translation>Mendaftarkan layanan di registri sistem; aplikasi tidak lagi sepenuhnya portabel</translation></message>
-    <message><source>A large number of staged files can significantly extend shutdown or restart; allow UWF Manager enough time to preserve user changes</source><translation>Banyak file dapat memperlama proses mati atau mulai ulang; beri cukup waktu untuk mempertahankan perubahan</translation></message>
-    <message><source>Enhanced mode runs this application (UWF Manager) as SYSTEM. If a non-administrator tampers with the application or replaces it with a malicious binary, privileges could be elevated to SYSTEM. Enable enhanced mode only from an administrator-protected location (recommended location: %ProgramFiles%\UWF Manager\Service\UWF.exe)</source><translation>Mode lanjutan menjalankan UWF Manager sebagai SYSTEM. Jika pengguna nonadministrator mengubah atau mengganti program dengan program berbahaya, hak akses dapat meningkat ke SYSTEM. Aktifkan hanya dari lokasi yang dilindungi administrator (disarankan: %ProgramFiles%\UWF Manager\Service\UWF.exe).</translation></message>
-    <message><source>Enhanced mode status could not be read</source><translation>Gagal: Membaca status mode lanjutan</translation></message>
     <message><source>The enhanced mode status read failed because of an unknown error.</source><translation>Gagal: Membaca status mode lanjutan (Kesalahan tidak diketahui).</translation></message>
     <message><source>The current service state could not be read:
 %1</source><translation>Gagal: Membaca status layanan:
 %1</translation></message>
     <message><source>The current service state could not be read because of an unknown error.</source><translation>Gagal: Membaca status layanan (Kesalahan tidak diketahui).</translation></message>
-    <message><source>Status: Disabled</source><translation>Status: Nonaktif</translation></message>
-    <message><source>Status: Enabled</source><translation>Status: Aktif</translation></message>
-    <message><source>Status: Service stopped</source><translation>Status: layanan berhenti</translation></message>
-    <message><source>Status: Repair required</source><translation>Status: perlu perbaikan</translation></message>
     <message><source>The service is not configured as an independent process.</source><translation>Layanan tidak dikonfigurasi sebagai proses mandiri.</translation></message>
     <message><source>The service is not configured for automatic startup.</source><translation>Layanan tidak dikonfigurasi untuk mulai otomatis.</translation></message>
     <message><source>The service is not configured to run as LocalSystem.</source><translation>Layanan tidak dikonfigurasi untuk berjalan sebagai LocalSystem.</translation></message>
@@ -667,10 +497,10 @@ Buang dan lanjutkan?</translation></message>
     <message><source>All staged targets were processed; one or more operations failed.</source><translation>Semua target diproses; satu atau beberapa operasi gagal.</translation></message>
     <message><source>Show main window</source><translation>Tampilkan jendela utama</translation></message>
     <message><source>Restore default position</source><translation>Pulihkan posisi default</translation></message>
+    <message><source>Show overlay hub</source><translation>Tampilkan HUB overlay</translation></message>
     <message><source>Hide overlay hub</source><translation>Sembunyikan HUB overlay</translation></message>
     <message><source>Exit application</source><translation>Keluar dari aplikasi</translation></message>
     <message><source>✘ Failed to connect to the system</source><translation>✘ Gagal: Menghubungkan ke sistem</translation></message>
-    <message><source>Registry access failed</source><translation>Gagal: Mengakses registri</translation></message>
     <message><source>Failed to read registry values: %1</source><translation>Gagal: Membaca nilai registri (%1)</translation></message>
     <message><source>Unexpected error while enumerating overlay files.</source><translation>Mencantumkan file overlay: Kesalahan tidak diketahui.</translation></message>
     <message><source>✘ Failed to %1 filter</source><translation>✘ Gagal: Tindakan filter: %1</translation></message>
@@ -694,7 +524,6 @@ Buang dan lanjutkan?</translation></message>
     <message><source>✘ Failed to read registry filter</source><translation>✘ Gagal: Membaca filter registri</translation></message>
     <message><source>UWF is not available</source><translation>UWF: Tidak didukung</translation></message>
     <message><source>Unknown error while reading the target state.</source><translation>Membaca status target: Kesalahan tidak diketahui.</translation></message>
-    <message><source>The target state could not be read before the operation: %1</source><translation>Status target tidak dapat dibaca sebelum operasi: %1</translation></message>
     <message><source>The target no longer exists, so there is nothing to delete.</source><translation>Jalur tidak ada; tidak ada yang dihapus.</translation></message>
     <message><source>The operation failed with an unknown error.</source><translation>Kesalahan tidak diketahui.</translation></message>
     <message><source>The operation result could not be confirmed because the target state reread failed: %1</source><translation>Hasil tidak dapat dikonfirmasi karena pembacaan ulang status target gagal: %1</translation></message>
@@ -703,13 +532,488 @@ Buang dan lanjutkan?</translation></message>
     <message><source>Failed to load logs: %1</source><translation>Gagal: Memuat log (%1)</translation></message>
     <message><source>Failed to load logs: unexpected error.</source><translation>Gagal: Memuat log (Kesalahan tidak diketahui).</translation></message>
     <message><source>: unknown error</source><translation>: Kesalahan tidak diketahui</translation></message>
-    <message><source>Failed to read the target state: %1</source><translation>Gagal: Membaca status target (%1)</translation></message>
-    <message><source>Failed to read the target state because of an unknown error.</source><translation>Gagal: Membaca status target (Kesalahan tidak diketahui).</translation></message>
+
     <message><source>Failed to resolve the target volume: %1</source><translation>Gagal: Menentukan volume target (%1)</translation></message>
-    <message><source>Failed to enumerate registry values: %1</source><translation>Gagal: Mencantumkan nilai registri (%1)</translation></message>
+
     <message><source>Failed to enumerate registry keys: %1</source><translation>Gagal: Mencantumkan kunci registri (%1)</translation></message>
-    <message><source>Delete and commit failed</source><translation>Hapus dan simpan permanen: Gagal</translation></message>
+
     <message><source>Failed to resolve the volume for path %1: %2</source><translation>Gagal: Menentukan volume target (%1): %2</translation></message>
-    <message><source>%1/%2 slots</source><translation>Slot terpakai: %1/%2</translation></message>
+    <message><source>Skipped because a prerequisite operation failed or could not be confirmed.</source><translation>Operasi dilewati karena operasi prasyarat gagal atau hasilnya tidak dapat dikonfirmasi.</translation></message>
+    <message><source>Copy</source><translation>Salin</translation></message>
+    <message><source>Select All</source><translation>Pilih Semua</translation></message>
+    <message><source>Display language</source><translation>Bahasa tampilan</translation></message>
+    <message><source>Folder</source><translation>Folder</translation></message>
+    <message><source>File</source><translation>File</translation></message>
+    <message><source>Export commands</source><translation>Ekspor perintah</translation></message>
+    <message><source>Direct restart…</source><translation>Langsung mulai ulang…</translation></message>
+    <message><source>Clear…</source><translation>Bersihkan…</translation></message>
+    <message><source>Committing</source><translation>Menyimpan</translation></message>
+    <message><source> · %1 selected</source><translation> · %1 dipilih</translation></message>
+    <message><source>%1 changes</source><translation>%1 perubahan</translation></message>
+    <message><source>%1 commands</source><translation>%1 perintah</translation></message>
+    <message><source>%1 items</source><translation>%1 item</translation></message>
+    <message><source>%1 items · %2</source><translation>%1 item · %2</translation></message>
+    <message><source>%1 pending change(s)</source><translation>%1 perubahan tertunda</translation></message>
+    <message><source>%1 records</source><translation>%1 catatan</translation></message>
+    <message><source>%1 records · %2 total</source><translation>%1 catatan · total %2</translation></message>
+
+
+    <message><source>%1 selected</source><translation>%1 dipilih</translation></message>
+    <message><source>/ %1 files</source><translation>/ %1 file</translation></message>
+    <message><source>32-bit</source><translation>32 bit</translation></message>
+    <message><source>64-bit</source><translation>64 bit</translation></message>
+    <message><source>&lt;p&gt;Released under the &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public License v3.0&lt;/a&gt;. Full terms are in the LICENSE file included with the application.&lt;/p&gt;&lt;p&gt;You may redistribute or modify it under GPL v3. The software is provided as is, without any warranty.&lt;/p&gt;</source><translation>&lt;p&gt;Dirilis berdasarkan &lt;a href="https://www.gnu.org/licenses/gpl-3.0.html"&gt;GNU General Public License v3.0&lt;/a&gt;. Ketentuan lengkap ada dalam file LICENSE yang disertakan bersama aplikasi.&lt;/p&gt;&lt;p&gt;Anda boleh mendistribusikan ulang atau mengubah perangkat lunak berdasarkan GPL v3. Perangkat lunak disediakan apa adanya, tanpa jaminan apa pun.&lt;/p&gt;</translation></message>
+    <message><source>&lt;p&gt;Windows disables paging files, System Restore, SuperFetch, file indexing, disk defragmentation, and fast startup. It also sets the BCD bootstatuspolicy to ignoreallfailures.&lt;/p&gt;&lt;p&gt;You can adjust these settings afterwards. For example, move the paging file to an unprotected volume before enabling paging again.&lt;/p&gt;</source><translation>&lt;p&gt;Windows menonaktifkan file halaman, Pemulihan Sistem, SuperFetch, pengindeksan file, defragmentasi disk, dan mulai cepat. Windows juga mengatur bootstatuspolicy ke ignoreallfailures dalam BCD.&lt;/p&gt;&lt;p&gt;Pengaturan ini dapat diubah setelahnya. Misalnya, pindahkan file halaman ke volume yang tidak dilindungi sebelum mengaktifkan kembali paging.&lt;/p&gt;</translation></message>
+    <message><source>A diagnostic snapshot of the system, privileges, and UWF.</source><translation>Snapshot diagnostik sistem, hak istimewa, dan UWF.</translation></message>
+    <message><source>A file already exists at this location:
+%1
+
+Saving will replace its contents.</source><translation>File sudah ada di lokasi ini:
+%1
+
+Menyimpan akan mengganti isinya.</translation></message>
+    <message><source>A graphical manager for Windows Unified Write Filter.
+Manage volume protection, overlay, exclusions, and staged files.</source><translation>Pengelola grafis untuk Windows Unified Write Filter.
+Kelola perlindungan volume, overlay, pengecualian, dan file yang disiapkan.</translation></message>
+    <message><source>About this snapshot</source><translation>Tentang snapshot ini</translation></message>
+    <message><source>Account</source><translation>Akun</translation></message>
+    <message><source>Add UWF configuration from a script or text.</source><translation>Tambahkan konfigurasi UWF dari skrip atau teks.</translation></message>
+    <message><source>Add exclusion</source><translation>Tambah pengecualian</translation></message>
+    <message><source>Add files or folders</source><translation>Tambah file atau folder</translation></message>
+    <message><source>Add selected items</source><translation>Tambah item terpilih</translation></message>
+    <message><source>Added</source><translation>Ditambahkan</translation></message>
+    <message><source>Administrator</source><translation>Administrator</translation></message>
+    <message><source>All changes have been saved to disk and will persist without a restart.</source><translation>Semua perubahan telah disimpan ke disk dan akan tetap ada tanpa memulai ulang.</translation></message>
+    <message><source>All files (*)</source><translation>Semua file (*)</translation></message>
+    <message><source>All levels</source><translation>Semua tingkat</translation></message>
+
+    <message><source>An empty diagnostic snapshot does not mean that the overlay contains no changes.</source><translation>Snapshot diagnostik yang kosong bukan berarti overlay tidak berisi perubahan.</translation></message>
+    <message><source>Application path</source><translation>Jalur aplikasi</translation></message>
+    <message><source>Application result</source><translation>Hasil penerapan</translation></message>
+    <message><source>Apply changes</source><translation>Terapkan perubahan</translation></message>
+    <message><source>Architecture</source><translation>Arsitektur</translation></message>
+    <message><source>Automatic</source><translation>Otomatis</translation></message>
+    <message><source>Automatic file staging</source><translation>Penyimpanan otomatis file yang disiapkan</translation></message>
+    <message><source>Automatic saving incomplete</source><translation>Penyimpanan otomatis belum selesai</translation></message>
+    <message><source>Automatically save eligible staged files during normal shutdown and restart.</source><translation>Simpan otomatis file yang disiapkan dan memenuhi syarat saat mematikan atau memulai ulang secara normal.</translation></message>
+    <message><source>Available</source><translation>Tersedia</translation></message>
+    <message><source>Back</source><translation>Kembali</translation></message>
+    <message><source>Background service</source><translation>Layanan latar belakang</translation></message>
+    <message><source>Binding</source><translation>Pengikatan</translation></message>
+    <message><source>By drive letter</source><translation>Berdasarkan huruf drive</translation></message>
+    <message><source>By volume ID</source><translation>Berdasarkan ID volume</translation></message>
+    <message><source>Cancel reading</source><translation>Batalkan pembacaan</translation></message>
+    <message><source>Changes already committed are retained.</source><translation>Perubahan yang sudah dikomit tetap disimpan.</translation></message>
+    <message><source>Select the registry key to exclude from UWF protection, including its subkeys and values.</source><translation>Pilih kunci registri yang akan dikecualikan dari perlindungan UWF, termasuk subkunci dan nilainya.</translation></message>
+    <message><source>Choose a location to save the file.</source><translation>Pilih lokasi untuk menyimpan file.</translation></message>
+    <message><source>Choose a location within the allowed drive or folder.</source><translation>Pilih lokasi dalam drive atau folder yang diizinkan.</translation></message>
+    <message><source>Choose another folder, or check access permissions and retry.</source><translation>Pilih folder lain atau periksa izin akses, lalu coba lagi.</translation></message>
+    <message><source>Choose another key, or check access permissions and try again.</source><translation>Pilih kunci lain atau periksa izin akses, lalu coba lagi.</translation></message>
+    <message><source>Clear filters</source><translation>Hapus filter</translation></message>
+    <message><source>Clear logs</source><translation>Hapus log</translation></message>
+    <message><source>Clear logs?</source><translation>Hapus log?</translation></message>
+    <message><source>Collapse</source><translation>Ciutkan</translation></message>
+    <message><source>Commit changes</source><translation>Komit perubahan</translation></message>
+    <message><source>Commit changes…</source><translation>Komit perubahan…</translation></message>
+    <message><source>Commit complete</source><translation>Komit selesai</translation></message>
+    <message><source>Commit file changes?</source><translation>Komit perubahan file?</translation></message>
+    <message><source>Commit folder changes?</source><translation>Komit perubahan folder?</translation></message>
+    <message><source>Commit registry key changes?</source><translation>Komit perubahan kunci registri?</translation></message>
+    <message><source>Commit registry value changes?</source><translation>Komit perubahan nilai registri?</translation></message>
+    <message><source>Commits staged files before normal shutdown and restart</source><translation>Mengomit file yang disiapkan sebelum mematikan atau memulai ulang secara normal</translation></message>
+    <message><source>Compatibility mode</source><translation>Mode kompatibilitas</translation></message>
+    <message><source>Configuration applied</source><translation>Konfigurasi diterapkan</translation></message>
+    <message><source>Configuration error</source><translation>Kesalahan konfigurasi</translation></message>
+    <message><source>Configured</source><translation>Dikonfigurasi</translation></message>
+    <message><source>Confirm before continuing</source><translation>Konfirmasi sebelum melanjutkan</translation></message>
+    <message><source>Connected and authenticated</source><translation>Terhubung dan terautentikasi</translation></message>
+    <message><source>Connecting…</source><translation>Menghubungkan…</translation></message>
+    <message><source>Contact author</source><translation>Hubungi pengembang</translation></message>
+    <message><source>Continue editing</source><translation>Lanjutkan mengedit</translation></message>
+    <message><source>Continuing restart will discard changes in files that could not be saved.</source><translation>Melanjutkan mulai ulang akan membuang perubahan pada file yang tidak dapat disimpan.</translation></message>
+    <message><source>Continuing shutdown will discard changes in files that could not be saved.</source><translation>Melanjutkan pematian akan membuang perubahan pada file yang tidak dapat disimpan.</translation></message>
+    <message><source>Coordinate with Windows shutdown</source><translation>Koordinasikan dengan pematian Windows</translation></message>
+    <message><source>Copy all logs</source><translation>Salin semua log</translation></message>
+    <message><source>Copy full report</source><translation>Salin laporan lengkap</translation></message>
+    <message><source>Copy name</source><translation>Salin nama</translation></message>
+    <message><source>Copy path</source><translation>Salin jalur</translation></message>
+    <message><source>Copy selection</source><translation>Salin pilihan</translation></message>
+    <message><source>Copy version</source><translation>Salin versi</translation></message>
+    <message><source>Counting staged files…</source><translation>Menghitung file yang disiapkan…</translation></message>
+    <message><source>Create</source><translation>Buat</translation></message>
+    <message><source>Critical %1 MB</source><translation>Kritis %1 MB</translation></message>
+    <message><source>Current filter</source><translation>Filter saat ini</translation></message>
+    <message><source>Current run</source><translation>Proses saat ini</translation></message>
+    <message><source>Current selection</source><translation>Pilihan saat ini</translation></message>
+    <message><source>Current usage</source><translation>Penggunaan saat ini</translation></message>
+    <message><source>Date modified</source><translation>Tanggal diubah</translation></message>
+    <message><source>Debug</source><translation>Debug</translation></message>
+    <message><source>Delete and commit this file?</source><translation>Hapus file ini dan komit penghapusannya?</translation></message>
+    <message><source>Delete and commit this folder?</source><translation>Hapus folder ini dan komit penghapusannya?</translation></message>
+    <message><source>Delete and commit this registry key?</source><translation>Hapus kunci registri ini dan komit penghapusannya?</translation></message>
+    <message><source>Delete and commit this registry value?</source><translation>Hapus nilai registri ini dan komit penghapusannya?</translation></message>
+
+    <message><source>Direct restart?</source><translation>Mulai ulang langsung?</translation></message>
+    <message><source>Direct shutdown?</source><translation>Matikan langsung?</translation></message>
+    <message><source>Discard changes</source><translation>Buang perubahan</translation></message>
+    <message><source>Disk</source><translation>Disk</translation></message>
+    <message><source>Domain Secret Key persistence</source><translation>Persistensi kunci rahasia domain</translation></message>
+    <message><source>Done</source><translation>Selesai</translation></message>
+    <message><source>Edit commands</source><translation>Edit perintah</translation></message>
+    <message><source>Editable</source><translation>Dapat diedit</translation></message>
+    <message><source>Enable the filter and restart to display live usage</source><translation>Aktifkan filter dan mulai ulang untuk menampilkan penggunaan langsung</translation></message>
+    <message><source>Enhanced mode adds a background service that starts with Windows. Remove the service before moving or deleting the application.</source><translation>Mode lanjutan menambahkan layanan latar belakang yang dimulai bersama Windows. Hapus layanan ini sebelum memindahkan atau menghapus aplikasi.</translation></message>
+    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to save staged files.</source><translation>Mode lanjutan tidak tersedia. Gunakan Matikan dengan aman atau Mulai ulang dengan aman untuk menyimpan file yang disiapkan.</translation></message>
+    <message><source>Enter HKLM\SOFTWARE\… and press Enter to navigate</source><translation>Masukkan HKLM\SOFTWARE\… lalu tekan Enter untuk menavigasi</translation></message>
+    <message><source>Enter a file name</source><translation>Masukkan nama file</translation></message>
+    <message><source>Enter a valid file name.</source><translation>Masukkan nama file yang valid.</translation></message>
+    <message><source>Enter a valid file or folder name.</source><translation>Masukkan nama file atau folder yang valid.</translation></message>
+    <message><source>Enter a valid folder name.</source><translation>Masukkan nama folder yang valid.</translation></message>
+    <message><source>Error</source><translation>Kesalahan</translation></message>
+    <message><source>Error details</source><translation>Detail kesalahan</translation></message>
+    <message><source>Error details and suggestions</source><translation>Detail kesalahan dan saran</translation></message>
+    <message><source>Expand</source><translation>Perluas</translation></message>
+    <message><source>Export list</source><translation>Ekspor daftar</translation></message>
+    <message><source>Failed to clear logs: %1</source><translation>Gagal menghapus log: %1</translation></message>
+    <message><source>Failed to clear logs: unexpected error.</source><translation>Gagal menghapus log: kesalahan tak terduga.</translation></message>
+    <message><source>File name</source><translation>Nama file</translation></message>
+    <message><source>File or folder</source><translation>File atau folder</translation></message>
+    <message><source>File saving has started and cannot be canceled.</source><translation>Penyimpanan file telah dimulai dan tidak dapat dibatalkan.</translation></message>
+    <message><source>File saving incomplete</source><translation>Penyimpanan file belum selesai</translation></message>
+    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after restart.</source><translation>Penyimpanan file yang disiapkan akan dilewati. Perubahan yang belum dikomit pada jalur terlindungi akan hilang setelah mulai ulang.</translation></message>
+    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after shutdown.</source><translation>Penyimpanan file yang disiapkan akan dilewati. Perubahan yang belum dikomit pada jalur terlindungi akan hilang setelah pematian.</translation></message>
+    <message><source>File type</source><translation>Jenis file</translation></message>
+    <message><source>Files and folders</source><translation>File dan folder</translation></message>
+    <message><source>Files and folders can be selected together.</source><translation>File dan folder dapat dipilih bersamaan.</translation></message>
+    <message><source>Files in File staging will not be saved.</source><translation>File yang disiapkan tidak akan disimpan.</translation></message>
+    <message><source>Filter is disabled</source><translation>Filter dinonaktifkan</translation></message>
+    <message><source>Fit columns to contents</source><translation>Sesuaikan kolom dengan isi</translation></message>
+    <message><source>Folder address</source><translation>Alamat folder</translation></message>
+    <message><source>Folder name</source><translation>Nama folder</translation></message>
+    <message><source>Folders</source><translation>Folder-folder</translation></message>
+    <message><source>Full configuration</source><translation>Konfigurasi lengkap</translation></message>
+    <message><source>Future writes to this key will not be protected by UWF.</source><translation>Penulisan berikutnya ke kunci ini tidak akan dilindungi UWF.</translation></message>
+    <message><source>Future writes to this path will not be protected by UWF.</source><translation>Penulisan berikutnya ke jalur ini tidak akan dilindungi UWF.</translation></message>
+    <message><source>Global registry exclusion · includes subkeys</source><translation>Pengecualian registri global · termasuk subkunci</translation></message>
+    <message><source>Go up one folder or choose another location.</source><translation>Naik satu folder atau pilih lokasi lain.</translation></message>
+    <message><source>Home</source><translation>Folder pribadi</translation></message>
+    <message><source>Import configuration</source><translation>Impor konfigurasi</translation></message>
+    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>Impor membuat perubahan tertunda. Gunakan Tinjau dan terapkan untuk menuliskannya ke sistem.</translation></message>
+    <message><source>Import results</source><translation>Hasil impor</translation></message>
+    <message><source>Imported</source><translation>Diimpor</translation></message>
+    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Perintah yang diimpor masih perlu diterapkan. Pilih baris untuk melihat hasil lengkap.</translation></message>
+    <message><source>Imported: %1</source><translation>Diimpor: %1</translation></message>
+    <message><source>Information</source><translation>Informasi</translation></message>
+    <message><source>Item details</source><translation>Detail item</translation></message>
+    <message><source>Large staging lists may take longer to save.</source><translation>Daftar file yang disiapkan dalam jumlah besar dapat memerlukan waktu penyimpanan lebih lama.</translation></message>
+    <message><source>License and copyright</source><translation>Lisensi dan hak cipta</translation></message>
+    <message><source>Line</source><translation>Baris</translation></message>
+    <message><source>Local disk (%1)</source><translation>Disk lokal (%1)</translation></message>
+    <message><source>Log level</source><translation>Tingkat log</translation></message>
+    <message><source>Log reading failed. Retry or check access to the log file.</source><translation>Gagal membaca log. Coba lagi atau periksa akses ke file log.</translation></message>
+    <message><source>Maximize</source><translation>Maksimalkan</translation></message>
+    <message><source>Message details</source><translation>Detail pesan</translation></message>
+    <message><source>Minimize</source><translation>Minimalkan</translation></message>
+    <message><source>Module</source><translation>Modul</translation></message>
+    <message><source>More</source><translation>Lainnya</translation></message>
+    <message><source>Move</source><translation>Pindahkan</translation></message>
+    <message><source>If UWF protects the application drive, first make sure the application files will remain after a restart. Committing many staged files can make shutdown or restart take longer.</source><translation>Jika drive tempat aplikasi berada dilindungi UWF, pastikan terlebih dahulu bahwa file aplikasi tetap ada setelah komputer dimulai ulang. Menyimpan banyak file yang disiapkan dapat memperlama proses mematikan atau memulai ulang komputer.</translation></message>
+    <message><source>Multiple files can be selected.</source><translation>Beberapa file dapat dipilih.</translation></message>
+    <message><source>Name and location</source><translation>Nama dan lokasi</translation></message>
+    <message><source>Named value: %1 · this value only</source><translation>Nilai bernama: %1 · hanya nilai ini</translation></message>
+    <message><source>Navigate to registry path</source><translation>Buka jalur registri</translation></message>
+    <message><source>New folder</source><translation>Folder baru</translation></message>
+    <message><source>New records will appear after refreshing.</source><translation>Catatan baru akan muncul setelah disegarkan.</translation></message>
+    <message><source>Next-session configuration</source><translation>Konfigurasi sesi berikutnya</translation></message>
+    <message><source>No files to commit</source><translation>Tidak ada file untuk dikomit</translation></message>
+    <message><source>No logs yet</source><translation>Belum ada log</translation></message>
+    <message><source>No matching items</source><translation>Tidak ada item yang cocok</translation></message>
+    <message><source>No matching logs</source><translation>Tidak ada log yang cocok</translation></message>
+    <message><source>No overlay files found</source><translation>Tidak ditemukan file overlay</translation></message>
+    <message><source>No registry key selected</source><translation>Tidak ada kunci registri yang dipilih</translation></message>
+    <message><source>None</source><translation>Tidak ada</translation></message>
+    <message><source>Not configured</source><translation>Belum dikonfigurasi</translation></message>
+    <message><source>Not connected</source><translation>Tidak terhubung</translation></message>
+    <message><source>Not installed</source><translation>Belum dipasang</translation></message>
+    <message><source>Not written to the system</source><translation>Belum ditulis ke sistem</translation></message>
+    <message><source>Off</source><translation>Nonaktif</translation></message>
+    <message><source>On</source><translation>Aktif</translation></message>
+    <message><source>One uwfmgr command per line</source><translation>Satu perintah uwfmgr per baris</translation></message>
+    <message><source>Keep the application in a fixed folder that standard users cannot modify. Suggested location:</source><translation>Simpan aplikasi di folder tetap yang tidak dapat diubah oleh pengguna standar. Lokasi yang disarankan:</translation></message>
+    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after restart.</source><translation>Hanya file yang disiapkan yang disimpan otomatis. Perubahan lain yang belum dikomit pada jalur terlindungi akan hilang setelah mulai ulang.</translation></message>
+    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after shutdown.</source><translation>Hanya file yang disiapkan yang disimpan otomatis. Perubahan lain yang belum dikomit pada jalur terlindungi akan hilang setelah pematian.</translation></message>
+    <message><source>Open</source><translation>Buka</translation></message>
+    <message><source>Open folder</source><translation>Buka folder</translation></message>
+    <message><source>Operating system</source><translation>Sistem operasi</translation></message>
+    <message><source>Operation and security</source><translation>Operasi dan keamanan</translation></message>
+    <message><source>Original command</source><translation>Perintah asli</translation></message>
+    <message><source>Overlay critical threshold reached. Save changes and safely restart.</source><translation>Ambang kritis overlay tercapai. Simpan perubahan dan mulai ulang dengan aman.</translation></message>
+    <message><source>Overlay maximum size</source><translation>Ukuran maksimum overlay</translation></message>
+    <message><source>Overlay type</source><translation>Jenis overlay</translation></message>
+    <message><source>Overlay usage</source><translation>Penggunaan overlay</translation></message>
+    <message><source>Overlay warning threshold reached. Save changes and safely restart.</source><translation>Ambang peringatan overlay tercapai. Simpan perubahan dan mulai ulang dengan aman.</translation></message>
+    <message><source>Overview</source><translation>Ringkasan</translation></message>
+    <message><source>Paste commands, or load them from a file…</source><translation>Tempel perintah atau muat dari file…</translation></message>
+    <message><source>Pending changes</source><translation>Perubahan tertunda</translation></message>
+    <message><source>Pending removal</source><translation>Menunggu penghapusan</translation></message>
+    <message><source>Permissions and protection</source><translation>Izin dan perlindungan</translation></message>
+    <message><source>Privileges</source><translation>Hak istimewa</translation></message>
+    <message><source>Processed %1 / %2 items</source><translation>%1 / %2 item diproses</translation></message>
+    <message><source>Processing result</source><translation>Hasil pemrosesan</translation></message>
+    <message><source>Protected</source><translation>Dilindungi</translation></message>
+    <message><source>Protected volumes</source><translation>Volume terlindungi</translation></message>
+    <message><source>Protection and overlay</source><translation>Perlindungan dan overlay</translation></message>
+    <message><source>Quick access</source><translation>Akses cepat</translation></message>
+    <message><source>Raw report</source><translation>Laporan mentah</translation></message>
+    <message><source>Read again</source><translation>Baca lagi</translation></message>
+    <message><source>Read again to retrieve a diagnostic snapshot.</source><translation>Baca lagi untuk mengambil snapshot diagnostik.</translation></message>
+    <message><source>Read the configuration to display live usage</source><translation>Baca konfigurasi untuk menampilkan penggunaan langsung</translation></message>
+    <message><source>Read-only</source><translation>Hanya baca</translation></message>
+    <message><source>Reading a large overlay can take longer. You can cancel at any time.</source><translation>Membaca overlay besar dapat memerlukan waktu lebih lama. Anda dapat membatalkan kapan saja.</translation></message>
+    <message><source>Reading canceled</source><translation>Pembacaan dibatalkan</translation></message>
+    <message><source>Reading files and subfolders in this location…</source><translation>Membaca file dan subfolder di lokasi ini…</translation></message>
+    <message><source>Reading folder</source><translation>Membaca folder</translation></message>
+    <message><source>Reading logs</source><translation>Membaca log</translation></message>
+    <message><source>Reading overlay</source><translation>Membaca overlay</translation></message>
+    <message><source>Ready</source><translation>Siap</translation></message>
+    <message><source>Ready to save</source><translation>Siap disimpan</translation></message>
+    <message><source>Records from the current run will appear here when reading is complete.</source><translation>Catatan proses saat ini akan muncul di sini setelah pembacaan selesai.</translation></message>
+    <message><source>Recursive staging</source><translation>Penyiapan rekursif</translation></message>
+    <message><source>Refresh folder</source><translation>Segarkan folder</translation></message>
+    <message><source>Registry key or persistence setting</source><translation>Kunci registri atau pengaturan persistensi</translation></message>
+    <message><source>Remaining tasks can be canceled after the current target finishes.</source><translation>Tugas tersisa dapat dibatalkan setelah target saat ini selesai.</translation></message>
+    <message><source>Remove this key from the next-session exclusions.</source><translation>Hapus kunci ini dari pengecualian sesi berikutnya.</translation></message>
+    <message><source>Remove this path from the next-session exclusions.</source><translation>Hapus jalur ini dari pengecualian sesi berikutnya.</translation></message>
+    <message><source>Removed</source><translation>Dihapus</translation></message>
+    <message><source>Rename</source><translation>Ubah nama</translation></message>
+    <message><source>Rename…</source><translation>Ubah nama…</translation></message>
+    <message><source>Repair required</source><translation>Perlu perbaikan</translation></message>
+    <message><source>Replace file</source><translation>Ganti file</translation></message>
+    <message><source>Replace the existing file?</source><translation>Ganti file yang ada?</translation></message>
+    <message><source>Required configuration</source><translation>Konfigurasi wajib</translation></message>
+    <message><source>Restart anyway</source><translation>Tetap mulai ulang</translation></message>
+    <message><source>Restart will continue after saving. Keep the application open.</source><translation>Mulai ulang akan dilanjutkan setelah penyimpanan. Biarkan aplikasi tetap terbuka.</translation></message>
+    <message><source>Restore</source><translation>Pulihkan</translation></message>
+    <message><source>Retry</source><translation>Coba lagi</translation></message>
+    <message><source>Review the failure details before continuing shutdown.</source><translation>Tinjau detail kegagalan sebelum melanjutkan pematian.</translation></message>
+    <message><source>Review the failure details before restarting.</source><translation>Tinjau detail kegagalan sebelum memulai ulang.</translation></message>
+    <message><source>Review the operation details. Read the current system state before retrying changes that may have been written.</source><translation>Tinjau detail operasi. Baca status sistem saat ini sebelum mencoba kembali perubahan yang mungkin sudah ditulis.</translation></message>
+    <message><source>Review the result for each target.</source><translation>Tinjau hasil untuk setiap target.</translation></message>
+    <message><source>Review these changes before writing them to the system.</source><translation>Tinjau perubahan ini sebelum menuliskannya ke sistem.</translation></message>
+    <message><source>Running</source><translation>Berjalan</translation></message>
+    <message><source>Save</source><translation>Simpan</translation></message>
+    <message><source>Save staged files to disk, then restart.</source><translation>Simpan file yang disiapkan ke disk, lalu mulai ulang.</translation></message>
+    <message><source>Save staged files to disk, then shut down.</source><translation>Simpan file yang disiapkan ke disk, lalu matikan.</translation></message>
+    <message><source>Saving staged files</source><translation>Menyimpan file yang disiapkan</translation></message>
+    <message><source>Saving to disk</source><translation>Menyimpan ke disk</translation></message>
+    <message><source>Saving…</source><translation>Menyimpan…</translation></message>
+    <message><source>Scanning staged paths</source><translation>Memindai jalur yang disiapkan</translation></message>
+    <message><source>Search logs</source><translation>Cari log</translation></message>
+    <message><source>Search messages or modules</source><translation>Cari pesan atau modul</translation></message>
+    <message><source>Search paths</source><translation>Cari jalur</translation></message>
+    <message><source>Search this folder</source><translation>Cari di folder ini</translation></message>
+    <message><source>Select a file or enter its name</source><translation>Pilih file atau masukkan namanya</translation></message>
+    <message><source>Select a file to open.</source><translation>Pilih file untuk dibuka.</translation></message>
+    <message><source>Select a folder.</source><translation>Pilih folder.</translation></message>
+    <message><source>Select a key to operate on its subtree, or a named value to operate on that value only.</source><translation>Pilih kunci untuk mengoperasikan seluruh subpohonnya, atau pilih nilai bernama untuk mengoperasikan nilai itu saja.</translation></message>
+    <message><source>Select an available subkey</source><translation>Pilih subkunci yang tersedia</translation></message>
+    <message><source>Select files only, or open a folder to browse its contents.</source><translation>Pilih file saja atau buka folder untuk menelusuri isinya.</translation></message>
+    <message><source>Select files or folders</source><translation>Pilih file atau folder</translation></message>
+    <message><source>Select folder</source><translation>Pilih folder</translation></message>
+    <message><source>Select folders only.</source><translation>Pilih folder saja.</translation></message>
+    <message><source>Select registry key or value</source><translation>Pilih kunci atau nilai registri</translation></message>
+    <message><source>Select registry key or value to delete</source><translation>Pilih kunci atau nilai registri untuk dihapus</translation></message>
+    <message><source>Select the current folder</source><translation>Pilih folder saat ini</translation></message>
+    <message><source>Select this file</source><translation>Pilih file ini</translation></message>
+    <message><source>Select this registry key</source><translation>Pilih kunci registri ini</translation></message>
+    <message><source>Select this registry value</source><translation>Pilih nilai registri ini</translation></message>
+    <message><source>Selected file</source><translation>File terpilih</translation></message>
+    <message><source>Selected folder</source><translation>Folder terpilih</translation></message>
+    <message><source>Selection</source><translation>Pilihan</translation></message>
+    <message><source>Service account</source><translation>Akun layanan</translation></message>
+    <message><source>Service configuration needs repair</source><translation>Konfigurasi layanan perlu diperbaiki</translation></message>
+    <message><source>Service details</source><translation>Detail layanan</translation></message>
+    <message><source>Service name</source><translation>Nama layanan</translation></message>
+    <message><source>Service status</source><translation>Status layanan</translation></message>
+    <message><source>Service stopped</source><translation>Layanan dihentikan</translation></message>
+    <message><source>Shut down anyway</source><translation>Tetap matikan</translation></message>
+    <message><source>Shutdown will continue after saving. Keep the application open.</source><translation>Pematian akan dilanjutkan setelah penyimpanan. Biarkan aplikasi tetap terbuka.</translation></message>
+    <message><source>Size</source><translation>Ukuran</translation></message>
+    <message><source>Some changes could not be applied</source><translation>Beberapa perubahan tidak dapat diterapkan</translation></message>
+    <message><source>Some files could not be saved</source><translation>Beberapa file tidak dapat disimpan</translation></message>
+    <message><source>Some hardware information could not be read. Other diagnostic information remains available to view and copy.</source><translation>Sebagian informasi perangkat keras tidak dapat dibaca. Informasi diagnostik lainnya tetap dapat dilihat dan disalin.</translation></message>
+    <message><source>Source code</source><translation>Kode sumber</translation></message>
+    <message><source>Staged file</source><translation>File yang disiapkan</translation></message>
+    <message><source>Staged path</source><translation>Jalur yang disiapkan</translation></message>
+    <message><source>Standard user</source><translation>Pengguna standar</translation></message>
+    <message><source>Starts automatically with Windows</source><translation>Mulai otomatis bersama Windows</translation></message>
+    <message><source>Startup type</source><translation>Jenis mulai</translation></message>
+    <message><source>Status unavailable</source><translation>Status tidak tersedia</translation></message>
+    <message><source>Stopped</source><translation>Dihentikan</translation></message>
+    <message><source>Storage</source><translation>Penyimpanan</translation></message>
+    <message><source>System</source><translation>Sistem</translation></message>
+    <message><source>System changes when UWF is first enabled</source><translation>Perubahan sistem saat UWF pertama kali diaktifkan</translation></message>
+    <message><source>System memory</source><translation>Memori sistem</translation></message>
+    <message><source>System metadata</source><translation>Metadata sistem</translation></message>
+    <message><source>System metadata is for diagnosis only and cannot be committed.</source><translation>Metadata sistem hanya untuk diagnosis dan tidak dapat dikomit.</translation></message>
+    <message><source>Takes effect after restart</source><translation>Berlaku setelah mulai ulang</translation></message>
+    <message><source>Target</source><translation>Target</translation></message>
+    <message><source>Terminal Services license persistence</source><translation>Persistensi lisensi Terminal Services</translation></message>
+    <message><source>The UWF provider could not complete enumeration. This can occur with a large overlay or insufficient system resources.</source><translation>Penyedia UWF tidak dapat menyelesaikan enumerasi. Ini dapat terjadi jika overlay besar atau sumber daya sistem tidak mencukupi.</translation></message>
+    <message><source>The configuration has been written to the system. Most changes take effect after restart.</source><translation>Konfigurasi telah ditulis ke sistem. Sebagian besar perubahan berlaku setelah mulai ulang.</translation></message>
+    <message><source>The configuration matches the next-session target. View or export commands in Full configuration.</source><translation>Konfigurasi sesuai dengan target sesi berikutnya. Lihat atau ekspor perintah dalam Konfigurasi lengkap.</translation></message>
+    <message><source>The current log records will be cleared and cannot be restored.</source><translation>Catatan log saat ini akan dihapus dan tidak dapat dipulihkan.</translation></message>
+    <message><source>The destination folder does not exist.</source><translation>Folder tujuan tidak ada.</translation></message>
+    <message><source>The enhanced mode service status could not be read. Check service permissions and retry.</source><translation>Status layanan mode lanjutan tidak dapat dibaca. Periksa izin layanan dan coba lagi.</translation></message>
+    <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>Daftar dapat melewatkan file atau menyertakan file yang sudah dikomit. Jangan gunakan sebagai daftar komit.</translation></message>
+
+    <message><source>The selected item no longer exists: %1</source><translation>Item terpilih sudah tidak ada: %1</translation></message>
+    <message><source>The service is installed but stopped. Start it to restore automatic saving.</source><translation>Layanan terpasang tetapi berhenti. Mulai layanan untuk memulihkan penyimpanan otomatis.</translation></message>
+    <message><source>This PC</source><translation>PC ini</translation></message>
+    <message><source>This folder is empty</source><translation>Folder ini kosong</translation></message>
+
+    <message><source>This report may contain account names, device identifiers, and file paths. Review it before sharing.</source><translation>Laporan ini mungkin berisi nama akun, pengenal perangkat, dan jalur file. Tinjau sebelum membagikannya.</translation></message>
+    <message><source>Save this UTF-8 CMD script as a .cmd file and run it in Command Prompt. Export uses the same script.</source><translation>Simpan skrip CMD UTF-8 ini sebagai file .cmd dan jalankan di Command Prompt. Ekspor menggunakan skrip yang sama.</translation></message>
+    <message><source>Try another keyword or log level.</source><translation>Coba kata kunci atau tingkat log lain.</translation></message>
+    <message><source>Try another search term.</source><translation>Coba istilah pencarian lain.</translation></message>
+    <message><source>Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>Jenis dan ukuran maksimum tidak dapat diubah saat filter aktif. Nonaktifkan filter dan mulai ulang terlebih dahulu.</translation></message>
+    <message><source>UI agent</source><translation>Agen antarmuka</translation></message>
+    <message><source>UTF-8 · %1 lines</source><translation>UTF-8 · %1 baris</translation></message>
+    <message><source>UWF configuration could not be read. Confirm that Unified Write Filter is installed in Windows, then read again.</source><translation>Konfigurasi UWF tidak dapat dibaca. Pastikan Unified Write Filter terpasang di Windows, lalu baca lagi.</translation></message>
+    <message><source>UWF feature</source><translation>Fitur UWF</translation></message>
+    <message><source>UWF filter</source><translation>Filter UWF</translation></message>
+    <message><source>UWF is currently unavailable</source><translation>UWF saat ini tidak tersedia</translation></message>
+    <message><source>UWF safe restart will run directly.</source><translation>Mulai ulang aman UWF akan dijalankan langsung.</translation></message>
+    <message><source>UWF safe shutdown will run directly.</source><translation>Pematian aman UWF akan dijalankan langsung.</translation></message>
+    <message><source>Unable to access this folder</source><translation>Tidak dapat mengakses folder ini</translation></message>
+    <message><source>Unable to access this registry key</source><translation>Tidak dapat mengakses kunci registri ini</translation></message>
+    <message><source>Unable to read logs</source><translation>Tidak dapat membaca log</translation></message>
+    <message><source>Unable to read service status</source><translation>Tidak dapat membaca status layanan</translation></message>
+    <message><source>Unable to read the overlay right now</source><translation>Tidak dapat membaca overlay saat ini</translation></message>
+    <message><source>Unable to read this folder.</source><translation>Tidak dapat membaca folder ini.</translation></message>
+    <message><source>Unable to select this item</source><translation>Tidak dapat memilih item ini</translation></message>
+    <message><source>Unavailable</source><translation>Tidak tersedia</translation></message>
+    <message><source>Undo removal</source><translation>Urungkan penghapusan</translation></message>
+    <message><source>Unprotected</source><translation>Tidak dilindungi</translation></message>
+    <message><source>Unsuccessful items have not been saved. Select a row to view the full path and reason.</source><translation>Item yang gagal belum disimpan. Pilih baris untuk melihat jalur lengkap dan alasannya.</translation></message>
+    <message><source>Up one folder</source><translation>Naik satu folder</translation></message>
+    <message><source>Usage unavailable</source><translation>Penggunaan tidak tersedia</translation></message>
+    <message><source>Use the whole key, including all subkeys</source><translation>Gunakan seluruh kunci, termasuk semua subkunci</translation></message>
+    <message><source>Version %1</source><translation>Versi %1</translation></message>
+    <message><source>View application records and diagnostic information.</source><translation>Lihat catatan aplikasi dan informasi diagnostik.</translation></message>
+    <message><source>View commands for these changes</source><translation>Lihat perintah untuk perubahan ini</translation></message>
+    <message><source>View failure details</source><translation>Lihat detail kegagalan</translation></message>
+    <message><source>View overlay</source><translation>Lihat overlay</translation></message>
+    <message><source>View the file diagnostic snapshot for %1.</source><translation>Lihat snapshot diagnostik file untuk %1.</translation></message>
+    <message><source>Volume %1 binding</source><translation>Pengikatan volume %1</translation></message>
+    <message><source>Volume %1 protection</source><translation>Perlindungan volume %1</translation></message>
+    <message><source>Volume identity</source><translation>Identitas volume</translation></message>
+    <message><source>Warning</source><translation>Peringatan</translation></message>
+    <message><source>Warning %1 MB</source><translation>Peringatan %1 MB</translation></message>
+    <message><source>Whole key and all subkeys · recursive</source><translation>Seluruh kunci dan semua subkunci · rekursif</translation></message>
+    <message><source>Windows UWF provides write protection. This application configures and manages it.</source><translation>Windows UWF menyediakan perlindungan penulisan. Aplikasi ini mengonfigurasi dan mengelolanya.</translation></message>
+    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to save staged files.</source><translation>Tanpa mode lanjutan, gunakan Matikan dengan aman atau Mulai ulang dengan aman dalam aplikasi ini untuk menyimpan file yang disiapkan.</translation></message>
+    <message><source>Write protection</source><translation>Perlindungan penulisan</translation></message>
+    <message><source>Write these configuration changes to the system? Most changes take effect after restart.</source><translation>Tulis perubahan konfigurasi ini ke sistem? Sebagian besar berlaku setelah mulai ulang.</translation></message>
+    <message><source>staged files</source><translation>file yang disiapkan</translation></message>
+    <message><source>uwfmgr commands</source><translation>perintah uwfmgr</translation></message>
+    <message><source>Mark selected paths for removal. Takes effect after Apply.</source><translation>Tandai jalur yang dipilih untuk dihapus. Berlaku setelah diterapkan.</translation></message>
+    <message><source>Remove from automatic file staging after Apply.</source><translation>Hapus dari daftar penyiapan berkas otomatis setelah diterapkan.</translation></message>
+    <message><source>Add to automatic file staging after Apply.</source><translation>Tambahkan ke daftar penyiapan berkas otomatis setelah diterapkan.</translation></message>
+    <message><source>Applying this plan clears the saved staging list and removes its registry exclusion when no longer required.</source><translation>Menerapkan rencana ini akan mengosongkan daftar penyiapan yang tersimpan dan menghapus pengecualian registri terkait jika tidak lagi diperlukan.</translation></message>
+    <message><source>File staging changes must be applied in UWF Manager and cannot be exported as uwfmgr commands.</source><translation>Perubahan penyiapan berkas harus diterapkan di UWF Manager dan tidak dapat diekspor sebagai perintah uwfmgr.</translation></message>
+    <message><source>File staging is saved after Apply</source><translation>Daftar penyiapan berkas disimpan setelah diterapkan</translation></message>
+    <message><source>Overlay snapshot scope</source><translation>Cakupan snapshot overlay</translation></message>
+    <message><source>This list is for diagnostics only. It cannot determine which files must be committed.</source><translation>Daftar ini hanya untuk diagnostik. Daftar ini tidak dapat menentukan file mana yang harus dikomit.</translation></message>
+    <message><source>NTFS volumes only</source><translation>Hanya volume NTFS</translation></message>
+    <message><source>Large overlays may load slowly or fail because of insufficient resources.</source><translation>Overlay besar mungkin lambat dibaca atau gagal karena sumber daya tidak mencukupi.</translation></message>
+    <message><source>Small files may be missing</source><translation>File kecil mungkin tidak tercantum</translation></message>
+    <message><source>Files smaller than the disk cluster size (typically 4 KB) may not appear in the list.</source><translation>File yang lebih kecil dari ukuran klaster disk (biasanya 4 KB) mungkin tidak muncul dalam daftar.</translation></message>
+    <message><source>Does not indicate pending commits</source><translation>Tidak menunjukkan komit yang tertunda</translation></message>
+    <message><source>Files already committed, excluded paths, and items affected by other operations may also appear.</source><translation>File yang sudah dikomit, jalur yang dikecualikan, dan item yang terpengaruh operasi lain juga dapat muncul.</translation></message>
+
+    <message><source>Command processing result</source><translation>Hasil pemrosesan perintah</translation></message>
+    <message><source>Copy command</source><translation>Salin perintah</translation></message>
+    <message><source> · %1 branches could not be read</source><translation> · %1 cabang tidak dapat dibaca</translation></message>
+    <message><source>%1 branches could not be read. Continue with discovered content, or retry only the failed items.</source><translation>%1 cabang tidak dapat dibaca. Lanjutkan dengan konten yang ditemukan atau coba lagi hanya item yang gagal.</translation></message>
+    <message><source>%1 files · %2 folders</source><translation>%1 berkas · %2 folder</translation></message>
+    <message><source>%1 values · %2 keys</source><translation>%1 nilai · %2 kunci</translation></message>
+    <message><source>Attempts</source><translation>Percobaan</translation></message>
+    <message><source>Cancel remaining tasks</source><translation>Batalkan tugas tersisa</translation></message>
+    <message><source>Commit only successfully traversed content. Unread branches remain unchanged.</source><translation>Simpan permanen hanya konten yang berhasil ditelusuri. Cabang yang tidak terbaca tetap tidak berubah.</translation></message>
+    <message><source>Committing changes</source><translation>Menyimpan perubahan permanen</translation></message>
+    <message><source>Completed deletions and commits cannot be undone.</source><translation>Penghapusan dan penyimpanan permanen yang selesai tidak dapat dibatalkan.</translation></message>
+    <message><source>Continue…</source><translation>Lanjutkan…</translation></message>
+    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>Hapus dan simpan permanen hanya target yang ditemukan. Cabang yang tidak terbaca beserta folder atau kunci induknya dipertahankan.</translation></message>
+    <message><source>Deleting and committing</source><translation>Menghapus dan menyimpan permanen</translation></message>
+    <message><source>Deletion and commit cannot be undone. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>Penghapusan dan penyimpanan permanen tidak dapat dibatalkan. Hanya cakupan yang dipilih diproses; konfigurasi UWF tertunda tidak diterapkan.</translation></message>
+    <message><source>Determining the scope. Unread branches are recorded while traversal continues elsewhere.</source><translation>Menentukan cakupan. Cabang yang tidak terbaca dicatat dan penelusuran konten lainnya dilanjutkan.</translation></message>
+    <message><source>Export traversal records</source><translation>Ekspor catatan penelusuran</translation></message>
+    <message><source>No actionable content</source><translation>Tidak ada konten yang dapat diproses</translation></message>
+    <message><source>No actionable targets were found. Nothing has been deleted or committed.</source><translation>Tidak ditemukan target yang dapat diproses. Tidak ada yang dihapus atau disimpan permanen.</translation></message>
+    <message><source>No changes have been committed.</source><translation>Belum ada perubahan yang disimpan permanen</translation></message>
+    <message><source>Nothing has been deleted or committed.</source><translation>Belum ada yang dihapus atau disimpan permanen</translation></message>
+    <message><source>Path</source><translation>Jalur</translation></message>
+    <message><source>Permanently delete the selected scope and save the deletions to the protected volume.</source><translation>Hapus cakupan yang dipilih secara permanen dan simpan hasil penghapusan ke volume terlindungi.</translation></message>
+    <message><source>Preparation complete</source><translation>Persiapan selesai</translation></message>
+    <message><source>Preparing commit</source><translation>Menyiapkan penyimpanan permanen</translation></message>
+    <message><source>Preparing deletion and commit</source><translation>Menyiapkan penghapusan dan penyimpanan permanen</translation></message>
+    <message><source>Process only successfully traversed content</source><translation>Proses hanya konten yang berhasil ditelusuri</translation></message>
+
+    <message><source>Reparse points are skipped to keep traversal within the selected scope.</source><translation>Titik reparse dilewati agar penelusuran tetap dalam cakupan yang dipilih.</translation></message>
+    <message><source>Restarting cannot undo a commit. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>Memulai ulang tidak membatalkan penyimpanan permanen. Hanya cakupan yang dipilih diproses; konfigurasi UWF tertunda tidak diterapkan.</translation></message>
+    <message><source>Retry failed items</source><translation>Coba lagi item yang gagal</translation></message>
+    <message><source>Save changes in the selected scope to the protected volume.</source><translation>Simpan perubahan dalam cakupan yang dipilih ke volume terlindungi.</translation></message>
+    <message><source>Stopping the operation</source><translation>Menghentikan operasi</translation></message>
+    <message><source>Successful and failed records are retained</source><translation>Catatan keberhasilan dan kegagalan dipertahankan</translation></message>
+    <message><source>The folder is not empty; unprocessed content has been retained.</source><translation>Folder tidak kosong; konten yang belum diproses dipertahankan.</translation></message>
+    <message><source>The operation could not be completed</source><translation>Operasi tidak dapat diselesaikan</translation></message>
+    <message><source>The registry key has new values; unprocessed content has been retained.</source><translation>Kunci registri memiliki nilai baru; konten yang belum diproses dipertahankan.</translation></message>
+    <message><source>The registry key still has subkeys; unprocessed content has been retained.</source><translation>Kunci registri masih memiliki subkunci; konten yang belum diproses dipertahankan.</translation></message>
+    <message><source>The target no longer exists.</source><translation>Target sudah tidak ada.</translation></message>
+    <message><source>Traversal complete</source><translation>Penelusuran selesai</translation></message>
+    <message><source>Traversal completed with unread content</source><translation>Penelusuran selesai dengan konten yang tidak terbaca</translation></message>
+    <message><source>Traversal records are retained and can be exported.</source><translation>Catatan penelusuran dipertahankan dan dapat diekspor.</translation></message>
+    <message><source>Traverse again</source><translation>Telusuri lagi</translation></message>
+    <message><source>Traverse again, or close this window.</source><translation>Telusuri lagi atau tutup jendela ini.</translation></message>
+    <message><source>Traversing the folder</source><translation>Menelusuri folder</translation></message>
+    <message><source>Traversing the registry</source><translation>Menelusuri registri</translation></message>
+    <message><source>Unable to prepare the operation</source><translation>Operasi tidak dapat disiapkan</translation></message>
+    <message><source>View results</source><translation>Lihat hasil</translation></message>
+
+    <message><source>All changes committed</source><translation>Semua perubahan berhasil disimpan</translation></message>
+    <message><source>Some changes committed</source><translation>Sebagian perubahan berhasil disimpan</translation></message>
+    <message><source>No changes could be committed</source><translation>Tidak ada perubahan yang berhasil disimpan</translation></message>
+    <message><source>No changes to commit</source><translation>Tidak ada perubahan untuk disimpan</translation></message>
+    <message><source>Commit interrupted</source><translation>Penyimpanan terhenti</translation></message>
+    <message><source>%1 items were not processed.</source><translation>%1 item belum diproses.</translation></message>
+    <message><source>%1 registry operation(s) failed.</source><translation>%1 operasi registri gagal.</translation></message>
+    <message><source>The folder does not exist.</source><translation>Folder tidak ada.</translation></message>
+    <message><source>Access denied.</source><translation>Akses ditolak.</translation></message>
+    <message><source>An item with this name already exists.</source><translation>Item dengan nama ini sudah ada.</translation></message>
+    <message><source>The folder could not be created. Check the name and permissions.</source><translation>Folder tidak dapat dibuat. Periksa nama dan izin akses.</translation></message>
+    <message><source>The item could not be renamed. Check the name and permissions.</source><translation>Nama item tidak dapat diubah. Periksa nama dan izin akses.</translation></message>
+    <message><source>Renaming is not supported by this browser.</source><translation>Peramban ini tidak mendukung penggantian nama.</translation></message>
+    <message><source>The file staging draft changed after this plan was opened. Review a new plan.</source><translation>Draf daftar berkas yang disiapkan berubah setelah rencana ini dibuka. Tinjau rencana baru.</translation></message>
+    <message><source>The saved file staging list changed after this plan was opened. Refresh and review the changes.</source><translation>Daftar tersimpan berkas yang disiapkan berubah setelah rencana ini dibuka. Muat ulang dan tinjau perubahannya.</translation></message>
+    <message><source>The saved file staging list does not match the accepted plan.</source><translation>Daftar tersimpan berkas yang disiapkan tidak sesuai dengan rencana yang disetujui.</translation></message>
+    <message><source>Export configuration</source><translation>Ekspor konfigurasi</translation></message>
+    <message><source>Save the current theme, language, and HUB visibility to UWF.ini next to this application.</source><translation>Simpan tema, bahasa, dan visibilitas HUB saat ini ke UWF.ini di folder yang sama dengan aplikasi ini.</translation></message>
+    <message><source>Configuration saved</source><translation>Konfigurasi disimpan</translation></message>
+    <message><source>Saved the current interface settings to:
+%1</source><translation>Pengaturan antarmuka saat ini disimpan ke:
+%1</translation></message>
+    <message><source>UWF.ini already exists. The existing file was not changed:
+%1</source><translation>UWF.ini sudah ada. File yang ada tidak diubah:
+%1</translation></message>
+    <message><source>Could not save UWF.ini:
+%1
+%2</source><translation>Tidak dapat menyimpan UWF.ini:
+%1
+%2</translation></message>
+    <message><source>Desktop</source><translation>Desktop</translation></message>
+    <message><source>Downloads</source><translation>Unduhan</translation></message>
+    <message><source>Documents</source><translation>Dokumen</translation></message>
+    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Penyimpanan file otomatis dihentikan. Atasi kesalahan sebelum mencoba lagi.</translation></message>
 </context>
 </TS>

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 # 全仓库统一使用 LF 行尾；git 自动识别二进制文件并跳过。
 * text=auto eol=lf
 

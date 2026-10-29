@@ -1,19 +1,10 @@
-/*
- * Copyright (c) 2026 HsingYun (iakext@gmail.com)
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- */
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2026 HsingYun (iakext@gmail.com)
+#include "EnhancedModeServiceRuntime.h"
+
+#include "windows/commit/WindowsCommitTraversalSource.h"
+#include "windows/storage/RegistryFileStagingStore.h"
+#include "windows/system/UnicodeConversion.h"
 // MinGW 的 sddl.h 不会自行定义 WINADVAPI / WINBOOL，windows.h 必须保持在前。
 // clang-format off
 #include <windows.h>
@@ -44,14 +35,16 @@
 #include <utility>
 #include <vector>
 
-#include "../app/FileStagingStore.h"
-#include "../util/Log.h"
-#include "../util/StringUtil.h"
-#include "../uwf/FileStagingTask.h"
-#include "../uwf/UwfSnapshot.h"
-#include "../uwf/wmi/WmiClient.h"
-#include "EnhancedModePipeIo.h"
-#include "EnhancedModeService.h"
+#include "app/enhanced/EnhancedModeProtocol.h"
+#include "app/ports/FileStagingStore.h"
+#include "app/staging/FileStagingTask.h"
+#include "app/uwf/UwfStateReader.h"
+#include "shared/Log.h"
+#include "shared/StringUtil.h"
+#include "windows/ipc/EnhancedModePipeIo.h"
+#include "windows/resources/UniqueHandle.h"
+#include "windows/security/ExecutableIdentity.h"
+#include "windows/wmi/WmiSession.h"
 
 namespace uwf::service {
 
@@ -65,30 +58,7 @@ constexpr auto kAgentRetryMaximum = std::chrono::seconds{60};
 constexpr auto kCommitPreparationPollInterval = std::chrono::milliseconds{16};
 constexpr auto kPreshutdownSkipLifetime = std::chrono::minutes{5};
 
-class UniqueHandle final {
- public:
-  explicit UniqueHandle(HANDLE handle = nullptr) : m_handle(handle) {}
-  ~UniqueHandle() { reset(); }
-  UniqueHandle(const UniqueHandle&) = delete;
-  UniqueHandle& operator=(const UniqueHandle&) = delete;
-  UniqueHandle(UniqueHandle&& other) noexcept : m_handle(std::exchange(other.m_handle, nullptr)) {}
-  UniqueHandle& operator=(UniqueHandle&& other) noexcept {
-    if (this == &other) return *this;
-    reset();
-    m_handle = std::exchange(other.m_handle, nullptr);
-    return *this;
-  }
-
-  void reset(HANDLE handle = nullptr) {
-    if (valid()) CloseHandle(m_handle);
-    m_handle = handle;
-  }
-  [[nodiscard]] HANDLE get() const { return m_handle; }
-  [[nodiscard]] bool valid() const { return m_handle && m_handle != INVALID_HANDLE_VALUE; }
-
- private:
-  HANDLE m_handle = nullptr;
-};
+using windows::UniqueHandle;
 
 class LocalMemory final {
  public:
@@ -118,34 +88,6 @@ class EnvironmentBlock final {
 
 [[noreturn]] void throwSystemError(const char* operation, const DWORD error = GetLastError()) {
   throw std::system_error(static_cast<int>(error), std::system_category(), operation);
-}
-
-std::wstring executablePath() {
-  std::wstring path(32768, L'\0');
-  const DWORD length = GetModuleFileNameW(nullptr, path.data(), static_cast<DWORD>(path.size()));
-  if (length == 0 || static_cast<std::size_t>(length) >= path.size()) throwSystemError("read service executable path");
-  path.resize(length);
-  return path;
-}
-
-bool sameFile(const std::wstring& leftPath, const std::wstring& rightPath) {
-  const DWORD sharing = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
-  const UniqueHandle left(CreateFileW(leftPath.c_str(), FILE_READ_ATTRIBUTES, sharing, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
-  const UniqueHandle right(CreateFileW(rightPath.c_str(), FILE_READ_ATTRIBUTES, sharing, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr));
-  if (!left.valid() || !right.valid()) return false;
-  FILE_ID_INFO leftInfo{};
-  FILE_ID_INFO rightInfo{};
-  return GetFileInformationByHandleEx(left.get(), FileIdInfo, &leftInfo, sizeof(leftInfo)) &&
-         GetFileInformationByHandleEx(right.get(), FileIdInfo, &rightInfo, sizeof(rightInfo)) && leftInfo.VolumeSerialNumber == rightInfo.VolumeSerialNumber &&
-         std::equal(std::begin(leftInfo.FileId.Identifier), std::end(leftInfo.FileId.Identifier), std::begin(rightInfo.FileId.Identifier));
-}
-
-std::wstring processImagePath(const HANDLE process) {
-  std::wstring path(32768, L'\0');
-  DWORD length = static_cast<DWORD>(path.size());
-  if (!QueryFullProcessImageNameW(process, 0, path.data(), &length)) return {};
-  path.resize(length);
-  return path;
 }
 
 struct AuthenticatedAgent {
@@ -211,7 +153,9 @@ std::optional<AuthenticatedAgent> authenticateAgent(const HANDLE pipe) {
   ULONG processId = 0;
   if (!GetNamedPipeClientProcessId(pipe, &processId) || processId == 0) return std::nullopt;
   UniqueHandle process(OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION | SYNCHRONIZE, FALSE, static_cast<DWORD>(processId)));
-  if (!process.valid() || !sameFile(processImagePath(process.get()), executablePath())) return std::nullopt;
+  if (!process.valid() ||
+      !windows::sameFile(windows::processImagePath(process.get()), windows::currentExecutablePath(), windows::FileIdentityFormat::FileId128))
+    return std::nullopt;
 
   DWORD sessionId = 0;
   if (!ProcessIdToSessionId(static_cast<DWORD>(processId), &sessionId) || sessionId == 0 || sessionId != activeInteractiveSessionId()) {
@@ -293,7 +237,7 @@ LaunchedAgent launchInteractiveAgent() {
   enablePrivilege(SE_INCREASE_QUOTA_NAME);
   auto token = elevatedInteractiveToken(sessionId);
   EnvironmentBlock environment(token.get());
-  const std::wstring image = executablePath();
+  const std::wstring image = windows::currentExecutablePath();
   std::wstring commandLine = L"\"" + image + L"\" --quiet";
 
   STARTUPINFOW startup{};
@@ -333,19 +277,36 @@ struct AgentLaunchResult {
   DWORD exitCode = STILL_ACTIVE;
 };
 
-FileStagingCommitResult commitStagedFiles() {
-  // 提交任务在自己的工作线程内使用该线程唯一的 WMI 上下文。作用域守卫会在
-  // result 完整构造后、函数真正返回前主动释放 COM/WMI，避免把代理释放拖到
-  // CRT 的线程退出清理阶段。
-  initializeWmiRuntime();
-  const auto shutdownWmi = qScopeGuard([] { shutdownWmiRuntime(); });
-  auto& session = embeddedWmiSession();
-  const auto capability = probeUwfCapability(session);
-  app::RegistryFileStagingStore store(session, capability);
-  FileStagingTask task(session, store, capability);
-  while (!task.pollPreparation()) std::this_thread::sleep_for(kCommitPreparationPollInterval);
-  while (!task.finished()) static_cast<void>(task.advance());
-  return task.result();
+app::FileStagingCommitResult commitStagedFiles() {
+  bool taskFailure = false;
+  try {
+    // 提交任务在自己的工作线程内使用该线程唯一的 WMI 上下文。作用域守卫会在
+    // result 完整构造后、函数真正返回前主动释放 COM/WMI，避免把代理释放拖到
+    // CRT 的线程退出清理阶段。
+    windows::initializeWmiRuntime();
+    const auto shutdownWmi = qScopeGuard([] { windows::shutdownWmiRuntime(); });
+    auto& session = windows::embeddedWmiSession();
+    const auto capability = app::probeUwfCapability(session);
+    windows::RegistryFileStagingStore store;
+    app::FileStagingTask task(session, store, capability, uwf::windows::systemCommitTraversalSource());
+    try {
+      while (!task.pollPreparation()) std::this_thread::sleep_for(kCommitPreparationPollInterval);
+      while (!task.finished()) {
+        static_cast<void>(task.advance());
+        task.waitForWorker();
+      }
+      return task.result();
+    } catch (...) {
+      taskFailure = task.failed();
+      throw;
+    }
+  } catch (const std::exception& error) {
+    if (!taskFailure) UWF_LOG_E("service") << "enhanced mode staged commit startup failed: error=" << error.what();
+    throw;
+  } catch (...) {
+    if (!taskFailure) UWF_LOG_E("service") << "enhanced mode staged commit startup failed: error=non-standard-exception";
+    throw;
+  }
 }
 
 void writePreshutdownDiagnostic([[maybe_unused]] const std::string_view result) noexcept {
@@ -354,7 +315,7 @@ void writePreshutdownDiagnostic([[maybe_unused]] const std::string_view result) 
   std::wstring diagnosticPath;
   std::wstring temporaryPath;
   try {
-    diagnosticPath = utf8ToWide(kPreshutdownDiagnosticPath);
+    diagnosticPath = windows::utf8ToWide(kPreshutdownDiagnosticPath);
     SYSTEMTIME completed{};
     GetLocalTime(&completed);
     std::ostringstream content;
@@ -415,7 +376,7 @@ void writePreshutdownDiagnostic([[maybe_unused]] const std::string_view result) 
 #endif
 }
 
-void writePreshutdownDiagnostic([[maybe_unused]] const FileStagingCommitResult& result) noexcept {
+void writePreshutdownDiagnostic([[maybe_unused]] const app::FileStagingCommitResult& result) noexcept {
 #if defined(UWF_DEBUG_LOGGING)
   try {
     std::ostringstream diagnostic;
@@ -458,7 +419,7 @@ class ServiceRuntime final {
   }
 
   void run() {
-    SERVICE_TABLE_ENTRYW table[] = {{const_cast<LPWSTR>(kEnhancedServiceName), &ServiceRuntime::serviceMainThunk}, {nullptr, nullptr}};
+    SERVICE_TABLE_ENTRYW table[] = {{const_cast<LPWSTR>(app::kEnhancedServiceName), &ServiceRuntime::serviceMainThunk}, {nullptr, nullptr}};
     if (!StartServiceCtrlDispatcherW(table)) throwSystemError("start service control dispatcher");
   }
 
@@ -495,7 +456,7 @@ class ServiceRuntime final {
   }
 
   void serviceMain() {
-    m_statusHandle = RegisterServiceCtrlHandlerExW(kEnhancedServiceName, &ServiceRuntime::handlerThunk, this);
+    m_statusHandle = RegisterServiceCtrlHandlerExW(app::kEnhancedServiceName, &ServiceRuntime::handlerThunk, this);
     if (!m_statusHandle) throwSystemError("register enhanced mode service handler");
     report({.state = SERVICE_START_PENDING, .checkpoint = 1, .waitHint = kServiceWaitHintMs});
     try {
@@ -624,7 +585,7 @@ class ServiceRuntime final {
       // 连接：监督线程持有的 shared_ptr 会让刚断开的 HANDLE 延迟关闭。允许
       // 退场实例与下一监听实例短暂重叠，不能把正常 UI 退出误判成
       // ERROR_PIPE_BUSY 并停止整个服务。
-      UniqueHandle pipe(CreateNamedPipeW(kEnhancedPipeName, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
+      UniqueHandle pipe(CreateNamedPipeW(app::kEnhancedPipeName, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED,
                                          PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS, PIPE_UNLIMITED_INSTANCES, 64 * 1024,
                                          64 * 1024, 0, &security));
       if (!pipe.valid()) {
@@ -632,24 +593,24 @@ class ServiceRuntime final {
         return;
       }
 
-      const auto connectionResult = connectEnhancedPipe(pipe.get(), m_stopEvent.get());
-      if (connectionResult == EnhancedPipeIoResult::Stopped || stopToken.stop_requested()) {
+      const auto connectionResult = windows::connectEnhancedPipe(pipe.get(), m_stopEvent.get());
+      if (connectionResult == windows::EnhancedPipeIoResult::Stopped || stopToken.stop_requested()) {
         DisconnectNamedPipe(pipe.get());
         return;
       }
-      if (connectionResult == EnhancedPipeIoResult::Disconnected) continue;
+      if (connectionResult == windows::EnhancedPipeIoResult::Disconnected) continue;
       if (stopToken.stop_requested()) return;
       auto identity = authenticateAgent(pipe.get());
       if (!identity) {
         DisconnectNamedPipe(pipe.get());
         continue;
       }
-      const auto handshakeResult = writeEnhancedPipe(pipe.get(), std::as_bytes(std::span{kEnhancedAgentHandshake}), m_stopEvent.get());
-      if (handshakeResult == EnhancedPipeIoResult::Stopped) {
+      const auto handshakeResult = windows::writeEnhancedPipe(pipe.get(), std::as_bytes(std::span{app::kEnhancedAgentHandshake}), m_stopEvent.get());
+      if (handshakeResult == windows::EnhancedPipeIoResult::Stopped) {
         DisconnectNamedPipe(pipe.get());
         return;
       }
-      if (handshakeResult == EnhancedPipeIoResult::Disconnected) {
+      if (handshakeResult == windows::EnhancedPipeIoResult::Disconnected) {
         DisconnectNamedPipe(pipe.get());
         continue;
       }
@@ -665,16 +626,17 @@ class ServiceRuntime final {
       // 武装或撤销一次性 PRESHUTDOWN 跳过令牌。服务原样回显包含请求 ID
       // 的控制帧，确保 UI 不会把延迟确认误认成下一次请求的结果。
       for (;;) {
-        EnhancedAgentControlFrame frame{};
-        const auto readResult = readEnhancedPipe(connection->pipe.get(), std::as_writable_bytes(std::span{frame}), m_stopEvent.get());
-        if (readResult != EnhancedPipeIoResult::Completed) break;
-        const auto message = decodeEnhancedAgentControl(frame);
+        app::EnhancedAgentControlFrame frame{};
+        const auto readResult = windows::readEnhancedPipe(connection->pipe.get(), std::as_writable_bytes(std::span{frame}), m_stopEvent.get());
+        if (readResult != windows::EnhancedPipeIoResult::Completed) break;
+        const auto message = app::decodeEnhancedAgentControl(frame);
         if (!message) {
           UWF_LOG_W("service") << "enhanced mode identity channel rejected invalid client control";
           break;
         }
         applyPreshutdownControl(message->control);
-        if (writeEnhancedPipe(connection->pipe.get(), std::as_bytes(std::span{frame}), m_stopEvent.get()) != EnhancedPipeIoResult::Completed) break;
+        if (windows::writeEnhancedPipe(connection->pipe.get(), std::as_bytes(std::span{frame}), m_stopEvent.get()) != windows::EnhancedPipeIoResult::Completed)
+          break;
       }
       discardConnection(connection);
       if (stopToken.stop_requested() || WaitForSingleObject(m_stopEvent.get(), 0) == WAIT_OBJECT_0) return;
@@ -825,13 +787,13 @@ class ServiceRuntime final {
     }
   }
 
-  void applyPreshutdownControl(const EnhancedAgentControl control) {
+  void applyPreshutdownControl(const app::EnhancedAgentControl control) {
     std::scoped_lock lock(m_preshutdownSkipMutex);
     switch (control) {
-      case EnhancedAgentControl::PreshutdownCommitHandled:
+      case app::EnhancedAgentControl::PreshutdownCommitHandled:
         m_preshutdownSkipDeadline = std::chrono::steady_clock::now() + kPreshutdownSkipLifetime;
         break;
-      case EnhancedAgentControl::PreshutdownCommitRequired:
+      case app::EnhancedAgentControl::PreshutdownCommitRequired:
         m_preshutdownSkipDeadline.reset();
         break;
     }
@@ -852,7 +814,7 @@ class ServiceRuntime final {
       return;
     }
 
-    std::promise<FileStagingCommitResult> resultPromise;
+    std::promise<app::FileStagingCommitResult> resultPromise;
     auto resultFuture = resultPromise.get_future();
     std::jthread worker([promise = std::move(resultPromise)]() mutable {
       try {
@@ -880,16 +842,11 @@ class ServiceRuntime final {
       const auto result = resultFuture.get();
       UWF_LOG_I("service") << "enhanced mode staged commit completed: discovered=" << result.discoveredFiles << " committed=" << result.committedFiles
                            << " skippedFiles=" << result.skippedFiles << " skippedEntries=" << result.skippedEntries << " failures=" << result.failures.size();
-      for (const auto& failure : result.failures) {
-        UWF_LOG_E("service") << "enhanced mode staged commit item failed: path=" << failure.path.toStdString() << " reason=" << static_cast<int>(failure.kind)
-                             << " error=" << failure.detail.toStdString();
-      }
       writePreshutdownDiagnostic(result);
     } catch (const std::exception& error) {
-      UWF_LOG_E("service") << "enhanced mode staged commit failed before producing a final batch result: error=" << error.what();
+      // commitStagedFiles (or its task) already recorded this actual failure.
       writePreshutdownFailureDiagnostic(error.what());
     } catch (...) {
-      UWF_LOG_E("service") << "enhanced mode staged commit failed before producing a final batch result: error=non-standard-exception";
       writePreshutdownFailureDiagnostic(nullptr);
     }
   }

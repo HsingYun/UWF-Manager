@@ -1,0 +1,13 @@
+/* SPDX-License-Identifier: GPL-3.0-or-later */
+/* Copyright (c) 2026 HsingYun (iakext@gmail.com) */
+
+/* Structure stays installed across theme changes. Colors come from the
+   application palette and DesignStyle, without repolishing the widget tree. */
+QToolBar { border: none; spacing: 4px; }
+QScrollArea { border: none; }
+QScrollArea[designTransparent="true"] { background: transparent; border: 0; }
+QListView, QTreeView, QTableView { border: none; outline: none; }
+QTextEdit[designCodeEditor="true"] { border: none; border-radius: 0; }
+QTreeView[designSoftSurface="true"] { padding: 10px 5px; }
+QTextBrowser[designPlainDocument="true"] { background: transparent; border: 0; padding: 0; }
+QToolTip { padding: 5px 8px; }

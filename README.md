@@ -29,7 +29,7 @@ UWF is the supported successor to the older Enhanced Write Filter (EWF) and File
 - Persist overlay contents back to disk or registry (files, directories, file deletions, registry keys)
 - File staging: persist a user-defined file/folder list in the registry and commit its current contents automatically before safe shutdown or restart
 - Read-only enumeration of overlay file entries
-- Import uwfmgr commands — paste or load a command script and stage each line as a pending change
+- Import settings — paste commands or choose a command file, then review and apply the changes
 - System restart and shutdown
 - In-app log viewer
 - Portable by default — file staging is the only feature that stores application state (its path list is kept in the registry); no configuration files are created, and the in-app log remains in memory and is discarded when the process exits
@@ -68,6 +68,8 @@ HubVisible=false
 `system` uses the Windows application theme or system language at startup. An omitted language or `system` follows the system’s preferred UI languages, falling back to English when none are supported. An explicit supported language code takes precedence. `HubVisible=false` starts with both the taskbar and floating HUB hidden; `true` allows the HUB to appear when UWF protection is active. Values are case-insensitive. All options are optional. The file name stays `UWF.ini` even when the executable includes a version number; ensure that the file is not accidentally named `UWF.ini.txt`.
 
 Configuration is loaded at startup, including tray-only startup. Fully exit and restart the application after editing the file.
+
+You can also click **Export configuration** in the About dialog to save the current theme, language, and HUB visibility to `UWF.ini` next to the executable. An existing file is left unchanged and a message is shown; failures report the reason. This saves the current interface settings, not the Windows UWF protection configuration.
 
 Omitted options use their defaults. Remove `UWF.ini` to restore the defaults on the next startup.
 
