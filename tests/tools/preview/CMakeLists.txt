@@ -11,6 +11,12 @@ qt_add_executable(UwfApplicationPreview
     ../../support/app/FileStagingFixture.cpp
 )
 target_include_directories(UwfApplicationPreview PRIVATE "${PROJECT_SOURCE_DIR}/tests")
+if(MSVC)
+    target_sources(UwfApplicationPreview PRIVATE ApplicationPreview.manifest)
+else()
+    target_sources(UwfApplicationPreview PRIVATE ApplicationPreview_manifest.rc)
+    target_include_directories(UwfApplicationPreview PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+endif()
 target_link_libraries(UwfApplicationPreview PRIVATE UwfBootstrap)
 uwf_configure_cpp_target(UwfApplicationPreview)
 uwf_add_resources(UwfApplicationPreview UwfApplicationPreview_assets)

@@ -36,6 +36,7 @@
 #include <QVBoxLayout>
 #include <QWidgetAction>
 #include <QWindow>
+#include <algorithm>
 #include <stdexcept>
 
 #include "app/commit/CommitWorkflow.h"
@@ -172,7 +173,14 @@ class PreviewRegistryBrowser final : public app::RegistryBrowser {
   }
   std::vector<app::RegistryValueInfo> values(std::string_view key) const override {
     if (failure && key.find("MyApp") != std::string_view::npos) throw std::runtime_error("拒绝访问 · 0x80070005");
-    return {{"", 1, std::vector<uint8_t>{}}, {"Enabled", 4, std::vector<uint8_t>{1, 0, 0, 0}}, {"InstallPath", 1, std::vector<uint8_t>{}}};
+    std::vector<uint8_t> installPath;
+    const QString path = QStringLiteral("C:\\Program Files\\MyApp");
+    for (const auto character : path) {
+      installPath.push_back(static_cast<uint8_t>(character.unicode() & 0xFF));
+      installPath.push_back(static_cast<uint8_t>(character.unicode() >> 8));
+    }
+    installPath.insert(installPath.end(), {0, 0});
+    return {{"", 1, std::vector<uint8_t>{}}, {"Enabled", 4, std::vector<uint8_t>{1, 0, 0, 0}}, {"InstallPath", 1, std::move(installPath)}};
   }
 };
 class PreviewSystemInformation final : public app::SystemInformationSource {
@@ -203,10 +211,24 @@ int main(int argc, char** argv) {
   };
   const auto output = value(QStringLiteral("--output"));
   if (output.isEmpty()) return 2;
+  const auto page = value(QStringLiteral("--page"), QStringLiteral("main"));
+  const auto scenario = value(QStringLiteral("--scenario"), QStringLiteral("normal"));
+  const bool docs = arguments.contains(QStringLiteral("--docs"));
+  if (docs && QGuiApplication::platformName() != QLatin1String("windows")) return 6;
+  const bool mainPage = page == QLatin1String("main") || page == QLatin1String("overview");
   QElapsedTimer reviewTimer;
   QJsonObject reviewTimings;
   ui::I18n::instance().setLang(ui::I18n::parseLanguageCode(value(QStringLiteral("--language"), QStringLiteral("zh_CN"))).value_or(ui::I18n::Lang::En));
   ui::ThemeManager::instance().apply(arguments.contains(QStringLiteral("--dark")) ? app::Theme::Dark : app::Theme::Light);
+  std::unique_ptr<QWidget> documentBackground;
+  if (docs) {
+    auto* screen = application.primaryScreen();
+    const auto available = screen->availableGeometry();
+    documentBackground = std::make_unique<QWidget>(nullptr, Qt::Tool | Qt::FramelessWindowHint);
+    documentBackground->setStyleSheet(QStringLiteral("background: white;"));
+    documentBackground->setGeometry(available);
+    documentBackground->show();
+  }
   test::application::RecordingWmiOperations wmi;
   auto stagingOwner = std::make_shared<test::application::MemoryFileStagingStore>();
   auto& staging = *stagingOwner;
@@ -225,6 +247,23 @@ int main(int argc, char** argv) {
   source.snapshot.next.registryExclusions = source.snapshot.current.registryExclusions;
   source.volumes = {{"C:", "Volume{c}", "NTFS", "系统", 512ULL << 30, 256ULL << 30, core::VolumeSupport::Supported},
                     {"D:", "Volume{d}", "NTFS", "数据", 1ULL << 40, 608ULL << 30, core::VolumeSupport::Supported}};
+  if (docs) {
+    source.snapshot.current.fileExclusions["Volume{c}"] = {
+        "C:\\ProgramData\\MyApp\\Logs", "C:\\ProgramData\\MyApp\\settings.json", "C:\\ProgramData\\DeviceAgent\\Logs",
+        "C:\\ProgramData\\DeviceAgent\\state.json", "C:\\ProgramData\\Kiosk\\Cache", "C:\\ProgramData\\Kiosk\\Uploads",
+        "C:\\ProgramData\\Microsoft\\Windows\\WER", "C:\\ProgramData\\Terminal\\Receipts", "C:\\ProgramData\\Terminal\\Reports",
+        "C:\\Users\\Public\\Documents", "C:\\Users\\Public\\Pictures", "C:\\Windows\\Temp"};
+    source.snapshot.next.fileExclusions = source.snapshot.current.fileExclusions;
+    if (ui::I18n::instance().lang() == ui::I18n::Lang::En) {
+      source.volumes[0].label = "System";
+      source.volumes[1].label = "Data";
+    }
+    staging.entries = {{app::FileStagingKind::File, QStringLiteral("C:\\Users\\User\\AppData\\Roaming\\MyApp\\preferences.json")},
+                       {app::FileStagingKind::Directory, QStringLiteral("C:\\Projects\\Workspace")},
+                       {app::FileStagingKind::Directory, QStringLiteral("C:\\Users\\User\\Documents\\Reports")}};
+    serviceOwner->current = test::application::completeEnhancedModeStatus();
+    agent.connectOnStart = true;
+  }
   const auto state = value(QStringLiteral("--state"));
   if (state == QLatin1String("warning")) source.snapshot.runtime = {902, 3194};
   if (state == QStringLiteral("readonly")) source.snapshot.elevated = false;
@@ -238,9 +277,9 @@ int main(int argc, char** argv) {
   services.viewModelFactory = bootstrap::createViewModelFactory(wmi, windows::systemRegistryBrowser(), windows::loadOverlayFilesFromSystem, system);
   const auto factory = services.viewModelFactory;
   ui::MainWindow window(std::move(services),
-                        {.uwfCapability = app::UwfCapability::Available, .compatibilityMode = state == QLatin1String("compatibility"), .hubVisible = false});
-  const auto page = value(QStringLiteral("--page"), QStringLiteral("main"));
-  const auto scenario = value(QStringLiteral("--scenario"), QStringLiteral("normal"));
+                        {.uwfCapability = app::UwfCapability::Available,
+                         .compatibilityMode = state == QLatin1String("compatibility"),
+                         .hubVisible = docs && page == QLatin1String("overview")});
   test::FileDialogStub fileDialogs;
   PreviewEnhancedActions enhanced;
   enhanced.current.agentState = app::EnhancedModeAgentState::Connected;
@@ -431,18 +470,20 @@ int main(int argc, char** argv) {
     panel = std::make_unique<ui::OverlayFilesDialog>(
         std::make_shared<presentation::OverlayFilesViewModel>(
             QStringLiteral("C:"),
-            [scenario](const QString&, std::stop_token) -> QVector<app::OverlayFileEntry> {
+            [scenario, docs](const QString&, std::stop_token) -> QVector<app::OverlayFileEntry> {
               if (scenario == QLatin1String("failure"))
                 throw app::wmi::WmiInfrastructureError(static_cast<int32_t>(app::wmi::WmiErrorCode::RpcServerFault), "UWF_Overlay.GetOverlayFiles",
                                                        "preview provider failure");
               if (scenario == QLatin1String("empty")) return {};
               return {{QStringLiteral("\\ProgramData\\MyApp\\settings.json"), {}, false, false, 2048},
                       {QStringLiteral("\\Users\\User\\AppData\\Roaming\\Code\\User\\settings.json"), {}, false, false, 4096},
-                      {QStringLiteral("\\Users\\User\\Documents\\工作记录.docx"), {}, false, false, 285184},
+                      {docs ? QStringLiteral("\\Users\\User\\Documents\\Reports\\monthly-report.docx")
+                            : QStringLiteral("\\Users\\User\\Documents\\工作记录.docx"),
+                       {}, false, false, 285184},
                       {QStringLiteral("\\ProgramData\\MyApp\\Data"), {}, true, false, 0},
                       {QStringLiteral("\\$Mft"), {}, false, true, 25165824},
                       {QStringLiteral("\\Windows\\Temp\\session.log"), {}, false, false, 16384}};
-            }),
+            }, [](const QString&, const QString&) { return app::TextFileWriteResult{}; }),
         fileDialogs);
     auto* overlay = static_cast<ui::OverlayFilesDialog*>(panel.get());
     QObject::connect(overlay, &ui::OverlayFilesDialog::commitFileRequested, overlay,
@@ -483,7 +524,7 @@ int main(int argc, char** argv) {
     });
   }
   const auto size = value(QStringLiteral("--size"), QStringLiteral("1200x798")).split(u'x');
-  if (page == QStringLiteral("main") && size.size() == 2) window.resize(size[0].toInt(), size[1].toInt());
+  if (mainPage && size.size() == 2) window.resize(size[0].toInt(), size[1].toInt());
   if (panel && arguments.contains(QStringLiteral("--size")) && size.size() == 2) root->resize(size[0].toInt(), size[1].toInt());
   const auto tab = value(QStringLiteral("--tab"));
   const auto selectBusinessTab = [&] {
@@ -506,7 +547,15 @@ int main(int argc, char** argv) {
   QTimer::singleShot(captureDelay, &application, [&] {
     if (blocking) root = QApplication::activeModalWidget();
     if (!root) return;
-    if (page != QLatin1String("main") && arguments.contains(QStringLiteral("--size")) && size.size() == 2) root->resize(size[0].toInt(), size[1].toInt());
+    if ((!mainPage || docs) && arguments.contains(QStringLiteral("--size")) && size.size() == 2) root->resize(size[0].toInt(), size[1].toInt());
+    if (docs) {
+      const auto area = root->screen()->availableGeometry();
+      root->move(page == QLatin1String("overview") ? area.bottomRight() - QPoint(root->width() - 1, root->height() - 1)
+                                                 : area.center() - QPoint(root->width() / 2, root->height() / 2));
+      root->raise();
+      root->activateWindow();
+      SetForegroundWindow(reinterpret_cast<HWND>(root->winId()));
+    }
     const auto captionStyle = value(QStringLiteral("--caption-style"));
     if (!captionStyle.isEmpty()) {
       const auto handle = reinterpret_cast<HWND>(root->winId());
@@ -516,7 +565,10 @@ int main(int argc, char** argv) {
       SetWindowPos(handle, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
     }
     // Main-window volume tabs are populated by the asynchronous first refresh.
-    if (page == QStringLiteral("main")) selectBusinessTab();
+    if (mainPage) selectBusinessTab();
+    if (docs && page == QLatin1String("overlay")) {
+      if (auto* table = root->findChild<QTableView*>(QStringLiteral("overlayFilesTable"))) table->selectRow(2);
+    }
     if (page == QStringLiteral("system") && scenario == QLatin1String("raw"))
       if (auto* tabs = root->findChild<QTabWidget*>(QStringLiteral("systemInformationTabs"))) tabs->setCurrentIndex(1);
     const auto expand = value(QStringLiteral("--expand"));
@@ -653,11 +705,15 @@ int main(int argc, char** argv) {
       application.exit(4);
       return;
     }
-    if (arguments.contains(QStringLiteral("--require-foreground")) && GetForegroundWindow() != reinterpret_cast<HWND>(root->winId())) {
+    if ((docs || arguments.contains(QStringLiteral("--require-foreground"))) && GetForegroundWindow() != reinterpret_cast<HWND>(root->winId())) {
+      if (docs && reviewTimer.elapsed() > 10000) {
+        application.exit(7);
+        return;
+      }
       captureTimer.start(250);
       return;
     }
-    if (arguments.contains(QStringLiteral("--require-foreground")) && !foregroundSettled) {
+    if ((docs || arguments.contains(QStringLiteral("--require-foreground"))) && !foregroundSettled) {
       foregroundSettled = true;
       QCursor::setPos(target && controlState == QLatin1String("hover") ? target->mapToGlobal(target->rect().center())
                                                                        : root->screen()->availableGeometry().topLeft());
@@ -728,15 +784,36 @@ int main(int argc, char** argv) {
     // QWidget::grab paints the widget tree alone and omits DWM materials.
     // Capture this window's composited pixels when reviewing native backdrops.
     QImage capture;
-    if (root->property("systemBackdropRequested").toBool() && GetForegroundWindow() == reinterpret_cast<HWND>(root->winId())) {
+    if (docs) {
+      auto* screen = root->screen();
+      if (page == QLatin1String("overview")) {
+        const auto area = screen->availableGeometry();
+        root->move(area.bottomRight() - QPoint(root->width() - 1, root->height() - 1));
+        bool taskbarConfirmed = false;
+        const auto widgets = QApplication::allWidgets();
+        for (const auto* widget : widgets) {
+          const auto* taskbar = qobject_cast<const ui::OverlayTaskbarWidget*>(widget);
+          if (taskbar && taskbar->presentationConfirmed()) taskbarConfirmed = true;
+        }
+        if (!taskbarConfirmed) {
+          application.exit(8);
+          return;
+        }
+      }
+      DwmFlush();
+      QRect documentBounds(root->mapToGlobal(QPoint()), root->size());
+      if (page == QLatin1String("overview")) documentBounds.setBottomRight(screen->geometry().bottomRight());
+      const auto origin = documentBounds.topLeft() - screen->geometry().topLeft();
+      capture = screen->grabWindow(0, origin.x(), origin.y(), documentBounds.width(), documentBounds.height()).toImage();
+    } else if (root->property("systemBackdropRequested").toBool() && GetForegroundWindow() == reinterpret_cast<HWND>(root->winId())) {
       auto* screen = root->screen();
       const QPoint origin = root->mapToGlobal(QPoint()) - screen->geometry().topLeft();
       capture = screen->grabWindow(0, origin.x(), origin.y(), root->width(), root->height()).toImage();
     } else {
       capture = root->grab().toImage();
     }
-    const qreal scale = arguments.contains(QStringLiteral("--native-scale")) ? capture.devicePixelRatio() : 1.0;
-    if (scale == 1.0) {
+    const qreal scale = docs || arguments.contains(QStringLiteral("--native-scale")) ? capture.devicePixelRatio() : 1.0;
+    if (!docs && scale == 1.0) {
       capture = capture.scaled(root->size(), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
       capture.setDevicePixelRatio(1);
     }
@@ -752,7 +829,24 @@ int main(int argc, char** argv) {
       }
     }
     const QRect crop(qRound(bounds.x() * scale), qRound(bounds.y() * scale), qRound(bounds.width() * scale), qRound(bounds.height() * scale));
-    const bool saved = capture.copy(crop.intersected(capture.rect())).save(output);
+    const bool saved = (docs ? capture : capture.copy(crop.intersected(capture.rect()))).save(output);
+    if (docs && saved) {
+      const auto* screen = root->screen();
+      const QJsonObject environment{{"platform", QGuiApplication::platformName()},
+                                    {"screen", screen->name()},
+                                    {"screenWidth", screen->geometry().width()},
+                                    {"screenHeight", screen->geometry().height()},
+                                    {"dpr", capture.devicePixelRatio()},
+                                    {"pixelWidth", capture.width()},
+                                    {"pixelHeight", capture.height()},
+                                    {"windowWidth", root->width()},
+                                    {"windowHeight", root->height()}};
+      QSaveFile manifest(output + QStringLiteral(".screen.json"));
+      if (manifest.open(QIODevice::WriteOnly)) {
+        manifest.write(QJsonDocument(environment).toJson());
+        manifest.commit();
+      }
+    }
     captureResult = saved ? 0 : 1;
     captureComplete = true;
     if (arguments.contains(QStringLiteral("--interactive"))) {
