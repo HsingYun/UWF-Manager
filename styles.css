@@ -335,7 +335,10 @@ svg {
 
 .gallery-viewport {
   display: flex;
+  align-items: flex-start;
+  aspect-ratio: 16 / 9;
   overflow-x: auto;
+  overflow-y: hidden;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--image-canvas);

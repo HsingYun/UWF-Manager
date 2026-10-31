@@ -201,6 +201,7 @@ function setTheme(theme, persist = true) {
   if (activeTheme) document.documentElement.dataset.theme = activeTheme;
   else delete document.documentElement.dataset.theme;
   updateThemeButton();
+  syncGalleryImages();
   if (persist && activeTheme) writePreference("uwf-site-theme", activeTheme);
   requestAnimationFrame(updateThemeColor);
 }
@@ -208,11 +209,27 @@ function setTheme(theme, persist = true) {
 function syncGalleryPresentation() {
   const item = galleryItems[activeGalleryIndex];
   if (!item) return;
+  const image = item.querySelector("img");
+  const width = Number(image?.getAttribute("width"));
+  const height = Number(image?.getAttribute("height"));
+  if (galleryTrack && width > 0 && height > 0) galleryTrack.style.aspectRatio = `${width} / ${height}`;
   galleryCurrent.textContent = String(activeGalleryIndex + 1);
   galleryCaptionTitle.textContent = item.querySelector("figcaption strong")?.textContent ?? "";
   galleryCaptionText.textContent = item.querySelector("figcaption p")?.textContent ?? "";
   galleryPrevious.disabled = activeGalleryIndex === 0;
   galleryNext.disabled = activeGalleryIndex === galleryItems.length - 1;
+}
+
+function syncGalleryImages() {
+  const languageKey = activeLanguage === "zh-CN" ? "Zh" : "En";
+  const variant = languageKey + (effectiveTheme() === "light" ? "Light" : "");
+  document.querySelectorAll("[data-src-en][data-src-zh]").forEach((image) => {
+    image.src = image.dataset[`src${variant}`];
+    image.setAttribute("width", image.dataset[`width${variant}`]);
+    image.setAttribute("height", image.dataset[`height${variant}`]);
+  });
+  syncGalleryPresentation();
+  if (lightbox?.open) updateLightbox(lightboxIndex);
 }
 
 function setLanguage(language, persist = true) {
@@ -257,12 +274,7 @@ function setLanguage(language, persist = true) {
     if (value !== undefined) element.setAttribute("alt", value);
   });
 
-  document.querySelectorAll("[data-src-en][data-src-zh]").forEach((image) => {
-    const languageKey = activeLanguage === "zh-CN" ? "Zh" : "En";
-    image.src = image.dataset[`src${languageKey}`];
-    image.setAttribute("width", image.dataset[`width${languageKey}`]);
-    image.setAttribute("height", image.dataset[`height${languageKey}`]);
-  });
+  syncGalleryImages();
 
   document.querySelectorAll("[data-href-en][data-href-zh]").forEach((link) => {
     link.href = activeLanguage === "zh-CN" ? link.dataset.hrefZh : link.dataset.hrefEn;
@@ -275,9 +287,7 @@ function setLanguage(language, persist = true) {
   });
 
   updateThemeButton();
-  syncGalleryPresentation();
   if (persist) writePreference("uwf-site-language", activeLanguage);
-  if (lightbox?.open) updateLightbox(lightboxIndex);
 }
 
 function scrollToGalleryItem(index, behavior = reducedMotion.matches ? "auto" : "smooth") {
@@ -447,8 +457,7 @@ window.addEventListener("scroll", () => {
 
 systemColorScheme.addEventListener("change", () => {
   if (activeTheme !== null) return;
-  updateThemeButton();
-  updateThemeColor();
+  setTheme(null, false);
 });
 
 const savedLanguage = readPreference("uwf-site-language");
