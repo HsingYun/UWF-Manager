@@ -422,22 +422,15 @@ Continue and discard them?</source><translation>Незастосованих з�
     <message><source>Unclosed double quote in command</source><translation>Незакрита подвійна лапка в команді</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Неочікуваний зайвий аргумент: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Непідтримувана команда uwfmgr: немає відповідної дії інтерфейсу</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Зміни в очікуванні: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Потрібний стан уже встановлено; дія не потрібна</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Шлях не на цьому томі або том не підтримує виключення файлів (наприклад, exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Відхилено списком заборон UWF (системні файли, Windows, підкачка тощо)</translation></message>
-    <message><source>Pending filter %1</source><translation>Зміни в очікуванні: Фільтр %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Фільтр: Потрібний стан уже встановлено; дія не потрібна</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Зміни в очікуванні: Накладання · Тип → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Накладання · Тип: %1 (Потрібний стан уже встановлено; дія не потрібна)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Неприпустиме значення: Розмір: %1</translation></message>
     <message><source>maximum size</source><translation>Максимальний розмір</translation></message>
     <message><source>warning threshold</source><translation>Поріг попередження</translation></message>
     <message><source>critical threshold</source><translation>Критичний поріг</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Зміни в очікуванні: Накладання %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Накладання %1: %2 MB (Потрібний стан уже встановлено; дія не потрібна)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>Глобальна конфігурація недоступна; команду не додано до змін, що очікують застосування.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Невідомий том %1: немає придатного для UWF диска з цією буквою</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Зміни в очікуванні: Том %1 · Захист UWF: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Том %1: Потрібний стан уже встановлено; дія не потрібна</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: Шлях не має букви диска. Визначення цільового тому: Помилка.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Том %1: UWF Не підтримується</translation></message>
@@ -698,10 +691,10 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Go up one folder or choose another location.</source><translation>Перейдіть до батьківської папки або виберіть інше розташування.</translation></message>
     <message><source>Home</source><translation>Особиста папка</translation></message>
     <message><source>Import configuration</source><translation>Імпорт конфігурації</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>Імпорт створює зміни, що очікують. Скористайтеся командою «Перевірити й застосувати», щоб записати їх у систему.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>Імпорт оновлює чернетку конфігурації. Скористайтеся командою «Перевірити й застосувати», щоб записати зміни в систему.</translation></message>
     <message><source>Import results</source><translation>Результати імпорту</translation></message>
     <message><source>Imported</source><translation>Імпортовано</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Імпортовані команди ще потрібно застосувати. Виберіть рядок для перегляду повного результату.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>У звіті наведено результати команд для чернетки конфігурації. Виберіть рядок, щоб переглянути повну команду та результат.</translation></message>
     <message><source>Imported: %1</source><translation>Імпортовано: %1</translation></message>
     <message><source>Information</source><translation>Інформація</translation></message>
     <message><source>Item details</source><translation>Подробиці елемента</translation></message>
@@ -1015,5 +1008,13 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Downloads</source><translation>Завантаження</translation></message>
     <message><source>Documents</source><translation>Документи</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Автофіксацію файлів зупинено. Усуньте помилку перед повторною спробою.</translation></message>
+    <message><source>No net change for this setting</source><translation>Остаточне значення цього налаштування не змінилося після імпорту</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Кінцеве значення чернетки: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Кінцеве значення чернетки: %1 → %2 (запитано: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>Запитано: %1 → %2; замінено наступною командою. Кінцеве значення чернетки → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>Чернетку %1 оновлено</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>Чернетку налаштування захисту тому %1 оновлено → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Виберіть записи для видалення.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>Наразі неможливо відновити вибрані записи.</translation></message>
 </context>
 </TS>

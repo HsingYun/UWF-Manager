@@ -316,6 +316,10 @@ std::vector<app::RegistryCommitTarget> WindowsEnhancedModeServiceControl::planRe
   return app::planRegistryTreeDeletion(app::kEnhancedServiceRegistryKey);
 }
 
+bool WindowsEnhancedModeServiceControl::registryTargetExists(const app::RegistryCommitTarget& target) const {
+  return target.valueName.empty() ? regkey::keyExists(target.key) : regkey::valueExists(target.key, target.valueName);
+}
+
 void WindowsEnhancedModeServiceControl::deleteRegistryRemnants() { regkey::deleteTree(app::kEnhancedServiceRegistryKey); }
 
 app::EnhancedModeServiceControl::Removal WindowsEnhancedModeServiceControl::stopAndMarkForDeletion() {

@@ -422,22 +422,15 @@ Verwerpen en doorgaan?</translation></message>
     <message><source>Unclosed double quote in command</source><translation>Niet-gesloten dubbele aanhalingstekens in opdracht</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Onverwacht extra argument: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Niet-ondersteunde uwfmgr-opdracht (geen bijbehorende interfaceactie)</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Openstaande wijzigingen: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Doelstatus is al bereikt; geen actie nodig</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Pad staat niet op dit volume of dit volume ondersteunt geen uitsluitingen (bijv. exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Geweigerd door UWF-blokkeerlijst (systeembestand / Windows / wisselbestand enz.)</translation></message>
-    <message><source>Pending filter %1</source><translation>Openstaande wijzigingen: Filter %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Filter: Doelstatus is al bereikt; geen actie nodig</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Openstaande wijzigingen: Overlay · Type → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Overlay · Type: %1 (Doelstatus is al bereikt; geen actie nodig)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Ongeldige waarde: Grootte: %1</translation></message>
     <message><source>maximum size</source><translation>Maximale grootte</translation></message>
     <message><source>warning threshold</source><translation>Waarschuwingsdrempel</translation></message>
     <message><source>critical threshold</source><translation>Kritieke drempel</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Openstaande wijzigingen: Overlay %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Overlay %1: %2 MB (Doelstatus is al bereikt; geen actie nodig)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>De algemene configuratie is niet beschikbaar; de opdracht is niet toegevoegd aan de openstaande wijzigingen.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Onbekend volume %1 (geen UWF-geschikte schijf met deze letter)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Openstaande wijzigingen: Volume %1 · UWF-beveiliging: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Volume %1: Doelstatus is al bereikt; geen actie nodig</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: Het pad heeft geen stationsletter. Doelvolume bepalen: Mislukt.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Volume %1: UWF Niet ondersteund</translation></message>
@@ -698,10 +691,10 @@ Beheer volumebeveiliging, overlay, uitsluitingen en klaargezette bestanden.</tra
     <message><source>Go up one folder or choose another location.</source><translation>Ga één map omhoog of kies een andere locatie.</translation></message>
     <message><source>Home</source><translation>Persoonlijke map</translation></message>
     <message><source>Import configuration</source><translation>Configuratie importeren</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>Importeren maakt openstaande wijzigingen. Gebruik Controleren en toepassen om ze naar het systeem te schrijven.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>Importeren werkt het configuratieconcept bij. Gebruik Controleren en toepassen om wijzigingen naar het systeem te schrijven.</translation></message>
     <message><source>Import results</source><translation>Importresultaten</translation></message>
     <message><source>Imported</source><translation>Geïmporteerd</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Geïmporteerde opdrachten moeten nog worden toegepast. Selecteer een rij voor het volledige resultaat.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>Het rapport toont de opdrachtresultaten voor het configuratieconcept. Selecteer een rij om de volledige opdracht en het resultaat te bekijken.</translation></message>
     <message><source>Imported: %1</source><translation>Geïmporteerd: %1</translation></message>
     <message><source>Information</source><translation>Informatie</translation></message>
     <message><source>Item details</source><translation>Itemdetails</translation></message>
@@ -1015,5 +1008,13 @@ Beheer volumebeveiliging, overlay, uitsluitingen en klaargezette bestanden.</tra
     <message><source>Downloads</source><translation>Downloads</translation></message>
     <message><source>Documents</source><translation>Documenten</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Het automatisch vastleggen van bestanden is gestopt. Verhelp de fout voordat u het opnieuw probeert.</translation></message>
+    <message><source>No net change for this setting</source><translation>De eindwaarde van deze instelling is na het importeren ongewijzigd</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Uiteindelijke conceptwaarde: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Uiteindelijke conceptwaarde: %1 → %2 (gevraagd: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>Gevraagd: %1 → %2; vervangen door een latere opdracht. Uiteindelijke conceptwaarde → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>Concept voor %1 bijgewerkt</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>Concept voor de beveiligingsinstelling van volume %1 bijgewerkt → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Selecteer de vermeldingen die u wilt verwijderen.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>De geselecteerde vermeldingen kunnen momenteel niet worden hersteld.</translation></message>
 </context>
 </TS>

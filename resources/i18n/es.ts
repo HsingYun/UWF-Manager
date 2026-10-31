@@ -422,22 +422,15 @@ Continue and discard them?</source><translation>Hay %1 cambios sin aplicar.
     <message><source>Unclosed double quote in command</source><translation>Comillas dobles sin cerrar en el comando</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Argumento adicional inesperado: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Comando uwfmgr no compatible (sin acción de interfaz equivalente)</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Cambios pendientes: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Ya está en el estado deseado; no se requiere acción</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>La ruta no pertenece al volumen o este no admite exclusiones (p. ej., exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Rechazado por la lista de bloqueo UWF (archivo de sistema, Windows, paginación, etc.)</translation></message>
-    <message><source>Pending filter %1</source><translation>Cambios pendientes: Filtro %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Filtro: Ya está en el estado deseado; no se requiere acción</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Cambios pendientes: Superposición · Tipo → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Superposición · Tipo: %1 (Ya está en el estado deseado; no se requiere acción)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Valor no válido: Tamaño: %1</translation></message>
     <message><source>maximum size</source><translation>Tamaño máximo</translation></message>
     <message><source>warning threshold</source><translation>Umbral de advertencia</translation></message>
     <message><source>critical threshold</source><translation>Umbral crítico</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Cambios pendientes: Superposición %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Superposición %1: %2 MB (Ya está en el estado deseado; no se requiere acción)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>La configuración global no está disponible; el comando no se añadió a los cambios pendientes.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Volumen %1 desconocido (no hay disco apto para UWF con esa letra)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Cambios pendientes: Volumen %1 · Protección UWF: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Volumen %1: Ya está en el estado deseado; no se requiere acción</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: La ruta no tiene letra de unidad. Identificación del volumen de destino: Error.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Volumen %1: UWF No compatible</translation></message>
@@ -698,10 +691,10 @@ Gestione la protección de volúmenes, la superposición, las exclusiones y los 
     <message><source>Go up one folder or choose another location.</source><translation>Suba a la carpeta superior o elija otra ubicación.</translation></message>
     <message><source>Home</source><translation>Carpeta personal</translation></message>
     <message><source>Import configuration</source><translation>Importar configuración</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>La importación crea cambios pendientes. Use Revisar y aplicar para escribirlos en el sistema.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>La importación actualiza el borrador de configuración. Use Revisar y aplicar para escribir los cambios en el sistema.</translation></message>
     <message><source>Import results</source><translation>Resultados de importación</translation></message>
     <message><source>Imported</source><translation>Importado</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Los comandos importados aún deben aplicarse. Seleccione una fila para ver el resultado completo.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>El informe muestra los resultados de los comandos para el borrador de configuración. Seleccione una fila para ver el comando y el resultado completos.</translation></message>
     <message><source>Imported: %1</source><translation>Importado: %1</translation></message>
     <message><source>Information</source><translation>Información</translation></message>
     <message><source>Item details</source><translation>Detalles del elemento</translation></message>
@@ -1015,5 +1008,13 @@ Gestione la protección de volúmenes, la superposición, las exclusiones y los 
     <message><source>Downloads</source><translation>Descargas</translation></message>
     <message><source>Documents</source><translation>Documentos</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>La confirmación de archivos se ha detenido. Resuelva el error antes de volver a intentarlo.</translation></message>
+    <message><source>No net change for this setting</source><translation>El valor final de este ajuste no ha cambiado tras la importación</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Valor final del borrador: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Valor final del borrador: %1 → %2 (valor solicitado: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>Valor solicitado: %1 → %2; sustituido por un comando posterior. Valor final del borrador → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>Se actualizó el borrador de %1</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>Se actualizó el borrador de la protección del volumen %1 → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Seleccione las entradas que desea quitar.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>Las entradas seleccionadas no se pueden restaurar en este momento.</translation></message>
 </context>
 </TS>

@@ -422,22 +422,15 @@ Continue and discard them?</source><translation>Неприменённых из�
     <message><source>Unclosed double quote in command</source><translation>Незакрытая двойная кавычка в команде</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Неожиданный лишний аргумент: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Неподдерживаемая команда uwfmgr: нет соответствующего действия интерфейса</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Ожидающие изменения: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Нужное состояние уже установлено; действие не требуется</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Путь не на этом томе либо том не поддерживает исключения файлов (например, exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Отклонено списком запретов UWF (системные файлы, Windows, подкачка и т. п.)</translation></message>
-    <message><source>Pending filter %1</source><translation>Ожидающие изменения: Фильтр %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Фильтр: Нужное состояние уже установлено; действие не требуется</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Ожидающие изменения: Оверлей · Тип → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Оверлей · Тип: %1 (Нужное состояние уже установлено; действие не требуется)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Недопустимое значение: Размер: %1</translation></message>
     <message><source>maximum size</source><translation>Максимальный размер</translation></message>
     <message><source>warning threshold</source><translation>Порог предупреждения</translation></message>
     <message><source>critical threshold</source><translation>Критический порог</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Ожидающие изменения: Оверлей %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Оверлей %1: %2 MB (Нужное состояние уже установлено; действие не требуется)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>Глобальная конфигурация недоступна; команда не добавлена в ожидающие изменения.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Неизвестный том %1: нет подходящего для UWF диска с этой буквой</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Ожидающие изменения: Том %1 · Защита UWF: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Том %1: Нужное состояние уже установлено; действие не требуется</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: У пути нет буквы диска. Определение целевого тома: Ошибка.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Том %1: UWF Не поддерживается</translation></message>
@@ -698,10 +691,10 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Go up one folder or choose another location.</source><translation>Перейдите в родительскую папку или выберите другое расположение.</translation></message>
     <message><source>Home</source><translation>Личная папка</translation></message>
     <message><source>Import configuration</source><translation>Импорт конфигурации</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>Импорт создаёт ожидающие изменения. Используйте Проверить и применить, чтобы записать их в систему.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>Импорт обновляет черновик конфигурации. Используйте Проверить и применить, чтобы записать изменения в систему.</translation></message>
     <message><source>Import results</source><translation>Результаты импорта</translation></message>
     <message><source>Imported</source><translation>Импортировано</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Импортированные команды ещё нужно применить. Выберите строку для просмотра полного результата.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>В отчёте перечислены результаты команд для черновика конфигурации. Выберите строку, чтобы просмотреть полную команду и результат.</translation></message>
     <message><source>Imported: %1</source><translation>Импортировано: %1</translation></message>
     <message><source>Information</source><translation>Информация</translation></message>
     <message><source>Item details</source><translation>Подробности элемента</translation></message>
@@ -1015,5 +1008,13 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Downloads</source><translation>Загрузки</translation></message>
     <message><source>Documents</source><translation>Документы</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Автофиксация файлов остановлена. Устраните ошибку перед повторной попыткой.</translation></message>
+    <message><source>No net change for this setting</source><translation>Итоговое значение этой настройки не изменилось после импорта</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Итоговое значение черновика: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Итоговое значение черновика: %1 → %2 (запрошено: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>Запрошено: %1 → %2; заменено последующей командой. Итоговое значение черновика → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>Черновик %1 обновлён</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>Черновик настройки защиты тома %1 обновлён → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Выберите записи для удаления.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>Сейчас невозможно восстановить выбранные записи.</translation></message>
 </context>
 </TS>

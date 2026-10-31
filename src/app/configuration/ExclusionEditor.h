@@ -47,6 +47,7 @@ class ExclusionEditor final : public QObject {
   [[nodiscard]] std::optional<bool> pendingPersistTSCAL() const;
 
   void setDriveLetter(const QString& driveLetter);
+  void setSystemDriveLetter(const QString& driveLetter);
   void setBaseline(const QStringList& current, const QStringList& next);
   void setPersistBaseline(bool domainCurrent, bool domainNext, bool tscalCurrent, bool tscalNext);
   void resetPending();
@@ -78,6 +79,7 @@ class ExclusionEditor final : public QObject {
   app::ExclusionDraft& m_draft;
   Kind m_kind;
   QString m_driveLetter;
+  QString m_systemDrive;
   app::FileStagingConflictPolicy* m_conflicts;
   std::function<bool()> m_fileStagingDataProbe;
   bool m_readOnly = false;

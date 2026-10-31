@@ -41,8 +41,11 @@ class EntryDelegate final : public QStyledItemDelegate {
     if (selected) fill = system.color(Color::Selected);
     painter->fillRect(row, fill);
     if (selected) painter->fillRect(QStyle::visualRect(option.direction, row, QRect(row.left(), row.top(), 3, row.height())), system.color(Color::Accent));
-    painter->setPen(system.color(Color::LineSoft));
-    painter->drawLine(row.bottomLeft(), row.bottomRight());
+    const auto* view = qobject_cast<const QAbstractItemView*>(option.widget);
+    if (!view || row.bottom() < view->viewport()->rect().bottom()) {
+      painter->setPen(system.color(Color::LineSoft));
+      painter->drawLine(row.bottomLeft(), row.bottomRight());
+    }
     const QRectF glyph(QStyle::visualRect(option.direction, row, QRect(row.left() + 14, row.center().y() - 7, 16, 16)));
     const auto resource = index.data(presentation::IconResourceRole).toString();
     const auto icon = ThemeManager::iconWithColor(resource, system.color(removed ? Color::Danger : Color::Muted));

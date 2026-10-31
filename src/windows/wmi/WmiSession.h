@@ -51,7 +51,7 @@ class WmiSession final : public app::wmi::WmiOperations {
   [[nodiscard]] app::wmi::WmiMethodOutput callMethodRead(const std::string& objectPath, const std::string& methodName,
                                                          const app::wmi::WmiRow& inputs = {}) const override;
   // 可取消的只读方法使用 WMI 原生异步调用；stop 请求会在发起调用的同一线程
-  // 执行 CancelAsyncCall，不依赖跨线程 CoCancelCall 的时序窗口。
+  // 执行 CancelAsyncCall。不设本地等待期限，由完成通知或 stop 请求结束等待。
   [[nodiscard]] app::wmi::WmiMethodOutput callMethodReadCancelable(const std::string& objectPath, const std::string& methodName, const app::wmi::WmiRow& inputs,
                                                                    std::stop_token stopToken) const override;
 

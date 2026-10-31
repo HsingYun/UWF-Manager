@@ -76,6 +76,16 @@ class WindowDragProbe final : public Base {
   }
 };
 
+class GuardedPanel : public uwf::ui::PanelDialog {
+ public:
+  bool allowRejection = false;
+  int rejectionRequests = 0;
+  bool requestRejection() override {
+    ++rejectionRequests;
+    return allowRejection;
+  }
+};
+
 class DialogLayoutTests final : public QObject {
   Q_OBJECT
 
@@ -107,6 +117,7 @@ class DialogLayoutTests final : public QObject {
   void informationActionsKeepKeyboardActivation_data();
   void informationActionsKeepKeyboardActivation();
   void informationTitleDragsWithoutStealingCloseOrSelection();
+  void panelEditorsKeepEnterLocalAndPreserveRejectionGuards();
   void panelWindowPreservesInputAndRejectionRules();
   void panelContentReceivesInitialKeyboardFocus();
   void panelSystemMenuReflectsAvailableWindowActions();
@@ -612,17 +623,63 @@ void DialogLayoutTests::dialogHeaderStaysVisibleAndUsesTheCloseAction() {
   QCOMPARE(dialog.result(), static_cast<int>(QDialog::Rejected));
 }
 
+void DialogLayoutTests::panelEditorsKeepEnterLocalAndPreserveRejectionGuards() {
+  using namespace uwf::ui;
+  GuardedPanel dialog;
+  auto* frame = new DialogLayout(&dialog, DialogContent::Form, QSize(440, 240));
+  auto* input = new QLineEdit(QStringLiteral("Editable path"), &dialog);
+  frame->body()->addWidget(input);
+  auto* buttons = new QDialogButtonBox(QDialogButtonBox::Cancel, &dialog);
+  auto* cancel = buttons->button(QDialogButtonBox::Cancel);
+  cancel->setDefault(true);
+  connect(cancel, &QPushButton::clicked, &dialog, &QDialog::reject);
+  frame->setActions(buttons);
+  dialog.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&dialog));
+  dialog.activateWindow();
+  QVERIFY(QTest::qWaitForWindowActive(&dialog));
+  input->setFocus(Qt::OtherFocusReason);
+  QTRY_VERIFY(input->hasFocus());
+  QVERIFY(cancel->isDefault());
+  QSignalSpy submitted(input, &QLineEdit::returnPressed);
+  QSignalSpy cancelled(cancel, &QPushButton::clicked);
+  QSignalSpy finished(&dialog, &QDialog::finished);
+  int submissions = 0;
+  for (const auto key : {Qt::Key_Return, Qt::Key_Enter}) {
+    QTest::keyClick(input, key);
+    ++submissions;
+    QCOMPARE(submitted.count(), submissions);
+    QCOMPARE(cancelled.count(), 0);
+    QCOMPARE(dialog.rejectionRequests, 0);
+    QCOMPARE(finished.count(), 0);
+    QVERIFY(dialog.isVisible());
+  }
+  cancel->setFocus(Qt::TabFocusReason);
+  QTRY_VERIFY(cancel->hasFocus());
+  QTest::keyClick(cancel, Qt::Key_Return);
+  QCOMPARE(cancelled.count(), 1);
+  QCOMPARE(dialog.rejectionRequests, 1);
+  QCOMPARE(finished.count(), 0);
+  input->setFocus(Qt::OtherFocusReason);
+  QTRY_VERIFY(input->hasFocus());
+  QTest::keyClick(input, Qt::Key_Escape);
+  QCOMPARE(dialog.rejectionRequests, 2);
+  QCOMPARE(finished.count(), 0);
+  QTest::mouseClick(dialog.closeButton(), Qt::LeftButton);
+  QCOMPARE(dialog.rejectionRequests, 3);
+  QCOMPARE(finished.count(), 0);
+  dialog.allowRejection = true;
+  cancel->setFocus(Qt::TabFocusReason);
+  QTRY_VERIFY(cancel->hasFocus());
+  QTest::keyClick(cancel, Qt::Key_Return);
+  QCOMPARE(cancelled.count(), 2);
+  QCOMPARE(dialog.rejectionRequests, 4);
+  QCOMPARE(finished.count(), 1);
+  QCOMPARE(dialog.result(), static_cast<int>(QDialog::Rejected));
+}
+
 void DialogLayoutTests::panelWindowPreservesInputAndRejectionRules() {
   using namespace uwf::ui;
-  class GuardedPanel : public PanelDialog {
-   public:
-    bool allowRejection = false;
-    int rejectionRequests = 0;
-    bool requestRejection() override {
-      ++rejectionRequests;
-      return allowRejection;
-    }
-  };
   WindowDragProbe<GuardedPanel> dialog;
   dialog.setWindowTitle(QStringLiteral("Panel workflow"));
   auto* frame = new DialogLayout(&dialog, DialogContent::Scrollable, QSize(640, 320), QSize(440, 240));
@@ -658,6 +715,10 @@ void DialogLayoutTests::panelWindowPreservesInputAndRejectionRules() {
   QCOMPARE(input->text(), QStringLiteral("New path"));
   QCOMPARE(dialog.dragRequests, 1);
   QTest::keyClick(input, Qt::Key_Return);
+  QCOMPARE(dialog.rejectionRequests, 0);
+  QCOMPARE(finished.count(), 0);
+  cancel->setFocus(Qt::TabFocusReason);
+  QTest::keyClick(cancel, Qt::Key_Return);
   QCOMPARE(dialog.rejectionRequests, 1);
   QCOMPARE(finished.count(), 0);
   QTest::mouseClick(dialog.closeButton(), Qt::LeftButton);

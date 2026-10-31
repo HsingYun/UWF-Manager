@@ -3,9 +3,6 @@
 #include "UwfOverlay.h"
 
 #include <format>
-#include <optional>
-#include <regex>
-#include <stdexcept>
 
 #include "WriteVerification.h"
 #include "app/wmi/WmiException.h"
@@ -15,32 +12,6 @@
 namespace uwf::app::provider {
 
 namespace {
-
-// 从 UWF_OverlayFile 的 MOF 文本中读取 FileSize。不同 WMI 文本化路径可能把
-// UInt64 写成裸数字或带引号的十进制字符串；两种都是同一字段语义。0 是合法
-// 的空文件大小，因此用 optional 区分“值为 0”和“字段无法解析”。
-std::optional<uint64_t> parseFileSizeFromMof(const std::string& mof) {
-  const std::regex re(R"mof(FileSize\s*=\s*(?:"(\d+)"|(\d+))\s*;)mof");
-  std::smatch m;
-  if (!std::regex_search(mof, m, re)) return std::nullopt;
-  try {
-    return std::stoull(m[1].matched ? m[1].str() : m[2].str());
-  } catch (const std::invalid_argument&) {
-    return std::nullopt;
-  } catch (const std::out_of_range&) {
-    return std::nullopt;
-  }
-}
-
-uint64_t requireOverlayFileSize(const wmi::WmiRow& row) {
-  if (const auto direct = row.find("FileSize"); direct != row.end() && direct->second.isValid()) {
-    return wmi::row::requireUInt64(row, "FileSize");
-  }
-  const auto mof = wmi::row::requireString(row, "__MOF", wmi::row::EmptyString::Reject);
-  const auto size = parseFileSizeFromMof(mof);
-  if (!size) throw wmi::WmiDecodeError("decode UWF_OverlayFile", "FileSize is missing or invalid in embedded MOF");
-  return *size;
-}
 
 provider::OverlayRow decodeOverlay(const wmi::WmiRow& source) {
   return {wmi::row::requireString(source, "__PATH", wmi::row::EmptyString::Reject), wmi::row::requireUInt(source, "OverlayConsumption"),
@@ -81,7 +52,7 @@ std::vector<provider::OverlayFileRow> UwfOverlay::getOverlayFiles(const provider
                                                 : m_session.callMethodRead(row.path, "GetOverlayFiles", inputs);
 
   auto out = wmi::row::readArrayOutput<provider::OverlayFileRow>(output, "OverlayFiles", [](const wmi::WmiRow& item) {
-    return provider::OverlayFileRow{wmi::row::requireEmbeddedString(item, "FileName"), requireOverlayFileSize(item)};
+    return provider::OverlayFileRow{wmi::row::requireEmbeddedString(item, "FileName"), wmi::row::requireEmbeddedUInt64(item, "FileSize")};
   });
   UWF_LOG_D("uwf") << "overlay files read completed: volume=" << volume << " files=" << out.size();
   return out;

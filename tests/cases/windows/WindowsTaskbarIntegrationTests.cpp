@@ -927,6 +927,7 @@ class WindowsTaskbarIntegrationTests final : public QObject {
 
   void taskbarMouseTooltipAndContextMenuActions() {
     ProductionUi ui;
+    ui.hub.setOperationAvailability(true, true);
     QSignalSpy showSpy(&ui.hub, &OverlayHub::showMainWindowRequested);
     QSignalSpy shutdownSpy(&ui.hub, &OverlayHub::safeShutdownRequested);
     QSignalSpy restartSpy(&ui.hub, &OverlayHub::safeRestartRequested);
@@ -990,6 +991,7 @@ class WindowsTaskbarIntegrationTests final : public QObject {
 
   void floatingWidgetRealInteractionsAndDataBoundaries() {
     ProductionUi ui;
+    ui.hub.setOperationAvailability(true, true);
     QSignalSpy showSpy(&ui.hub, &OverlayHub::showMainWindowRequested);
     QSignalSpy shutdownSpy(&ui.hub, &OverlayHub::safeShutdownRequested);
     QSignalSpy restartSpy(&ui.hub, &OverlayHub::safeRestartRequested);

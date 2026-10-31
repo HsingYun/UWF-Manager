@@ -6,6 +6,8 @@
 #include <QSize>
 #include <QVBoxLayout>
 
+#include "ui/widgets/FlexibleColumnLayout.h"
+
 class QDialog;
 class QDialogButtonBox;
 class QFrame;
@@ -23,7 +25,7 @@ class DialogLayout final : public QVBoxLayout {
  public:
   explicit DialogLayout(QDialog* dialog, DialogContent content = DialogContent::Scrollable, QSize initialSize = {}, QSize minimumSize = {});
 
-  [[nodiscard]] QVBoxLayout* body() const { return m_body; }
+  [[nodiscard]] FlexibleColumnLayout* body() const { return m_body; }
   [[nodiscard]] VerticalScrollArea* scrollArea() const { return m_scroll; }
   void setActions(QDialogButtonBox* buttons);
   void setActions(QDialogButtonBox* buttons, QLabel* hint);
@@ -46,7 +48,7 @@ class DialogLayout final : public QVBoxLayout {
 
   QDialog* m_dialog;
   QWidget* m_content;
-  QVBoxLayout* m_body;
+  FlexibleColumnLayout* m_body;
   QFrame* m_footer;
   QWidget* m_header = nullptr;
   VerticalScrollArea* m_scroll = nullptr;

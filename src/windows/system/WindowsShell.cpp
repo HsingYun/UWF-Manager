@@ -11,8 +11,6 @@
 #include <QFileInfo>
 #include <string>
 
-#include "app/ports/VolumePaths.h"
-
 namespace uwf::windows::shell {
 
 namespace {
@@ -65,7 +63,5 @@ void revealInExplorer(const QString& path) {
     if (!explorer.empty()) ShellExecuteW(nullptr, L"open", explorer.c_str(), wf.c_str(), nullptr, SW_SHOWDEFAULT);
   }
 }
-
-QString extractDriveLetter(const QString& path) { return QString::fromStdString(drive::fromPath(path.toStdString())); }
 
 }  // namespace uwf::windows::shell

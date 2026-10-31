@@ -69,6 +69,15 @@ class DialogWindowController final : public QObject {
     if (event->type() == QEvent::KeyPress) {
       const auto* key = static_cast<QKeyEvent*>(event);
       const auto* widget = qobject_cast<QWidget*>(object);
+      const auto* focus = m_dialog->focusWidget();
+      const auto* combo = qobject_cast<const QComboBox*>(focus);
+      if (object == m_dialog && (key->key() == Qt::Key_Return || key->key() == Qt::Key_Enter) &&
+          (qobject_cast<const QLineEdit*>(focus) || (combo && combo->isEditable()))) {
+        // The editor has already handled Enter and emitted returnPressed if
+        // its input is acceptable. Do not also activate a dialog default.
+        event->accept();
+        return true;
+      }
       if ((key->key() == Qt::Key_Tab || key->key() == Qt::Key_Backtab) && widget && widget->window() == m_dialog) {
         // Qt rebuilds button-box focus proxies after style and visibility changes.
         // Traverse the buttons directly so entering a group cannot revisit its default button.

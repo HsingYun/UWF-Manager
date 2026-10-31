@@ -20,6 +20,7 @@ class EnhancedModeServiceControl {
   virtual void start() = 0;
   [[nodiscard]] virtual std::vector<RegistryCommitTarget> planRegistryCommit() const = 0;
   [[nodiscard]] virtual std::vector<RegistryCommitTarget> planRegistryDeletion() const = 0;
+  [[nodiscard]] virtual bool registryTargetExists(const RegistryCommitTarget& target) const = 0;
   virtual void deleteRegistryRemnants() = 0;
   // SCM 只有在服务停止且最后一个服务句柄关闭后才真正删除服务项。调用方在
   // 返回的屏障存活期间提交服务注册表键的递归删除，随后销毁屏障完成删除。

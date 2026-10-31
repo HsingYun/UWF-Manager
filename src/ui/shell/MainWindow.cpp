@@ -135,6 +135,7 @@ MainWindow::MainWindow(MainWindowServices services, MainWindowStartup startup, Q
 
   // 提交期间暂停占用刷新，防止同线程 WMI 会话重入。
   m_commit = m_workflowFactory->commit(m_viewModel->state().snapshot(), m_overlayPresentation->usageTimer(), this);
+  updateInteractionAvailability();
   connect(&I18n::events(), &LanguageEvents::changed, this, &MainWindow::retranslateUi);
   connect(&ThemeManager::instance(), &ThemeManager::themeChanged, this, [this](app::Theme) {
     refreshThemedUi();
@@ -739,7 +740,8 @@ void MainWindow::updateStatusBaseline() {
 }
 
 void MainWindow::updateInteractionAvailability() {
-  if (m_overlayPresentation) m_overlayPresentation->setOperationAvailability(m_viewModel->powerActionsAllowed(), m_viewModel->exitAllowed());
+  const bool powerAllowed = m_viewModel->powerActionsAllowed();
+  if (m_overlayPresentation) m_overlayPresentation->setOperationAvailability(powerAllowed, m_viewModel->exitAllowed());
   if (!m_global) return;
 
   const bool elevated = m_viewModel->state().snapshot().elevated;
@@ -749,11 +751,10 @@ void MainWindow::updateInteractionAvailability() {
   for (QAction* action : {m_actImport, m_actPlan})
     if (action) action->setEnabled(editable);
   for (QAction* action : {m_actShutdown, m_actRestart})
-    if (action) action->setEnabled(m_viewModel->powerActionsAllowed() && elevated && m_viewModel->state().snapshot().uwfAvailable);
+    if (action) action->setEnabled(powerAllowed);
   // An unavailable UWF snapshot does not establish the process's access level.
   // Keep the independent service settings reachable until access is known.
   if (m_actEnhancedMode && m_viewModel->state().hasCommittedState()) m_actEnhancedMode->setEnabled(elevated && !m_viewModel->applyingConfiguration());
-  if (m_tray) m_tray->setPowerActionsEnabled(elevated && m_viewModel->state().snapshot().uwfAvailable);
 
   // 快照恢复控件状态后再应用对账门禁；对账期间禁用整页，覆盖所有写入入口。
   for (auto& tab : m_volumeTabs) {

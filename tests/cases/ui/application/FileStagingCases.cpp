@@ -83,7 +83,6 @@
 #include "ui/widgets/ContentHintBox.h"
 #include "windows/ipc/EnhancedModeAgent.h"
 #include "windows/system/SystemHardwareInfo.h"
-#include "windows/system/WindowsShell.h"
 
 class ApplicationFileStagingTests final : public ApplicationUiTest {
   Q_OBJECT
@@ -110,7 +109,7 @@ void ApplicationFileStagingTests::fileStagingTabDefersEditsAndCollapsesCoveredPa
   QVERIFY(file.open(QIODevice::WriteOnly));
   QVERIFY(file.write("state") > 0);
   file.close();
-  const QString diskDrive = uwf::windows::shell::extractDriveLetter(filePath);
+  const QString diskDrive = QString::fromStdString(drive::fromPath(filePath.toStdString()));
   QVERIFY(!diskDrive.isEmpty());
   const QString otherDrive = diskDrive.compare(QStringLiteral("C:"), Qt::CaseInsensitive) == 0 ? QStringLiteral("D:") : QStringLiteral("C:");
   const app::FileStagingEntry otherVolumeEntry{app::FileStagingKind::File, otherDrive + QStringLiteral("\\Other\\keep.bin")};
@@ -478,7 +477,7 @@ void ApplicationFileStagingTests::fileStagingTabPreservesStateAcrossInvalidInput
   QTemporaryFile file;
   QVERIFY(file.open());
   const QString filePath = QDir::toNativeSeparators(file.fileName());
-  const QString drive = uwf::windows::shell::extractDriveLetter(filePath);
+  const QString drive = QString::fromStdString(drive::fromPath(filePath.toStdString()));
   QVERIFY(!drive.isEmpty());
 
   FileDialogStub dialogs;
@@ -576,7 +575,7 @@ void ApplicationFileStagingTests::fileStagingAndFileExclusionsRejectOverlapFromE
   QTemporaryFile file;
   QVERIFY(file.open());
   const QString filePath = QDir::toNativeSeparators(file.fileName());
-  const QString drive = uwf::windows::shell::extractDriveLetter(filePath);
+  const QString drive = QString::fromStdString(drive::fromPath(filePath.toStdString()));
   QVERIFY(!drive.isEmpty());
 
   app::FileStagingConflictPolicy conflicts;
@@ -632,7 +631,7 @@ void ApplicationFileStagingTests::fileStagingCommandUiCoalescesRequestsAndComple
     QVERIFY(file.write(name.toUtf8()) > 0);
     paths.append(path);
   }
-  const QString drive = uwf::windows::shell::extractDriveLetter(paths.front());
+  const QString drive = QString::fromStdString(drive::fromPath(paths.front().toStdString()));
   QVERIFY(!drive.isEmpty());
 
   RecordingWmiOperations wmi;

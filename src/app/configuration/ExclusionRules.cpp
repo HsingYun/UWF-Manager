@@ -6,7 +6,7 @@
 
 #include "app/common/ApplicationText.h"
 #include "app/paths/PathPolicy.h"
-#include "app/ports/VolumePaths.h"
+#include "shared/DriveLetter.h"
 #include "core/RegistryExclusionPolicy.h"
 #include "core/UwfConstraints.h"
 
@@ -17,7 +17,7 @@ QLatin1String l1(std::string_view sv) { return QLatin1String(sv.data(), static_c
 }  // namespace
 
 // 返回禁止排除路径的本地化原因；空串表示允许。
-QString FileExclusionRules::rejectionReason(const QString& rawPath, const QString& volumeDl) {
+QString FileExclusionRules::rejectionReason(const QString& rawPath, const QString& volumeDl, const QString& systemDrive) {
   const QString volume = QString::fromStdString(drive::normalize(volumeDl.toStdString()));
   const QString upper = paths::normalize(rawPath.trimmed(), volume).toUpper();
   if (upper.isEmpty()) return {};
@@ -40,7 +40,7 @@ QString FileExclusionRules::rejectionReason(const QString& rawPath, const QStrin
     }
   }
 
-  const bool isSystemVolume = (volume == QString::fromStdString(drive::systemLetter()));
+  const bool isSystemVolume = !volume.isEmpty() && volume == QString::fromStdString(drive::normalize(systemDrive.toStdString()));
   if (!isSystemVolume) return {};
 
   // 系统卷：几个关键目录本身不能排除（里面的具体文件可以）。

@@ -101,6 +101,7 @@ void showCommitReport(QWidget* parent, const QList<presentation::CommitReportRow
   QObject::connect(copyRow, &QPushButton::clicked, &dialog,
                    [&] { QGuiApplication::clipboard()->setText(model.details(pages.mapToSource(table->currentIndex()).row())); });
   body->addWidget(inspector);
+  body->setPagedDetails(surface, table, inspector, design::reportRowHeight);
   auto* pagination = new PaginationBar(pages, &dialog, TextStyle::Caption);
   pagination->setSummary(I18n::tr("%1 items").arg(model.rowCount()));
   body->addWidget(pagination);

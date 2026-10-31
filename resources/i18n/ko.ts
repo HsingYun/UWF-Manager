@@ -422,22 +422,15 @@ Continue and discard them?</source><translation>적용하지 않은 변경이 %1
     <message><source>Unclosed double quote in command</source><translation>명령의 큰따옴표가 닫히지 않았습니다</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>예상하지 못한 추가 인수: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>UI 작업에 연결할 수 없는 uwfmgr 명령입니다</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>대기 중인 변경: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>이미 목표 상태이므로 작업이 필요 없습니다</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>경로가 이 볼륨에 없거나 파일 제외를 지원하지 않는 볼륨입니다(예: exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>UWF 차단 목록에서 거부했습니다(시스템 파일 / Windows / 페이지 파일 등)</translation></message>
-    <message><source>Pending filter %1</source><translation>대기 중인 변경: 필터 %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>필터: 이미 목표 상태이므로 작업이 필요 없습니다</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>대기 중인 변경: 오버레이 · 유형 → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>오버레이 · 유형: %1 (이미 목표 상태이므로 작업이 필요 없습니다)</translation></message>
     <message><source>Invalid size value: %1</source><translation>잘못된 값: 크기: %1</translation></message>
     <message><source>maximum size</source><translation>최대 크기</translation></message>
     <message><source>warning threshold</source><translation>경고 임계값</translation></message>
     <message><source>critical threshold</source><translation>위험 임계값</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>대기 중인 변경: 오버레이 %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>오버레이 %1: %2 MB (이미 목표 상태이므로 작업이 필요 없습니다)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>전역 구성을 사용할 수 없어 명령을 대기 중인 변경 사항에 추가하지 않았습니다.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>알 수 없는 볼륨 %1(이 드라이브 문자에 UWF 지원 디스크가 없음)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>대기 중인 변경: 볼륨 %1 · UWF 보호: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>볼륨 %1: 이미 목표 상태이므로 작업이 필요 없습니다</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: 경로에 드라이브 문자가 없습니다. 대상 볼륨 확인: 실패.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>볼륨 %1: UWF 지원 안 됨</translation></message>
@@ -698,10 +691,10 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Go up one folder or choose another location.</source><translation>상위 폴더로 이동하거나 다른 위치를 선택하세요.</translation></message>
     <message><source>Home</source><translation>홈</translation></message>
     <message><source>Import configuration</source><translation>설정 가져오기</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>가져온 변경은 보류 상태가 됩니다. 검토 및 적용으로 시스템에 기록하세요.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>가져오기는 구성 초안을 업데이트합니다. 검토 및 적용으로 변경 사항을 시스템에 기록하세요.</translation></message>
     <message><source>Import results</source><translation>가져오기 결과</translation></message>
     <message><source>Imported</source><translation>가져옴</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>가져온 명령은 아직 적용해야 합니다. 행을 선택하면 전체 결과를 볼 수 있습니다.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>보고서에는 구성 초안에 대한 각 명령의 처리 결과가 표시됩니다. 행을 선택하면 전체 명령과 결과를 확인할 수 있습니다.</translation></message>
     <message><source>Imported: %1</source><translation>가져옴: %1</translation></message>
     <message><source>Information</source><translation>정보</translation></message>
     <message><source>Item details</source><translation>항목 세부 정보</translation></message>
@@ -1015,5 +1008,13 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Downloads</source><translation>다운로드</translation></message>
     <message><source>Documents</source><translation>문서</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>파일 저장이 중지되었습니다. 오류를 해결한 후 다시 시도하세요.</translation></message>
+    <message><source>No net change for this setting</source><translation>이 설정의 최종 값은 가져오기 전과 같습니다</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>초안 최종 값: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>초안 최종 값: %1 → %2(요청 값: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>요청 값: %1 → %2. 이후 명령으로 대체되었습니다. 초안 최종 값 → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>%1 초안을 업데이트했습니다</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>볼륨 %1의 보호 설정 초안을 업데이트했습니다 → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>제거할 항목을 선택하세요.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>현재 선택한 항목을 복원할 수 없습니다.</translation></message>
 </context>
 </TS>

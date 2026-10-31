@@ -28,7 +28,9 @@ class GlobalConfigurationEditor final : public QObject, public app::GlobalConfig
   void setOverlayConfigLocked(bool locked);
   [[nodiscard]] bool controlsEnabled() const { return m_available && m_controlsEnabled; }
   [[nodiscard]] bool overlayConfigLocked() const { return m_overlayConfigLocked; }
-  [[nodiscard]] bool available() const { return m_available; }
+  [[nodiscard]] bool available() const override { return m_available; }
+  [[nodiscard]] bool filterEnabled() const override { return m_draft.filterEnabled; }
+  [[nodiscard]] core::OverlayConfig overlayConfiguration() const override { return m_draft.overlay; }
   [[nodiscard]] uint32_t totalRamMb() const { return m_totalRamMb; }
   [[nodiscard]] bool rangesNormalized() const { return m_rangesNormalized; }
   [[nodiscard]] const app::GlobalConfigurationDraft& draft() const { return m_draft; }

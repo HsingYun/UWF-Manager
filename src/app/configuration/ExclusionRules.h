@@ -8,7 +8,7 @@ namespace uwf::app {
 
 class FileExclusionRules final {
  public:
-  [[nodiscard]] static QString rejectionReason(const QString& rawPath, const QString& volumeDl);
+  [[nodiscard]] static QString rejectionReason(const QString& rawPath, const QString& volumeDl, const QString& systemDrive);
 };
 
 class RegistryExclusionRules final {

@@ -754,22 +754,15 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>不支持的 uwfmgr 命令（无法翻译成 UI 操作）</translation></message>
 
     <!-- showImport applier: per-command results -->
-    <message><source>Queued as a pending %1 change</source><translation>已加入待应用的%1变更</translation></message>
     <message><source>Already in the target state — no-op</source><translation>已经处于目标状态——无须变更</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>路径不在本卷，或本卷不支持文件排除（如 exFAT / ReFS）</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>被 UWF 黑名单拒绝（系统文件 / Windows / 分页文件等）</translation></message>
-    <message><source>Pending filter %1</source><translation>待应用：%1 筛选器</translation></message>
-    <message><source>Filter is already in the target state</source><translation>筛选器已经处于目标状态</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>待应用：覆盖层类型 → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>覆盖层类型已经是 %1</translation></message>
     <message><source>Invalid size value: %1</source><translation>大小数值非法：%1</translation></message>
     <message><source>maximum size</source><translation>最大大小</translation></message>
     <message><source>warning threshold</source><translation>警告阈值</translation></message>
     <message><source>critical threshold</source><translation>严重阈值</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>待应用：覆盖层 %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>覆盖层 %1 已经是 %2 MB</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>全局配置当前不可用，未将此命令加入待应用更改。</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>未知的卷 %1（没有该盘符对应的 UWF 可保护磁盘）</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>待应用：卷 %1 %2 保护</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>卷 %1 的保护状态已是目标值</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>路径 %1 没有盘符，无法定位到卷 TAB</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>没有盘符 %1 对应的 UWF 可保护磁盘</translation></message>
@@ -935,8 +928,8 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>uwfmgr commands</source><translation>uwfmgr 命令</translation></message>
     <message><source>Editable</source><translation>可编辑</translation></message>
     <message><source>Paste commands, or load them from a file…</source><translation>粘贴命令，或从文件加载…</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>导入后生成待应用变更，点击“预览并应用”才会写入系统。</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>已导入的命令仍需应用。选择一行可查看完整命令和处理结果。</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>导入会更新配置草稿。点击“预览并应用”可将更改写入系统。</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>报告列出了各条命令对配置草稿的处理结果。选择一行可查看完整命令和处理结果。</translation></message>
     <message><source>Edit commands</source><translation>编辑命令</translation></message>
     <message><source>Import results</source><translation>导入结果</translation></message>
     <message><source>Line</source><translation>行</translation></message>
@@ -1614,5 +1607,13 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>Downloads</source><translation>下载</translation></message>
     <message><source>Documents</source><translation>文档</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>文件暂存已中止。请先解决错误，再重试。</translation></message>
+    <message><source>No net change for this setting</source><translation>本次导入后，此设置的最终值未变</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>草稿最终值：%1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>草稿最终值：%1 → %2（请求值为 %3）</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>请求值：%1 → %2；已被后续命令替代。草稿最终值 → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>已更新%1草稿</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>已更新卷 %1 的保护设置草稿 → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>请选择要移除的条目。</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>当前无法恢复所选条目。</translation></message>
 </context>
 </TS>

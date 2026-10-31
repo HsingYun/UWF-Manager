@@ -151,7 +151,6 @@ void RegistryPickerViewModel::loadValues(const QString& key) {
     } catch (const std::exception& error) {
       const auto message = QString::fromUtf8(error.what());
       m_accessError = AccessError{AccessError::Operation::Values, key, message};
-      emit valuesLoadFailed(message);
     }
   }
   emit accessStateChanged();

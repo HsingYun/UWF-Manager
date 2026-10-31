@@ -110,7 +110,9 @@ QString EnhancedModeOperations::persistRemoval(const std::vector<RegistryCommitT
   try {
     RegistryTreeCommitter registry(m_session());
     registryOwnsFailure = true;
-    const auto result = registry.commitDeletion(deletionPlan);
+    const auto result = registry.commitDeletion(deletionPlan, [control = m_serviceControl](const RegistryCommitTarget& target) {
+      return control->registryTargetExists(target);
+    });
     registryOwnsFailure = false;
     return summarizeFailures(result);
   } catch (const std::exception& error) {

@@ -30,6 +30,7 @@
 #include "shared/StringUtil.h"
 #include "windows/resources/ComPtr.h"
 #include "windows/system/UnicodeConversion.h"
+#include "windows/wmi/WmiMethodCompletion.h"
 #include "windows/wmi/WmiNamespaces.h"
 
 namespace uwf::windows {
@@ -488,39 +489,9 @@ app::wmi::WmiMethodOutput decodeWriteMethodOutput(IWbemClassObject& output, cons
   }
 }
 
-struct AsyncMethodState {
-  SRWLOCK lock = SRWLOCK_INIT;
-  CONDITION_VARIABLE changed = CONDITION_VARIABLE_INIT;
-  bool completed = false;
-  HRESULT status = E_UNEXPECTED;
-  windows::ComPtr<IWbemClassObject> output;
-};
-
-class SrwExclusiveLock final {
- public:
-  explicit SrwExclusiveLock(SRWLOCK& lock) noexcept : m_lock(&lock) { AcquireSRWLockExclusive(m_lock); }
-  ~SrwExclusiveLock() {
-    if (m_lock) ReleaseSRWLockExclusive(m_lock);
-  }
-  SrwExclusiveLock(const SrwExclusiveLock&) = delete;
-  SrwExclusiveLock& operator=(const SrwExclusiveLock&) = delete;
-
-  void unlock() noexcept {
-    ReleaseSRWLockExclusive(m_lock);
-    m_lock = nullptr;
-  }
-  void lock(SRWLOCK& value) noexcept {
-    AcquireSRWLockExclusive(&value);
-    m_lock = &value;
-  }
-
- private:
-  SRWLOCK* m_lock;
-};
-
 class AsyncMethodSink final : public IWbemObjectSink {
  public:
-  explicit AsyncMethodSink(std::shared_ptr<AsyncMethodState> state) : m_state(std::move(state)) {}
+  explicit AsyncMethodSink(std::shared_ptr<WmiMethodCompletion> state) : m_state(std::move(state)) {}
 
   HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, void** object) noexcept override {
     if (!object) return E_POINTER;
@@ -553,18 +524,13 @@ class AsyncMethodSink final : public IWbemObjectSink {
 
   HRESULT STDMETHODCALLTYPE SetStatus(const LONG flags, const HRESULT result, BSTR, IWbemClassObject*) noexcept override {
     if (flags != WBEM_STATUS_COMPLETE) return WBEM_S_NO_ERROR;
-    {
-      SrwExclusiveLock lock(m_state->lock);
-      m_state->status = result;
-      m_state->completed = true;
-    }
-    WakeAllConditionVariable(&m_state->changed);
+    m_state->complete(result);
     return WBEM_S_NO_ERROR;
   }
 
  private:
   std::atomic<ULONG> m_refs{1};
-  std::shared_ptr<AsyncMethodState> m_state;
+  std::shared_ptr<WmiMethodCompletion> m_state;
 };
 
 }  // namespace
@@ -824,36 +790,25 @@ app::wmi::WmiMethodOutput WmiSession::callMethodReadCancelable(const std::string
   Impl::OperationGuard operation(*m_impl);
   if (!operation) throw app::wmi::WmiProtocolError("invoke cancellable WMI method " + methodName, "reentrant request on the same thread");
   const std::string operationName = std::format("invoke cancellable WMI method {} on {}", methodName, objectPath);
-  const auto deadline = std::chrono::steady_clock::now() + kQueryTimeout;
   for (int attempt = 0; attempt < 2; ++attempt) {
     try {
       if (stopToken.stop_requested()) throw app::wmi::WmiCancelled(operationName);
       ensureConnectedWithinOperation();
       PreparedMethodCall prepared = prepareMethodCall(*m_impl->services, objectPath, methodName, inputs);
-      auto state = std::make_shared<AsyncMethodState>();
+      auto state = std::make_shared<WmiMethodCompletion>();
       auto sink = windows::ComPtr<AsyncMethodSink>::adopt(new AsyncMethodSink(state));
       const HRESULT startHr = m_impl->services->ExecMethodAsync(prepared.objectPath, prepared.methodName, 0, nullptr, prepared.inputs.get(), sink.get());
       if (FAILED(startHr)) throwComFailure(startHr, operationName, std::format("ExecMethodAsync failed: {}", hrText(startHr)));
 
-      std::stop_callback wakeOnStop(stopToken, [state = state.get()]() noexcept {
-        // 修改等待谓词与唤醒使用同一把锁，避免 stop 恰好落在谓词检查和
-        // SleepConditionVariableSRW 原子释放锁之间时丢失通知。
-        SrwExclusiveLock lock(state->lock);
-        WakeAllConditionVariable(&state->changed);
-      });
-      SrwExclusiveLock lock(state->lock);
-      while (!state->completed && !stopToken.stop_requested()) {
-        if (!SleepConditionVariableSRW(&state->changed, &state->lock, static_cast<DWORD>(kEnumerationPollMilliseconds), 0)) {
-          const DWORD waitError = GetLastError();
-          if (waitError == ERROR_TIMEOUT && std::chrono::steady_clock::now() < deadline) continue;
-          const HRESULT waitHr = HRESULT_FROM_WIN32(waitError);
-          lock.unlock();
-          const HRESULT cancelHr = m_impl->services->CancelAsyncCall(sink.get());
-          std::string detail = std::format("waiting for asynchronous completion failed: {}", hrText(waitHr));
-          if (FAILED(cancelHr)) detail += std::format("; cancellation also failed: {}", hrText(cancelHr));
-          throw app::wmi::WmiInfrastructureError(static_cast<int32_t>(waitHr), operationName, std::move(detail));
-        }
+      const DWORD waitError = state->wait(stopToken);
+      if (waitError != ERROR_SUCCESS) {
+        const HRESULT waitHr = HRESULT_FROM_WIN32(waitError);
+        const HRESULT cancelHr = m_impl->services->CancelAsyncCall(sink.get());
+        std::string detail = std::format("waiting for asynchronous completion failed: {}", hrText(waitHr));
+        if (FAILED(cancelHr)) detail += std::format("; cancellation also failed: {}", hrText(cancelHr));
+        throw app::wmi::WmiInfrastructureError(static_cast<int32_t>(waitHr), operationName, std::move(detail));
       }
+      SrwExclusiveLock lock(state->lock);
       if (stopToken.stop_requested() && !state->completed) {
         lock.unlock();
         const HRESULT cancelHr = m_impl->services->CancelAsyncCall(sink.get());

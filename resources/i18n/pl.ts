@@ -422,22 +422,15 @@ Odrzucić i kontynuować?</translation></message>
     <message><source>Unclosed double quote in command</source><translation>Niezamknięty cudzysłów w poleceniu</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Nieoczekiwany dodatkowy argument: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Nieobsługiwane polecenie uwfmgr (brak odpowiedniej operacji interfejsu)</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Oczekujące zmiany: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Stan docelowy już ustawiony; brak operacji</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Ścieżka jest poza woluminem lub wolumin nie obsługuje wykluczeń (np. exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Odrzucone przez listę blokad UWF (pliki systemowe, Windows, plik stronicowania itd.)</translation></message>
-    <message><source>Pending filter %1</source><translation>Oczekujące zmiany: Filtr %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Filtr: Stan docelowy już ustawiony; brak operacji</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Oczekujące zmiany: Nakładka · Typ → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Nakładka · Typ: %1 (Stan docelowy już ustawiony; brak operacji)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Nieprawidłowa wartość: Rozmiar: %1</translation></message>
     <message><source>maximum size</source><translation>Maksymalny rozmiar</translation></message>
     <message><source>warning threshold</source><translation>Próg ostrzeżenia</translation></message>
     <message><source>critical threshold</source><translation>Próg krytyczny</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Oczekujące zmiany: Nakładka %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Nakładka %1: %2 MB (Stan docelowy już ustawiony; brak operacji)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>Konfiguracja globalna jest niedostępna; polecenie nie zostało dodane do oczekujących zmian.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Nieznany wolumin %1 (brak dysku obsługiwanego przez UWF o tej literze)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Oczekujące zmiany: Wolumin %1 · Ochrona UWF: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Wolumin %1: Stan docelowy już ustawiony; brak operacji</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: Ścieżka nie ma litery dysku. Identyfikacja woluminu docelowego: Niepowodzenie.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Wolumin %1: UWF Nieobsługiwane</translation></message>
@@ -698,10 +691,10 @@ Zarządzaj ochroną woluminów, nakładką, wykluczeniami i plikami do zapisu.</
     <message><source>Go up one folder or choose another location.</source><translation>Przejdź do folderu nadrzędnego lub wybierz inną lokalizację.</translation></message>
     <message><source>Home</source><translation>Folder osobisty</translation></message>
     <message><source>Import configuration</source><translation>Importuj konfigurację</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>Import tworzy oczekujące zmiany. Użyj Sprawdź i zastosuj, aby zapisać je w systemie.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>Import aktualizuje roboczą wersję konfiguracji. Użyj Sprawdź i zastosuj, aby zapisać zmiany w systemie.</translation></message>
     <message><source>Import results</source><translation>Wyniki importu</translation></message>
     <message><source>Imported</source><translation>Zaimportowano</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Zaimportowane polecenia trzeba jeszcze zastosować. Wybierz wiersz, aby zobaczyć pełny wynik.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>Raport zawiera wyniki poleceń dotyczących roboczej wersji konfiguracji. Wybierz wiersz, aby wyświetlić pełne polecenie i wynik.</translation></message>
     <message><source>Imported: %1</source><translation>Zaimportowano: %1</translation></message>
     <message><source>Information</source><translation>Informacja</translation></message>
     <message><source>Item details</source><translation>Szczegóły elementu</translation></message>
@@ -1015,5 +1008,13 @@ Zarządzaj ochroną woluminów, nakładką, wykluczeniami i plikami do zapisu.</
     <message><source>Downloads</source><translation>Pobrane</translation></message>
     <message><source>Documents</source><translation>Dokumenty</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Automatyczny zapis plików został zatrzymany. Usuń przyczynę błędu przed ponowną próbą.</translation></message>
+    <message><source>No net change for this setting</source><translation>Wartość końcowa tego ustawienia nie zmieniła się po imporcie</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Końcowa wartość wersji roboczej: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Końcowa wartość wersji roboczej: %1 → %2 (żądano: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>Żądano: %1 → %2; zastąpiono późniejszym poleceniem. Końcowa wartość wersji roboczej → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>Zaktualizowano wersję roboczą %1</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>Zaktualizowano wersję roboczą ustawienia ochrony woluminu %1 → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Wybierz wpisy do usunięcia.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>Obecnie nie można przywrócić wybranych wpisów.</translation></message>
 </context>
 </TS>

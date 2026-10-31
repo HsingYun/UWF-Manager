@@ -422,22 +422,15 @@ Hủy bỏ và tiếp tục?</translation></message>
     <message><source>Unclosed double quote in command</source><translation>Dấu ngoặc kép trong lệnh chưa đóng</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Tham số thừa ngoài dự kiến: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Lệnh uwfmgr không được hỗ trợ (không thể ánh xạ sang thao tác giao diện)</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Thay đổi chờ áp dụng: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Đã ở trạng thái đích; không cần thao tác</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Đường dẫn không thuộc ổ này hoặc ổ không hỗ trợ loại trừ tệp (ví dụ exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Bị danh sách chặn UWF từ chối (tệp hệ thống / Windows / phân trang / v.v.)</translation></message>
-    <message><source>Pending filter %1</source><translation>Thay đổi chờ áp dụng: Bộ lọc %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Bộ lọc: Đã ở trạng thái đích; không cần thao tác</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Thay đổi chờ áp dụng: Lớp phủ · Loại → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Lớp phủ · Loại: %1 (Đã ở trạng thái đích; không cần thao tác)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Giá trị không hợp lệ: Dung lượng: %1</translation></message>
     <message><source>maximum size</source><translation>Dung lượng tối đa</translation></message>
     <message><source>warning threshold</source><translation>Ngưỡng cảnh báo</translation></message>
     <message><source>critical threshold</source><translation>Ngưỡng nghiêm trọng</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Thay đổi chờ áp dụng: Lớp phủ %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Lớp phủ %1: %2 MB (Đã ở trạng thái đích; không cần thao tác)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>Cấu hình chung không khả dụng; lệnh chưa được thêm vào các thay đổi chờ áp dụng.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Không rõ ổ %1 (không có đĩa đủ điều kiện UWF mang ký tự này)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Thay đổi chờ áp dụng: Ổ đĩa %1 · Bảo vệ UWF: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Ổ đĩa %1: Đã ở trạng thái đích; không cần thao tác</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: Đường dẫn không có ký tự ổ đĩa. Xác định ổ đĩa đích: Thất bại.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Ổ đĩa %1: UWF Không được hỗ trợ</translation></message>
@@ -698,10 +691,10 @@ Quản lý bảo vệ ổ đĩa, lớp phủ, ngoại lệ và tệp chờ lưu.
     <message><source>Go up one folder or choose another location.</source><translation>Lên thư mục cha hoặc chọn vị trí khác.</translation></message>
     <message><source>Home</source><translation>Thư mục cá nhân</translation></message>
     <message><source>Import configuration</source><translation>Nhập cấu hình</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>Nhập cấu hình tạo các thay đổi đang chờ. Dùng Xem lại và áp dụng để ghi chúng vào hệ thống.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>Nhập cấu hình cập nhật bản nháp cấu hình. Dùng Xem lại và áp dụng để ghi các thay đổi vào hệ thống.</translation></message>
     <message><source>Import results</source><translation>Kết quả nhập</translation></message>
     <message><source>Imported</source><translation>Đã nhập</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Các lệnh đã nhập vẫn cần được áp dụng. Chọn một hàng để xem toàn bộ kết quả.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>Báo cáo liệt kê kết quả các lệnh đối với bản nháp cấu hình. Chọn một hàng để xem đầy đủ lệnh và kết quả.</translation></message>
     <message><source>Imported: %1</source><translation>Đã nhập: %1</translation></message>
     <message><source>Information</source><translation>Thông tin</translation></message>
     <message><source>Item details</source><translation>Chi tiết mục</translation></message>
@@ -1015,5 +1008,13 @@ Quản lý bảo vệ ổ đĩa, lớp phủ, ngoại lệ và tệp chờ lưu.
     <message><source>Downloads</source><translation>Tải xuống</translation></message>
     <message><source>Documents</source><translation>Tài liệu</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Đã dừng ghi tệp tự động. Hãy khắc phục lỗi trước khi thử lại.</translation></message>
+    <message><source>No net change for this setting</source><translation>Giá trị cuối cùng của cài đặt này không thay đổi sau khi nhập</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Giá trị bản nháp cuối cùng: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Giá trị bản nháp cuối cùng: %1 → %2 (giá trị yêu cầu: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>Giá trị yêu cầu: %1 → %2; đã được thay thế bằng lệnh sau. Giá trị bản nháp cuối cùng → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>Đã cập nhật bản nháp của %1</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>Đã cập nhật bản nháp cài đặt bảo vệ ổ đĩa %1 → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Chọn các mục cần xóa.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>Hiện không thể khôi phục các mục đã chọn.</translation></message>
 </context>
 </TS>

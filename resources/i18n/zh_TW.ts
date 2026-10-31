@@ -419,22 +419,15 @@ Continue and discard them?</source><translation>還有 %1 個待應用變更尚�
     <message><source>Unclosed double quote in command</source><translation>命令中存在未閉合的雙引號</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>存在多餘引數：%1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>不支援的 uwfmgr 命令（無法翻譯成 UI 操作）</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>已加入待應用的%1變更</translation></message>
     <message><source>Already in the target state — no-op</source><translation>已經處於目標狀態——無須變更</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>路徑不在此磁碟區，或此磁碟區不支援檔案排除（如 exFAT / ReFS）</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>被 UWF 黑名單拒絕（系統檔案 / Windows / 分頁檔案等）</translation></message>
-    <message><source>Pending filter %1</source><translation>待應用：%1 篩選器</translation></message>
-    <message><source>Filter is already in the target state</source><translation>篩選器已經處於目標狀態</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>待應用：覆寫層型別 → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>覆寫層型別已經是 %1</translation></message>
     <message><source>Invalid size value: %1</source><translation>大小數值非法：%1</translation></message>
     <message><source>maximum size</source><translation>最大大小</translation></message>
     <message><source>warning threshold</source><translation>警告閾值</translation></message>
     <message><source>critical threshold</source><translation>嚴重閾值</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>待應用：覆寫層 %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>覆寫層 %1 已經是 %2 MB</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>全域設定目前無法使用，未將此命令加入待套用變更。</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>未知的卷 %1（沒有該磁碟機代號對應的 UWF 可保護磁碟）</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>待應用：卷 %1 %2 保護</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>卷 %1 的保護狀態已是目標值</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>路徑 %1 沒有磁碟機代號，無法定位到卷 TAB</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>沒有磁碟機代號 %1 對應的 UWF 可保護磁碟</translation></message>
@@ -640,8 +633,8 @@ Continue and discard them?</source><translation>還有 %1 個待應用變更尚�
     <message><source>uwfmgr commands</source><translation>uwfmgr 命令</translation></message>
     <message><source>Editable</source><translation>可編輯</translation></message>
     <message><source>Paste commands, or load them from a file…</source><translation>粘貼命令，或從檔案載入…</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>導入后生成待應用變更，點擊“預覽并應用”才會寫入系統。</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>已導入的命令仍需應用。選擇一行可查看完整命令和處理結果。</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>匯入會更新設定草稿。點擊「預覽並應用」可將變更寫入系統。</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>報告列出了各條命令對設定草稿的處理結果。選擇一行可檢視完整命令和處理結果。</translation></message>
     <message><source>Edit commands</source><translation>編輯命令</translation></message>
     <message><source>Import results</source><translation>導入結果</translation></message>
     <message><source>Not written to the system</source><translation>尚未寫入系統</translation></message>
@@ -1010,5 +1003,13 @@ Saving will replace its contents.</source><translation>此位置已存在檔案�
     <message><source>Downloads</source><translation>下載</translation></message>
     <message><source>Documents</source><translation>文件</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>檔案暫存已中止。請先解決錯誤，再重試。</translation></message>
+    <message><source>No net change for this setting</source><translation>本次匯入後，此設定的最終值未變</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>草稿最終值：%1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>草稿最終值：%1 → %2（要求值為 %3）</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>要求值：%1 → %2；已由後續命令取代。草稿最終值 → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>已更新%1草稿</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>已更新磁碟區 %1 的保護設定草稿 → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>請選取要移除的項目。</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>目前無法還原所選項目。</translation></message>
 </context>
 </TS>

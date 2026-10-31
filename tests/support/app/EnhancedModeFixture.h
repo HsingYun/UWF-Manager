@@ -3,6 +3,7 @@
 #pragma once
 
 #include <functional>
+#include <algorithm>
 #include <stdexcept>
 
 #include "app/ports/EnhancedModeAgentConnection.h"
@@ -63,6 +64,9 @@ class MemoryEnhancedModeServiceControl final : public app::EnhancedModeServiceCo
   [[nodiscard]] std::vector<uwf::app::RegistryCommitTarget> planRegistryDeletion() const override {
     if (beforeDeletionPlan) beforeDeletionPlan();
     return deletionPlan;
+  }
+  [[nodiscard]] bool registryTargetExists(const app::RegistryCommitTarget& target) const override {
+    return std::ranges::any_of(deletionPlan, [&](const auto& item) { return item.key == target.key && item.valueName == target.valueName; });
   }
   void deleteRegistryRemnants() override {
     if (beforeDeleteRemnants) beforeDeleteRemnants();

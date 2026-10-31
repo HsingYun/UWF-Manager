@@ -479,7 +479,9 @@ void WidgetConfigurationTests::exclusionListButtonsFilterAndPersistenceRowsUseDi
     if (item.data(Qt::UserRole).toString().compare(stagingRegistryRoot, Qt::CaseInsensitive) != 0) continue;
     stagingRegistryObserved = true;
     stagingRegistryItem = item;
-    QVERIFY(item.data(Qt::ToolTipRole).toString().startsWith(QStringLiteral("Required by UWF for File staging.")));
+    QCOMPARE(item.data(Qt::ToolTipRole).toString(),
+             QStringLiteral("File staging relies on this registry exclusion to preserve its list across restarts.\n\n"
+                            "Current session: Excluded\nNext session: Excluded"));
     QVERIFY(!item.data(Qt::ToolTipRole).toString().contains(QStringLiteral("Registry:")));
   }
   QVERIFY(stagingRegistryObserved);

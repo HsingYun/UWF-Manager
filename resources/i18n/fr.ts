@@ -422,22 +422,15 @@ Les abandonner et continuer ?</translation></message>
     <message><source>Unclosed double quote in command</source><translation>Guillemet double non fermé dans la commande</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Argument supplémentaire inattendu : %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Commande uwfmgr non prise en charge (aucune action d’interface correspondante)</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Modifications en attente: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>État cible déjà atteint ; aucune action nécessaire</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Chemin hors de ce volume, ou exclusions de fichiers non prises en charge (exFAT / ReFS, par exemple)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Refusé par la liste de blocage UWF (fichiers système, Windows, fichier d’échange, etc.)</translation></message>
-    <message><source>Pending filter %1</source><translation>Modifications en attente: Filtre %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Filtre: État cible déjà atteint ; aucune action nécessaire</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Modifications en attente: Overlay · Type → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Overlay · Type: %1 (État cible déjà atteint ; aucune action nécessaire)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Valeur invalide : Taille: %1</translation></message>
     <message><source>maximum size</source><translation>Taille maximale</translation></message>
     <message><source>warning threshold</source><translation>Seuil d’avertissement</translation></message>
     <message><source>critical threshold</source><translation>Seuil critique</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Modifications en attente: Overlay %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Overlay %1: %2 MB (État cible déjà atteint ; aucune action nécessaire)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>La configuration globale est indisponible ; la commande n’a pas été ajoutée aux modifications en attente.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Volume %1 inconnu (aucun disque compatible UWF avec cette lettre)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Modifications en attente: Volume %1 · Protection UWF: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Volume %1: État cible déjà atteint ; aucune action nécessaire</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: Le chemin n’a pas de lettre de lecteur. Identification du volume cible: Échec.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Volume %1: UWF Non pris en charge</translation></message>
@@ -698,10 +691,10 @@ Gérez la protection des volumes, la surcouche, les exclusions et les fichiers e
     <message><source>Go up one folder or choose another location.</source><translation>Remontez d’un dossier ou choisissez un autre emplacement.</translation></message>
     <message><source>Home</source><translation>Dossier personnel</translation></message>
     <message><source>Import configuration</source><translation>Importer la configuration</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>L’importation crée des modifications en attente. Utilisez Vérifier et appliquer pour les écrire dans le système.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>L’importation met à jour le brouillon de configuration. Utilisez Vérifier et appliquer pour écrire les modifications dans le système.</translation></message>
     <message><source>Import results</source><translation>Résultats d’importation</translation></message>
     <message><source>Imported</source><translation>Importé</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Les commandes importées doivent encore être appliquées. Sélectionnez une ligne pour voir le résultat complet.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>Le rapport présente les résultats des commandes pour le brouillon de configuration. Sélectionnez une ligne pour afficher la commande et le résultat complets.</translation></message>
     <message><source>Imported: %1</source><translation>Importé : %1</translation></message>
     <message><source>Information</source><translation>Information</translation></message>
     <message><source>Item details</source><translation>Détails de l’élément</translation></message>
@@ -1015,5 +1008,13 @@ Gérez la protection des volumes, la surcouche, les exclusions et les fichiers e
     <message><source>Downloads</source><translation>Téléchargements</translation></message>
     <message><source>Documents</source><translation>Documents</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>L’enregistrement des fichiers s’est arrêté. Corrigez l’erreur avant de réessayer.</translation></message>
+    <message><source>No net change for this setting</source><translation>La valeur finale de ce paramètre reste inchangée après l’importation</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Valeur finale du brouillon : %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Valeur finale du brouillon : %1 → %2 (valeur demandée : %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>Valeur demandée : %1 → %2 ; remplacée par une commande ultérieure. Valeur finale du brouillon → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>Brouillon de %1 mis à jour</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>Brouillon du paramètre de protection du volume %1 mis à jour → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Sélectionnez les entrées à supprimer.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>Les entrées sélectionnées ne peuvent pas être restaurées pour le moment.</translation></message>
 </context>
 </TS>

@@ -24,7 +24,8 @@ class MainWindowViewModel final : public QObject {
     QString title, tooltip, icon;
     std::shared_ptr<VolumeConfigurationViewModel> model;
   };
-  MainWindowViewModel(app::ApplicationStateSource& source, app::UwfCapability capability, std::shared_ptr<app::FileStagingDraft> staging = {});
+  MainWindowViewModel(app::ApplicationStateSource& source, app::UwfCapability capability, std::shared_ptr<app::FileStagingDraft> staging = {},
+                       app::DriveResolver resolveDrive = {});
   [[nodiscard]] const app::ApplicationStateSession& state() const { return m_state; }
   [[nodiscard]] const std::shared_ptr<ConfigurationViewModel>& configuration() const { return m_configuration; }
   [[nodiscard]] std::size_t pendingChangeCount() const;
@@ -35,7 +36,7 @@ class MainWindowViewModel final : public QObject {
   [[nodiscard]] bool applyingConfiguration() const { return m_applyPlan && m_applyPlan->applying(); }
   [[nodiscard]] bool configurationWritesAllowed() const;
   [[nodiscard]] bool exitAllowed() const { return !applyingConfiguration() && !m_externalOperationActive; }
-  [[nodiscard]] bool powerActionsAllowed() const { return !applyingConfiguration(); }
+  [[nodiscard]] bool powerActionsAllowed() const;
   bool discardPendingChanges();
   void trackApplyPlan(std::shared_ptr<ApplyPlanViewModel> plan);
   void setExternalOperationActive(bool active);
@@ -59,6 +60,7 @@ class MainWindowViewModel final : public QObject {
   void publishPendingChanged();
   void publishInteractionAvailability();
   QString m_systemDrive;
+  app::DriveResolver m_resolveDrive;
   void applyEnhancedModeStatus(const app::EnhancedModeStatus& status);
   void recordEnhancedModeStatusFailure(const QString& detail);
   app::ApplicationStateSource& m_stateSource;

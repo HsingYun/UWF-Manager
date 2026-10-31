@@ -349,13 +349,14 @@ int main(int argc, char** argv) {
       component = std::move(widget);
     }
     auto context = std::make_unique<ui::OverlayContextMenu>();
+    context->setOperationAvailability(true, true);
     context->setRestorePositionAvailable(scenario == QLatin1String("floating"));
     context->setHubState(true, true);
     if (scenario != QLatin1String("floating") && scenario != QLatin1String("taskbar")) {
       trayPreview = std::make_unique<ui::TrayController>(&trayOwner);
       trayPreview->applyUsageState(usage);
       trayPreview->setHubState(true, true);
-      trayPreview->setPowerActionsEnabled(true);
+      trayPreview->setOperationAvailability(true, true);
       productionTrayMenu = trayOwner.findChild<ui::OverlayContextMenu*>();
     }
     menu = std::move(context);

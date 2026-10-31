@@ -122,6 +122,7 @@ OverlayFilesDialog::OverlayFilesDialog(std::shared_ptr<presentation::OverlayFile
   m_selectedPath = m_inspector->textView();
   m_selectedPath->setObjectName(QStringLiteral("overlaySelectedPath"));
   body->addWidget(m_inspector);
+  body->setPagedDetails(tableHost, m_table, m_inspector, design::overlayRowHeight);
   m_pagination = new PaginationBar(*m_pages, m_records, TextStyle::Caption);
   body->addWidget(m_pagination);
 

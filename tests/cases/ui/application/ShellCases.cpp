@@ -1267,11 +1267,11 @@ void ApplicationShellTests::overlayMenusRouteActionsAndDeferBlockingDispatch() {
   QCOMPARE(shown.count(), 2);
   tray.setHubState(true, true);
   trigger("overlayMenuToggleHub", toggled);
-  tray.setPowerActionsEnabled(true);
+  tray.setOperationAvailability(true, true);
   trigger("overlayMenuSafeShutdown", shutdown);
   trigger("overlayMenuSafeRestart", restart);
   trigger("overlayMenuExit", exited);
-  tray.setPowerActionsEnabled(false);
+  tray.setOperationAvailability(false, true);
   auto* shutdownAction = trayMenu->findChild<QAction*>(QStringLiteral("overlayMenuSafeShutdown"));
   auto* restartAction = trayMenu->findChild<QAction*>(QStringLiteral("overlayMenuSafeRestart"));
   QVERIFY(shutdownAction && restartAction);
@@ -1311,7 +1311,7 @@ void ApplicationShellTests::trayUsageCardKeepsValuesAndTooltipsConsistent() {
   QWidget owner;
   ui::TrayController tray(&owner);
   tray.setHubState(true, true);
-  tray.setPowerActionsEnabled(true);
+  tray.setOperationAvailability(true, true);
   auto* icon = tray.findChild<QSystemTrayIcon*>();
   auto* menu = owner.findChild<ui::OverlayContextMenu*>();
   auto* progress = owner.findChild<QProgressBar*>(QStringLiteral("trayUsageProgress"));
@@ -1412,7 +1412,7 @@ void ApplicationShellTests::contextMenusKeepTextRenderingConsistent() {
     const auto snapshot = editableSnapshot();
     tray->applyUsageState(app::OverlayUsageEnabled(snapshot.runtime, snapshot.current.overlay));
     tray->setHubState(true, true);
-    tray->setPowerActionsEnabled(true);
+    tray->setOperationAvailability(true, true);
     trayMenu = owner.findChild<QMenu*>();
     QVERIFY(trayMenu);
   } else if (entryPoint == QLatin1String("taskbar")) {

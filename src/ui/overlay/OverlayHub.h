@@ -53,7 +53,7 @@ class OverlayHub final : public QObject {
   app::OverlayUsageState m_usageState{app::OverlayUsageUnavailable{}};
   OverlayHubView* m_presentedView = nullptr;
   bool m_requestedVisible = true;
-  bool m_powerAllowed = true;
+  bool m_powerAllowed = false;
   bool m_exitAllowed = true;
   bool m_temporarilyHidden = false;
   bool m_reconciling = false;

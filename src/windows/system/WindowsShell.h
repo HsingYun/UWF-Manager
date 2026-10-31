@@ -7,6 +7,5 @@
 namespace uwf::windows::shell {
 
 void revealInExplorer(const QString& path);
-[[nodiscard]] QString extractDriveLetter(const QString& path);
 
 }  // namespace uwf::windows::shell

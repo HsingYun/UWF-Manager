@@ -422,22 +422,15 @@ Verwerfen und fortfahren?</translation></message>
     <message><source>Unclosed double quote in command</source><translation>Nicht geschlossenes Anführungszeichen im Befehl</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Unerwartetes zusätzliches Argument: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Nicht unterstützter uwfmgr-Befehl (keine Zuordnung zu einer UI-Aktion)</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Ausstehende Änderungen: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Zielzustand bereits erreicht; keine Aktion nötig</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Pfad liegt nicht auf diesem Volume oder es unterstützt keine Dateiausnahmen (z. B. exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Von UWF-Sperrliste abgelehnt (Systemdatei / Windows / Auslagerungsdatei usw.)</translation></message>
-    <message><source>Pending filter %1</source><translation>Ausstehende Änderungen: Filter %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Filter: Zielzustand bereits erreicht; keine Aktion nötig</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Ausstehende Änderungen: Overlay · Typ → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Overlay · Typ: %1 (Zielzustand bereits erreicht; keine Aktion nötig)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Ungültiger Wert: Größe: %1</translation></message>
     <message><source>maximum size</source><translation>Maximale Größe</translation></message>
     <message><source>warning threshold</source><translation>Warnschwelle</translation></message>
     <message><source>critical threshold</source><translation>Kritische Schwelle</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Ausstehende Änderungen: Overlay %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Overlay %1: %2 MB (Zielzustand bereits erreicht; keine Aktion nötig)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>Die globale Konfiguration ist nicht verfügbar; der Befehl wurde nicht zur Anwendung vorgemerkt.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Unbekanntes Volume %1 (kein UWF-geeignetes Laufwerk mit diesem Buchstaben)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Ausstehende Änderungen: Volume %1 · UWF-Schutz: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Volume %1: Zielzustand bereits erreicht; keine Aktion nötig</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: Der Pfad hat keinen Laufwerksbuchstaben. Zielvolume ermitteln: Fehlgeschlagen.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Volume %1: UWF Nicht unterstützt</translation></message>
@@ -698,10 +691,10 @@ Verwalten Sie Volumeschutz, Overlay, Ausschlüsse und vorgemerkte Dateien.</tran
     <message><source>Go up one folder or choose another location.</source><translation>Wechseln Sie eine Ordnerebene nach oben oder wählen Sie einen anderen Ort.</translation></message>
     <message><source>Home</source><translation>Benutzerordner</translation></message>
     <message><source>Import configuration</source><translation>Konfiguration importieren</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>Der Import erzeugt ausstehende Änderungen. Schreiben Sie diese mit Prüfen und anwenden in das System.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>Der Import aktualisiert den Konfigurationsentwurf. Schreiben Sie Änderungen mit Prüfen und anwenden in das System.</translation></message>
     <message><source>Import results</source><translation>Importergebnisse</translation></message>
     <message><source>Imported</source><translation>Importiert</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Importierte Befehle müssen noch angewendet werden. Wählen Sie eine Zeile, um das vollständige Ergebnis zu sehen.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>Der Bericht enthält die Ergebnisse der Befehle für den Konfigurationsentwurf. Wählen Sie eine Zeile aus, um den vollständigen Befehl und das Ergebnis anzuzeigen.</translation></message>
     <message><source>Imported: %1</source><translation>Importiert: %1</translation></message>
     <message><source>Information</source><translation>Information</translation></message>
     <message><source>Item details</source><translation>Eintragsdetails</translation></message>
@@ -1015,5 +1008,13 @@ Verwalten Sie Volumeschutz, Overlay, Ausschlüsse und vorgemerkte Dateien.</tran
     <message><source>Downloads</source><translation>Downloads</translation></message>
     <message><source>Documents</source><translation>Dokumente</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Die Dateivormerkung wurde angehalten. Beheben Sie den Fehler, bevor Sie es erneut versuchen.</translation></message>
+    <message><source>No net change for this setting</source><translation>Diese Einstellung ist nach dem Import unverändert</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Endgültiger Entwurfswert: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Endgültiger Entwurfswert: %1 → %2 (angefordert: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>Angefordert: %1 → %2; durch einen späteren Befehl ersetzt. Endgültiger Entwurfswert → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>Entwurf für %1 aktualisiert</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>Entwurf der Schutzeinstellung für Volume %1 aktualisiert → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Wählen Sie die zu entfernenden Einträge aus.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>Die ausgewählten Einträge können derzeit nicht wiederhergestellt werden.</translation></message>
 </context>
 </TS>

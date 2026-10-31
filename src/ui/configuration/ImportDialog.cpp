@@ -183,7 +183,7 @@ ImportDialog::ImportDialog(std::shared_ptr<presentation::ImportViewModel> model,
   meta->addWidget(lineCount);
   editorStack->addWidget(editorFooter);
   editorLayout->addWidget(editor, 1);
-  auto* importHint = new TextLabel(I18n::tr("Import creates pending changes. Use Review and apply to write them to the system."), TextStyle::Caption, this);
+  auto* importHint = new TextLabel(I18n::tr("Import updates the configuration draft. Use Review and apply to write changes to the system."), TextStyle::Caption, this);
   importHint->setProperty("designTone", "muted");
   importHint->setWordWrap(true);
   auto* hintRow = new QHBoxLayout();
@@ -227,7 +227,8 @@ ImportDialog::ImportDialog(std::shared_ptr<presentation::ImportViewModel> model,
   reportStack->addWidget(m_report);
   reportLayout->addWidget(reportSurface, 1);
   auto* reportHint =
-      new TextLabel(I18n::tr("Imported commands still need to be applied. Select a row to view the complete result."), TextStyle::Caption, reportPage);
+      new TextLabel(I18n::tr("The report lists command results for the configuration draft. Select a row to view the complete command and result."),
+                    TextStyle::Caption, reportPage);
   reportHint->setWordWrap(true);
   reportHint->setProperty("designTone", "muted");
   reportLayout->addWidget(reportHint);

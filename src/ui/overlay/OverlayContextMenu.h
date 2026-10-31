@@ -17,7 +17,6 @@ class OverlayContextMenu final : public CommandMenu {
 
   void setRestorePositionAvailable(bool available);
   void setHubState(bool available, bool enabled);
-  void setPowerActionsEnabled(bool enabled);
   void setOperationAvailability(bool powerAllowed, bool exitAllowed);
   QWidgetAction* addUsageWidget(QWidget* widget);
   void execAt(const QPoint& position);
@@ -43,9 +42,8 @@ class OverlayContextMenu final : public CommandMenu {
   QAction* m_exit = nullptr;
   bool m_hubEnabled = true;
   bool m_deferSignals = false;
-  bool m_powerAllowed = true;
+  bool m_powerAllowed = false;
   bool m_exitAllowed = true;
-  bool m_powerEnabled = true;
 };
 
 }  // namespace uwf::ui

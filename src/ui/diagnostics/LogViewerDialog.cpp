@@ -136,6 +136,7 @@ LogViewerDialog::LogViewerDialog(std::shared_ptr<presentation::LogViewModel> mod
   m_copy->setObjectName(QStringLiteral("copyLogEntry"));
   m_details->setObjectName(QStringLiteral("logMessageDetails"));
   records->addWidget(m_inspector);
+  records->setPagedDetails(m_tableHost, m_table, m_inspector, design::logRowHeight);
   records->addWidget(m_pagination);
 
   auto* failure = new Disclosure(I18n::tr("Error details"), m_state);

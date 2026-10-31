@@ -37,6 +37,39 @@ std::shared_ptr<app::VolumeConfigurationEditor> addVolume(app::ConfigurationEdit
 class ConfigurationEditSessionTests final : public QObject {
   Q_OBJECT
  private slots:
+  void exclusionPolicyUsesTheInjectedSystemDrive() {
+    app::ConfigurationEditSession session(16384, QStringLiteral("R:"));
+    core::VolumeInfo volume;
+    volume.driveLetter = "R:";
+    volume.support = core::VolumeSupport::Supported;
+    auto system = session.editVolume(volume, true);
+    QCOMPARE(system->files()->importAdd(QStringLiteral("R:/Windows")), app::ExclusionImportOutcome::RejectedForbidden);
+    volume.driveLetter = "Z:";
+    auto data = session.editVolume(volume, false);
+    QCOMPARE(data->files()->importAdd(QStringLiteral("Z:/Windows")), app::ExclusionImportOutcome::Applied);
+  }
+  void activeImportRetainsItsDependenciesAfterSessionDestruction() {
+    int resolutions = 0;
+    auto session = std::make_unique<app::ConfigurationEditSession>(16384, QStringLiteral("C:"), [&](const std::string&) {
+      ++resolutions;
+      return std::string("C:");
+    });
+    core::SessionSnapshot baseline;
+    session->globalEditor()->reset(baseline);
+    const std::weak_ptr<app::GlobalConfigurationEditor> global = session->globalEditor();
+    const std::weak_ptr<app::ExclusionEditor> registry = session->registryEditor();
+    connect(session->globalEditor().get(), &app::GlobalConfigurationEditor::pendingChanged, this, [&] { session.reset(); });
+    const auto report = session->importCommands(commands(
+        "uwfmgr filter enable\nuwfmgr file add-exclusion C:\\Data\nuwfmgr registry add-exclusion HKLM\\SOFTWARE\\ImportLifetimeFixture"));
+    QVERIFY(!session);
+    QCOMPARE(resolutions, 1);
+    QCOMPARE(report.size(), 3);
+    QCOMPARE(report[0].status, app::ImportResult::Status::Success);
+    QCOMPARE(report[1].status, app::ImportResult::Status::Failed);
+    QCOMPARE(report[2].status, app::ImportResult::Status::Success);
+    QVERIFY(global.expired());
+    QVERIFY(registry.expired());
+  }
   void activeImportRetainsItsTargetUntilTheCommandReturns_data() {
     QTest::addColumn<QString>("script");
     QTest::newRow("volume") << QStringLiteral("uwfmgr.exe volume unprotect C:\nuwfmgr.exe volume protect C:");

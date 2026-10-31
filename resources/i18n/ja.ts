@@ -422,22 +422,15 @@ Continue and discard them?</source><translation>未適用の変更が %1 件あ�
     <message><source>Unclosed double quote in command</source><translation>コマンド内の二重引用符が閉じられていません</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>余分な引数があります：%1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>UI の操作に対応付けられない uwfmgr コマンドです</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>保留中の変更: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>既に指定した状態のため、操作は不要です</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>このボリューム外のパスか、ファイル除外に非対応のボリュームです（exFAT / ReFS など）</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>UWF の禁止リストにより拒否されました（システムファイル、Windows、ページファイルなど）</translation></message>
-    <message><source>Pending filter %1</source><translation>保留中の変更: フィルター %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>フィルター: 既に指定した状態のため、操作は不要です</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>保留中の変更: オーバーレイ · 種類 → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>オーバーレイ · 種類: %1 (既に指定した状態のため、操作は不要です)</translation></message>
     <message><source>Invalid size value: %1</source><translation>無効な値： サイズ: %1</translation></message>
     <message><source>maximum size</source><translation>最大サイズ</translation></message>
     <message><source>warning threshold</source><translation>警告しきい値</translation></message>
     <message><source>critical threshold</source><translation>重大しきい値</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>保留中の変更: オーバーレイ %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>オーバーレイ %1: %2 MB (既に指定した状態のため、操作は不要です)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>全体設定を利用できないため、このコマンドは適用待ちに追加されませんでした。</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>不明なボリューム %1（このドライブ文字に UWF 対応ディスクがありません）</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>保留中の変更: ボリューム %1 · UWF 保護: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>ボリューム %1: 既に指定した状態のため、操作は不要です</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: パスにドライブ文字がありません。 対象ボリュームの特定: 失敗.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>ボリューム %1: UWF 未対応</translation></message>
@@ -698,10 +691,10 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Go up one folder or choose another location.</source><translation>親フォルダーへ移動するか、別の場所を選択してください。</translation></message>
     <message><source>Home</source><translation>ホーム</translation></message>
     <message><source>Import configuration</source><translation>設定をインポート</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>インポートした変更は保留状態になります。「確認して適用」でシステムに書き込んでください。</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>インポートは設定の下書きを更新します。変更をシステムに書き込むには「確認して適用」を使用してください。</translation></message>
     <message><source>Import results</source><translation>インポート結果</translation></message>
     <message><source>Imported</source><translation>インポート済み</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>インポートしたコマンドは、まだ適用が必要です。行を選択すると結果全体を確認できます。</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>レポートには、設定の下書きに対する各コマンドの処理結果が表示されます。行を選択すると、コマンドと結果の全文を確認できます。</translation></message>
     <message><source>Imported: %1</source><translation>インポート済み：%1</translation></message>
     <message><source>Information</source><translation>情報</translation></message>
     <message><source>Item details</source><translation>項目の詳細</translation></message>
@@ -1015,5 +1008,13 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Downloads</source><translation>ダウンロード</translation></message>
     <message><source>Documents</source><translation>ドキュメント</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>ファイルの保存待ち処理が中止されました。エラーを解決してから再試行してください。</translation></message>
+    <message><source>No net change for this setting</source><translation>この設定の最終値はインポート前と変わりません</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>下書きの最終値: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>下書きの最終値: %1 → %2（要求値: %3）</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>要求値: %1 → %2。後のコマンドで置き換えられました。下書きの最終値 → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>%1 の下書きを更新しました</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>ボリューム %1 の保護設定の下書きを更新しました → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>削除する項目を選択してください。</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>選択した項目は現在復元できません。</translation></message>
 </context>
 </TS>

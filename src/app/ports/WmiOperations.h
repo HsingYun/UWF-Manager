@@ -27,6 +27,8 @@ class WmiOperations {
   [[nodiscard]] virtual WmiRow getObject(const std::string& objectPath) const = 0;
   virtual void invokeMethod(const std::string& objectPath, const std::string& methodName, const WmiRow& inputs = {}) const = 0;
   [[nodiscard]] virtual WmiMethodOutput callMethodRead(const std::string& objectPath, const std::string& methodName, const WmiRow& inputs = {}) const = 0;
+  // Wait until the provider completes or stop is requested, without a local
+  // deadline. Provider and transport failures still propagate to the caller.
   [[nodiscard]] virtual WmiMethodOutput callMethodReadCancelable(const std::string& objectPath, const std::string& methodName, const WmiRow& inputs,
                                                                  std::stop_token stopToken) const = 0;
   virtual void putInstance(const std::string& className, const WmiRow& props, WmiPutMode mode) const = 0;

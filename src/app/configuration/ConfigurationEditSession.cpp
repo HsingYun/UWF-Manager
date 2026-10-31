@@ -7,6 +7,7 @@
 
 #include "GlobalConfigurationEditor.h"
 #include "VolumeConfigurationEditor.h"
+#include "shared/DriveLetter.h"
 
 namespace uwf::app {
 namespace {
@@ -21,10 +22,12 @@ std::vector<std::string> sortedPaths(const QSet<QString>& paths) {
 }
 }  // namespace
 
-ConfigurationEditSession::ConfigurationEditSession(uint32_t totalRamMb)
+ConfigurationEditSession::ConfigurationEditSession(uint32_t totalRamMb, QString systemDrive, DriveResolver resolveDrive)
     : m_global(std::make_shared<GlobalConfigurationState>()),
       m_globalEditor(std::make_shared<GlobalConfigurationEditor>(m_global, totalRamMb)),
-      m_registryEditor(std::make_shared<ExclusionEditor>(ExclusionEditor::Kind::Registry, std::shared_ptr<ExclusionDraft>(m_global, &m_global->registry))) {}
+      m_registryEditor(std::make_shared<ExclusionEditor>(ExclusionEditor::Kind::Registry, std::shared_ptr<ExclusionDraft>(m_global, &m_global->registry))),
+      m_systemDrive(std::move(systemDrive)),
+      m_resolveDrive(resolveDrive ? std::move(resolveDrive) : DriveResolver{[](const std::string& path) { return drive::split(path).letter; }}) {}
 
 void ConfigurationEditSession::resetRegistry(const core::UwfSnapshot& snapshot) {
   const auto strings = [](const std::vector<std::string>& paths) {
@@ -40,6 +43,7 @@ void ConfigurationEditSession::resetRegistry(const core::UwfSnapshot& snapshot) 
 }
 std::shared_ptr<VolumeConfigurationEditor> ConfigurationEditSession::editVolume(const core::VolumeInfo& volume, bool hostsRegistry) {
   auto editor = std::make_shared<VolumeConfigurationEditor>(volume, hostsRegistry, this);
+  editor->files()->setSystemDriveLetter(m_systemDrive);
   m_volumeEditors.push_back(editor);
   return editor;
 }
@@ -48,7 +52,9 @@ QList<ImportResult> ConfigurationEditSession::importCommands(const QList<app::Uw
   editors.reserve(m_volumeEditors.size());
   for (const auto& editor : m_volumeEditors) editors.emplace_back(editor);
   const auto global = m_globalEditor;
-  return applyImportCommands(commands, global.get(), editors, m_registryEditor.get());
+  const auto registry = m_registryEditor;
+  const auto resolveDrive = m_resolveDrive;
+  return applyImportCommands(commands, global.get(), editors, registry.get(), resolveDrive);
 }
 
 std::shared_ptr<VolumeConfigurationState> ConfigurationEditSession::addVolume(const core::VolumeInfo& volume) {

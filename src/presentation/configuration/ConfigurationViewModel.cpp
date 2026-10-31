@@ -6,8 +6,10 @@
 
 namespace uwf::presentation {
 
-ConfigurationViewModel::ConfigurationViewModel(const uint32_t totalRamMb, std::function<bool()> stagingData, QObject* parent)
-    : QObject(parent), m_edit(totalRamMb), m_global(std::make_shared<GlobalConfigurationViewModel>(m_edit.globalEditor())) {
+ConfigurationViewModel::ConfigurationViewModel(const uint32_t totalRamMb, std::function<bool()> stagingData, QString systemDrive,
+                                               app::DriveResolver resolveDrive, QObject* parent)
+    : QObject(parent), m_edit(totalRamMb, std::move(systemDrive), std::move(resolveDrive)),
+      m_global(std::make_shared<GlobalConfigurationViewModel>(m_edit.globalEditor())) {
   m_edit.registryEditor()->setFileStagingDataProbe(std::move(stagingData));
   connect(m_global.get(), &GlobalConfigurationViewModel::pendingChanged, this, &ConfigurationViewModel::pendingChanged);
 }

@@ -253,6 +253,7 @@ set(UWF_WINDOWS_SOURCES
     src/windows/uwf/SystemUwfStateReader.cpp
     src/windows/uwf/SystemUwfStateReader.h
     src/windows/wmi/WmiNamespaces.h
+    src/windows/wmi/WmiMethodCompletion.h
     src/windows/wmi/WmiSession.cpp
     src/windows/wmi/WmiSession.h
     src/windows/wmi/WmiRuntime.h

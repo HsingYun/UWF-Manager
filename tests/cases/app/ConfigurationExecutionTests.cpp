@@ -156,8 +156,12 @@ class ConfigurationExecutionTests final : public QObject {
     const auto expectedEffect = outcome == Outcome::Success                                       ? app::WriteEffect::Confirmed
                                 : outcome == Outcome::Uncertain || outcome == Outcome::Unverified ? app::WriteEffect::Uncertain
                                                                                                   : app::WriteEffect::None;
-    const auto plan = app::planConfiguration(changes, {});
-    for (const auto& operation : plan.operations()) {
+    std::vector<app::ConfigurationOperation> expectedOperations;
+    if (selection & 1) expectedOperations.push_back({app::ConfigurationOperationKind::DomainPersistence, {}});
+    if (selection & 2) expectedOperations.push_back({app::ConfigurationOperationKind::LicensePersistence, {}});
+    QCOMPARE(std::ranges::count_if(result.steps, [](const auto& step) { return step.operation.has_value(); }),
+             static_cast<std::ptrdiff_t>(expectedOperations.size()));
+    for (const auto& operation : expectedOperations) {
       QCOMPARE(std::ranges::count_if(result.steps, [&](const auto& step) { return step.operation == operation; }), 1);
       const auto step = std::ranges::find_if(result.steps, [&](const auto& value) { return value.operation == operation; });
       QCOMPARE(step->outcome, expectedOutcome);

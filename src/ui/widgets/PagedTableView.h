@@ -11,8 +11,12 @@ namespace uwf::ui {
 class PagedTableView final : public QTableView {
  public:
   PagedTableView(presentation::PageProxyModel& pages, int rowHeight, QWidget* parent = nullptr);
+  [[nodiscard]] QSize minimumSizeHint() const override;
 
  protected:
   void keyPressEvent(QKeyEvent* event) override;
+
+ private:
+  const int m_rowHeight;
 };
 }  // namespace uwf::ui

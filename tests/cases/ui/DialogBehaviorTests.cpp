@@ -12,6 +12,7 @@
 #include <QFile>
 #include <QFocusFrame>
 #include <QHeaderView>
+#include <QImage>
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QLayout>
@@ -38,6 +39,7 @@
 #include <QTimer>
 #include <QTreeView>
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -80,6 +82,7 @@
 #include "ui/widgets/PagedViewController.h"
 #include "ui/widgets/PagedWindowLayout.h"
 #include "ui/widgets/RecordInspector.h"
+#include "ui/widgets/Surface.h"
 #include "ui/widgets/TextLabel.h"
 #include "ui/widgets/VerticalScrollArea.h"
 #include "windows/filesystem/AtomicTextFileWriter.h"
@@ -178,11 +181,45 @@ bool pagedViewportShowsWholeRows(const QAbstractItemView& view, const int rowHei
   const auto* viewport = view.viewport();
   const int rows = viewport->height() / rowHeight;
   if (rows < 1 || viewport->height() % rowHeight != 0 || pages->pager().pageSize != rows || !viewport->mask().isEmpty()) return false;
+  const auto* controller = view.findChild<uwf::ui::PagedViewController*>();
+  if (!controller || controller->availableViewportHeight() != viewport->height()) return false;
+  if (const auto* surface = dynamic_cast<const uwf::ui::Surface*>(view.parentWidget())) {
+    const auto* layout = surface->layout();
+    if (!layout || layout->count() != 1 || layout->itemAt(0)->widget() != &view) return false;
+    const auto margins = layout->contentsMargins();
+    if (view.y() != margins.top() || view.geometry().bottom() + 1 + margins.bottom() != surface->height()) return false;
+  }
   if (pages->rowCount() == 0) return true;
   const auto first = view.indexAt(QPoint(viewport->width() / 2, 0));
   if (!first.isValid() || view.visualRect(first).top() != 0) return false;
   const int lastRow = std::min(pages->rowCount() - 1, first.row() + rows - 1);
   const auto last = view.visualRect(pages->index(lastRow, first.column()));
+  // Inspect the rendered item area, so hiding a double rule with a viewport
+  // mask cannot satisfy the same physical-height contract.
+  const auto image = view.viewport()->grab().toImage();
+  if (image.isNull()) return false;
+  const qreal dpr = image.devicePixelRatio();
+  const int left = static_cast<int>(std::floor(viewport->width() * dpr / 4));
+  const int right = std::min(image.width() - 1, static_cast<int>(std::ceil(viewport->width() * dpr * 3 / 4)) - 1);
+  const auto line = uwf::ui::DesignSystem::instance().color(uwf::ui::design::Color::LineSoft);
+  const auto separatorCoverage = [&](const int top, const int bottom) {
+    int maximum = 0;
+    const int firstPixel = std::max(0, static_cast<int>(std::floor(top * dpr)));
+    const int lastPixel = std::min(image.height() - 1, static_cast<int>(std::ceil((bottom + 1) * dpr)) - 1);
+    for (int y = firstPixel; y <= lastPixel; ++y) {
+      int pixels = 0;
+      for (int x = left; x <= right; ++x)
+        if (image.pixelColor(x, y) == line) ++pixels;
+      maximum = std::max(maximum, pixels);
+    }
+    return maximum;
+  };
+  const int minimumRule = (right - left + 1) / 2;
+  if (last.bottom() + 1 == viewport->height() && separatorCoverage(last.bottom() - 1, last.bottom()) > minimumRule) return false;
+  const auto firstRect = view.visualRect(first);
+  if (rows > 1 && first.row() + 1 < pages->rowCount() && firstRect.height() == rowHeight &&
+      separatorCoverage(firstRect.bottom() - 1, firstRect.bottom()) <= minimumRule)
+    return false;
   return last.height() == rowHeight && last.bottom() < viewport->height() &&
          (view.verticalScrollBar()->value() != view.verticalScrollBar()->maximum() || lastRow == pages->rowCount() - 1);
 }
@@ -704,26 +741,66 @@ void DialogBehaviorTests::recordSelectionKeepsPagedGeometry() {
     QTRY_COMPARE(details->verticalScrollBar()->maximum(), 0);
     QTRY_COMPARE(details->horizontalScrollBar()->maximum(), 0);
     QTRY_VERIFY(textDocumentFits(*details));
-    QTRY_COMPARE(details->height(), std::max(details->minimumHeight(), details->heightForWidth(details->width())));
+    QTRY_VERIFY(details->height() >= std::max(details->minimumHeight(), details->heightForWidth(details->width())));
   };
   const auto gapAfterTable = [&] { return inspector->mapTo(dialog.get(), QPoint()).y() - table->mapTo(dialog.get(), QPoint(0, table->height())).y(); };
   const auto gapAfterDetails = [&] {
     return pagination->mapTo(dialog.get(), QPoint()).y() - inspector->mapTo(dialog.get(), QPoint(0, inspector->height())).y();
   };
+  const auto settleRecordGeometry = [&] {
+    const auto geometry = [&] {
+      return std::array{dialog->geometry(), table->parentWidget()->geometry(), table->geometry(), table->viewport()->geometry(), inspector->geometry(),
+                        details->geometry(), pagination->geometry()};
+    };
+    auto previous = geometry();
+    int stableFrames = 0;
+    for (int frame = 0; frame < 50; ++frame) {
+      QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+      QTest::qWait(20);
+      static_cast<void>(dialog->grab());
+      const auto current = geometry();
+      stableFrames = current == previous ? stableFrames + 1 : 0;
+      if (stableFrames >= 2) return true;
+      previous = current;
+    }
+    return false;
+  };
+  if (locale == uwf::ui::I18n::Lang::Zh_CN && !dark && !qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR").isEmpty()) {
+    // Keep both comparison sizes even when the new physical-height assertion
+    // below catches a regression on its first iteration.
+    for (const QSize size : {QSize(1096, 754), QSize(720, 500)}) {
+      dialog->resize(size);
+      selectRecord(shortRow);
+      uwf::ui::PagedWindowLayout::forWindow(dialog.get()).fit();
+      QVERIFY(settleRecordGeometry());
+      QTRY_COMPARE(table->viewport()->height() % table->verticalHeader()->defaultSectionSize(), 0);
+      QVERIFY(uwf::test::saveScreenshot(*dialog, QStringLiteral("record-%1-%2x%3-short")
+                                                       .arg(logs ? QStringLiteral("logs") : QStringLiteral("overlay"))
+                                                       .arg(size.width())
+                                                       .arg(size.height())));
+    }
+  }
   for (const QSize size : {QSize(1096, 754), QSize(760, 754), QSize(720, 500)}) {
     dialog->resize(size);
     selectRecord(shortRow);
     // Consume the requested outer resize before recording its resulting
-    // geometry. Wrapped content can reflow afterwards; the visible row mask
-    // and page capacity, rather than physical viewport padding, are the contract.
+    // geometry. Wrapped content can reflow afterwards; both the viewport and
+    // its enclosing list surface must retain an exact number of complete rows.
     auto& windowLayout = uwf::ui::PagedWindowLayout::forWindow(dialog.get());
     windowLayout.fit();
+    // Wrapped text and queued interior layout passes can settle after the
+    // first viewport already has complete rows. Record the restoration
+    // baseline only after two rendered frames agree on all related bounds.
+    QVERIFY(settleRecordGeometry());
     QTRY_VERIFY(pagedViewportShowsWholeRows(*table, table->verticalHeader()->defaultSectionSize()));
     QTRY_VERIFY(textDocumentFits(*details));
-    QTRY_COMPARE(details->height(), std::max(details->minimumHeight(), details->heightForWidth(details->width())));
+    QTRY_VERIFY(details->height() >= std::max(details->minimumHeight(), details->heightForWidth(details->width())));
     const auto windowGeometry = dialog->geometry();
     const int shortDetailsHeight = details->height();
     const int rowsWithShortDetails = table->viewport()->height() / table->verticalHeader()->defaultSectionSize();
+    const int tableGap = gapAfterTable();
+    const int detailsGap = gapAfterDetails();
+    QVERIFY(tableGap > 0 && detailsGap > 0);
     const auto selectionCycle = rows + rows;
     for (const int row : selectionCycle) {
       selectRecord(row);
@@ -735,7 +812,8 @@ void DialogBehaviorTests::recordSelectionKeepsPagedGeometry() {
                                                                         .arg(dialog->width())
                                                                         .arg(dialog->height())));
       QTRY_VERIFY(pagedViewportShowsWholeRows(*table, table->verticalHeader()->defaultSectionSize()));
-      QVERIFY(gapAfterTable() > 0 && gapAfterDetails() > 0);
+      QTRY_COMPARE(gapAfterTable(), tableGap);
+      QTRY_COMPARE(gapAfterDetails(), detailsGap);
       const auto owners = scrollingAncestors(*details, *dialog);
       QVERIFY(owners.size() <= 1);
       if (row == longRow) {
@@ -755,6 +833,15 @@ void DialogBehaviorTests::recordSelectionKeepsPagedGeometry() {
     selectRecord(shortRow);
     QTRY_COMPARE(details->height(), shortDetailsHeight);
     QTRY_COMPARE(table->viewport()->height() / table->verticalHeader()->defaultSectionSize(), rowsWithShortDetails);
+    pages->goLast();
+    QTRY_COMPARE(table->verticalScrollBar()->value(), table->verticalScrollBar()->maximum());
+    QTRY_VERIFY(pagedViewportShowsWholeRows(*table, table->verticalHeader()->defaultSectionSize()));
+    pages->goFirst();
+    QTRY_COMPARE(table->verticalScrollBar()->value(), 0);
+    QTRY_VERIFY(pagedViewportShowsWholeRows(*table, table->verticalHeader()->defaultSectionSize()));
+    QCOMPARE(dialog->geometry(), windowGeometry);
+    QCOMPARE(gapAfterTable(), tableGap);
+    QCOMPARE(gapAfterDetails(), detailsGap);
   }
 }
 
@@ -1622,8 +1709,10 @@ void DialogBehaviorTests::commitReportDetailsGrowForWrappedTextAndPreserveCopyin
     QVERIFY(table && details && copy && done);
     dialog->resize(900, 690);
     QTRY_COMPARE(details->toPlainText(), rows.front().path);
-    QTRY_COMPARE(details->height(), std::max(details->minimumHeight(), details->heightForWidth(details->width())));
+    QTRY_VERIFY(details->height() >= std::max(details->minimumHeight(), details->heightForWidth(details->width())));
     QTRY_COMPARE(table->viewport()->height() % table->verticalHeader()->defaultSectionSize(), 0);
+    QVERIFY(uwf::test::saveScreenshot(*dialog, QStringLiteral("commit-record-900x690-short")));
+    QTRY_VERIFY(pagedViewportShowsWholeRows(*table, table->verticalHeader()->defaultSectionSize()));
     const int shortHeight = details->height();
     const int rowsWithShortDetails = table->viewport()->height() / table->verticalHeader()->defaultSectionSize();
     table->selectRow(1);
@@ -1642,6 +1731,7 @@ void DialogBehaviorTests::commitReportDetailsGrowForWrappedTextAndPreserveCopyin
       QVERIFY(owner != details);
       QTRY_VERIFY(exposeTextPosition(*details, *owner, *dialog, 0));
       QTRY_VERIFY(exposeTextPosition(*details, *owner, *dialog, expectedDetails.size() - 1));
+      QVERIFY(uwf::test::saveScreenshot(*dialog, QStringLiteral("commit-record-%1x%2-long").arg(size.width()).arg(size.height())));
       QTRY_VERIFY(pagedViewportShowsWholeRows(*table, table->verticalHeader()->defaultSectionSize()));
       QVERIFY(details->textInteractionFlags().testFlag(Qt::TextSelectableByMouse));
       copy->click();
@@ -1649,9 +1739,13 @@ void DialogBehaviorTests::commitReportDetailsGrowForWrappedTextAndPreserveCopyin
       QVERIFY(!done->visibleRegion().isEmpty());
       QVERIFY(dialog->rect().contains(QRect(done->mapTo(dialog, QPoint()), done->size())));
     }
+    dialog->resize(900, 690);
+    QTRY_COMPARE(dialog->size(), QSize(900, 690));
     table->selectRow(0);
     QTRY_COMPARE(details->toPlainText(), rows.front().path);
     QTRY_COMPARE(details->height(), shortHeight);
+    QTRY_COMPARE(table->viewport()->height() / table->verticalHeader()->defaultSectionSize(), rowsWithShortDetails);
+    QTRY_VERIFY(pagedViewportShowsWholeRows(*table, table->verticalHeader()->defaultSectionSize()));
     inspected = true;
   });
   uwf::ui::showCommitReport(nullptr, rows, uwf::app::CommitOperation::Persist);

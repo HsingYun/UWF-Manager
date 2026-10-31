@@ -422,22 +422,15 @@ Continue and discard them?</source><translation>هناك %1 تغيير لم يُ
     <message><source>Unclosed double quote in command</source><translation>علامة اقتباس مزدوجة غير مغلقة في الأمر</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>وسيطة إضافية غير متوقعة: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>أمر uwfmgr غير مدعوم (لا يقابله إجراء في الواجهة)</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>التغييرات المعلقة: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>الحالة المطلوبة متحققة؛ لا حاجة إلى إجراء</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>المسار خارج هذه الوحدة أو أنها لا تدعم استثناءات الملفات (مثل exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>مرفوض من قائمة حظر UWF (ملفات النظام أو Windows أو ملف الترحيل وغيرها)</translation></message>
-    <message><source>Pending filter %1</source><translation>التغييرات المعلقة: عامل التصفية %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>عامل التصفية: الحالة المطلوبة متحققة؛ لا حاجة إلى إجراء</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>التغييرات المعلقة: التراكب · النوع → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>التراكب · النوع: %1 (الحالة المطلوبة متحققة؛ لا حاجة إلى إجراء)</translation></message>
     <message><source>Invalid size value: %1</source><translation>قيمة غير صالحة: الحجم: %1</translation></message>
     <message><source>maximum size</source><translation>الحجم الأقصى</translation></message>
     <message><source>warning threshold</source><translation>حد التحذير</translation></message>
     <message><source>critical threshold</source><translation>الحد الحرج</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>التغييرات المعلقة: التراكب %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>التراكب %1: %2 MB (الحالة المطلوبة متحققة؛ لا حاجة إلى إجراء)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>الإعدادات العامة غير متاحة؛ لم يُضف الأمر إلى التغييرات المعلّقة.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>وحدة غير معروفة %1 (لا يوجد قرص مؤهل لـ UWF بهذا الحرف)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>التغييرات المعلقة: وحدة التخزين %1 · حماية UWF: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>وحدة التخزين %1: الحالة المطلوبة متحققة؛ لا حاجة إلى إجراء</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: لا يحتوي المسار على حرف محرك أقراص. تحديد وحدة التخزين المستهدفة: فشل.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>وحدة التخزين %1: UWF غير مدعوم</translation></message>
@@ -749,8 +742,8 @@ Continue and discard them?</source><translation>هناك %1 تغيير لم يُ
     <message><source>uwfmgr commands</source><translation>أوامر uwfmgr</translation></message>
     <message><source>Editable</source><translation>قابل للتحرير</translation></message>
     <message><source>Paste commands, or load them from a file…</source><translation>الصق الأوامر، أو حمّلها من ملف…</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>ينشئ الاستيراد تغييرات معلّقة. استخدم المراجعة والتطبيق لكتابتها إلى النظام.</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>لا تزال الأوامر المستوردة بحاجة إلى التطبيق. حدّد صفاً لعرض النتيجة الكاملة.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>يحدّث الاستيراد مسودة الإعدادات. استخدم المراجعة والتطبيق لكتابة التغييرات إلى النظام.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>يسرد التقرير نتائج الأوامر الخاصة بمسودة الإعدادات. حدد صفًا لعرض الأمر والنتيجة بالكامل.</translation></message>
     <message><source>Not written to the system</source><translation>لم يُكتب إلى النظام</translation></message>
     <message><source>UTF-8 · %1 lines</source><translation>UTF-8 · %1 من الأسطر</translation></message>
     <message><source>Imported: %1</source><translation>تم الاستيراد: %1</translation></message>
@@ -1014,5 +1007,13 @@ Saving will replace its contents.</source><translation>يوجد ملف بالف�
     <message><source>Downloads</source><translation>التنزيلات</translation></message>
     <message><source>Documents</source><translation>المستندات</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>توقّف الحفظ التلقائي للملفات. عالج الخطأ قبل المحاولة مرة أخرى.</translation></message>
+    <message><source>No net change for this setting</source><translation>لم تتغير القيمة النهائية لهذا الإعداد بعد الاستيراد</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>القيمة النهائية للمسودة: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>القيمة النهائية للمسودة: %1 → %2 (القيمة المطلوبة: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>القيمة المطلوبة: %1 → %2؛ استُبدلت بأمر لاحق. القيمة النهائية للمسودة → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>تم تحديث مسودة %1</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>تم تحديث مسودة إعداد حماية وحدة التخزين %1 → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>حدد الإدخالات المراد إزالتها.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>لا يمكن استعادة الإدخالات المحددة حاليًا.</translation></message>
 </context>
 </TS>

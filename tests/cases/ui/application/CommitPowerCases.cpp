@@ -70,7 +70,6 @@
 #include "ui/widgets/Disclosure.h"
 #include "windows/commit/WindowsCommitTraversalSource.h"
 #include "windows/system/SystemHardwareInfo.h"
-#include "windows/system/WindowsShell.h"
 
 class ApplicationCommitPowerTests final : public ApplicationUiTest {
   Q_OBJECT
@@ -185,7 +184,7 @@ void ApplicationCommitPowerTests::commitDispatcherConfirmsAndReportsARealFileThr
   QVERIFY(file.write("committed payload") > 0);
   QVERIFY(file.flush());
   const QString path = QDir::toNativeSeparators(file.fileName());
-  const QString drive = uwf::windows::shell::extractDriveLetter(path);
+  const QString drive = QString::fromStdString(drive::fromPath(path.toStdString()));
   QVERIFY(!drive.isEmpty());
 
   RecordingWmiOperations wmi;
@@ -592,7 +591,7 @@ void ApplicationCommitPowerTests::safePowerActionsRequireConfirmationAndUseTheIn
   QVERIFY(thirdFile.open(QIODevice::WriteOnly));
   QVERIFY(thirdFile.write("third") > 0);
   thirdFile.close();
-  const QString drive = uwf::windows::shell::extractDriveLetter(stagedPath);
+  const QString drive = QString::fromStdString(drive::fromPath(stagedPath.toStdString()));
   QVERIFY(!drive.isEmpty());
 
   RecordingWmiOperations stagedWmi;

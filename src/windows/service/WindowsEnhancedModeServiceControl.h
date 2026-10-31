@@ -13,6 +13,7 @@ class WindowsEnhancedModeServiceControl final : public app::EnhancedModeServiceC
   void start() override;
   [[nodiscard]] std::vector<app::RegistryCommitTarget> planRegistryCommit() const override;
   [[nodiscard]] std::vector<app::RegistryCommitTarget> planRegistryDeletion() const override;
+  [[nodiscard]] bool registryTargetExists(const app::RegistryCommitTarget& target) const override;
   void deleteRegistryRemnants() override;
   [[nodiscard]] Removal stopAndMarkForDeletion() override;
 };

@@ -49,7 +49,6 @@ class TrayController : public QObject, public QAbstractNativeEventFilter {
   // 因而保持不动。
   void applyUsageState(app::OverlayUsageState state);
   void setHubState(bool available, bool enabled);
-  void setPowerActionsEnabled(bool enabled);
   void setOperationAvailability(bool powerAllowed, bool exitAllowed);
  signals:
   // 菜单即将弹出时请求唯一的数据拥有者刷新；本类不自行访问 WMI。

@@ -308,8 +308,8 @@ void ApplicationConfigurationTests::importRoutingAndPendingCollectionCoverInvali
   QCOMPARE(pending.addRegistryExclusions.front(), std::string("HKEY_LOCAL_MACHINE\\Software\\Vendor"));
   QVERIFY(!pending.addFileExclusions.contains("D:"));
 
-  const auto withoutGlobal = app::applyImportCommands(commands.mid(0, 1), nullptr, {}, nullptr);
-  QCOMPARE(withoutGlobal.front().status, app::ImportResult::Status::Duplicate);
+  const auto withoutGlobal = app::applyImportCommands(commands.mid(0, 1), nullptr, {}, nullptr, drive::fromPath);
+  QCOMPARE(withoutGlobal.front().status, app::ImportResult::Status::Failed);
 }
 
 void ApplicationConfigurationTests::importCommandsPreserveOrderAcrossRepeatedTargets() {

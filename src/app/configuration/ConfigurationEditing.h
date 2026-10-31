@@ -15,6 +15,9 @@ namespace uwf::app {
 class GlobalConfigurationEditing {
  public:
   virtual ~GlobalConfigurationEditing() = default;
+  [[nodiscard]] virtual bool available() const = 0;
+  [[nodiscard]] virtual bool filterEnabled() const = 0;
+  [[nodiscard]] virtual core::OverlayConfig overlayConfiguration() const = 0;
   virtual bool importFilterEnabled(bool value) = 0;
   virtual bool importOverlayType(core::OverlayType type) = 0;
   virtual bool importOverlayMaxMb(uint32_t value) = 0;

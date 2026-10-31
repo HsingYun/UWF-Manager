@@ -341,8 +341,8 @@ FilePickerDialog::FilePickerDialog(std::shared_ptr<presentation::FilePickerViewM
   m_table->setFont(tableFont);
   m_table->verticalHeader()->hide();
   m_table->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
-  m_table->verticalHeader()->setDefaultSectionSize(42);
-  m_table->horizontalHeader()->setFixedHeight(38);
+  m_table->verticalHeader()->setDefaultSectionSize(design::tableRowHeight);
+  m_table->horizontalHeader()->setFixedHeight(design::tableHeaderHeight);
   m_table->horizontalHeader()->setStretchLastSection(false);
   m_table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
   m_table->setColumnWidth(1, 150);
@@ -559,6 +559,7 @@ void FilePickerDialog::createDirectory() {
   frame->setActions(buttons);
   connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
   connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+  connect(name, &QLineEdit::returnPressed, &dialog, &QDialog::accept);
   if (dialog.exec() == QDialog::Accepted) m_model->createDirectory(name->text());
 }
 void FilePickerDialog::renameEntry(const int row) {
@@ -576,6 +577,7 @@ void FilePickerDialog::renameEntry(const int row) {
   frame->setActions(buttons);
   connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
   connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+  connect(name, &QLineEdit::returnPressed, &dialog, &QDialog::accept);
   if (dialog.exec() == QDialog::Accepted) m_model->renameEntry(row, name->text());
 }
 QStringList FilePickerDialog::selectedPaths() const { return m_model->selectedPaths(); }

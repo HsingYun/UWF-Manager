@@ -124,10 +124,11 @@ bool GlobalConfigurationEditor::importOverlayType(const core::OverlayType value)
 }
 
 bool GlobalConfigurationEditor::importNumber(const uint32_t value, uint32_t& target, Range& range) {
-  if (!m_available || target == value) return false;
+  const auto imported = editorValue(value);
+  if (!m_available || target == value || target == imported) return false;
   range = {0, kEditorMaximum};
   m_rangesNormalized = false;
-  target = editorValue(value);
+  target = imported;
   publishEdit();
   return true;
 }

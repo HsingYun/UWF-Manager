@@ -3,8 +3,11 @@
 #pragma once
 
 #include <QVBoxLayout>
+#include <QPointer>
 #include <QWidget>
 #include <algorithm>
+
+class QAbstractItemView;
 
 namespace uwf::ui {
 
@@ -15,6 +18,11 @@ namespace uwf::ui {
 class FlexibleColumnLayout final : public QVBoxLayout {
  public:
   explicit FlexibleColumnLayout(QWidget* parent) : QVBoxLayout(parent) {}
+  // The records surface wraps a single item view; its spare row remainder
+  // belongs to the adjacent details surface.
+  void setPagedDetails(QWidget* records, QAbstractItemView* view, QWidget* details, int rowHeight);
+  void setGeometry(const QRect& rect) override;
+  [[nodiscard]] QSize minimumSize() const override;
   [[nodiscard]] int heightForWidth(const int width) const override {
     const auto margins = contentsMargins();
     const int available = std::max(0, width - margins.left() - margins.right());
@@ -33,11 +41,23 @@ class FlexibleColumnLayout final : public QVBoxLayout {
       const int itemWidth = std::clamp(available, std::min(item->minimumSize().width(), maximumWidth), maximumWidth);
       const int preferred = item->hasHeightForWidth() ? (flexible ? item->minimumHeightForWidth(itemWidth) : item->heightForWidth(itemWidth))
                                                       : (flexible ? item->minimumSize().height() : item->sizeHint().height());
-      height += std::max(preferred, item->minimumSize().height());
+      const int minimum = item->widget() == m_records ? pagedRecordsMinimumHeight() : item->minimumSize().height();
+      height += std::max(preferred, minimum);
     }
     return height;
   }
   [[nodiscard]] int minimumHeightForWidth(const int width) const override { return heightForWidth(width); }
+
+ protected:
+  bool eventFilter(QObject* object, QEvent* event) override;
+
+ private:
+  [[nodiscard]] int pagedRecordsMinimumHeight() const;
+  QPointer<QWidget> m_records;
+  QPointer<QWidget> m_details;
+  QPointer<QAbstractItemView> m_view;
+  int m_rowHeight = 0;
+  bool m_distributingHeight = false;
 };
 
 }  // namespace uwf::ui

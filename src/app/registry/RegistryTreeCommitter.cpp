@@ -6,7 +6,6 @@
 #include <stdexcept>
 #include <utility>
 
-#include "app/ports/RegistryKey.h"
 #include "shared/Log.h"
 
 namespace uwf::app {
@@ -57,7 +56,8 @@ RegistryCommitResult RegistryTreeCommitter::commit(const std::vector<RegistryCom
   return result;
 }
 
-RegistryCommitResult RegistryTreeCommitter::commitDeletion(const std::vector<RegistryCommitTarget>& targets) const {
+RegistryCommitResult RegistryTreeCommitter::commitDeletion(const std::vector<RegistryCommitTarget>& targets, const TargetExists& exists) const {
+  if (!targets.empty() && !exists) throw std::invalid_argument("registry deletion requires a target existence probe");
   RegistryCommitResult result;
   result.attempted = targets.size();
   std::vector<const RegistryCommitTarget*> existingTargets;
@@ -65,8 +65,7 @@ RegistryCommitResult RegistryTreeCommitter::commitDeletion(const std::vector<Reg
 
   for (const auto& target : targets) {
     try {
-      const bool exists = target.valueName.empty() ? regkey::keyExists(target.key) : regkey::valueExists(target.key, target.valueName);
-      if (!exists) {
+      if (!exists(target)) {
         ++result.skipped;
         continue;
       }

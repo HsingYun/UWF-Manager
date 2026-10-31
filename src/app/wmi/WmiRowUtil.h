@@ -46,8 +46,13 @@ std::string requireString(const WmiRow& r, const std::string& key, EmptyString e
 // EmbeddedInstance 既可能展开成普通字段，也可能只以 __MOF 文本返回。两种
 // provider 表示统一严格读取；缺失、类型错误或空值均抛出异常。
 std::string requireEmbeddedString(const WmiRow& r, const std::string& propName);
+// MOF UInt64 values accept bare or quoted decimal digits, including zero.
+uint64_t requireEmbeddedUInt64(const WmiRow& r, const std::string& propName);
 
-// 从 EmbeddedInstance 的 __MOF 文本提取指定属性。
+// Read a complete flat MOF property list with an optional instance wrapper.
+// Names match in full without ASCII case sensitivity. Strings, escapes and
+// comments delimit properties; duplicate or malformed
+// properties fail explicitly. A missing string property returns an empty value.
 std::string extractFromMof(const std::string& mof, const std::string& propName);
 
 // 把一整行以 "k=v, k=v..." 形式写进调试日志（UWF_LOG_D）。

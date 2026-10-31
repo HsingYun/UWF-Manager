@@ -21,6 +21,7 @@ function(uwf_add_application_case suite feature)
     )
 endfunction()
 uwf_add_application_case(ConfigurationDraftTests configuration)
+uwf_add_application_case(ConfigurationImportTests configuration)
 uwf_add_application_case(ConfigurationExecutionTests configuration UwfTestApplicationSupport)
 uwf_add_test(UwfConfigurationLifecycleTests
     LAYER presentation FEATURE configuration-lifecycle RUNTIME eventloop
@@ -39,9 +40,9 @@ uwf_add_application_case(CommandRenderingTests commands)
 uwf_add_application_case(OverlayPlanningTests configuration)
 uwf_add_application_case(CommitBatchExecutionTests commit)
 uwf_add_application_case(CommitPreparationTests commit)
-uwf_add_application_case(ExclusionEditingTests exclusions UwfWindows)
-uwf_add_application_case(ConfigurationEditSessionTests configuration UwfWindows)
-uwf_add_application_case(RegistryTreeCommitterTests registry UwfTestApplicationSupport UwfWindows)
+uwf_add_application_case(ExclusionEditingTests exclusions)
+uwf_add_application_case(ConfigurationEditSessionTests configuration)
+uwf_add_application_case(RegistryTreeCommitterTests registry UwfTestApplicationSupport)
 uwf_add_application_case(FileStagingCommitterTests staging UwfTestApplicationSupport UwfWindows)
 
 uwf_add_test(UwfFileStagingCoordinatorTests
@@ -162,6 +163,27 @@ uwf_add_test(UwfComboBoxTests
     LIBRARIES UwfUi UwfWindows Qt6::Test
 )
 
+uwf_add_test(UwfPickerKeyboardTests
+    LAYER ui FEATURE interaction RUNTIME desktop
+    RESOURCES TRANSLATIONS
+    SOURCES ui/PickerKeyboardTests.cpp
+    LIBRARIES UwfUi UwfWindows Qt6::Test
+)
+
+uwf_add_test(UwfExclusionRemovalHintTests
+    LAYER ui FEATURE exclusions RUNTIME desktop
+    RESOURCES TRANSLATIONS
+    SOURCES ui/ExclusionRemovalHintTests.cpp
+    LIBRARIES UwfUi Qt6::Test
+)
+
+uwf_add_test(UwfPowerAvailabilityTests
+    LAYER ui FEATURE power RUNTIME desktop
+    RESOURCES
+    SOURCES ui/PowerAvailabilityTests.cpp
+    LIBRARIES UwfUi Qt6::Test
+)
+
 uwf_add_test(UwfHubLifecycleTests
     LAYER ui FEATURE overlay RUNTIME desktop
     RESOURCES
@@ -198,6 +220,13 @@ uwf_add_test(UwfDialogLayoutTests
     RESOURCES TRANSLATIONS
     SOURCES ui/DialogLayoutTests.cpp
     LIBRARIES UwfUi UwfWindows UwfTestUiSupport UwfTestVisualSupport Qt6::Svg Qt6::Test advapi32 ole32 shell32 user32 wbemuuid
+)
+
+uwf_add_test(UwfPagedDetailsLayoutTests
+    LAYER ui FEATURE pagination RUNTIME desktop
+    RESOURCES
+    SOURCES ui/PagedDetailsLayoutTests.cpp
+    LIBRARIES UwfUi Qt6::Test
 )
 
 # Feature suites share fixtures, not their execution state or entry point.
@@ -270,6 +299,11 @@ uwf_add_test(UwfUiComponentLinkTests
 uwf_add_test(UwfComPtrTests
     LAYER windows FEATURE resources RUNTIME appless
     SOURCES windows/ComPtrTests.cpp
+    LIBRARIES Qt6::Test
+)
+uwf_add_test(UwfWmiMethodCompletionTests
+    LAYER windows FEATURE wmi RUNTIME appless
+    SOURCES windows/WmiMethodCompletionTests.cpp
     LIBRARIES Qt6::Test
 )
 uwf_add_test(UwfWindowsTextFileCreationTests

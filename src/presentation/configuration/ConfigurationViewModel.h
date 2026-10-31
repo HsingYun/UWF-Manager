@@ -11,7 +11,8 @@ namespace uwf::presentation {
 class ConfigurationViewModel final : public QObject {
   Q_OBJECT
  public:
-  explicit ConfigurationViewModel(uint32_t totalRamMb, std::function<bool()> stagingData = {}, QObject* parent = nullptr);
+  explicit ConfigurationViewModel(uint32_t totalRamMb, std::function<bool()> stagingData = {}, QString systemDrive = {},
+                                  app::DriveResolver resolveDrive = {}, QObject* parent = nullptr);
   [[nodiscard]] const std::shared_ptr<GlobalConfigurationViewModel>& global() const { return m_global; }
   std::shared_ptr<VolumeConfigurationViewModel> addVolume(const core::VolumeInfo& volume, bool hostsRegistry);
   void clearVolumes();

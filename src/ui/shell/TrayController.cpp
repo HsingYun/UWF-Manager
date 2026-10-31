@@ -83,7 +83,7 @@ TrayController::TrayController(QWidget* ownerWindow, QObject* parent)
 
   m_menu = new OverlayContextMenu(ownerWindow);
   m_menu->setHubState(false, false);
-  m_menu->setPowerActionsEnabled(false);
+  m_menu->setOperationAvailability(false, true);
   connect(m_menu, &OverlayContextMenu::showMainWindowRequested, this, &TrayController::activateWindowRequested);
   connect(m_menu, &OverlayContextMenu::toggleHubRequested, this, &TrayController::toggleHubRequested);
   connect(m_menu, &OverlayContextMenu::safeShutdownRequested, this, &TrayController::safeShutdownRequested);
@@ -308,9 +308,6 @@ void TrayController::setHubState(const bool available, const bool enabled) {
   if (m_menu) m_menu->setHubState(available, enabled);
 }
 
-void TrayController::setPowerActionsEnabled(const bool enabled) {
-  if (m_menu) m_menu->setPowerActionsEnabled(enabled);
-}
 void TrayController::setOperationAvailability(const bool powerAllowed, const bool exitAllowed) {
   if (m_menu) m_menu->setOperationAvailability(powerAllowed, exitAllowed);
 }

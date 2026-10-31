@@ -76,7 +76,6 @@ class RegistryPickerViewModel final : public QAbstractItemModel {
 
  signals:
   void childrenLoadFailed(const QModelIndex& parent, const QString& message);
-  void valuesLoadFailed(const QString& message);
   void accessStateChanged();
 
  private:

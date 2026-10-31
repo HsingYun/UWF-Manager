@@ -164,6 +164,13 @@ class WmiApiBehaviorTests final : public QObject {
   void wmiValueConversionMatrixCoversKindsAndBoundaries();
   void rowDecodingDistinguishesMissingNullWrongTypeAndEmpty();
   void embeddedMofDecodingHandlesEscapesAndMissingFields();
+  void embeddedMofPropertiesHaveStructuralBoundaries();
+  void embeddedMofUInt64LiteralsPreserveBoundaries();
+  void embeddedMofRejectsMalformedAndAmbiguousProperties_data();
+  void embeddedMofRejectsMalformedAndAmbiguousProperties();
+  void embeddedDirectFieldsCannotBeMaskedByMof();
+  void overlayMofSizeCannotComeFromAFileName_data();
+  void overlayMofSizeCannotComeFromAFileName();
   void wmiErrorsPreserveKnownAndUnknownCodes();
   void apiSessionLookupHonorsSessionAndPredicate();
   void filterRequiresExactlyOneRowAndConfirmsWrites();
@@ -280,6 +287,113 @@ void WmiApiBehaviorTests::embeddedMofDecodingHandlesEscapesAndMissingFields() {
   uwf::app::wmi::WmiRow embedded{{"__MOF", uwf::app::wmi::WmiValue::fromString(mof)}};
   QCOMPARE(uwf::app::wmi::row::requireEmbeddedString(embedded, "FileName"), std::string("\\Users\"quoted\".txt"));
   QVERIFY_THROWS_EXCEPTION(uwf::app::wmi::WmiDecodeError, (void)uwf::app::wmi::row::requireEmbeddedString(embedded, "Absent"));
+}
+
+void WmiApiBehaviorTests::embeddedMofPropertiesHaveStructuralBoundaries() {
+  const std::string mof = R"mof(
+    /* FileName = "comment"; FileSize = 999; */
+    INSTANCE OF UWF_OverlayFile {
+      OtherFileName = "prefix";
+      FileName /* between name and delimiter */ = "\\Data\\FileSize = 999;.txt";
+      // FileSize = 999;
+      fIlEsIzE = /* before value */ "42";
+    }; // trailing comment
+  )mof";
+  const uwf::app::wmi::WmiRow row{{"__MOF", uwf::app::wmi::WmiValue::fromString(mof)}};
+  QCOMPARE(uwf::app::wmi::row::requireEmbeddedString(row, "filename"), std::string(R"(\Data\FileSize = 999;.txt)"));
+  QCOMPARE(uwf::app::wmi::row::requireEmbeddedUInt64(row, "FileSize"), uint64_t{42});
+  QCOMPARE(uwf::app::wmi::row::extractFromMof(R"(OtherFileName = "prefix"; FileName = "\\real.txt";)", "FileName"), std::string("\\real.txt"));
+  QCOMPARE(uwf::app::wmi::row::extractFromMof(R"(OtherFileName = "prefix";)", "FileName"), std::string{});
+  QCOMPARE(uwf::app::wmi::row::extractFromMof(R"(FileName = "\\Data\unknown;/*literal*/{x}\"quoted\".txt";)", "FileName"),
+           std::string(R"(\Data\unknown;/*literal*/{x}"quoted".txt)"));
+  const uwf::app::wmi::WmiRow wrongType{
+      {"__MOF", uwf::app::wmi::WmiValue::fromString(R"(OtherFileName = "prefix"; FileName = 42;)")}};
+  QVERIFY_THROWS_EXCEPTION(uwf::app::wmi::WmiDecodeError, (void)uwf::app::wmi::row::requireEmbeddedString(wrongType, "FileName"));
+}
+
+void WmiApiBehaviorTests::embeddedMofUInt64LiteralsPreserveBoundaries() {
+  for (const auto& [literal, expected] : std::vector<std::pair<std::string, uint64_t>>{
+           {"0", uint64_t{0}}, {"\"0\"", uint64_t{0}}, {"42", uint64_t{42}}, {"\"42\"", uint64_t{42}},
+           {"18446744073709551615", std::numeric_limits<uint64_t>::max()}, {"\"18446744073709551615\"", std::numeric_limits<uint64_t>::max()}}) {
+    const uwf::app::wmi::WmiRow row{{"__MOF", uwf::app::wmi::WmiValue::fromString("FileSize = " + literal + ";")}};
+    QCOMPARE(uwf::app::wmi::row::requireEmbeddedUInt64(row, "FileSize"), expected);
+  }
+}
+
+void WmiApiBehaviorTests::embeddedMofRejectsMalformedAndAmbiguousProperties_data() {
+  QTest::addColumn<QString>("mof");
+  QTest::newRow("missing-exact-property") << QStringLiteral("OtherFileSize = 999;");
+  QTest::newRow("filename-cannot-mask-invalid-size") << QStringLiteral(R"(FileName = "\\Data\\FileSize = 999;.txt"; FileSize = "bad";)");
+  QTest::newRow("quoted-empty-size") << QStringLiteral("FileSize = \"\";");
+  QTest::newRow("negative") << QStringLiteral("FileSize = -1;");
+  QTest::newRow("positive-sign") << QStringLiteral("FileSize = +42;");
+  QTest::newRow("fraction") << QStringLiteral("FileSize = 42.0;");
+  QTest::newRow("bare-overflow") << QStringLiteral("FileSize = 18446744073709551616;");
+  QTest::newRow("quoted-overflow") << QStringLiteral("FileSize = \"18446744073709551616\";");
+  QTest::newRow("trailing-number-text") << QStringLiteral("FileSize = 42junk;");
+  QTest::newRow("missing-value") << QStringLiteral("FileSize = ;");
+  QTest::newRow("missing-semicolon") << QStringLiteral("FileSize = 42");
+  QTest::newRow("missing-property-separator") << QStringLiteral("FileSize = 42 Other = 1;");
+  QTest::newRow("duplicate-property") << QStringLiteral("FileSize = 42; FileSize = 43;");
+  QTest::newRow("case-insensitive-duplicate") << QStringLiteral("FileSize = 42; filesize = 43;");
+  QTest::newRow("duplicate-unrelated-property") << QStringLiteral("Other = 1; Other = 2; FileSize = 42;");
+  QTest::newRow("unterminated-instance") << QStringLiteral("instance of X { FileSize = 42;");
+  QTest::newRow("trailing-instance-data") << QStringLiteral("instance of X { FileSize = 42; }; Other = 1;");
+  QTest::newRow("unterminated-string") << QStringLiteral("FileSize = 42; FileName = \"unterminated;");
+  QTest::newRow("unterminated-comment") << QStringLiteral("FileSize = 42; /* unterminated");
+  QTest::newRow("only-in-comment") << QStringLiteral("/* FileSize = 999; */ Other = 1;");
+  QTest::newRow("nested-value-is-not-a-flat-property") << QStringLiteral("Other = { FileSize = 999; }; FileSize = 42;");
+  QTest::newRow("malformed-unrelated-scalar") << QStringLiteral("Other = ); FileSize = 42;");
+}
+
+void WmiApiBehaviorTests::embeddedMofRejectsMalformedAndAmbiguousProperties() {
+  QFETCH(QString, mof);
+  const uwf::app::wmi::WmiRow row{{"__MOF", uwf::app::wmi::WmiValue::fromString(mof.toStdString())}};
+  QVERIFY_THROWS_EXCEPTION(uwf::app::wmi::WmiDecodeError, (void)uwf::app::wmi::row::requireEmbeddedUInt64(row, "FileSize"));
+}
+
+void WmiApiBehaviorTests::embeddedDirectFieldsCannotBeMaskedByMof() {
+  using Value = uwf::app::wmi::WmiValue;
+  const uwf::app::wmi::WmiRow direct{{"FileName", Value::fromString("\\direct")}, {"FileSize", Value::fromUInt(42)},
+                                    {"__MOF", Value::fromString("not MOF")}};
+  QCOMPARE(uwf::app::wmi::row::requireEmbeddedString(direct, "FileName"), std::string("\\direct"));
+  QCOMPARE(uwf::app::wmi::row::requireEmbeddedUInt64(direct, "FileSize"), uint64_t{42});
+  const auto mof = Value::fromString(R"(FileName = "\\fallback"; FileSize = 999;)");
+  for (const auto& value : std::vector<Value>{Value{}, Value::fromBool(true), Value::fromInt(-1), Value::fromDouble(42), Value::fromString("bad")}) {
+    const uwf::app::wmi::WmiRow row{{"FileSize", value}, {"__MOF", mof}};
+    QVERIFY_THROWS_EXCEPTION(uwf::app::wmi::WmiDecodeError, (void)uwf::app::wmi::row::requireEmbeddedUInt64(row, "FileSize"));
+  }
+  for (const auto& value : std::vector<Value>{Value{}, Value::fromUInt(42), Value::fromString("")}) {
+    const uwf::app::wmi::WmiRow row{{"FileName", value}, {"__MOF", mof}};
+    QVERIFY_THROWS_EXCEPTION(uwf::app::wmi::WmiDecodeError, (void)uwf::app::wmi::row::requireEmbeddedString(row, "FileName"));
+  }
+}
+
+void WmiApiBehaviorTests::overlayMofSizeCannotComeFromAFileName_data() {
+  QTest::addColumn<QString>("literal");
+  QTest::addColumn<bool>("valid");
+  QTest::newRow("real-size") << QStringLiteral("42") << true;
+  QTest::newRow("invalid-real-size") << QStringLiteral("\"invalid\"") << false;
+}
+
+void WmiApiBehaviorTests::overlayMofSizeCannotComeFromAFileName() {
+  QFETCH(QString, literal);
+  QFETCH(bool, valid);
+  MemoryWmiOperations session;
+  const auto mof = std::string(R"(instance of UWF_OverlayFile { FileName = "\\Data\\FileSize = 999;.txt"; FileSize = )") + literal.toStdString() + "; };";
+  uwf::app::wmi::WmiMethodOutput output;
+  output.arrays["OverlayFiles"] = {{{"__MOF", uwf::app::wmi::WmiValue::fromString(mof)}}};
+  session.readResults.push_back(output);
+  const app::provider::UwfOverlay overlay(session);
+  const app::provider::OverlayRow row{"overlay"};
+  if (!valid) {
+    QVERIFY_THROWS_EXCEPTION(uwf::app::wmi::WmiDecodeError, (void)overlay.getOverlayFiles(row, "C:"));
+    return;
+  }
+  const auto files = overlay.getOverlayFiles(row, "C:");
+  QCOMPARE(files.size(), std::size_t{1});
+  QCOMPARE(files.front().fileName, std::string(R"(\Data\FileSize = 999;.txt)"));
+  QCOMPARE(files.front().fileSize, uint64_t{42});
 }
 
 void WmiApiBehaviorTests::wmiErrorsPreserveKnownAndUnknownCodes() {

@@ -9,9 +9,10 @@
 #include "TablePresentation.h"
 #include "design/DesignTokens.h"
 #include "presentation/common/PageProxyModel.h"
+#include "ui/design/ItemViewGeometry.h"
 
 namespace uwf::ui {
-PagedTableView::PagedTableView(presentation::PageProxyModel& pages, const int rowHeight, QWidget* parent) : QTableView(parent) {
+PagedTableView::PagedTableView(presentation::PageProxyModel& pages, const int rowHeight, QWidget* parent) : QTableView(parent), m_rowHeight(rowHeight) {
   setModel(&pages);
   configureReportTable(this);
   setFrameShape(QFrame::NoFrame);
@@ -29,8 +30,12 @@ PagedTableView::PagedTableView(presentation::PageProxyModel& pages, const int ro
   verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
   verticalHeader()->setDefaultSectionSize(rowHeight);
   horizontalHeader()->setFixedHeight(design::tableHeaderHeight);
-  setMinimumHeight(design::tableHeaderHeight + rowHeight);
   new PagedViewController(this, pages, rowHeight);
+}
+QSize PagedTableView::minimumSizeHint() const {
+  auto minimum = QTableView::minimumSizeHint();
+  minimum.setHeight(minimumItemViewHeight(*this, m_rowHeight, design::tableHeaderHeight + m_rowHeight));
+  return minimum;
 }
 void PagedTableView::keyPressEvent(QKeyEvent* event) {
   QTableView::keyPressEvent(event);

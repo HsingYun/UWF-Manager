@@ -131,7 +131,6 @@ ExclusionListWidget::ExclusionListWidget(std::shared_ptr<presentation::Exclusion
 
   m_rmBtn = new QPushButton(tm.iconWithColor(":/icons/remove.svg", btnIconFg), I18n::tr("Remove selected"), this);
   m_rmBtn->setObjectName("dangerBtn");
-  I18n::bind(m_rmBtn, [target = m_rmBtn] { target->setToolTip(I18n::tr("Remove the selected entries from the exclusion list. Takes effect after Apply.")); });
   header->addWidget(m_rmBtn);
   layout->addWidget(m_commands);
 
@@ -380,11 +379,10 @@ void ExclusionListWidget::onRemove() {
     selection.append({path, persistence});
   }
   if (!(restore ? m_viewModel->restoreSelection(selection) : m_viewModel->removeSelection(selection))) {
-    m_rmBtn->setEnabled(false);
-    if (!m_viewModel->readOnly()) {
-      m_rmBtn->setToolTip(
-          I18n::tr("This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it."));
-    }
+    updateRemoveButtonState();
+    // Restore retries follow the shared selection/read-only rule, even after
+    // a failed attempt. Report the failure without retaining a UI-only state.
+    if (restore) dialogs::warning(this, I18n::tr("Undo removal"), I18n::tr("Selected entries cannot currently be restored."));
   }
 }
 
@@ -414,11 +412,17 @@ void ExclusionListWidget::updateRemoveButtonState() {
   if (!m_rmBtn) return;
   const auto selected = m_list->selectionModel()->selectedRows();
   const bool restore = presentation::isRemovedSelection(selected);
-  const bool removable = m_list->selectionModel()->hasSelection() && !m_viewModel->readOnly() && (restore || canRemoveSelection());
+  const bool hasSelection = m_list->selectionModel()->hasSelection();
+  const bool readOnly = m_viewModel->readOnly();
+  const bool removable = hasSelection && !readOnly && (restore || canRemoveSelection());
   m_rmBtn->setEnabled(removable);
   m_rmBtn->setProperty("accessibleName", restore ? I18n::tr("Undo removal") : I18n::tr("Remove selected"));
   m_rmBtn->setIcon(ThemeManager::instance().icon(restore ? QStringLiteral(":/icons/restart.svg") : QStringLiteral(":/icons/remove.svg")));
-  if (!removable && !m_viewModel->readOnly()) {
+  if (readOnly) {
+    m_rmBtn->setToolTip(I18n::tr("Read-only"));
+  } else if (!hasSelection) {
+    m_rmBtn->setToolTip(I18n::tr("Select entries to remove."));
+  } else if (!removable) {
     m_rmBtn->setToolTip(
         I18n::tr("This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it."));
   } else {

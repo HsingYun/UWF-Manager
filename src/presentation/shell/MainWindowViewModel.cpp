@@ -12,8 +12,9 @@
 #include "presentation/common/PresentationText.h"
 #include "shared/Log.h"
 namespace uwf::presentation {
-MainWindowViewModel::MainWindowViewModel(app::ApplicationStateSource& source, app::UwfCapability capability, std::shared_ptr<app::FileStagingDraft> staging)
-    : m_stateSource(source), m_uwfCapability(capability), m_staging(std::move(staging)) {
+MainWindowViewModel::MainWindowViewModel(app::ApplicationStateSource& source, app::UwfCapability capability, std::shared_ptr<app::FileStagingDraft> staging,
+                                         app::DriveResolver resolveDrive)
+    : m_resolveDrive(std::move(resolveDrive)), m_stateSource(source), m_uwfCapability(capability), m_staging(std::move(staging)) {
   if (m_staging) connect(m_staging.get(), &app::FileStagingDraft::changed, this, &MainWindowViewModel::refreshStagingConstraints);
   m_enhancedModeStatusRetry.setSingleShot(true);
   connect(&m_enhancedModeStatusRetry, &QTimer::timeout, this, &MainWindowViewModel::refreshEnhancedModeStatus);
@@ -74,7 +75,8 @@ std::vector<MainWindowViewModel::VolumePage> MainWindowViewModel::volumePages(co
 void MainWindowViewModel::initializeConfiguration(const uint32_t totalRamMb, QString systemDrive) {
   if (m_configuration) return;
   m_systemDrive = std::move(systemDrive);
-  m_configuration = std::make_shared<ConfigurationViewModel>(totalRamMb, [staging = m_staging] { return staging && !staging->load().isEmpty(); });
+  m_configuration = std::make_shared<ConfigurationViewModel>(
+      totalRamMb, [staging = m_staging] { return staging && !staging->load().isEmpty(); }, m_systemDrive, m_resolveDrive);
   connect(m_configuration.get(), &ConfigurationViewModel::pendingChanged, this, &MainWindowViewModel::publishPendingChanged);
   resetVolumeEditors();
   publishPendingChanged();
@@ -103,6 +105,12 @@ bool MainWindowViewModel::discardPendingChanges() {
 }
 bool MainWindowViewModel::configurationWritesAllowed() const {
   return !applyingConfiguration() && !refreshing() && !m_externalOperationActive && m_state.configurationWritesAllowed();
+}
+
+bool MainWindowViewModel::powerActionsAllowed() const {
+  if (!m_state.hasCommittedState() || applyingConfiguration()) return false;
+  const auto& snapshot = m_state.snapshot();
+  return snapshot.elevated && snapshot.uwfAvailable;
 }
 void MainWindowViewModel::publishInteractionAvailability() {
   const QPointer guard(this);

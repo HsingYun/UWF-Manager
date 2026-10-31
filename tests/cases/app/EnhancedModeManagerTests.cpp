@@ -130,7 +130,7 @@ void EnhancedModeManagerTests::persistenceFailuresKeepOneOriginalBatchLog() {
   auto service = std::make_shared<MemoryEnhancedModeServiceControl>();
   service->current = completeEnhancedModeStatus();
   service->installationPlan = {{"HKEY_CURRENT_USER\\logging-only", "value"}};
-  // An existing hive is inspected but all provider writes stay in the recording transport.
+  // Existence comes from the in-memory service boundary; provider writes are recorded.
   service->deletionPlan = {{"HKEY_CURRENT_USER", {}}};
   if (source == 0 || source == 3) wmi.queryFailure = failure;
   if (source == 1) service->beforeCommitPlan = [failure] { std::rethrow_exception(failure); };

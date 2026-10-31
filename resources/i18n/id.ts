@@ -422,22 +422,15 @@ Buang dan lanjutkan?</translation></message>
     <message><source>Unclosed double quote in command</source><translation>Tanda kutip ganda belum ditutup dalam perintah</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Argumen tambahan tidak diharapkan: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Perintah uwfmgr tidak didukung (tidak ada tindakan antarmuka yang sesuai)</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Perubahan tertunda: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Sudah dalam status target; tidak perlu tindakan</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Jalur bukan pada volume ini atau volume tidak mendukung pengecualian (mis. exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Ditolak daftar blokir UWF (file sistem / Windows / paging / dll.)</translation></message>
-    <message><source>Pending filter %1</source><translation>Perubahan tertunda: Filter %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Filter: Sudah dalam status target; tidak perlu tindakan</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Perubahan tertunda: Overlay · Jenis → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Overlay · Jenis: %1 (Sudah dalam status target; tidak perlu tindakan)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Nilai tidak valid: Ukuran: %1</translation></message>
     <message><source>maximum size</source><translation>Ukuran maksimum</translation></message>
     <message><source>warning threshold</source><translation>Ambang peringatan</translation></message>
     <message><source>critical threshold</source><translation>Ambang kritis</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Perubahan tertunda: Overlay %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Overlay %1: %2 MB (Sudah dalam status target; tidak perlu tindakan)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>Konfigurasi global tidak tersedia; perintah tidak ditambahkan ke perubahan tertunda.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Volume %1 tidak dikenal (tidak ada disk yang memenuhi syarat UWF dengan huruf ini)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Perubahan tertunda: Volume %1 · Perlindungan UWF: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Volume %1: Sudah dalam status target; tidak perlu tindakan</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: Jalur tidak memiliki huruf drive. Menentukan volume target: Gagal.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Volume %1: UWF Tidak didukung</translation></message>
@@ -698,10 +691,10 @@ Kelola perlindungan volume, overlay, pengecualian, dan file yang disiapkan.</tra
     <message><source>Go up one folder or choose another location.</source><translation>Naik satu folder atau pilih lokasi lain.</translation></message>
     <message><source>Home</source><translation>Folder pribadi</translation></message>
     <message><source>Import configuration</source><translation>Impor konfigurasi</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>Impor membuat perubahan tertunda. Gunakan Tinjau dan terapkan untuk menuliskannya ke sistem.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>Impor memperbarui draf konfigurasi. Gunakan Tinjau dan terapkan untuk menulis perubahan ke sistem.</translation></message>
     <message><source>Import results</source><translation>Hasil impor</translation></message>
     <message><source>Imported</source><translation>Diimpor</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>Perintah yang diimpor masih perlu diterapkan. Pilih baris untuk melihat hasil lengkap.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>Laporan mencantumkan hasil perintah untuk draf konfigurasi. Pilih satu baris untuk melihat perintah dan hasil selengkapnya.</translation></message>
     <message><source>Imported: %1</source><translation>Diimpor: %1</translation></message>
     <message><source>Information</source><translation>Informasi</translation></message>
     <message><source>Item details</source><translation>Detail item</translation></message>
@@ -1015,5 +1008,13 @@ Kelola perlindungan volume, overlay, pengecualian, dan file yang disiapkan.</tra
     <message><source>Downloads</source><translation>Unduhan</translation></message>
     <message><source>Documents</source><translation>Dokumen</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Penyimpanan file otomatis dihentikan. Atasi kesalahan sebelum mencoba lagi.</translation></message>
+    <message><source>No net change for this setting</source><translation>Nilai akhir pengaturan ini tidak berubah setelah impor</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Nilai akhir draf: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Nilai akhir draf: %1 → %2 (diminta: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>Diminta: %1 → %2; digantikan oleh perintah berikutnya. Nilai akhir draf → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>Draf %1 diperbarui</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>Draf pengaturan perlindungan volume %1 diperbarui → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Pilih entri yang akan dihapus.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>Entri yang dipilih saat ini tidak dapat dipulihkan.</translation></message>
 </context>
 </TS>

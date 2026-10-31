@@ -18,7 +18,9 @@ class VolumeConfigurationEditor;
 // Shared state outlives replaceable views. Pending is derived, never stored.
 class ConfigurationEditSession final {
  public:
-  explicit ConfigurationEditSession(uint32_t totalRamMb = 0);
+  // Without a resolver, imports accept literal drive paths. The platform
+  // composition supplies volume-GUID resolution when that capability exists.
+  explicit ConfigurationEditSession(uint32_t totalRamMb = 0, QString systemDrive = {}, DriveResolver resolveDrive = {});
   [[nodiscard]] const std::shared_ptr<GlobalConfigurationEditor>& globalEditor() const { return m_globalEditor; }
   [[nodiscard]] const std::shared_ptr<ExclusionEditor>& registryEditor() const { return m_registryEditor; }
   void resetRegistry(const core::UwfSnapshot& snapshot);
@@ -36,6 +38,8 @@ class ConfigurationEditSession final {
   std::shared_ptr<GlobalConfigurationEditor> m_globalEditor;
   std::shared_ptr<ExclusionEditor> m_registryEditor;
   std::vector<std::shared_ptr<VolumeConfigurationEditor>> m_volumeEditors;
+  QString m_systemDrive;
+  DriveResolver m_resolveDrive;
 };
 
 }  // namespace uwf::app

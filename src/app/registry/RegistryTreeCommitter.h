@@ -3,6 +3,7 @@
 #pragma once
 
 #include <string>
+#include <functional>
 #include <vector>
 
 #include "app/api/RegistryCommitTypes.h"
@@ -15,7 +16,8 @@ class RegistryTreeCommitter final {
   explicit RegistryTreeCommitter(wmi::WmiOperations& session);
 
   [[nodiscard]] RegistryCommitResult commit(const std::vector<RegistryCommitTarget>& targets) const;
-  [[nodiscard]] RegistryCommitResult commitDeletion(const std::vector<RegistryCommitTarget>& targets) const;
+  using TargetExists = std::function<bool(const RegistryCommitTarget&)>;
+  [[nodiscard]] RegistryCommitResult commitDeletion(const std::vector<RegistryCommitTarget>& targets, const TargetExists& exists) const;
 
  private:
   app::provider::UwfRegistryFilter m_registry;

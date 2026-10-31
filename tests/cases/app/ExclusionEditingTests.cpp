@@ -7,7 +7,6 @@
 
 #include "app/configuration/ExclusionEditor.h"
 #include "app/configuration/ExclusionRules.h"
-#include "app/ports/VolumePaths.h"
 namespace {
 class ExclusionEditingTests final : public QObject {
   Q_OBJECT
@@ -64,7 +63,7 @@ class ExclusionEditingTests final : public QObject {
   void forbiddenFilePathsRemainForbiddenThroughAliases_data() {
     QTest::addColumn<QString>("drive");
     QTest::addColumn<QString>("path");
-    const QString system = QString::fromStdString(uwf::drive::systemLetter());
+    const QString system = QStringLiteral("R:");
     QTest::newRow("volume-root") << QStringLiteral("Z:") << QStringLiteral("Z:/Data/..");
     QTest::newRow("lowercase-volume-root") << QStringLiteral("z:") << QStringLiteral("z:/Data/..");
     QTest::newRow("pagefile") << QStringLiteral("Z:") << QStringLiteral("Z:/Data/../pagefile.sys");
@@ -81,10 +80,17 @@ class ExclusionEditingTests final : public QObject {
     using Editor = uwf::app::ExclusionEditor;
     Editor editor(Editor::Kind::File);
     editor.setDriveLetter(drive);
-    QVERIFY(!uwf::app::FileExclusionRules::rejectionReason(path, drive).isEmpty());
+    editor.setSystemDriveLetter(QStringLiteral("R:"));
+    QVERIFY(!uwf::app::FileExclusionRules::rejectionReason(path, drive, QStringLiteral("R:")).isEmpty());
     QCOMPARE(editor.addEntry(path).outcome, Editor::ImportOutcome::RejectedForbidden);
     QCOMPARE(editor.importAdd(path), Editor::ImportOutcome::RejectedForbidden);
     QVERIFY(editor.pendingAdded().isEmpty());
+  }
+  void systemDirectoryPolicyUsesTheSuppliedSystemDrive() {
+    using Rules = uwf::app::FileExclusionRules;
+    QVERIFY(!Rules::rejectionReason(QStringLiteral("R:/Windows"), QStringLiteral("R:"), QStringLiteral("r:")).isEmpty());
+    QVERIFY(Rules::rejectionReason(QStringLiteral("Z:/Windows"), QStringLiteral("Z:"), QStringLiteral("R:")).isEmpty());
+    QVERIFY(Rules::rejectionReason(QStringLiteral("R:/Windows"), QStringLiteral("R:"), {}).isEmpty());
   }
   void fileCommitEligibilityReflectsCurrentProtectionAndFileFacts() {
     QTemporaryDir temporary;

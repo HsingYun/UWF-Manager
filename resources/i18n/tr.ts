@@ -422,22 +422,15 @@ Atıp devam edilsin mi?</translation></message>
     <message><source>Unclosed double quote in command</source><translation>Komutta kapatılmamış çift tırnak</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Beklenmeyen ek bağımsız değişken: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Desteklenmeyen uwfmgr komutu (arayüz işlemiyle eşleştirilemiyor)</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Bekleyen değişiklikler: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Zaten hedef durumda; işlem gerekmiyor</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Yol bu birimde değil veya birim dosya dışlamalarını desteklemiyor (ör. exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>UWF engel listesi reddetti (sistem dosyası / Windows / disk belleği vb.)</translation></message>
-    <message><source>Pending filter %1</source><translation>Bekleyen değişiklikler: Filtre %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Filtre: Zaten hedef durumda; işlem gerekmiyor</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Bekleyen değişiklikler: Yer paylaşımı · Tür → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Yer paylaşımı · Tür: %1 (Zaten hedef durumda; işlem gerekmiyor)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Geçersiz değer: Boyut: %1</translation></message>
     <message><source>maximum size</source><translation>En büyük boyut</translation></message>
     <message><source>warning threshold</source><translation>Uyarı eşiği</translation></message>
     <message><source>critical threshold</source><translation>Kritik eşik</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Bekleyen değişiklikler: Yer paylaşımı %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Yer paylaşımı %1: %2 MB (Zaten hedef durumda; işlem gerekmiyor)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>Genel yapılandırma kullanılamıyor; komut bekleyen değişikliklere eklenmedi.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Bilinmeyen birim %1 (bu harfte UWF’ye uygun disk yok)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Bekleyen değişiklikler: Birim %1 · UWF koruması: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Birim %1: Zaten hedef durumda; işlem gerekmiyor</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: Yolun sürücü harfi yok. Hedef birimi belirleme: Başarısız.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Birim %1: UWF Desteklenmiyor</translation></message>
@@ -698,10 +691,10 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Go up one folder or choose another location.</source><translation>Bir üst klasöre gidin veya başka bir konum seçin.</translation></message>
     <message><source>Home</source><translation>Giriş klasörü</translation></message>
     <message><source>Import configuration</source><translation>Yapılandırmayı içe aktar</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>İçe aktarma bekleyen değişiklikler oluşturur. Bunları sisteme yazmak için İncele ve uygula seçeneğini kullanın.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>İçe aktarma yapılandırma taslağını günceller. Değişiklikleri sisteme yazmak için İncele ve uygula seçeneğini kullanın.</translation></message>
     <message><source>Import results</source><translation>İçe aktarma sonuçları</translation></message>
     <message><source>Imported</source><translation>İçe aktarıldı</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>İçe aktarılan komutların hâlâ uygulanması gerekiyor. Sonucun tamamını görmek için bir satır seçin.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>Rapor, yapılandırma taslağına yönelik komut sonuçlarını listeler. Komutun ve sonucun tamamını görmek için bir satır seçin.</translation></message>
     <message><source>Imported: %1</source><translation>İçe aktarıldı: %1</translation></message>
     <message><source>Information</source><translation>Bilgi</translation></message>
     <message><source>Item details</source><translation>Öğe ayrıntıları</translation></message>
@@ -1015,5 +1008,13 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Downloads</source><translation>İndirilenler</translation></message>
     <message><source>Documents</source><translation>Belgeler</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Otomatik dosya kaydı durduruldu. Yeniden denemeden önce hatayı giderin.</translation></message>
+    <message><source>No net change for this setting</source><translation>Bu ayarın son değeri içe aktarma sonrasında değişmedi</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Taslaktaki son değer: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Taslaktaki son değer: %1 → %2 (istenen: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>İstenen: %1 → %2; sonraki bir komutla değiştirildi. Taslaktaki son değer → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>%1 taslağı güncellendi</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>%1 biriminin koruma ayarı taslağı güncellendi → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Kaldırılacak girdileri seçin.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>Seçili girdiler şu anda geri yüklenemiyor.</translation></message>
 </context>
 </TS>

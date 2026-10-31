@@ -3,7 +3,7 @@
 #pragma once
 
 // 导入 CLI 文本或默认规则，通过注入回调更新待应用状态，累计显示逐行结果。
-// File loading uses the injected picker; importing only updates pending configuration.
+// File loading uses the injected picker; importing only updates the configuration draft.
 
 #include <QList>
 #include <QString>

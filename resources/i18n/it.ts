@@ -422,22 +422,15 @@ Scartarle e continuare?</translation></message>
     <message><source>Unclosed double quote in command</source><translation>Virgolette doppie non chiuse nel comando</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Argomento aggiuntivo imprevisto: %1</translation></message>
     <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Comando uwfmgr non supportato (nessuna azione corrispondente nell’interfaccia)</translation></message>
-    <message><source>Queued as a pending %1 change</source><translation>Modifiche in sospeso: %1</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Stato desiderato già presente; nessuna operazione necessaria</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Il percorso è fuori dal volume oppure il volume non supporta esclusioni (es. exFAT / ReFS)</translation></message>
     <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Rifiutato dall’elenco di blocco UWF (file di sistema, Windows, paging, ecc.)</translation></message>
-    <message><source>Pending filter %1</source><translation>Modifiche in sospeso: Filtro %1</translation></message>
-    <message><source>Filter is already in the target state</source><translation>Filtro: Stato desiderato già presente; nessuna operazione necessaria</translation></message>
-    <message><source>Pending overlay type → %1</source><translation>Modifiche in sospeso: Overlay · Tipo → %1</translation></message>
-    <message><source>Overlay type already %1</source><translation>Overlay · Tipo: %1 (Stato desiderato già presente; nessuna operazione necessaria)</translation></message>
     <message><source>Invalid size value: %1</source><translation>Valore non valido: Dimensione: %1</translation></message>
     <message><source>maximum size</source><translation>Dimensione massima</translation></message>
     <message><source>warning threshold</source><translation>Soglia di avviso</translation></message>
     <message><source>critical threshold</source><translation>Soglia critica</translation></message>
-    <message><source>Pending overlay %1 → %2 MB</source><translation>Modifiche in sospeso: Overlay %1 → %2 MB</translation></message>
-    <message><source>Overlay %1 already %2 MB</source><translation>Overlay %1: %2 MB (Stato desiderato già presente; nessuna operazione necessaria)</translation></message>
+    <message><source>Global configuration is unavailable; the command was not queued.</source><translation>La configurazione globale non è disponibile; il comando non è stato aggiunto alle modifiche in sospeso.</translation></message>
     <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Volume %1 sconosciuto (nessun disco compatibile UWF con questa lettera)</translation></message>
-    <message><source>Pending volume %1 protection %2</source><translation>Modifiche in sospeso: Volume %1 · Protezione UWF: %2</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Volume %1: Stato desiderato già presente; nessuna operazione necessaria</translation></message>
     <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: Il percorso non ha una lettera di unità. Identificazione volume di destinazione: Non riuscito.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Volume %1: UWF Non supportato</translation></message>
@@ -698,10 +691,10 @@ Gestisci protezione dei volumi, overlay, esclusioni e file da salvare.</translat
     <message><source>Go up one folder or choose another location.</source><translation>Sali alla cartella superiore o scegli un’altra posizione.</translation></message>
     <message><source>Home</source><translation>Cartella personale</translation></message>
     <message><source>Import configuration</source><translation>Importa configurazione</translation></message>
-    <message><source>Import creates pending changes. Use Review and apply to write them to the system.</source><translation>L’importazione crea modifiche in sospeso. Usa Rivedi e applica per scriverle nel sistema.</translation></message>
+    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>L’importazione aggiorna la bozza della configurazione. Usa Rivedi e applica per scrivere le modifiche nel sistema.</translation></message>
     <message><source>Import results</source><translation>Risultati dell’importazione</translation></message>
     <message><source>Imported</source><translation>Importato</translation></message>
-    <message><source>Imported commands still need to be applied. Select a row to view the complete result.</source><translation>I comandi importati devono ancora essere applicati. Seleziona una riga per vedere il risultato completo.</translation></message>
+    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>Il rapporto elenca i risultati dei comandi per la bozza della configurazione. Seleziona una riga per visualizzare il comando e il risultato completi.</translation></message>
     <message><source>Imported: %1</source><translation>Importato: %1</translation></message>
     <message><source>Information</source><translation>Informazioni</translation></message>
     <message><source>Item details</source><translation>Dettagli elemento</translation></message>
@@ -1015,5 +1008,13 @@ Gestisci protezione dei volumi, overlay, esclusioni e file da salvare.</translat
     <message><source>Downloads</source><translation>Download</translation></message>
     <message><source>Documents</source><translation>Documenti</translation></message>
     <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Il salvataggio dei file è stato interrotto. Risolvere l&apos;errore prima di riprovare.</translation></message>
+    <message><source>No net change for this setting</source><translation>Il valore finale di questa impostazione non è cambiato dopo l’importazione</translation></message>
+    <message><source>Final draft %1 → %2</source><translation>Valore finale della bozza: %1 → %2</translation></message>
+    <message><source>Final draft %1 → %2 (requested %3)</source><translation>Valore finale della bozza: %1 → %2 (valore richiesto: %3)</translation></message>
+    <message><source>Requested %1 → %2; replaced by a later command. Final draft value → %3</source><translation>Valore richiesto: %1 → %2; sostituito da un comando successivo. Valore finale della bozza → %3</translation></message>
+    <message><source>Updated the %1 draft</source><translation>Bozza di %1 aggiornata</translation></message>
+    <message><source>Updated volume %1 protection draft → %2</source><translation>Bozza della protezione del volume %1 aggiornata → %2</translation></message>
+    <message><source>Select entries to remove.</source><translation>Seleziona le voci da rimuovere.</translation></message>
+    <message><source>Selected entries cannot currently be restored.</source><translation>Al momento non è possibile ripristinare le voci selezionate.</translation></message>
 </context>
 </TS>

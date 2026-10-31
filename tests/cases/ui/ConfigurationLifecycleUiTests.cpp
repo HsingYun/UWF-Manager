@@ -46,16 +46,13 @@ class ConfigurationLifecycleUiTests final : public QObject {
   void operationAvailabilityReachesExistingAndNewHubMenus_data() {
     QTest::addColumn<bool>("power");
     QTest::addColumn<bool>("exit");
-    QTest::addColumn<bool>("capability");
     for (const bool power : {false, true})
       for (const bool exit : {false, true})
-        for (const bool capability : {false, true})
-          QTest::newRow(qUtf8Printable(QStringLiteral("power-%1-exit-%2-capability-%3").arg(power).arg(exit).arg(capability))) << power << exit << capability;
+        QTest::newRow(qUtf8Printable(QStringLiteral("power-%1-exit-%2").arg(power).arg(exit))) << power << exit;
   }
   void operationAvailabilityReachesExistingAndNewHubMenus() {
     QFETCH(bool, power);
     QFETCH(bool, exit);
-    QFETCH(bool, capability);
     ui::OverlayHub hub;
     auto first = std::make_unique<MenuEndpoint>();
     auto* existing = first.get();
@@ -65,13 +62,12 @@ class ConfigurationLifecycleUiTests final : public QObject {
     auto* added = second.get();
     hub.registerView(std::move(second));
     for (auto* endpoint : {existing, added}) {
-      endpoint->menu.setPowerActionsEnabled(capability);
-      QCOMPARE(endpoint->menu.findChild<QAction*>(QStringLiteral("overlayMenuSafeRestart"))->isEnabled(), power && capability);
+      QCOMPARE(endpoint->menu.findChild<QAction*>(QStringLiteral("overlayMenuSafeRestart"))->isEnabled(), power);
       QCOMPARE(endpoint->menu.findChild<QAction*>(QStringLiteral("overlayMenuExit"))->isEnabled(), exit);
     }
     hub.setOperationAvailability(true, true);
     for (auto* endpoint : {existing, added}) {
-      QCOMPARE(endpoint->menu.findChild<QAction*>(QStringLiteral("overlayMenuSafeRestart"))->isEnabled(), capability);
+      QVERIFY(endpoint->menu.findChild<QAction*>(QStringLiteral("overlayMenuSafeRestart"))->isEnabled());
       QVERIFY(endpoint->menu.findChild<QAction*>(QStringLiteral("overlayMenuExit"))->isEnabled());
     }
   }

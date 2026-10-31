@@ -23,7 +23,7 @@ class ApplicationViewModelFactory final : public presentation::ViewModelFactory 
       : m_session(session), m_registry(registry), m_overlayFiles(std::move(loader)), m_systemInformation(systemInformation) {}
   std::unique_ptr<presentation::MainWindowViewModel> mainWindow(app::ApplicationStateSource& source, app::UwfCapability capability,
                                                                 std::shared_ptr<app::FileStagingDraft> staging) override {
-    return std::make_unique<presentation::MainWindowViewModel>(source, capability, std::move(staging));
+    return std::make_unique<presentation::MainWindowViewModel>(source, capability, std::move(staging), drive::fromPath);
   }
   std::shared_ptr<presentation::SystemInformationViewModel> systemInformation() override {
     return std::make_shared<presentation::SystemInformationViewModel>(m_systemInformation);

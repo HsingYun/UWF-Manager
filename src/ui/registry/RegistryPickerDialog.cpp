@@ -9,7 +9,6 @@
 #include <QHBoxLayout>
 #include <QHeaderView>
 #include <QItemSelectionModel>
-#include <QKeyEvent>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMouseEvent>
@@ -91,7 +90,7 @@ void RegistryPickerDialog::buildUi() {
   address->addWidget(go);
   address->addWidget(refresh);
   root->addLayout(address);
-  m_addressBar->installEventFilter(this);
+  connect(m_addressBar, &QLineEdit::returnPressed, this, &RegistryPickerDialog::onAddressBarReturnPressed);
   connect(m_addressBar, &QLineEdit::textChanged, this, [this](const QString& text) {
     if (text.isEmpty()) {
       m_tree->clearSelection();
@@ -333,15 +332,6 @@ void RegistryPickerDialog::onValueSelectionChanged() {
 }
 
 bool RegistryPickerDialog::eventFilter(QObject* obj, QEvent* ev) {
-  // 地址栏的 Enter 只表示跳转；不能继续冒泡到 QDialog，否则默认的 OK
-  // 会同时被触发，导致跳转成功后立即接受并关闭对话框。
-  if (obj == m_addressBar && ev->type() == QEvent::KeyPress) {
-    const auto key = static_cast<QKeyEvent*>(ev)->key();
-    if (key == Qt::Key_Return || key == Qt::Key_Enter) {
-      onAddressBarReturnPressed();
-      return true;
-    }
-  }
   if (supportsValueSelection() && m_valueTable && obj == m_valueTable->viewport() && ev->type() == QEvent::MouseButtonPress) {
     const auto* me = static_cast<QMouseEvent*>(ev);
     if (!m_valueTable->indexAt(me->pos()).isValid()) {

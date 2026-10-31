@@ -89,6 +89,7 @@ void ExclusionEditor::setDriveLetter(const QString& dl) {
   publishFileExclusions();
   emit stateChanged();
 }
+void ExclusionEditor::setSystemDriveLetter(const QString& dl) { m_systemDrive = QString::fromStdString(drive::normalize(dl.toStdString())); }
 
 void ExclusionEditor::setBaseline(const QStringList& current, const QStringList& next) {
   m_draft.current = current;
@@ -256,7 +257,7 @@ ExclusionEditor::EditResult ExclusionEditor::validateAddition(const QString& raw
       result.outcome = ImportOutcome::RejectedNotOnVolume;
       return result;
     }
-    result.reason = app::FileExclusionRules::rejectionReason(path, m_driveLetter);
+    result.reason = app::FileExclusionRules::rejectionReason(path, m_driveLetter, m_systemDrive);
     if (!result.reason.isEmpty()) {
       result.outcome = ImportOutcome::RejectedForbidden;
       return result;

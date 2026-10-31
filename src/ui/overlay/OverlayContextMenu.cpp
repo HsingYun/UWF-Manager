@@ -44,6 +44,7 @@ OverlayContextMenu::OverlayContextMenu(QWidget* parent) : CommandMenu(parent) {
   }
   connect(this, &QMenu::aboutToShow, this, &OverlayContextMenu::retranslate);
   retranslate();
+  updateActionAvailability();
   I18n::bind(this, [this] { retranslate(); });
 }
 
@@ -55,18 +56,14 @@ void OverlayContextMenu::setHubState(const bool available, const bool enabled) {
   retranslate();
 }
 
-void OverlayContextMenu::setPowerActionsEnabled(const bool enabled) {
-  m_powerEnabled = enabled;
-  updateActionAvailability();
-}
 void OverlayContextMenu::setOperationAvailability(const bool powerAllowed, const bool exitAllowed) {
   m_powerAllowed = powerAllowed;
   m_exitAllowed = exitAllowed;
   updateActionAvailability();
 }
 void OverlayContextMenu::updateActionAvailability() {
-  m_shutdown->setEnabled(m_powerEnabled && m_powerAllowed);
-  m_restart->setEnabled(m_powerEnabled && m_powerAllowed);
+  m_shutdown->setEnabled(m_powerAllowed);
+  m_restart->setEnabled(m_powerAllowed);
   m_exit->setEnabled(m_exitAllowed);
 }
 

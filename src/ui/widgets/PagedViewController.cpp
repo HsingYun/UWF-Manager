@@ -16,6 +16,7 @@
 
 #include "PagedWindowLayout.h"
 #include "design/DesignTokens.h"
+#include "ui/design/ItemViewGeometry.h"
 #include "presentation/common/PageProxyModel.h"
 namespace uwf::ui {
 namespace {
@@ -113,14 +114,7 @@ void PagedViewController::beginDrag() {
   syncOverlay();
 }
 int PagedViewController::availableViewportHeight() const {
-  int available = m_view->maximumViewportSize().height();
-  const auto* horizontal = m_view->horizontalScrollBar();
-  // maximumViewportSize includes an AlwaysOn bar, but assumes an AsNeeded
-  // bar has no range. Account for a visible bar unless the style overlays it.
-  if (m_view->horizontalScrollBarPolicy() == Qt::ScrollBarAsNeeded && horizontal->isVisibleTo(m_view) &&
-      horizontal->style()->pixelMetric(QStyle::PM_ScrollView_ScrollBarOverlap, nullptr, horizontal) == 0)
-    available -= horizontal->height();
-  return std::max(0, available);
+  return availableItemViewportHeight(*m_view);
 }
 void PagedViewController::updateGeometry() {
   if (!m_pages || m_changingMode || m_updatingGeometry) return;
@@ -143,6 +137,8 @@ void PagedViewController::updateGeometry() {
   syncPage();
 }
 bool PagedViewController::eventFilter(QObject* object, QEvent* event) {
+  if (object == m_view->horizontalScrollBar() && (event->type() == QEvent::Show || event->type() == QEvent::Hide || event->type() == QEvent::Resize))
+    m_view->updateGeometry();
   if (event->type() == QEvent::Resize || event->type() == QEvent::Show || event->type() == QEvent::LayoutDirectionChange ||
       (object == m_view->horizontalScrollBar() && event->type() == QEvent::Hide)) {
     updateGeometry();

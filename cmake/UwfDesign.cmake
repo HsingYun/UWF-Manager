@@ -39,6 +39,7 @@ add_library(UwfUiDesign STATIC
     src/ui/design/IconPainting.h
     src/ui/design/ItemHighlight.cpp
     src/ui/design/ItemHighlight.h
+    src/ui/design/ItemViewGeometry.h
     src/ui/design/PopupAppearance.cpp
     src/ui/design/PopupAppearance.h
     src/ui/design/PopupPlacement.cpp
@@ -62,6 +63,7 @@ add_library(UwfUiDesign STATIC
     src/ui/widgets/Disclosure.cpp
     src/ui/widgets/Disclosure.h
     src/ui/widgets/FlexibleColumnLayout.h
+    src/ui/widgets/FlexibleColumnLayout.cpp
     src/ui/widgets/IconView.cpp
     src/ui/widgets/IconView.h
     src/ui/widgets/Notice.cpp

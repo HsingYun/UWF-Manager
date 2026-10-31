@@ -436,7 +436,9 @@ void DesignStyle::drawControl(const ControlElement element, const QStyleOption* 
       QProxyStyle::drawControl(element, option, painter, widget);
     }
     painter->save();
-    if (!item || !item->index.isValid() || item->index.row() + 1 < item->index.model()->rowCount(item->index.parent())) {
+    const auto* view = qobject_cast<const QAbstractItemView*>(widget);
+    const bool spaceBelow = !view || option->rect.bottom() < view->viewport()->rect().bottom();
+    if (spaceBelow && (!item || !item->index.isValid() || item->index.row() + 1 < item->index.model()->rowCount(item->index.parent()))) {
       painter->setPen(color(Color::LineSoft));
       painter->drawLine(option->rect.bottomLeft(), option->rect.bottomRight());
     }

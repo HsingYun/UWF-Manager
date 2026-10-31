@@ -109,7 +109,7 @@ class OverlayHubView : public QWidget {
   void notifyPresentationReleaseCompleted();
 
  private:
-  bool m_powerAllowed = true;
+  bool m_powerAllowed = false;
   bool m_exitAllowed = true;
   friend class OverlayHubViewTestAccess;
 
