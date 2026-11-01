@@ -7,6 +7,7 @@
 #include <QSaveFile>
 #include <QTextStream>
 #include <stdexcept>
+#include <utility>
 
 #include "TestResults.h"
 
@@ -24,7 +25,7 @@ int main(int argc, char** argv) {
     using namespace uwf::test::tools;
     if (parser.positionalArguments().isEmpty()) throw std::runtime_error("Specify QtTest XML result files.");
     TestResults actual;
-    for (const auto paths = parser.positionalArguments(); const auto& path : paths) {
+    for (auto paths = parser.positionalArguments(); const auto& path : std::as_const(paths)) {
       QFile file(path);
       if (!file.open(QIODevice::ReadOnly)) throw std::runtime_error(file.errorString().toStdString());
       const auto results = readTestResults(file);

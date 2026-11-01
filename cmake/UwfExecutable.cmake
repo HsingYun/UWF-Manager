@@ -8,15 +8,19 @@ include(UwfResources)
 include(UwfTranslations)
 
 qt_add_executable(UWF WIN32 main.cpp)
-target_link_libraries(UWF PRIVATE UwfBootstrap UwfVersion Qt6::Widgets)
+target_link_libraries(UWF PRIVATE UwfEntryComposition UwfVersion Qt6::Widgets)
 target_sources(UWF PRIVATE "${PROJECT_SOURCE_DIR}/resources/app.rc")
+get_target_property(uwf_app_version_header UwfVersion INTERFACE_UWF_VERSION_HEADER)
+set_source_files_properties("${PROJECT_SOURCE_DIR}/resources/app.rc" PROPERTIES
+    OBJECT_DEPENDS "${uwf_app_version_header}"
+)
 if(MSVC)
     target_sources(UWF PRIVATE "${PROJECT_SOURCE_DIR}/resources/app.manifest")
 else()
     target_sources(UWF PRIVATE "${PROJECT_SOURCE_DIR}/resources/app_manifest.rc")
 endif()
 uwf_configure_application_target(UWF)
-uwf_add_resources(UWF app_resources)
+uwf_add_resources(UWF)
 uwf_add_translations(UWF)
 
 qt_add_lupdate(

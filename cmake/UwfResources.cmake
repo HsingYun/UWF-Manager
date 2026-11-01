@@ -25,6 +25,7 @@ set(UWF_APP_RESOURCE_FILES
     resources/icons/import.svg
     resources/icons/search.svg
     resources/icons/copy.svg
+    resources/icons/dot.svg
     resources/icons/github.svg
     resources/icons/mail.svg
     resources/icons/external.svg
@@ -38,6 +39,7 @@ set(UWF_APP_RESOURCE_FILES
     resources/icons/info.svg
     resources/icons/more.svg
     resources/icons/lock.svg
+    resources/icons/settings.svg
     resources/icons/page_first.svg
     resources/icons/page_previous.svg
     resources/icons/page_next.svg
@@ -84,14 +86,24 @@ set(UWF_APP_RESOURCE_FILES
 )
 
 # Application and tests embed identical assets under stable resource aliases.
-function(uwf_add_resources target resource_name)
-    set(resource_files)
-    foreach(resource_file IN LISTS UWF_APP_RESOURCE_FILES)
-        list(APPEND resource_files "${PROJECT_SOURCE_DIR}/${resource_file}")
-    endforeach()
-    qt_add_resources(${target} "${resource_name}"
-        PREFIX "/"
-        BASE "${PROJECT_SOURCE_DIR}/resources"
-        FILES ${resource_files}
-    )
+function(uwf_add_resources target)
+    if(NOT TARGET UwfAppResources)
+        # Share the compiled resource object, including its initializer. An
+        # ordinary static archive could discard an unreferenced initializer.
+        add_library(UwfAppResources OBJECT)
+        set_target_properties(UwfAppResources PROPERTIES AUTOMOC OFF AUTOUIC OFF)
+        target_link_libraries(UwfAppResources PRIVATE Qt6::Core)
+        uwf_configure_cpp_target(UwfAppResources)
+
+        set(resource_files)
+        foreach(resource_file IN LISTS UWF_APP_RESOURCE_FILES)
+            list(APPEND resource_files "${PROJECT_SOURCE_DIR}/${resource_file}")
+        endforeach()
+        qt_add_resources(UwfAppResources app_resources
+            PREFIX "/"
+            BASE "${PROJECT_SOURCE_DIR}/resources"
+            FILES ${resource_files}
+        )
+    endif()
+    target_link_libraries(${target} PRIVATE UwfAppResources)
 endfunction()

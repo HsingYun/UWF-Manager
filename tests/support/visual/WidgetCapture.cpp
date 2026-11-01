@@ -6,15 +6,18 @@
 #include <QCursor>
 #include <QDir>
 #include <QEvent>
+#include <QGraphicsEffect>
 #include <QImage>
 #include <QPixmap>
 #include <QScreen>
 #include <QTest>
 #include <QWidget>
+#include <utility>
 
 #include "AnimationClock.h"
-#include "app/diagnostics/ProcessLogSource.h"
-#include "presentation/diagnostics/LogViewModel.h"
+#include "VisualGeometry.h"
+#include "application/diagnostics/ProcessLogSource.h"
+#include "presentation/viewmodels/diagnostics/LogViewModel.h"
 
 namespace uwf::test {
 
@@ -49,11 +52,11 @@ class VisualWindowPlacement final : public QObject {
   bool eventFilter(QObject* object, QEvent* event) override {
     if (event->type() == QEvent::Show) {
       auto* widget = qobject_cast<QWidget*>(object);
-      // 显式定位的窗口保留被测布局的位置，只为未指定位置的窗口提供截图默认位置。
+      // Preserve explicit test positions; supply a capture position only for unmoved windows.
       if (widget && widget->isWindow() && !widget->testAttribute(Qt::WA_Moved) && widget->windowType() != Qt::Popup && widget->windowType() != Qt::ToolTip) {
         auto* screen = QGuiApplication::primaryScreen();
         const QString requested = qEnvironmentVariable("UWF_TEST_SCREEN_NAME");
-        for (const auto screens = QGuiApplication::screens(); auto* candidate : screens)
+        for (auto screens = QGuiApplication::screens(); auto* candidate : std::as_const(screens))
           if (candidate->name() == requested) screen = candidate;
         widget->setScreen(screen);
         widget->move(screen->availableGeometry().topLeft() + QPoint(30, 30));
@@ -70,7 +73,7 @@ void initializeVisualComparison() {
   QApplication::setCursorFlashTime(0);
   qApp->installEventFilter(new VisualWindowPlacement(qApp));
   QApplication::setWindowIcon(QIcon(QStringLiteral(":/icons/app.svg")));
-  for (const auto screens = QGuiApplication::screens(); const auto* screen : screens)
+  for (auto screens = QGuiApplication::screens(); const auto* screen : std::as_const(screens))
     qInfo() << "visual-screen" << screen->name() << screen->geometry() << "DPR" << screen->devicePixelRatio();
 }
 
@@ -133,6 +136,34 @@ QPixmap screenshot(QWidget& widget, const bool preservePointer) {
   return frame;
 }
 
+QRectF renderedInkBounds(QWidget& widget, qreal scale, const QRectF& requestedRegion) {
+  if (scale <= 0) scale = widget.devicePixelRatioF();
+  auto* surface = widget.window();
+  for (auto* ancestor = &widget; ancestor; ancestor = ancestor->parentWidget()) {
+    if (const auto* effect = ancestor->graphicsEffect(); effect && effect->isEnabled()) {
+      surface = ancestor;
+      break;
+    }
+    if (ancestor->isWindow()) break;
+  }
+  const auto origin = widget.mapTo(surface, QPoint());
+  QImage frame(QSize(qCeil(surface->width() * scale), qCeil(surface->height() * scale)), QImage::Format_ARGB32_Premultiplied);
+  frame.setDevicePixelRatio(scale);
+  frame.fill(Qt::transparent);
+  widget.render(&frame, origin, QRegion(), QWidget::RenderFlags{});
+  const auto region = requestedRegion.isEmpty() ? QRectF(origin, widget.size()) : requestedRegion.translated(origin);
+  const auto area = (requestedRegion.isEmpty() ? QRectF(region.x() * scale, region.y() * scale, region.width() * scale, region.height() * scale).toAlignedRect()
+                                               : pixelCenterRegion(region, scale))
+                        .intersected(frame.rect());
+  QRect ink;
+  for (int y = area.top(); y <= area.bottom(); ++y) {
+    const auto* row = reinterpret_cast<const QRgb*>(frame.constScanLine(y));
+    for (int x = area.left(); x <= area.right(); ++x)
+      if (qAlpha(row[x]) / 255.0 >= .12) ink = ink.united(QRect(x, y, 1, 1));
+  }
+  if (ink.isEmpty()) return {};
+  return QRectF(ink.x() / scale - origin.x(), ink.y() / scale - origin.y(), ink.width() / scale, ink.height() / scale);
+}
 bool saveScreenshot(QWidget& widget, const QString& state, const bool preservePointer) {
   const QString directory = qEnvironmentVariable("UWF_TEST_SCREENSHOT_DIR");
   if (directory.isEmpty()) return true;

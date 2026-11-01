@@ -1,93 +1,54 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
-
-#include <QStringList>
+#include <QString>
 #include <stdexcept>
 
-#include "app/ports/WmiOperations.h"
-#include "app/state/ApplicationState.h"
-#include "app/wmi/WmiException.h"
+#include "application/state/contracts/ApplicationState.h"
+#include "application/state/contracts/ApplicationStateSource.h"
 namespace uwf::test::application {
+// Positive configuration GUIDs match the file-target fixtures; negative protocol cases supply their own inputs.
+inline constexpr char fixtureVolumeCName[] = "Volume{11111111-2222-3333-4444-555555555555}";
+inline constexpr char fixtureVolumeDName[] = "Volume{66666666-7777-8888-9999-aaaaaaaaaaaa}";
+
 core::UwfSnapshot editableSnapshot();
-
-class OverlayContractWmiOperations final : public uwf::app::wmi::WmiOperations {
- public:
-  mutable core::OverlayConfig state;
-  int failureMode = 0;
-  mutable QStringList invocations;
-  mutable bool invalidIntermediate = false;
-
-  void ensureConnected() const override {}
-  std::vector<uwf::app::wmi::WmiRow> query(const std::string& wql) const override {
-    if (wql.find("UWF_OverlayConfig") != std::string::npos) return {getObject("config")};
-    return {getObject("overlay")};
+inline core::UwfSnapshot configurationSnapshot(const core::SessionSnapshot& current, const core::SessionSnapshot& next,
+                                               const core::OverlayRuntime& runtime = {}) {
+  core::UwfSnapshot result;
+  result.uwfAvailable = true;
+  result.elevated = true;
+  result.current = current;
+  result.next = next;
+  // Widget fixtures built here describe mounted records. Tests for moved or
+  // offline volumes supply their physical observation explicitly.
+  for (auto* session : {&result.current, &result.next})
+    for (auto& volume : session->volumes)
+      if (!volume.physicalDriveLetter) volume.physicalDriveLetter = volume.driveLetter;
+  result.runtime = runtime;
+  if (!result.runtime.romDisposition) result.runtime.romDisposition = 0;
+  if (!result.runtime.fullCommit) result.runtime.fullCommit = false;
+  if (!result.runtime.hormEnabled) result.runtime.hormEnabled = false;
+  if (!result.runtime.currentOverlayFlags) result.runtime.currentOverlayFlags = 0;
+  if (!result.runtime.systemVolumeProtected) {
+    result.runtime.systemVolumeProtected = false;
+    for (const auto& volume : result.current.volumes)
+      if (volume.driveLetter == "C:") result.runtime.systemVolumeProtected = volume.isProtected;
   }
-  std::vector<uwf::app::wmi::WmiRow> queryInstances(const std::string& wql) const override { return query(wql); }
-  uwf::app::wmi::WmiClassStatus classStatus(const std::string&) const override { return uwf::app::wmi::WmiClassStatus::Present; }
-  uwf::app::wmi::WmiRow getObject(const std::string& path) const override {
-    if (path == "config") {
-      return {{"__PATH", uwf::app::wmi::WmiValue::fromString(path)},
-              {"CurrentSession", uwf::app::wmi::WmiValue::fromBool(false)},
-              {"Type", uwf::app::wmi::WmiValue::fromUInt(static_cast<uint32_t>(state.type))},
-              {"MaximumSize", uwf::app::wmi::WmiValue::fromUInt(state.maximumSizeMb)}};
-    }
-    return {{"__PATH", uwf::app::wmi::WmiValue::fromString(path)},
-            {"OverlayConsumption", uwf::app::wmi::WmiValue::fromUInt(0)},
-            {"AvailableSpace", uwf::app::wmi::WmiValue::fromUInt(state.maximumSizeMb)},
-            {"WarningOverlayThreshold", uwf::app::wmi::WmiValue::fromUInt(state.warningThresholdMb)},
-            {"CriticalOverlayThreshold", uwf::app::wmi::WmiValue::fromUInt(state.criticalThresholdMb)}};
-  }
-  void invokeMethod(const std::string&, const std::string& method, const uwf::app::wmi::WmiRow& inputs) const override {
-    invocations.append(QString::fromStdString(method));
-    if (invocations.size() == 1) {
-      if (failureMode == 1) throw uwf::app::wmi::WmiProviderError(5, method, "injected rejection");
-      if (failureMode == 2) throw uwf::app::wmi::WmiInvocationUncertain(method, "injected uncertain result");
-      if (failureMode == 4) return;
-    }
-    auto candidate = state;
-    if (method == "SetWarningThreshold")
-      candidate.warningThresholdMb = inputs.at("size").toUInt();
-    else if (method == "SetCriticalThreshold")
-      candidate.criticalThresholdMb = inputs.at("size").toUInt();
-    else if (method == "SetMaximumSize")
-      candidate.maximumSizeMb = inputs.at("size").toUInt();
-    else if (method == "SetType")
-      candidate.type = static_cast<core::OverlayType>(inputs.at("type").toUInt());
-    else
-      throw std::runtime_error("unexpected overlay method");
-    const bool invalidThresholds =
-        candidate.warningThresholdMb != 0 && candidate.criticalThresholdMb != 0 && candidate.warningThresholdMb >= candidate.criticalThresholdMb;
-    const bool invalidStorage = candidate.type == core::OverlayType::Disk && (candidate.maximumSizeMb < 1024 || candidate.maximumSizeMb >= 3000);
-    if (invalidThresholds || invalidStorage) {
-      invalidIntermediate = true;
-      throw uwf::app::wmi::WmiProviderError(0x80041008u, method, "intermediate state violates provider constraints");
-    }
-    state = candidate;
-    if (invocations.size() == 1 && failureMode == 3) throw uwf::app::wmi::WmiInvocationUncertain(method, "injected lost acknowledgement");
-  }
-  uwf::app::wmi::WmiMethodOutput callMethodRead(const std::string&, const std::string&, const uwf::app::wmi::WmiRow&) const override {
-    throw std::runtime_error("unexpected overlay read method");
-  }
-  uwf::app::wmi::WmiMethodOutput callMethodReadCancelable(const std::string&, const std::string&, const uwf::app::wmi::WmiRow&,
-                                                          std::stop_token) const override {
-    throw std::runtime_error("unexpected cancelable overlay read");
-  }
-  void putInstance(const std::string&, const uwf::app::wmi::WmiRow&, uwf::app::wmi::WmiPutMode) const override {
-    throw std::runtime_error("unexpected overlay putInstance");
-  }
-};
+  return result;
+}
 
 class MutableApplicationStateSource final : public app::ApplicationStateSource {
  public:
   std::vector<core::VolumeInfo> volumes;
   core::UwfSnapshot snapshot;
+  app::OverlayPolicySnapshot policy;
+  std::optional<bool> hormEnabled{};
   QString failure;
   int reads = 0;
 
   ReadOperation readOperation(uwf::app::UwfCapability) override {
     ++reads;
-    return [candidate = app::ApplicationState{volumes, snapshot}, error = failure](std::stop_token) {
+    return [candidate = app::ApplicationState{volumes, snapshot, policy, hormEnabled}, error = failure](std::stop_token) {
       if (!error.isEmpty()) throw std::runtime_error(error.toStdString());
       return candidate;
     };

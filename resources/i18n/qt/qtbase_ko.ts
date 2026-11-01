@@ -9,11 +9,11 @@
         </message>
         <message>
             <source>&amp;Step up</source>
-            <translation>한 단계 위로(&amp;S)</translation>
+            <translation>값 늘리기(&amp;S)</translation>
         </message>
         <message>
             <source>Step &amp;down</source>
-            <translation>한 단계 아래로(&amp;D)</translation>
+            <translation>값 줄이기(&amp;D)</translation>
         </message>
     </context>
     <context>
@@ -51,11 +51,11 @@
         <name>QUnicodeControlCharacterMenu</name>
         <message>
             <source>LRM Left-to-right mark</source>
-            <translation>LRM 왼쪽에서 오른쪽 기호</translation>
+            <translation>LRM 왼쪽에서 오른쪽 표시</translation>
         </message>
         <message>
             <source>RLM Right-to-left mark</source>
-            <translation>RLM 오른쪽에서 왼쪽 기호</translation>
+            <translation>RLM 오른쪽에서 왼쪽 표시</translation>
         </message>
         <message>
             <source>ZWJ Zero width joiner</source>
@@ -87,7 +87,7 @@
         </message>
         <message>
             <source>PDF Pop directional formatting</source>
-            <translation>PDF Pop 방향 포매팅</translation>
+            <translation>PDF 방향 서식 종료</translation>
         </message>
         <message>
             <source>LRI Left-to-right isolate</source>
@@ -99,11 +99,11 @@
         </message>
         <message>
             <source>FSI First strong isolate</source>
-            <translation>FSI 첫 대문자 격리</translation>
+            <translation>FSI 첫 강한 방향성 문자 기준 격리</translation>
         </message>
         <message>
             <source>PDI Pop directional isolate</source>
-            <translation>PDI 방향 격리 끝</translation>
+            <translation>PDI 방향 격리 종료</translation>
         </message>
         <message>
             <source>Insert Unicode control character</source>

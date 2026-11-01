@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
-#include <QHash>
+#include <QMap>
 #include <atomic>
 #include <chrono>
 #include <stdexcept>
 #include <thread>
 
-#include "app/commit/CommitPreparation.h"
+#include "application/commit/CommitPlanner.h"
+#include "application/commit/contracts/CommitTraversalSource.h"
+#include "support/app/FileTargetFixture.h"
 namespace uwf::test::commit {
 template <typename Waiting>
 void waitForRelease(Waiting waiting) {
@@ -20,7 +22,7 @@ void waitForRelease(Waiting waiting) {
 class Tree final : public app::CommitTraversalSource {
  public:
   app::CommitNode root, branch, leaf;
-  QHash<QString, QList<app::CommitNode>> children;
+  QMap<app::CommitNodeIdentity, QList<app::CommitNode>> children;
   std::atomic_bool fail{false}, block{false}, release{false}, ignoreStop{false}, failAfterChildren{false};
   std::function<void()> afterChild;
   mutable std::atomic_int reads{0}, failedReads{0};
@@ -43,9 +45,9 @@ class Tree final : public app::CommitTraversalSource {
     return node.path == root.path && node.kind == app::CommitTargetKind::File ? root : node;
   }
   bool exists(const app::CommitNode&) const override { return true; }
-  std::string volumeForPath(const QString&) const override { return "C:"; }
-  std::vector<std::string> mountedLetters(const std::string&) const override { return {"C:"}; }
-  QString read(const app::CommitNode& node, std::stop_token stop, const app::CommitNodeVisitor& discover) const override {
+  std::string driveLetterForPath(const QString&) const override { return "C:"; }
+  app::FileCommitTarget resolveFileTarget(const QString& path) const override { return application::memoryFileTarget(path); }
+  QString enumerateChildren(const app::CommitNode& node, std::stop_token stop, const app::CommitNodeVisitor& discover) const override {
     ++reads;
     waitForRelease([&] { return block && !release && (ignoreStop || !stop.stop_requested()); });
     if (node.identity() == branch.identity() && fail) {

@@ -1,0 +1,82 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2026 HsingYun (iakext@gmail.com)
+
+get_filename_component(uwf_boundary_root "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE)
+
+# Check dependency paths, not implementation names in comments or diagnostics.
+# Independent component-link tests also exercise actual linker dependencies.
+function(uwf_check_includes directory forbidden)
+    set(source_root "${uwf_boundary_root}/src")
+    if(ARGC GREATER 2)
+        set(source_root "${uwf_boundary_root}/${ARGV2}")
+    endif()
+    if(directory MATCHES "\\.(h|cpp)$")
+        if(NOT EXISTS "${source_root}/${directory}")
+            message(FATAL_ERROR "Dependency boundary source is missing: ${directory}")
+        endif()
+        set(sources "${source_root}/${directory}")
+    else()
+        file(GLOB_RECURSE sources
+            "${source_root}/${directory}/*.h"
+            "${source_root}/${directory}/*.cpp"
+        )
+    endif()
+    if(NOT CMAKE_SCRIPT_MODE_FILE)
+        set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${sources})
+    endif()
+    foreach(source IN LISTS sources)
+        file(READ "${source}" content)
+        string(REGEX REPLACE [[/\*([^*]|\*+[^*/])*\*+/]] "" content "${content}")
+        string(REGEX REPLACE "//[^\n]*" "" content "${content}")
+        string(REGEX MATCHALL "(^|\n)[ \t]*#[ \t]*include[ \t]*[<\"][^>\"\n]+[>\"]" includes "${content}")
+        foreach(include IN LISTS includes)
+            if(include MATCHES "[<\"](${forbidden})")
+                message(FATAL_ERROR "Layer ${directory} imports a forbidden dependency: ${source}\n${include}")
+            endif()
+        endforeach()
+    endforeach()
+    list(LENGTH sources count)
+    message(STATUS "Layer boundary checked: ${directory} (${count} files)")
+endfunction()
+
+uwf_check_includes(foundation "domain/|application/|presentation/|infrastructure/|composition/|Q[A-Za-z]|[Ww]indows\\.h")
+uwf_check_includes(domain "application/|presentation/|infrastructure/|composition/|Q[A-Za-z]|[Ww]indows\\.h|wbem[a-z]*\\.h|thread|future")
+uwf_check_includes(application "presentation/|infrastructure/|composition/|[Ww]indows\\.h|wbem[a-z]*\\.h|QtWidgets/|QWidget|QDialog|QSettings|QLocalServer|QLocalSocket|QtEndian")
+uwf_check_includes(presentation/models "application/|domain/|infrastructure/|composition/|presentation/(viewmodels|views|controls|design|appearance|dialogs)/|QtWidgets/|QWidget|QDialog|QIcon|QPainter")
+uwf_check_includes(presentation/console "infrastructure/|composition/|presentation/(viewmodels|views|controls|design|appearance|dialogs)/|QtWidgets/|QWidget|QDialog|[Ww]indows\\.h")
+uwf_check_includes(presentation/viewmodels "domain/uwf/contracts/|presentation/(views|controls|design|dialogs|appearance)/|infrastructure/|composition/|[Ww]indows\\.h|wbem[a-z]*\\.h|QtWidgets/|QWidget|QDialog")
+uwf_check_includes(presentation/views "domain/uwf/contracts/|infrastructure/(uwf/|windows/management/)|composition/|wbem[a-z]*\\.h")
+uwf_check_includes(presentation/controls "application/|domain/|presentation/(viewmodels|views|appearance|dialogs)/|infrastructure/|composition/")
+uwf_check_includes(presentation/design "application/|domain/|presentation/(viewmodels|views|controls|appearance|dialogs)/|infrastructure/|composition/")
+uwf_check_includes(presentation/dialogs "domain/uwf/contracts/|presentation/(viewmodels|views)/|infrastructure/(uwf/|windows/management/)|composition/")
+uwf_check_includes(presentation/appearance "domain/uwf/contracts/|presentation/(viewmodels|views)/|infrastructure/(uwf/|windows/management/)|composition/")
+uwf_check_includes(composition/desktop/ViewModelComposition.cpp "infrastructure/")
+uwf_check_includes(composition/desktop/WorkflowComposition.cpp "infrastructure/")
+uwf_check_includes(infrastructure "presentation/|composition/")
+uwf_check_includes(infrastructure/uwf "domain/uwf/solvers/|application/")
+uwf_check_includes(support/uwf "domain/uwf/solvers/|application/uwf/UwfRequestPrecheck" tests)
+uwf_check_includes(domain/uwf/solvers "domain/uwf/contracts/Backend\\.h|fstream|filesystem|[Ww]indows\\.h|thread|future")
+uwf_check_includes(infrastructure/uwf/routing "application/|infrastructure/windows/|infrastructure/uwf/windows/|Q[A-Za-z]|[Ww]indows\\.h|thread|future")
+uwf_check_includes(infrastructure/windows/management "application/|domain/|infrastructure/uwf/")
+uwf_check_includes(infrastructure/windows/text "application/|domain/|infrastructure/uwf/|Q[A-Za-z]|thread|future")
+
+# Business and presentation tests exercise semantic ports. Protocol fixtures
+# belong to backend/integration suites, not a second upper-layer UWF model.
+set(uwf_test_protocol_dependencies "infrastructure/(uwf/windows/|windows/management/)|support/windows/(RecordingWmiOperations|OverlayWmiFixture)")
+uwf_check_includes(cases/application "${uwf_test_protocol_dependencies}" tests)
+uwf_check_includes(cases/presentation "${uwf_test_protocol_dependencies}" tests)
+uwf_check_includes(support/app "${uwf_test_protocol_dependencies}" tests)
+
+# Application contracts may depend on other contracts, but never their
+# implementations. Feature folders are organization, not extra runtime layers.
+file(GLOB_RECURSE uwf_application_headers "${uwf_boundary_root}/src/application/*.h")
+foreach(source IN LISTS uwf_application_headers)
+    if(source MATCHES "/contracts/")
+        file(STRINGS "${source}" includes REGEX "^[ \t]*#[ \t]*include[ \t]*[\"]application/")
+        foreach(include IN LISTS includes)
+            if(NOT include MATCHES "[\"]application/[^\"]+/contracts/")
+                message(FATAL_ERROR "Application contract imports an implementation: ${source}\n${include}")
+            endif()
+        endforeach()
+    endif()
+endforeach()

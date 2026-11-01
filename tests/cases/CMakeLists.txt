@@ -2,341 +2,631 @@
 
 # Value and domain contracts need neither widgets nor Windows adapters.
 uwf_add_test(UwfSharedValueTests
-    LAYER shared FEATURE values RUNTIME appless
-    SOURCES shared/SharedValueTests.cpp
-    LIBRARIES UwfShared Qt6::Test
+    LAYER foundation FEATURE values RUNTIME appless
+    SOURCES foundation/SharedValueTests.cpp
+    LIBRARIES UwfFoundation Qt6::Test
 )
 uwf_add_test(UwfDomainPolicyTests
-    LAYER core FEATURE configuration RUNTIME appless
-    SOURCES core/DomainPolicyTests.cpp
-    LIBRARIES UwfCore Qt6::Test
+    LAYER domain FEATURE configuration RUNTIME appless
+    SOURCES domain/uwf/DomainPolicyTests.cpp
+    LIBRARIES UwfDomain UwfObjectNameComparison Qt6::Test
+)
+uwf_add_test(UwfCollectionContractTests
+    LAYER domain FEATURE collection-contract RUNTIME appless
+    SOURCES domain/uwf/UwfCollectionContractTests.cpp
+    LIBRARIES UwfDomain Qt6::Test
 )
 
 # Application cases link Windows adapters only when they use those ports.
-function(uwf_add_application_case suite feature)
+uwf_add_test(UwfFailureSolverTests
+    LAYER domain FEATURE uwf-admission RUNTIME appless
+    SOURCES domain/uwf/UwfFailureSolverTests.cpp
+        ../support/uwf/UwfOperationCatalog.cpp
+        ../support/uwf/UwfOperationCatalog.h
+    LIBRARIES UwfContractSolvers Qt6::Test
+)
+uwf_add_test(UwfAllVolumeProtectionSolverTests
+    LAYER domain FEATURE all-volume-protection RUNTIME appless
+    SOURCES domain/uwf/AllVolumeProtectionSolverTests.cpp
+    LIBRARIES UwfAllVolumeProtectionSolvers Qt6::Test
+)
+uwf_add_test(UwfCompositeAllVolumeProtectionTests
+    LAYER application FEATURE all-volume-protection RUNTIME appless
+    SOURCES application/uwf/CompositeAllVolumeProtectionTests.cpp
+    LIBRARIES UwfAllVolumeProtection Qt6::Test
+)
+uwf_add_test(UwfPrecheckDifferentialTests
+    LAYER infrastructure FEATURE uwf-compatibility RUNTIME appless
+    SOURCES infrastructure/uwf/simulation/UwfPrecheckDifferentialTests.cpp
+    LIBRARIES UwfRequestPrecheck UwfTestCompatibilitySupport Qt6::Test
+)
+function(uwf_add_application_case suite feature source)
     uwf_add_test(Uwf${suite}
-        LAYER app FEATURE ${feature} RUNTIME appless
-        SOURCES "app/${suite}.cpp"
+        LAYER application FEATURE ${feature} RUNTIME appless
+        SOURCES "${source}"
         LIBRARIES UwfApplication Qt6::Test ${ARGN}
     )
 endfunction()
-uwf_add_application_case(ConfigurationDraftTests configuration)
-uwf_add_application_case(ConfigurationImportTests configuration)
-uwf_add_application_case(ConfigurationExecutionTests configuration UwfTestApplicationSupport)
+uwf_add_application_case(ConfigurationDraftTests configuration application/configuration/ConfigurationDraftTests.cpp)
+uwf_add_test(UwfStateExecutionTests
+    LAYER application FEATURE uwf-state RUNTIME appless
+    SOURCES application/uwf/UwfStateExecutionTests.cpp
+    LIBRARIES UwfRequestPrecheck UwfCompatibilityRuntime Qt6::Test
+)
+uwf_add_test(UwfStateConsistencyTests
+    LAYER application FEATURE uwf-state RUNTIME appless
+    SOURCES application/uwf/UwfStateConsistencyTests.cpp
+    LIBRARIES UwfApplication UwfRequestPrecheck UwfTestCompatibilitySupport Qt6::Test
+)
+uwf_add_test(UwfStateMutationMatrixTests
+    LAYER application FEATURE uwf-state RUNTIME appless
+    SOURCES application/uwf/UwfStateMutationMatrixTests.cpp
+    LIBRARIES UwfApplication UwfRequestPrecheck UwfTestCompatibilitySupport Qt6::Test
+)
+uwf_add_test(UwfWindowsStatusTests
+    LAYER infrastructure FEATURE error-contract RUNTIME appless
+    SOURCES infrastructure/uwf/execution/UwfWindowsStatusTests.cpp
+    LIBRARIES UwfCompatibilityRuntime Qt6::Test
+)
+uwf_add_test(UwfHibernationCapabilitiesTests
+    LAYER infrastructure FEATURE hibernation RUNTIME appless
+    SOURCES infrastructure/windows/power/HibernationCapabilitiesTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
+)
+uwf_add_test(UwfBackendEquivalenceTests
+    LAYER infrastructure FEATURE backend-equivalence RUNTIME eventloop
+    SOURCES infrastructure/uwf/conformance/UwfBackendEquivalenceTests.cpp
+        ../support/uwf/UwfPublicInterfaceCases.h
+    LIBRARIES UwfWindowsInfrastructure UwfTestCompatibilitySupport Qt6::Test
+)
+uwf_assert_backend_independent(UwfBackendEquivalenceTests)
+uwf_assert_backend_independent(UwfWindowsStatusTests)
+uwf_add_test(UwfApplicationStateSourceTests
+    LAYER application FEATURE uwf-state RUNTIME appless
+    SOURCES application/uwf/UwfApplicationStateSourceTests.cpp
+    LIBRARIES UwfApplication UwfRequestPrecheck UwfTestCompatibilitySupport Qt6::Test
+)
+uwf_add_test(UwfReadStateTests
+    LAYER application FEATURE uwf-state RUNTIME appless
+    SOURCES application/uwf/UwfReadStateTests.cpp
+    LIBRARIES UwfApplication UwfTestCompatibilitySupport Qt6::Test
+)
+uwf_add_test(UwfFallbackTests
+    LAYER infrastructure FEATURE uwf-compatibility RUNTIME appless
+    SOURCES infrastructure/uwf/routing/UwfFallbackTests.cpp
+    LIBRARIES UwfApplication UwfRequestPrecheck UwfTestCompatibilitySupport Qt6::Test
+)
+uwf_add_test(UwfFakeIntegrationTests
+    LAYER infrastructure FEATURE uwf-compatibility RUNTIME appless
+    SOURCES infrastructure/uwf/simulation/UwfFakeIntegrationTests.cpp
+    LIBRARIES UwfApplication UwfRequestPrecheck UwfTestCompatibilitySupport Qt6::Test
+)
+uwf_add_test(UwfFakeStageContractTests
+    LAYER infrastructure FEATURE uwf-compatibility RUNTIME appless
+    SOURCES infrastructure/uwf/simulation/UwfFakeStageContractTests.cpp
+    LIBRARIES UwfApplication UwfTestCompatibilitySupport Qt6::Test
+)
+uwf_add_application_case(ConfigurationImportTests configuration application/configuration/ConfigurationImportTests.cpp)
+uwf_add_application_case(ConfigurationExecutionTests configuration application/configuration/ConfigurationExecutionTests.cpp UwfTestApplicationSupport UwfTestCompatibilitySupport UwfAllVolumeProtection)
 uwf_add_test(UwfConfigurationLifecycleTests
     LAYER presentation FEATURE configuration-lifecycle RUNTIME eventloop
-    SOURCES presentation/ConfigurationLifecycleTests.cpp
-    LIBRARIES UwfPresentation UwfTestApplicationSupport UwfWindows Qt6::Test
+    SOURCES presentation/viewmodels/configuration/ConfigurationLifecycleTests.cpp
+    LIBRARIES UwfViewModels UwfTestApplicationSupport Qt6::Test
 )
-uwf_add_application_case(StartupConfigurationTests startup)
-uwf_add_application_case(CommandProtocolTests protocols)
-uwf_add_application_case(RegistryMetadataTests registry UwfWindows)
-uwf_add_application_case(FileStagingPolicyTests staging UwfWindows)
-uwf_add_application_case(FileStagingDraftTests staging UwfTestApplicationSupport UwfWindows)
-uwf_add_application_case(FileStagingDurabilityTests staging UwfTestApplicationSupport)
-uwf_add_application_case(PathPolicyTests paths)
-uwf_add_application_case(OverlayCatalogTests overlay)
-uwf_add_application_case(CommandRenderingTests commands)
-uwf_add_application_case(OverlayPlanningTests configuration)
-uwf_add_application_case(CommitBatchExecutionTests commit)
-uwf_add_application_case(CommitPreparationTests commit)
-uwf_add_application_case(ExclusionEditingTests exclusions)
-uwf_add_application_case(ConfigurationEditSessionTests configuration)
-uwf_add_application_case(RegistryTreeCommitterTests registry UwfTestApplicationSupport)
-uwf_add_application_case(FileStagingCommitterTests staging UwfTestApplicationSupport UwfWindows)
-
-uwf_add_test(UwfFileStagingCoordinatorTests
-    LAYER app FEATURE staging RUNTIME eventloop
-    SOURCES app/FileStagingCoordinatorTests.cpp
+uwf_add_application_case(StartupConfigurationTests startup application/startup/StartupConfigurationTests.cpp)
+uwf_add_test(UwfCommandProtocolTests
+    LAYER infrastructure FEATURE protocols RUNTIME appless
+    SOURCES infrastructure/windows/ipc/CommandProtocolTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
+)
+uwf_add_test(UwfRegistryFileStagingCodecTests
+    LAYER infrastructure FEATURE staging RUNTIME appless
+    SOURCES infrastructure/windows/staging/RegistryFileStagingCodecTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
+)
+uwf_add_test(UwfIniUserConfigTests
+    LAYER infrastructure FEATURE settings RUNTIME appless
+    SOURCES infrastructure/windows/settings/IniUserConfigTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
+)
+uwf_add_application_case(RegistryMetadataTests registry application/registry/RegistryMetadataTests.cpp UwfWindowsInfrastructure)
+uwf_add_application_case(FileStagingPolicyTests staging application/staging/FileStagingPolicyTests.cpp)
+uwf_add_application_case(AutomaticCommitPolicyTests staging application/staging/AutomaticCommitPolicyTests.cpp)
+uwf_add_test(UwfFileStagingEditorTests
+    LAYER application FEATURE staging RUNTIME eventloop
+    SOURCES application/staging/FileStagingEditorTests.cpp
     LIBRARIES UwfApplication Qt6::Test
 )
+uwf_add_application_case(FileStagingDraftTests staging application/staging/FileStagingDraftTests.cpp UwfTestApplicationSupport UwfTestCompatibilitySupport UwfWindowsInfrastructure)
+uwf_add_application_case(FileStagingDurabilityTests staging application/staging/FileStagingDurabilityTests.cpp UwfTestApplicationSupport UwfTestCompatibilitySupport UwfRequestPrecheck)
+uwf_add_application_case(PathPolicyTests paths application/paths/PathPolicyTests.cpp)
+uwf_add_application_case(OverlayCatalogTests overlay application/overlay/OverlayCatalogTests.cpp)
+uwf_add_application_case(UwfmgrCommandCodecTests commands application/configuration/commands/UwfmgrCommandCodecTests.cpp)
+uwf_add_application_case(ConsoleCommandExecutorTests console application/console/ConsoleCommandExecutorTests.cpp UwfTestCompatibilitySupport UwfAllVolumeProtection)
+uwf_add_test(UwfConsoleRendererTests
+    LAYER presentation FEATURE console RUNTIME appless
+    SOURCES presentation/console/ConsoleRendererTests.cpp
+    LIBRARIES UwfConsolePresentation Qt6::Test
+)
+uwf_add_test(UwfConsoleDiagnosticsTests
+    LAYER presentation FEATURE console RUNTIME appless
+    SOURCES presentation/console/ConsoleDiagnosticsTests.cpp
+    LIBRARIES UwfConsolePresentation Qt6::Test
+)
+uwf_add_test(UwfConsoleSessionTests
+    LAYER infrastructure FEATURE console RUNTIME appless
+    SOURCES infrastructure/windows/console/ConsoleSessionTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
+)
+qt_add_executable(UwfConsoleApplicationTests composition/ConsoleApplicationTests.cpp)
+target_include_directories(UwfConsoleApplicationTests PRIVATE
+    "${PROJECT_SOURCE_DIR}/src"
+    "${PROJECT_SOURCE_DIR}/tests"
+)
+target_link_libraries(UwfConsoleApplicationTests PRIVATE UwfApplication Qt6::Test)
+uwf_configure_cpp_target(UwfConsoleApplicationTests)
+target_compile_definitions(UwfConsoleApplicationTests PRIVATE UWF_EXECUTABLE_PATH="$<TARGET_FILE:UWF>")
+add_dependencies(UwfConsoleApplicationTests UWF)
+uwf_register_test(UwfConsoleApplicationTests
+    TARGET UwfConsoleApplicationTests LAYER composition FEATURE console RUNTIME eventloop
+    FUNCTIONS embeddedManifestUsesInvokerPrivileges executableRemainsAGuiApplication embeddedVersionResourceKeepsProductIdentity
+        everyHelpEntryIsCapturedWithoutAGui invalidCommandsAreCapturedWithTheirOriginalExitCode
+        redirectedFilesCaptureTheOriginalOutput oneRedirectedOutputIsEnough
+)
+uwf_register_test(UwfConsoleApplicationGuiTests
+    TARGET UwfConsoleApplicationTests LAYER composition FEATURE console RUNTIME desktop
+    FUNCTIONS everyHelpEntryUsesAGraphicalDialog invalidCommandsUseAGraphicalDialogWithoutCapture
+)
+uwf_add_application_case(ConfigurationScriptTests configuration application/configuration/planning/ConfigurationScriptTests.cpp UwfTestCompatibilitySupport UwfAllVolumeProtection)
+uwf_add_application_case(OverlayPlanningTests configuration application/configuration/OverlayPlanningTests.cpp)
+uwf_add_application_case(OverlayStoragePlanningTests configuration application/configuration/OverlayStoragePlanningTests.cpp UwfTestCompatibilitySupport UwfRequestPrecheck)
+uwf_add_test(UwfOverlayFilesQueryManagerTests
+    LAYER application FEATURE overlay-files RUNTIME eventloop
+    SOURCES application/overlay/OverlayFilesQueryManagerTests.cpp
+    LIBRARIES UwfApplication Qt6::Test
+)
+uwf_add_application_case(OverlayPolicyTests overlay-policy application/overlay/OverlayPolicyTests.cpp)
+uwf_add_application_case(OverlayMaintenanceTests overlay-maintenance application/overlay/OverlayMaintenanceTests.cpp UwfTestCompatibilitySupport)
+uwf_add_application_case(OverlayMaintenanceExecutionTests configuration application/configuration/OverlayMaintenanceExecutionTests.cpp)
+uwf_add_application_case(OverlayPolicyEditorTests overlay-policy application/configuration/OverlayPolicyEditorTests.cpp)
+target_include_directories(UwfOverlayPolicyEditorTests PRIVATE "${PROJECT_SOURCE_DIR}/tests")
+uwf_add_application_case(OverlaySettingsEditSessionTests overlay-maintenance application/configuration/OverlaySettingsEditSessionTests.cpp)
+target_include_directories(UwfOverlaySettingsEditSessionTests PRIVATE "${PROJECT_SOURCE_DIR}/tests")
+uwf_add_application_case(MixedConfigurationTests configuration application/configuration/MixedConfigurationTests.cpp UwfTestApplicationSupport)
+uwf_add_application_case(ConfigurationRepositoryTests configuration application/configuration/ConfigurationRepositoryTests.cpp)
+uwf_add_application_case(CommitBatchExecutionTests commit application/commit/CommitBatchExecutionTests.cpp)
+uwf_add_application_case(CommitPreparationTests commit application/commit/CommitPreparationTests.cpp)
+uwf_add_application_case(ExclusionEditingTests exclusions application/configuration/ExclusionEditingTests.cpp)
+uwf_add_application_case(ConfigurationEditSessionTests configuration application/configuration/ConfigurationEditSessionTests.cpp UwfTestApplicationSupport)
+uwf_add_application_case(EditorPublicationTests configuration application/configuration/EditorPublicationTests.cpp)
+uwf_add_application_case(RegistryTreeCommitterTests registry application/registry/RegistryTreeCommitterTests.cpp UwfTestApplicationSupport UwfTestCompatibilitySupport UwfRequestPrecheck)
+uwf_add_application_case(MaintenanceRepositoryTests uwf-maintenance application/uwf/MaintenanceRepositoryTests.cpp UwfTestCompatibilitySupport UwfRequestPrecheck)
+uwf_add_application_case(FileStagingCommitterTests staging application/staging/FileStagingCommitterTests.cpp UwfTestApplicationSupport UwfTestCompatibilitySupport UwfWindowsInfrastructure)
+
+uwf_add_test(UwfAgentSupervisionTests
+    LAYER infrastructure FEATURE enhanced-mode RUNTIME appless
+    SOURCES infrastructure/windows/service/AgentSupervisionTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
+)
+uwf_add_test(UwfEnhancedModeServiceRuntimeTests
+    LAYER infrastructure FEATURE enhanced-mode RUNTIME appless
+    SOURCES infrastructure/windows/service/EnhancedModeServiceRuntimeTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
+)
+uwf_add_test(UwfPreshutdownCommitGateTests
+    LAYER infrastructure FEATURE enhanced-mode RUNTIME appless
+    SOURCES infrastructure/windows/service/PreshutdownCommitGateTests.cpp
+    LIBRARIES Qt6::Test
+)
 uwf_add_test(UwfEnhancedModeSessionTests
-    LAYER app FEATURE enhanced-mode RUNTIME eventloop
-    SOURCES app/EnhancedModeSessionTests.cpp
+    LAYER application FEATURE enhanced-mode RUNTIME eventloop
+    SOURCES application/enhanced/EnhancedModeSessionTests.cpp
     LIBRARIES UwfApplication UwfTestApplicationSupport Qt6::Test
 )
 uwf_add_test(UwfEnhancedModeManagerTests
-    LAYER app FEATURE enhanced-mode RUNTIME eventloop
-    SOURCES app/EnhancedModeManagerTests.cpp
-    LIBRARIES UwfApplication UwfTestApplicationSupport UwfWindows Qt6::Test
+    LAYER application FEATURE enhanced-mode RUNTIME eventloop
+    SOURCES application/enhanced/EnhancedModeManagerTests.cpp
+    LIBRARIES UwfApplication UwfTestApplicationSupport UwfTestCompatibilitySupport Qt6::Test
+)
+uwf_add_test(UwfEnhancedModeOperationsTests
+    LAYER application FEATURE enhanced-mode RUNTIME eventloop
+    SOURCES application/enhanced/EnhancedModeOperationsTests.cpp
+    LIBRARIES UwfApplication UwfTestApplicationSupport UwfTestCompatibilitySupport Qt6::Test
 )
 uwf_add_test(UwfFileStagingPreparationTests
-    LAYER app FEATURE staging RUNTIME eventloop
-    SOURCES app/FileStagingPreparationTests.cpp
-    LIBRARIES UwfApplication UwfWindows Qt6::Test
+    LAYER application FEATURE staging RUNTIME eventloop
+    SOURCES application/staging/FileStagingPreparationTests.cpp
+    LIBRARIES UwfApplication UwfWindowsInfrastructure UwfRequestPrecheck UwfTestCompatibilitySupport Qt6::Test
 )
 uwf_add_test(UwfPowerCoordinatorTests
-    LAYER app FEATURE power RUNTIME eventloop
-    SOURCES app/PowerCoordinatorTests.cpp
-    LIBRARIES UwfApplication UwfWindows Qt6::Test
+    LAYER application FEATURE power RUNTIME eventloop
+    SOURCES application/power/PowerCoordinatorTests.cpp
+    LIBRARIES UwfApplication UwfWindowsInfrastructure UwfTestCompatibilitySupport Qt6::Test
 )
 
-uwf_add_test(UwfWriteVerificationTests
-    LAYER contracts FEATURE uwf RUNTIME appless
-    SOURCES contracts/UwfWriteVerificationTests.cpp
-    LIBRARIES UwfApplication UwfWindows Qt6::Test advapi32 user32
-)
 uwf_add_test(UwfWmiApiBehaviorTests
-    LAYER contracts FEATURE wmi RUNTIME appless
-    SOURCES contracts/WmiApiBehaviorTests.cpp
-    LIBRARIES UwfApplication UwfWindows Qt6::Test advapi32 ole32 user32 wbemuuid
+    LAYER infrastructure FEATURE wmi RUNTIME appless
+    SOURCES infrastructure/windows/management/wmi/WmiApiBehaviorTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test advapi32 ole32 user32 wbemuuid
 )
-# Compile the production reader against a controlled runtime, without COM.
+if(WIN32)
+    uwf_add_test(UwfMtaExecutionTests
+        LAYER infrastructure FEATURE mta-execution RUNTIME appless TIMEOUT 120
+        SOURCES infrastructure/windows/execution/MtaExecutionTests.cpp
+        LIBRARIES UwfWindowsInfrastructure Qt6::Test ole32
+    )
+endif()
+# Exercise the application reader and injected WMI adapter without COM.
 uwf_add_test(UwfOverlayFilesReaderTests
-    LAYER contracts FEATURE overlay RUNTIME appless
-    SOURCES contracts/OverlayFilesReaderTests.cpp
-        "${PROJECT_SOURCE_DIR}/src/windows/uwf/OverlayFilesReader.cpp"
-    LIBRARIES UwfApplication Qt6::Test
+    LAYER integration FEATURE overlay RUNTIME eventloop
+    SOURCES infrastructure/uwf/integration/OverlayFilesReaderTests.cpp
+    LIBRARIES UwfApplication UwfWindowsInfrastructure UwfRequestPrecheck Qt6::Test
 )
 
 uwf_add_test(UwfPagerTests
     LAYER presentation FEATURE pagination RUNTIME appless
-    SOURCES presentation/PagerTests.cpp
-    LIBRARIES UwfPresentation Qt6::Test
+    SOURCES presentation/models/PagerTests.cpp
+    LIBRARIES UwfPresentationModels Qt6::Test
 )
 uwf_add_test(UwfTextFilePresentationTests
     LAYER presentation FEATURE text-files RUNTIME appless
-    SOURCES presentation/TextFilePresentationTests.cpp
-    LIBRARIES UwfPresentation Qt6::Test
+    SOURCES presentation/viewmodels/common/TextFilePresentationTests.cpp
+    LIBRARIES UwfViewModels Qt6::Test
+)
+uwf_add_test(UwfOverlayTextTests
+    LAYER presentation FEATURE localization RUNTIME eventloop
+    TRANSLATIONS
+    SOURCES presentation/viewmodels/integration/OverlayTextTests.cpp
+    LIBRARIES UwfViewModels UwfTestCompatibilitySupport Qt6::Test
 )
 uwf_add_test(UwfUserConfigExportViewModelTests
     LAYER presentation FEATURE startup RUNTIME appless
-    SOURCES presentation/UserConfigExportViewModelTests.cpp
-    LIBRARIES UwfPresentation Qt6::Test
+    SOURCES presentation/viewmodels/settings/UserConfigExportViewModelTests.cpp
+    LIBRARIES UwfViewModels Qt6::Test
 )
-uwf_add_test(UwfViewModelBehaviorTests
-    LAYER presentation FEATURE models RUNTIME eventloop
-    SOURCES presentation/ViewModelBehaviorTests.cpp
-    LIBRARIES UwfPresentation UwfWindows Qt6::Test advapi32 user32
+uwf_add_test(UwfMainWindowViewModelTests
+    LAYER presentation FEATURE shell RUNTIME eventloop
+    SOURCES presentation/viewmodels/shell/MainWindowViewModelTests.cpp
+    LIBRARIES UwfViewModels UwfTestApplicationSupport Qt6::Test
 )
+# Suites follow the capability they exercise; only cross-feature workflows
+# remain under integration. Neutral item models link without Widgets or adapters.
+uwf_add_test(UwfPageProxyModelTests
+    LAYER presentation FEATURE pagination RUNTIME eventloop
+    SOURCES presentation/models/PageProxyModelTests.cpp
+    LIBRARIES UwfPresentationModels Qt6::Test
+)
+function(uwf_add_viewmodel_case suite feature source)
+    uwf_add_test(Uwf${suite}
+        LAYER presentation FEATURE ${feature} RUNTIME eventloop
+        SOURCES ${source}
+        LIBRARIES UwfViewModels UwfTestApplicationSupport Qt6::Test ${ARGN}
+    )
+endfunction()
+uwf_add_viewmodel_case(ConfigurationEditingViewModelTests configuration presentation/viewmodels/configuration/ConfigurationEditingViewModelTests.cpp)
+uwf_add_viewmodel_case(OverlayMaintenanceViewModelTests overlay-maintenance presentation/viewmodels/configuration/OverlayMaintenanceViewModelTests.cpp)
+uwf_add_viewmodel_case(OverlaySettingsEditViewModelTests overlay-maintenance presentation/viewmodels/configuration/OverlaySettingsEditViewModelTests.cpp)
+uwf_add_viewmodel_case(RuntimeModePresentationTests overlay-maintenance presentation/viewmodels/configuration/RuntimeModePresentationTests.cpp)
+uwf_add_viewmodel_case(VolumeConfigurationViewModelTests configuration presentation/viewmodels/configuration/VolumeConfigurationViewModelTests.cpp)
+uwf_add_viewmodel_case(ExclusionListViewModelTests exclusions presentation/viewmodels/configuration/ExclusionListViewModelTests.cpp)
+uwf_add_viewmodel_case(ConfigurationReviewViewModelTests configuration presentation/viewmodels/configuration/ConfigurationReviewViewModelTests.cpp)
+uwf_add_viewmodel_case(FileStagingViewModelTests staging presentation/viewmodels/staging/FileStagingViewModelTests.cpp)
+uwf_add_viewmodel_case(EnhancedModeViewModelTests enhanced-mode presentation/viewmodels/enhanced/EnhancedModeViewModelTests.cpp)
+uwf_add_viewmodel_case(OverlayViewModelTests overlay presentation/viewmodels/overlay/OverlayViewModelTests.cpp)
+uwf_add_viewmodel_case(OverlayFilesViewModelTests overlay-files presentation/viewmodels/overlay/OverlayFilesViewModelTests.cpp)
+uwf_add_viewmodel_case(PowerDialogViewModelTests power presentation/viewmodels/power/PowerDialogViewModelTests.cpp)
+uwf_add_viewmodel_case(RegistryPickerViewModelTests registry presentation/viewmodels/registry/RegistryPickerViewModelTests.cpp)
+target_sources(UwfRegistryPickerViewModelTests PRIVATE
+    presentation/viewmodels/registry/RegistryPickerTestActions.h
+)
+uwf_add_viewmodel_case(CommitPresentationTests commit presentation/viewmodels/commit/CommitPresentationTests.cpp)
+uwf_add_viewmodel_case(ItemModelContractTests models presentation/viewmodels/integration/ItemModelContractTests.cpp)
+uwf_add_viewmodel_case(ConfigurationWorkflowViewModelTests configuration-integration presentation/viewmodels/integration/ConfigurationWorkflowViewModelTests.cpp)
 uwf_add_test(UwfConfigurationAsyncTests
     LAYER presentation FEATURE configuration RUNTIME eventloop
-    SOURCES presentation/ConfigurationAsyncTests.cpp
-    LIBRARIES UwfPresentation UwfWindows UwfTestApplicationSupport Qt6::Test
+    SOURCES presentation/viewmodels/configuration/ConfigurationAsyncTests.cpp
+    LIBRARIES UwfViewModels UwfTestApplicationSupport Qt6::Test
 )
 uwf_add_test(UwfAsyncModelTests
     LAYER presentation FEATURE loading RUNTIME eventloop
-    SOURCES presentation/AsyncModelTests.cpp
-    LIBRARIES UwfPresentation Qt6::Test
+    SOURCES presentation/viewmodels/common/AsyncModelTests.cpp
+    LIBRARIES UwfViewModels Qt6::Test
 )
 uwf_add_test(UwfCommitOperationViewModelTests
     LAYER presentation FEATURE commit RUNTIME eventloop
-    SOURCES presentation/CommitOperationViewModelTests.cpp
-    LIBRARIES UwfPresentation Qt6::Test
+    SOURCES presentation/viewmodels/commit/CommitOperationViewModelTests.cpp
+    LIBRARIES UwfViewModels Qt6::Test
 )
 uwf_add_test(UwfFilePickerViewModelTests
     LAYER presentation FEATURE file-picker RUNTIME eventloop
-    SOURCES presentation/FilePickerViewModelTests.cpp
-    LIBRARIES UwfPresentation UwfWindows Qt6::Test
+    SOURCES presentation/viewmodels/files/FilePickerViewModelTests.cpp
+    LIBRARIES UwfViewModels UwfWindowsInfrastructure UwfTestCompatibilitySupport Qt6::Test
 )
 uwf_add_test(UwfFileStagingFailureLoggingTests
-    LAYER presentation FEATURE staging RUNTIME eventloop TIMEOUT 180
-    SOURCES presentation/FileStagingFailureLoggingTests.cpp
-    LIBRARIES UwfPresentation Qt6::Test
+    LAYER presentation FEATURE staging RUNTIME eventloop
+    SOURCES presentation/viewmodels/staging/FileStagingFailureLoggingTests.cpp
+    LIBRARIES UwfViewModels UwfTestCompatibilitySupport Qt6::Test
 )
 uwf_add_test(UwfSystemInformationViewModelTests
     LAYER presentation FEATURE diagnostics RUNTIME eventloop
-    SOURCES presentation/SystemInformationViewModelTests.cpp
-    LIBRARIES UwfPresentation Qt6::Test
-)
-uwf_add_test(UwfTaskPresentationTests
-    LAYER presentation FEATURE task-lifetime RUNTIME eventloop
-    SOURCES presentation/TaskPresentationTests.cpp
-    LIBRARIES UwfPresentation UwfWindows Qt6::Test
+    SOURCES presentation/viewmodels/diagnostics/SystemInformationViewModelTests.cpp
+    LIBRARIES UwfViewModels Qt6::Test
 )
 uwf_add_test(UwfUsageBarGeometryTests
-    LAYER ui FEATURE overlay RUNTIME appless
-    SOURCES ui/UsageBarGeometryTests.cpp
+    LAYER views FEATURE overlay RUNTIME appless
+    SOURCES presentation/views/UsageBarGeometryTests.cpp
     LIBRARIES Qt6::Gui Qt6::Test
 )
 uwf_add_test(UwfDesignControlTests
-    LAYER ui FEATURE design-controls RUNTIME desktop
+    LAYER views FEATURE design-controls RUNTIME desktop
     RESOURCES
-    SOURCES ui/DesignControlTests.cpp
-    LIBRARIES UwfUiDesign UwfTestWidgetInput Qt6::Test
+    SOURCES presentation/views/DesignControlTests.cpp
+    LIBRARIES UwfDesignSystem UwfTestWidgetInput Qt6::Test
+)
+uwf_add_test(UwfPathEntryListRenderingTests
+    LAYER views FEATURE path-entry-rendering RUNTIME offscreen
+    RESOURCES
+    SOURCES presentation/views/PathEntryListRenderingTests.cpp
+    LIBRARIES UwfViews Qt6::Test
+)
+uwf_add_test(UwfOverlayAdvancedTests
+    LAYER views FEATURE overlay-policy RUNTIME offscreen
+    RESOURCES TRANSLATIONS VISUAL_MATRIX
+    SOURCES presentation/views/OverlayAdvancedTests.cpp
+    LIBRARIES UwfViews UwfTestApplicationSupport UwfTestUiSupport UwfTestVisualSupport Qt6::Test
+)
+uwf_add_test(UwfOverlayMaintenanceDialogTests
+    LAYER views FEATURE overlay-maintenance RUNTIME offscreen
+    RESOURCES TRANSLATIONS VISUAL_MATRIX
+    SOURCES presentation/views/OverlayMaintenanceDialogTests.cpp
+    LIBRARIES UwfViews UwfTestApplicationSupport UwfTestUiSupport UwfTestVisualSupport Qt6::Test
 )
 
 uwf_add_test(UwfComboBoxTests
-    LAYER ui FEATURE interaction RUNTIME desktop
+    LAYER views FEATURE interaction RUNTIME offscreen
     RESOURCES
-    SOURCES ui/ComboBoxTests.cpp
-    LIBRARIES UwfUi UwfWindows Qt6::Test
+    SOURCES presentation/views/ComboBoxTests.cpp
+    LIBRARIES UwfViews UwfWindowsInfrastructure Qt6::Test
 )
 
 uwf_add_test(UwfPickerKeyboardTests
-    LAYER ui FEATURE interaction RUNTIME desktop
+    LAYER views FEATURE interaction RUNTIME offscreen
     RESOURCES TRANSLATIONS
-    SOURCES ui/PickerKeyboardTests.cpp
-    LIBRARIES UwfUi UwfWindows Qt6::Test
+    SOURCES presentation/views/PickerKeyboardTests.cpp
+    LIBRARIES UwfViews UwfWindowsInfrastructure Qt6::Test
 )
 
 uwf_add_test(UwfExclusionRemovalHintTests
-    LAYER ui FEATURE exclusions RUNTIME desktop
+    LAYER views FEATURE exclusions RUNTIME offscreen
     RESOURCES TRANSLATIONS
-    SOURCES ui/ExclusionRemovalHintTests.cpp
-    LIBRARIES UwfUi Qt6::Test
+    SOURCES presentation/views/ExclusionRemovalHintTests.cpp
+    LIBRARIES UwfViews Qt6::Test
 )
 
 uwf_add_test(UwfPowerAvailabilityTests
-    LAYER ui FEATURE power RUNTIME desktop
-    RESOURCES
-    SOURCES ui/PowerAvailabilityTests.cpp
-    LIBRARIES UwfUi Qt6::Test
+    LAYER views FEATURE power RUNTIME offscreen
+    RESOURCES TRANSLATIONS
+    SOURCES presentation/views/PowerAvailabilityTests.cpp
+    LIBRARIES UwfViews UwfWindowsInfrastructure UwfTestCompatibilitySupport Qt6::Test
 )
 
 uwf_add_test(UwfHubLifecycleTests
-    LAYER ui FEATURE overlay RUNTIME desktop
+    LAYER views FEATURE overlay RUNTIME desktop
     RESOURCES
-    SOURCES ui/HubLifecycleTests.cpp
-    LIBRARIES UwfUi UwfWindows Qt6::Widgets Qt6::Test user32 shcore dwmapi
+    SOURCES presentation/views/HubLifecycleTests.cpp
+    LIBRARIES UwfViews UwfWindowsInfrastructure Qt6::Widgets Qt6::Test user32 shcore dwmapi
 )
-add_library(UwfWidgetUiSupport STATIC ui/widgets/WidgetUiFixture.cpp)
+add_library(UwfWidgetUiSupport STATIC presentation/views/widgets/WidgetUiFixture.cpp)
 target_include_directories(UwfWidgetUiSupport PRIVATE "${PROJECT_SOURCE_DIR}/tests" "${PROJECT_BINARY_DIR}/generated")
-target_link_libraries(UwfWidgetUiSupport PUBLIC UwfUi UwfWindows UwfTestUiSupport UwfTestVisualSupport Qt6::Svg Qt6::Test advapi32 shell32 user32)
+target_link_libraries(UwfWidgetUiSupport PUBLIC UwfViews UwfWindowsInfrastructure UwfTestUiSupport UwfTestVisualSupport Qt6::Svg Qt6::Test advapi32 shell32 user32)
 uwf_configure_cpp_target(UwfWidgetUiSupport)
 foreach(feature Appearance Configuration Controls Pagination Power Shell)
     string(TOLOWER "${feature}" label)
+    if(feature STREQUAL "Pagination" OR feature STREQUAL "Power")
+        set(runtime offscreen)
+    else()
+        set(runtime desktop)
+    endif()
+    set(visual_matrix)
+    if(feature STREQUAL "Configuration")
+        set(visual_matrix VISUAL_MATRIX)
+    endif()
     uwf_add_test(UwfWidget${feature}Tests
-        LAYER ui FEATURE "widgets-${label}" RUNTIME desktop
-        RESOURCES TRANSLATIONS
-        SOURCES "ui/widgets/${feature}Cases.cpp"
+        LAYER views FEATURE "widgets-${label}" RUNTIME ${runtime}
+        RESOURCES TRANSLATIONS ${visual_matrix}
+        SOURCES "presentation/views/widgets/${feature}Cases.cpp"
         LIBRARIES UwfWidgetUiSupport
     )
 endforeach()
+
+target_link_libraries(UwfWidgetConfigurationTests PRIVATE UwfTestApplicationSupport)
 uwf_add_test(UwfDialogBehaviorTests
-    LAYER ui FEATURE data-dialogs RUNTIME desktop
+    LAYER views FEATURE data-dialogs RUNTIME offscreen
     RESOURCES TRANSLATIONS
-    SOURCES ui/DialogBehaviorTests.cpp
-    LIBRARIES UwfUi UwfWindows UwfTestUiSupport UwfTestVisualSupport Qt6::Svg Qt6::Test advapi32 ole32 shell32 user32 wbemuuid
+    SOURCES presentation/views/DialogBehaviorTests.cpp
+    LIBRARIES UwfViews UwfWindowsInfrastructure UwfTestUiSupport UwfTestVisualSupport Qt6::Svg Qt6::Test advapi32 ole32 shell32 user32 wbemuuid
+)
+uwf_add_test(UwfCommandOutputDialogTests
+    LAYER views FEATURE command-output RUNTIME offscreen
+    RESOURCES TRANSLATIONS
+    SOURCES presentation/views/commands/CommandOutputDialogTests.cpp
+    LIBRARIES UwfViews Qt6::Test
 )
 uwf_add_test(UwfCommitOperationDialogTests
-    LAYER ui FEATURE commit RUNTIME desktop
-    RESOURCES TRANSLATIONS TIMEOUT 240
-    SOURCES ui/CommitOperationDialogTests.cpp
-    LIBRARIES UwfUi UwfWindows UwfTestVisualSupport UwfTestUiSupport Qt6::Test
+    LAYER views FEATURE commit RUNTIME offscreen
+    RESOURCES TRANSLATIONS VISUAL_MATRIX
+    SOURCES presentation/views/CommitOperationDialogTests.cpp
+    LIBRARIES UwfViews UwfWindowsInfrastructure UwfTestVisualSupport UwfTestUiSupport Qt6::Test
 )
 uwf_add_test(UwfDialogLayoutTests
-    LAYER ui FEATURE dialogs RUNTIME desktop
-    RESOURCES TRANSLATIONS
-    SOURCES ui/DialogLayoutTests.cpp
-    LIBRARIES UwfUi UwfWindows UwfTestUiSupport UwfTestVisualSupport Qt6::Svg Qt6::Test advapi32 ole32 shell32 user32 wbemuuid
+    LAYER views FEATURE dialogs RUNTIME desktop
+    RESOURCES TRANSLATIONS VISUAL_MATRIX
+    SOURCES presentation/views/DialogLayoutTests.cpp
+    LIBRARIES UwfViews UwfWindowsInfrastructure UwfTestUiSupport UwfTestVisualSupport Qt6::Svg Qt6::Test advapi32 ole32 shell32 user32 wbemuuid
 )
 
 uwf_add_test(UwfPagedDetailsLayoutTests
-    LAYER ui FEATURE pagination RUNTIME desktop
+    LAYER views FEATURE pagination RUNTIME offscreen
     RESOURCES
-    SOURCES ui/PagedDetailsLayoutTests.cpp
-    LIBRARIES UwfUi Qt6::Test
+    SOURCES presentation/views/PagedDetailsLayoutTests.cpp
+    LIBRARIES UwfViews Qt6::Test
 )
 
 # Feature suites share fixtures, not their execution state or entry point.
 add_library(UwfApplicationUiSupport STATIC
-    ui/application/ApplicationUiFixture.cpp
-    ui/application/ApplicationUiTest.cpp
+    presentation/views/application/ApplicationUiFixture.cpp
+    presentation/views/application/ApplicationUiTest.cpp
 )
 set_target_properties(UwfApplicationUiSupport PROPERTIES AUTOUIC OFF)
 target_include_directories(UwfApplicationUiSupport PRIVATE
     "${PROJECT_SOURCE_DIR}/tests" "${PROJECT_BINARY_DIR}/generated"
 )
 target_link_libraries(UwfApplicationUiSupport PUBLIC
-    UwfBootstrap UwfTestApplicationSupport UwfTestUiSupport UwfTestVisualSupport Qt6::Svg Qt6::Test
+    UwfDesktopComposition UwfWindowsInfrastructure UwfTestApplicationSupport UwfTestUiSupport UwfTestVisualSupport Qt6::Svg Qt6::Test
     advapi32 dwmapi ole32 shell32 shcore user32 userenv wbemuuid wtsapi32
 )
 uwf_configure_cpp_target(UwfApplicationUiSupport)
 
 function(uwf_add_application_ui_case feature label)
+    if(feature MATCHES "^(Configuration|EnhancedMode|FileStaging)$")
+        set(runtime offscreen)
+    else()
+        set(runtime desktop)
+    endif()
     uwf_add_test(UwfApplication${feature}Tests
-        LAYER ui FEATURE ${label} RUNTIME desktop TIMEOUT 900
-        RESOURCES TRANSLATIONS
-        SOURCES ui/application/${feature}Cases.cpp
+        LAYER views FEATURE ${label} RUNTIME ${runtime}
+        RESOURCES TRANSLATIONS ${ARGN}
+        SOURCES presentation/views/application/${feature}Cases.cpp
         LIBRARIES UwfApplicationUiSupport
     )
 endfunction()
-uwf_add_application_ui_case(Appearance appearance)
+uwf_add_application_ui_case(Appearance appearance VISUAL_MATRIX)
 uwf_add_application_ui_case(CommitPower commit-power)
-uwf_add_application_ui_case(Configuration configuration)
+target_link_libraries(UwfApplicationCommitPowerTests PRIVATE UwfTestCompatibilitySupport)
+uwf_add_application_ui_case(Configuration configuration VISUAL_MATRIX)
+target_link_libraries(UwfApplicationConfigurationTests PRIVATE UwfTestCompatibilitySupport)
 uwf_add_application_ui_case(Diagnostics diagnostics)
-uwf_add_application_ui_case(EnhancedMode enhanced-mode)
-uwf_add_application_ui_case(FileStaging staging)
-uwf_add_application_ui_case(Shell shell)
+uwf_add_application_ui_case(EnhancedMode enhanced-mode VISUAL_MATRIX)
+uwf_add_application_ui_case(FileStaging staging VISUAL_MATRIX)
+target_link_libraries(UwfApplicationFileStagingTests PRIVATE UwfTestCompatibilitySupport)
+uwf_add_application_ui_case(Shell shell VISUAL_MATRIX)
 uwf_add_test(UwfConfigurationLifecycleUiTests
-    LAYER ui FEATURE configuration-lifecycle RUNTIME desktop
+    LAYER views FEATURE configuration-lifecycle RUNTIME offscreen
     RESOURCES TRANSLATIONS
-    SOURCES ui/ConfigurationLifecycleUiTests.cpp
-    LIBRARIES UwfApplicationUiSupport
+    SOURCES presentation/views/ConfigurationLifecycleUiTests.cpp
+    LIBRARIES UwfApplicationUiSupport UwfTestCompatibilitySupport
 )
 uwf_add_test(UwfFileStagingViewTests
-    LAYER ui FEATURE staging RUNTIME desktop
+    LAYER views FEATURE staging RUNTIME offscreen
     RESOURCES
-    SOURCES ui/FileStagingViewTests.cpp
-    LIBRARIES UwfUi UwfWindows Qt6::Test
+    SOURCES presentation/views/FileStagingViewTests.cpp
+    LIBRARIES UwfViews UwfWindowsInfrastructure Qt6::Test
 )
 uwf_add_test(UwfFilePickerDialogTests
-    LAYER ui FEATURE file-picker RUNTIME desktop
+    LAYER views FEATURE file-picker RUNTIME desktop
     RESOURCES TRANSLATIONS
-    SOURCES ui/FilePickerDialogTests.cpp
-    LIBRARIES UwfUi UwfWindows UwfTestVisualSupport Qt6::Test
+    SOURCES presentation/views/FilePickerDialogTests.cpp
+    LIBRARIES UwfViews UwfWindowsInfrastructure UwfTestVisualSupport UwfTestWidgetInput Qt6::Test
 )
 uwf_add_test(UwfSurfaceShadowTests
-    LAYER ui FEATURE shadows RUNTIME desktop
-    SOURCES ui/SurfaceShadowTests.cpp
-    LIBRARIES UwfUiDesign Qt6::Test
+    LAYER views FEATURE shadows RUNTIME desktop
+    SOURCES presentation/views/SurfaceShadowTests.cpp
+    LIBRARIES UwfDesignSystem Qt6::Test
+)
+
+uwf_add_test(UwfDesktopCompositionTests
+    LAYER composition FEATURE desktop-ports RUNTIME offscreen
+    SOURCES composition/DesktopCompositionTests.cpp
+    LIBRARIES UwfDesktopComposition UwfTestCompatibilitySupport Qt6::Test
 )
 
 # Link and exercise public component usage with exactly the required components.
 uwf_add_test(UwfApplicationComponentLinkTests
-    LAYER composition FEATURE provider RUNTIME appless
+    LAYER composition FEATURE application RUNTIME appless
     SOURCES composition/ApplicationComponentLinkTests.cpp
     LIBRARIES UwfApplication Qt6::Test
 )
+uwf_add_test(UwfNativeUwfCompositionTests
+    LAYER composition FEATURE provider RUNTIME appless
+    SOURCES composition/NativeUwfCompositionTests.cpp
+    LIBRARIES UwfSystemComposition UwfAllVolumeProtection UwfTestCompatibilitySupport Qt6::Test
+)
+target_compile_definitions(UwfNativeUwfCompositionTests PRIVATE
+    $<$<BOOL:${UWF_ENABLE_FAILURE_SOLVER}>:UWF_ENABLE_FAILURE_SOLVER>
+)
 uwf_add_test(UwfUiComponentLinkTests
-    LAYER composition FEATURE ui RUNTIME desktop
+    LAYER composition FEATURE ui RUNTIME offscreen
     RESOURCES
     SOURCES composition/UiComponentLinkTests.cpp
-    LIBRARIES UwfUi Qt6::Test
+    LIBRARIES UwfViews Qt6::Test
 )
 
 uwf_add_test(UwfComPtrTests
-    LAYER windows FEATURE resources RUNTIME appless
-    SOURCES windows/ComPtrTests.cpp
+    LAYER infrastructure FEATURE resources RUNTIME appless
+    SOURCES infrastructure/windows/resources/ComPtrTests.cpp
     LIBRARIES Qt6::Test
 )
 uwf_add_test(UwfWmiMethodCompletionTests
-    LAYER windows FEATURE wmi RUNTIME appless
-    SOURCES windows/WmiMethodCompletionTests.cpp
-    LIBRARIES Qt6::Test
+    LAYER infrastructure FEATURE wmi RUNTIME appless
+    SOURCES infrastructure/windows/management/wmi/WmiMethodCompletionTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
+)
+uwf_add_test(UwfCspUwfBackendTests
+    LAYER infrastructure FEATURE csp RUNTIME appless
+    SOURCES infrastructure/uwf/windows/csp/CspUwfBackendTests.cpp
+    LIBRARIES UwfWindowsInfrastructure UwfTestCompatibilitySupport Qt6::Test
+)
+uwf_add_test(UwfWmiUwfBackendTests
+    LAYER infrastructure FEATURE wmi RUNTIME appless
+    SOURCES infrastructure/uwf/windows/wmi/WmiUwfBackendTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
+)
+uwf_add_test(UwfNativeUwfBackendTests
+    LAYER infrastructure FEATURE uwf-native RUNTIME appless
+    SOURCES infrastructure/uwf/windows/native/NativeUwfBackendTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
+)
+uwf_add_test(UwfWindowsVolumeRepositoryTests
+    LAYER infrastructure FEATURE volumes RUNTIME appless
+    SOURCES infrastructure/windows/storage/WindowsVolumeRepositoryTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
 )
 uwf_add_test(UwfWindowsTextFileCreationTests
-    LAYER windows FEATURE text-files RUNTIME appless
-    SOURCES windows/WindowsTextFileCreationTests.cpp
-    LIBRARIES UwfWindows Qt6::Test
+    LAYER infrastructure FEATURE text-files RUNTIME appless
+    SOURCES infrastructure/windows/filesystem/WindowsTextFileCreationTests.cpp
+    LIBRARIES UwfWindowsInfrastructure Qt6::Test
 )
 set(uwf_windows_test_support "${PROJECT_SOURCE_DIR}/tests/support/windows")
 uwf_add_test(UwfWindowsPlatformIntegrationTests
-    LAYER windows FEATURE platform RUNTIME desktop
+    LAYER infrastructure FEATURE platform RUNTIME offscreen
     RUN_SERIAL
-    SOURCES windows/WindowsPlatformIntegrationTests.cpp
-    LIBRARIES UwfUi UwfWindows Qt6::Network Qt6::Test advapi32 dxgi ole32 user32 wbemuuid
+    SOURCES infrastructure/windows/integration/WindowsPlatformIntegrationTests.cpp
+    LIBRARIES UwfViews UwfSystemComposition Qt6::Network Qt6::Test advapi32 dxgi ole32 user32 wbemuuid
     LABELS native isolated-resources
 )
 uwf_add_test(UwfWindowsTaskbarIntegrationTests
-    LAYER windows FEATURE taskbar RUNTIME desktop
+    LAYER infrastructure FEATURE taskbar RUNTIME desktop
     RESOURCES RUN_SERIAL
-    SOURCES windows/WindowsTaskbarIntegrationTests.cpp
+    SOURCES infrastructure/windows/integration/WindowsTaskbarIntegrationTests.cpp
         "${uwf_windows_test_support}/Win11TaskbarLayoutStrategyTestAccess.cpp"
         "${uwf_windows_test_support}/windows_integration_manifest.rc"
-    LIBRARIES UwfUi UwfWindows Qt6::Test user32 shcore dwmapi ole32
+    LIBRARIES UwfViews UwfWindowsInfrastructure Qt6::Test user32 shcore dwmapi ole32
     LABELS native isolated-resources
 )
 uwf_add_test(UwfWindowsTaskbarIncompatibilityTests
-    LAYER windows FEATURE taskbar RUNTIME desktop
+    LAYER infrastructure FEATURE taskbar RUNTIME desktop
     RESOURCES RUN_SERIAL
-    SOURCES windows/WindowsTaskbarIncompatibilityTests.cpp
+    SOURCES infrastructure/windows/integration/WindowsTaskbarIncompatibilityTests.cpp
         "${uwf_windows_test_support}/windows_taskbar_incompatible_manifest.rc"
-    LIBRARIES UwfUi UwfWindows Qt6::Test user32 shcore dwmapi
+    LIBRARIES UwfViews UwfWindowsInfrastructure Qt6::Test user32 shcore dwmapi
     LABELS native isolated-resources
 )
 
+uwf_add_test(UwfPointerPressHistoryTests
+    LAYER tools FEATURE native-input RUNTIME appless
+    SOURCES tools/PointerPressHistoryTests.cpp
+    LIBRARIES Qt6::Test
+)
 uwf_add_test(UwfCatalogCheckTests
     LAYER tools FEATURE localization RUNTIME appless
     SOURCES tools/CatalogCheckTests.cpp
@@ -353,8 +643,16 @@ uwf_add_test(UwfTestResultsTests
     LIBRARIES UwfTestResultsSupport Qt6::Test
 )
 uwf_add_test(UwfTextLayoutChecksTests
-    LAYER tools FEATURE layout RUNTIME desktop
+    LAYER tools FEATURE layout RUNTIME offscreen
     RESOURCES
     SOURCES tools/TextLayoutChecksTests.cpp
-    LIBRARIES UwfTestUiSupport UwfWindows Qt6::Test
+    LIBRARIES UwfTestUiSupport UwfWindowsInfrastructure Qt6::Test
 )
+
+uwf_add_test(UwfVisualGeometryTests
+    LAYER tools FEATURE visual RUNTIME appless
+    SOURCES tools/VisualGeometryTests.cpp
+    LIBRARIES Qt6::Gui Qt6::Test
+)
+
+include(presentation/views/OffscreenCases.cmake)

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
+#include <QDir>
 #include <QFile>
 #include <QJsonArray>
 #include <QTemporaryDir>
@@ -15,6 +16,38 @@ class ImageCompareTests final : public QObject {
   Q_OBJECT
 
  private slots:
+  void captureDirectoryIdentityUsesTheHostComparison_data() {
+    QTest::addColumn<QString>("referenceName");
+    QTest::addColumn<QString>("actualName");
+    QTest::addColumn<bool>("same");
+    QTest::newRow("ascii-alias") << QStringLiteral("Capture") << QStringLiteral("cAPTURE") << true;
+    QTest::newRow("unicode-alias") << QStringLiteral("Ä") << QStringLiteral("ä") << true;
+    QTest::newRow("unicode-micro-distinct") << QStringLiteral("µ") << QStringLiteral("μ") << false;
+    QTest::newRow("unicode-sharp-s-distinct") << QStringLiteral("ß") << QStringLiteral("ẞ") << false;
+  }
+  void captureDirectoryIdentityUsesTheHostComparison() {
+    QFETCH(QString, referenceName);
+    QFETCH(QString, actualName);
+    QFETCH(bool, same);
+    QTemporaryDir root;
+    QVERIFY(root.isValid());
+    const QDir directory(root.path());
+    QVERIFY(directory.mkdir(referenceName));
+    if (!same) QVERIFY(directory.mkdir(actualName));
+    const auto reference = directory.filePath(referenceName);
+    const auto actual = directory.filePath(actualName);
+    QImage image(3, 4, QImage::Format_ARGB32);
+    image.fill(QColor(20, 40, 60, 120));
+    QVERIFY(image.save(QDir(reference).filePath(QStringLiteral("scene.png"))));
+    if (same) {
+      QVERIFY_THROWS_EXCEPTION(std::runtime_error, compareImageDirectories(reference, actual));
+    } else {
+      QVERIFY(image.save(QDir(actual).filePath(QStringLiteral("scene.png"))));
+      const auto report = compareImageDirectories(reference, actual);
+      QVERIFY(report.value(QStringLiteral("passed")).toBool());
+      QCOMPARE(report.value(QStringLiteral("identical")).toInteger(), qint64{1});
+    }
+  }
   void reportsPixelsAndBoundsIncludingAlpha() {
     QImage reference(7, 5, QImage::Format_RGBA8888);
     reference.fill(QColor(30, 60, 90, 255));

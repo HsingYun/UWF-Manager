@@ -59,11 +59,11 @@
         </message>
         <message>
             <source>ZWJ Zero width joiner</source>
-            <translation>ZWJ Sıfır genişlikli katıcı</translation>
+            <translation>ZWJ Sıfır genişlikli birleştirici karakter</translation>
         </message>
         <message>
             <source>ZWNJ Zero width non-joiner</source>
-            <translation>ZWNJ Sıfır genişlikli katıcı</translation>
+            <translation>ZWNJ Sıfır genişlikli birleştirmeyen karakter</translation>
         </message>
         <message>
             <source>ZWSP Zero width space</source>
@@ -87,7 +87,7 @@
         </message>
         <message>
             <source>PDF Pop directional formatting</source>
-            <translation>PDF Pop yönlü biçimlendirme</translation>
+            <translation>PDF Yönlü biçimlendirmeyi sonlandır</translation>
         </message>
         <message>
             <source>LRI Left-to-right isolate</source>
@@ -99,11 +99,11 @@
         </message>
         <message>
             <source>FSI First strong isolate</source>
-            <translation>FSI İlk güçlü yalıtma</translation>
+            <translation>FSI İlk güçlü karakterin yönüne göre yalıtma</translation>
         </message>
         <message>
             <source>PDI Pop directional isolate</source>
-            <translation>PDI Pop yönlü yalıtma</translation>
+            <translation>PDI Yönlü yalıtmayı sonlandır</translation>
         </message>
         <message>
             <source>Insert Unicode control character</source>

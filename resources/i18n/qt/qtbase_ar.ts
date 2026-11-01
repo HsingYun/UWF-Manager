@@ -99,11 +99,11 @@
         </message>
         <message>
             <source>FSI First strong isolate</source>
-            <translation>عزل أول محرف قويّ (FSI)</translation>
+            <translation>عزل بحسب اتجاه أول محرف قويّ (FSI)</translation>
         </message>
         <message>
             <source>PDI Pop directional isolate</source>
-            <translation>أزل العزل ثنائيّ الاتّجاه (PDF)</translation>
+            <translation>أزل العزل ثنائيّ الاتّجاه (PDI)</translation>
         </message>
         <message>
             <source>Insert Unicode control character</source>

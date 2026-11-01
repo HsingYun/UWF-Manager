@@ -10,6 +10,7 @@
     <message><source>disable</source><translation>無効にする</translation></message>
     <message><source>Enabled</source><translation>有効</translation></message>
     <message><source>Disabled</source><translation>無効</translation></message>
+    <message><source>Disabled</source><comment>service startup type</comment><translation>無効</translation></message>
     <message><source>OK</source><translation>OK</translation></message>
     <message><source>Cancel</source><translation>キャンセル</translation></message>
     <message><source>Close</source><translation>閉じる</translation></message>
@@ -27,26 +28,26 @@
     <message><source>Drive letter</source><translation>ドライブ文字</translation></message>
     <message><source>Volume ID</source><translation>ボリューム ID</translation></message>
     <message><source>Protection state of this volume in the current session (read-only).</source><translation>現在のセッションでの保護状態（読み取り専用）。</translation></message>
-    <message><source>Protect this volume in the next session. Writes to this volume are redirected to the overlay and discarded on reboot.</source><translation>次のセッションでこのボリュームを保護します。書き込みはオーバーレイに転送され、再起動時に破棄されます。</translation></message>
+    <message><source>Protect this volume in the next session. Writes to protected paths are redirected to the overlay; retention across restarts depends on the overlay settings.</source><translation>次のセッションでこのボリュームを保護します。保護されたパスへの書き込みはオーバーレイにリダイレクトされます。再起動後の保持はオーバーレイの設定によって異なります。</translation></message>
     <message><source>Current session</source><translation>現在のセッション</translation></message>
     <message><source>Next session</source><translation>次のセッション</translation></message>
     <message><source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source><translation>ボリュームの識別方法です。ドライブ文字は簡単ですが、ディスクの増設・取り外しなどで文字が変わると関連付けが無効になります。ボリューム ID は文字が変わっても維持されます。</translation></message>
     <message><source>This volume is not supported by UWF: </source><translation>UWF 非対応のボリューム： </translation></message>
     <message><source>Global settings</source><translation>全体設定</translation></message>
     <message><source>UWF filter state in the current session (read-only).</source><translation>現在のセッションの UWF フィルター状態（読み取り専用）。</translation></message>
-    <message><source>Enable the UWF filter in the next session. Writes to protected volumes are redirected to the overlay and discarded on reboot.</source><translation>次のセッションで UWF を有効にします。保護されたボリュームへの書き込みはオーバーレイに転送され、再起動時に破棄されます。</translation></message>
-    <message><source>Overlay type and maximum size can only be changed while the filter is disabled:
-1. Disable the filter using the switch above.
-2. Reboot (the filter will be off after reboot).
-3. Change this setting.</source><translation>種類と最大サイズを変更するには：
-1. 上のスイッチでフィルターを無効にします。
-2. 再起動し、無効な状態にします。
-3. 設定を変更します。</translation></message>
-    <message><source>Overlay storage location. RAM is faster but consumes memory; Disk uses the system drive and offers more capacity. Both are discarded on reboot.</source><translation>オーバーレイの保存先。RAM は高速ですがメモリを使います。Disk はシステムドライブを使い、容量を大きくできます。どちらも再起動時に破棄されます。</translation></message>
+    <message><source>Enable UWF in the next session. Writes to protected paths are redirected to the overlay; retention across restarts depends on the overlay settings.</source><translation>次のセッションで UWF を有効にします。保護されたパスへの書き込みはオーバーレイにリダイレクトされます。再起動後の保持はオーバーレイの設定によって異なります。</translation></message>
+    <message><source>To change the overlay type or maximum capacity:
+1. Disable UWF.
+2. Restart the device.
+3. Change this setting.</source><translation>オーバーレイの種類や最大容量を変更するには：
+1. UWF を無効にします。
+2. デバイスを再起動します。
+3. この設定を変更します。</translation></message>
+    <message><source>RAM uses system memory. Disk uses the system drive and supports larger overlays. Persistent Overlay can retain Disk overlay data across restarts.</source><translation>RAM はシステムメモリを使用します。Disk はシステムドライブを使用し、より大きなオーバーレイを利用できます。永続オーバーレイを使用すると、再起動後も Disk オーバーレイのデータを保持できます。</translation></message>
     <message><source>Type</source><translation>種類</translation></message>
-    <message><source>Maximum overlay capacity. In RAM mode, capped by total system memory. Disk mode requires at least 1024 MB and enough free space on the system volume.</source><translation>オーバーレイの最大容量。RAM はシステムの総メモリ量が上限です。Disk は 1024 MB 以上で、システムボリュームに十分な空き容量が必要です。</translation></message>
-    <message><source>Maximum size</source><translation>最大サイズ</translation></message>
-    <message><source>Maximum size · RAM %1</source><translation>最大サイズ · RAM %1</translation></message>
+    <message><source>RAM overlay capacity is limited by system memory. A Disk overlay requires at least 1024 MB and sufficient free space on the system drive.</source><translation>RAM オーバーレイの容量はシステムメモリに制限されます。Disk オーバーレイには 1024 MB 以上の容量と、システムドライブの十分な空き領域が必要です。</translation></message>
+    <message><source>Maximum capacity</source><translation>最大容量</translation></message>
+    <message><source>Maximum capacity · RAM %1</source><translation>最大容量 · RAM %1</translation></message>
     <message><source>Warning threshold</source><translation>警告しきい値</translation></message>
     <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be lower than the critical threshold. Set to 0 to disable only the warning event.</source><translation>オーバーレイの使用量がこの値に達すると、警告レベルの通知をイベントログに記録します。両方のイベントが有効な場合、この値は重大しきい値より小さくする必要があります。0 に設定すると、警告イベントのみを無効にします。</translation></message>
     <message><source>Critical threshold</source><translation>重大しきい値</translation></message>
@@ -54,43 +55,42 @@
     <message><source>Overlay</source><translation>オーバーレイ</translation></message>
     <message><source>Unsupported drive type (only fixed local disks are supported).</source><translation>非対応のドライブ種類です（ローカル固定ディスクのみ対応）。</translation></message>
     <message><source>Volume capacity exceeds the UWF limit of 16 TiB for a single protected volume.</source><translation>容量が UWF の保護ボリュームあたりの上限 16 TiB を超えています。</translation></message>
-    <message><source>%1 file system: this volume can be protected, but file exclusions and per-file commit are not supported.</source><translation>%1：ボリューム保護は可能ですが、ファイル除外とファイル単位のコミットには非対応です。</translation></message>
-    <message><source>Failed to read volume information.</source><translation>失敗: ボリューム情報の読み取り.</translation></message>
+
     <message><source>%1 free / %2</source><translation>空き %1 / %2</translation></message>
     <message><source>Commit</source><translation>コミット</translation></message>
-    <message><source>Commit overlay changes to disk / registry. This action cannot be undone.</source><translation>ファイルの変更をオーバーレイからディスクにコミット / レジストリの変更をコミット. この操作は元に戻せません。</translation></message>
+    <message><source>Commit changes from the overlay to disk or the registry. This cannot be undone.</source><translation>オーバーレイ内の変更をディスクまたはレジストリにコミットします。この操作は元に戻せません。</translation></message>
     <message><source>Commit file changes…</source><translation>ファイルの変更をコミット…</translation></message>
-    <message><source>Pick a file and commit its overlay changes to disk.</source><translation>ディスクにコミットするファイルを選択. ファイルの変更をオーバーレイからディスクにコミット.</translation></message>
+    <message><source>Pick a file and commit its overlay changes to disk.</source><translation>ファイルを選択し、オーバーレイ内の変更をディスクにコミットします。</translation></message>
     <message><source>Commit folder changes…</source><translation>フォルダーの変更をコミット…</translation></message>
-    <message><source>Pick a folder and commit overlay changes for every file inside it to disk.</source><translation>ディスクにコミットするフォルダーを選択. フォルダーの変更をオーバーレイからディスクにコミット. 全サブフォルダーを含みます。</translation></message>
-    <message><source>Delete and commit file…</source><translation>ファイルを削除し、削除をディスクにコミット…</translation></message>
-    <message><source>Pick a file to delete, and commit the deletion to disk.</source><translation>削除をコミットするファイルを選択. ファイルを削除し、削除をディスクにコミット.</translation></message>
-    <message><source>Delete and commit folder…</source><translation>フォルダーと全内容を削除し、削除をディスクにコミット…</translation></message>
-    <message><source>Pick a folder to delete (recursively, with everything inside it) and commit the deletions to disk.</source><translation>削除をコミットするフォルダーを選択. フォルダーと全内容を削除し、削除をディスクにコミット. 全サブフォルダーを含みます。</translation></message>
+    <message><source>Pick a folder and commit overlay changes for every file inside it to disk.</source><translation>フォルダーを選択し、含まれるすべてのファイルのオーバーレイ内の変更をディスクにコミットします。</translation></message>
+    <message><source>Delete and commit file…</source><translation>ファイルを削除してコミット…</translation></message>
+    <message><source>Pick a file to delete, and commit the deletion to disk.</source><translation>削除するファイルを選択し、その削除をディスクにコミットします。</translation></message>
+    <message><source>Delete and commit folder…</source><translation>フォルダーを削除してコミット…</translation></message>
+    <message><source>Select a folder, recursively delete it and all its contents, and commit the deletions to disk.</source><translation>フォルダーを選択し、フォルダーとその内容をすべて再帰的に削除して、削除内容をディスクにコミットします。</translation></message>
     <message><source>Commit registry changes…</source><translation>レジストリの変更をコミット…</translation></message>
     <message><source>Enter a registry key (and optional value name) and commit changes to the registry. Leaving the value name empty commits every value under the key and all its subkeys (recursively).</source><translation>キーのパスと値名（任意）を入力し、変更をコミットします。値名を空にすると、キーと全サブキーのすべての値をコミットします。</translation></message>
-    <message><source>Delete and commit registry…</source><translation>レジストリの削除をコミット…</translation></message>
-    <message><source>Enter a registry key (and optional value name) to delete, and commit the deletion to the registry. Leaving the value name empty deletes the whole subtree (the key plus all its values and subkeys, recursively).</source><translation>削除するキーのパスと値名（任意）を入力し、削除をコミットします。値名を空にすると、キー・全値・全サブキーを再帰的に削除します。</translation></message>
+    <message><source>Delete and commit registry…</source><translation>レジストリを削除してコミット…</translation></message>
+    <message><source>Enter a registry key and an optional value name. Leave the value name empty to delete the key and all its subkeys and values, then commit the deletions.</source><translation>レジストリキーと値名（任意）を入力します。値名を空にすると、キーとすべてのサブキーおよび値を削除し、その削除をコミットします。</translation></message>
     <message><source>File exclusions</source><translation>ファイルの除外</translation></message>
     <message><source>Files and folders on this volume excluded from UWF protection. Double-click an entry to copy its path.</source><translation>UWF の保護から除外するファイルとフォルダーです。項目をダブルクリックするとパスをコピーします。</translation></message>
     <message><source>Registry exclusions</source><translation>レジストリの除外</translation></message>
-    <message><source>Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is shared across all volumes and shown only once in the disk tabs. Double-click an entry to copy its path.</source><translation>レジストリ除外はボリューム保護とは独立した全体設定で、UWF フィルタースイッチに従います。一覧は全ボリューム共通で、タブには一度だけ表示されます。ダブルクリックでパスをコピーします。</translation></message>
-    <message><source>File staging</source><translation>ファイルの保存待ち</translation></message>
-    <message><source>Files and folders in this list are committed automatically before safe shutdown or restart. Folders are processed recursively. While the list contains data, UWF Manager excludes HKLM\SOFTWARE\HsingYun\UWF Manager so the list persists across protected sessions.</source><translation>ファイル / フォルダー: 安全なシャットダウンまたは再起動の前に、自動でコミットします。 全サブフォルダーを含みます。 一覧に項目がある間は、次のレジストリ除外により、保護されたセッション間でも一覧を保持します： HKLM\SOFTWARE\HsingYun\UWF Manager</translation></message>
+    <message><source>Registry exclusions are global and are shown only on the system drive.</source><translation>レジストリ除外は全体設定で、Windows をインストールしたボリュームにのみ表示されます。</translation></message>
+    <message><source>File staging</source><translation>ファイルステージング</translation></message>
+
     <message><source>Add files or a folder to the automatic commit list.</source><translation>ファイルまたはフォルダーを自動コミット一覧に追加します。</translation></message>
-    <message><source>Select one or more files to commit automatically before safe shutdown or restart.</source><translation>ディスクにコミットするファイルを選択. 安全なシャットダウンまたは再起動の前に、自動でコミットします。</translation></message>
-    <message><source>Select a folder whose files will be committed recursively before safe shutdown or restart.</source><translation>ディスクにコミットするフォルダーを選択. 安全なシャットダウンまたは再起動の前に、自動でコミットします。 全サブフォルダーを含みます。</translation></message>
-    <message><source>Select files for automatic commit</source><translation>ディスクにコミットするファイルを選択 · ファイルの保存待ち</translation></message>
-    <message><source>Select a folder for automatic recursive commit</source><translation>ディスクにコミットするフォルダーを選択 · ファイルの保存待ち · 全サブフォルダーを含みます。</translation></message>
+    <message><source>Select one or more files to commit automatically before safe shutdown or restart.</source><translation>安全なシャットダウンまたは再起動の前に自動コミットするファイルを、1 つ以上選択してください。</translation></message>
+    <message><source>Select a folder whose files will be committed recursively before safe shutdown or restart.</source><translation>安全なシャットダウンまたは再起動の前に、ファイルを再帰的にコミットするフォルダーを選択してください。</translation></message>
+    <message><source>Select files for automatic commit</source><translation>自動コミット対象のファイルを選択</translation></message>
+    <message><source>Select a folder for automatic recursive commit</source><translation>再帰的な自動コミットの対象フォルダーを選択</translation></message>
     <message><source>Cannot stage this path</source><translation>このパスを自動コミット対象に追加できません</translation></message>
     <message><source>This path overlaps a UWF file exclusion. Remove the exclusion before adding the staged path:
-%1</source><translation>UWF のファイル除外と重複しています。次の除外を削除してから追加してください：
+%1</source><translation>UWF のファイル除外とパスが重複しています。ステージング対象パスを追加する前に、次の除外を削除してください：
 %1</translation></message>
     <message><source>This path overlaps a file staging entry. Remove the staged path before adding the exclusion:
-%1</source><translation>自動コミット対象と重複しています。次の対象を削除してから除外を追加してください：
+%1</source><translation>ファイルステージング項目とパスが重複しています。除外を追加する前に、次のステージング対象パスを削除してください：
 %1</translation></message>
-    <message><source>The path overlaps an existing file staging entry</source><translation>既存の自動コミット対象とパスが重複しています</translation></message>
-    <message><source>The registry exclusion is required while File staging contains saved entries</source><translation>自動コミット一覧に保存済み項目がある間、このレジストリ除外は必要です</translation></message>
+    <message><source>The path overlaps an existing file staging entry</source><translation>既存のファイルステージング項目とパスが重複しています</translation></message>
+    <message><source>The registry exclusion is required while File staging contains saved entries</source><translation>ファイルステージングに保存済みの項目がある間は、このレジストリ除外が必要です</translation></message>
     <message><source>The selected path does not exist or is not the expected file type:
 %1</source><translation>パスが存在しないか、想定したファイル種類ではありません：
 %1</translation></message>
@@ -100,27 +100,25 @@
     <message><source>Reparse points cannot be added to automatic file staging:
 %1</source><translation>再解析ポイントは自動コミット対象に追加できません：
 %1</translation></message>
-    <message><source>The path has no drive letter and cannot be committed by UWF:
-%1</source><translation>ドライブ文字がないため、UWF でコミットできません：
+    <message><source>The path has no drive letter and cannot be added to file staging:
+%1</source><translation>パスにドライブ文字がないため、ファイルステージングに追加できません：
 %1</translation></message>
-    <message><source>The selected path is on volume %1. Add it from that volume's File staging tab.</source><translation>ボリューム %1 のパスです。そのボリュームの自動コミットタブから追加してください。</translation></message>
+    <message><source>The selected path is on volume %1. Add it from that volume's File staging tab.</source><translation>ボリューム %1 のパスです。そのボリュームのファイルステージングタブから追加してください。</translation></message>
     <message><source>A volume root cannot be staged because it would recursively commit the entire volume.</source><translation>ボリュームのルートは追加できません。ボリューム全体が再帰的にコミットされてしまいます。</translation></message>
-    <message><source>File staging could not be saved</source><translation>失敗: ファイル自動コミット一覧の保存</translation></message>
+    <message><source>File staging could not be saved</source><translation>ファイルステージングの一覧を保存できませんでした</translation></message>
     <message><source>The file staging state was reloaded after the update could not be completed:
-%1</source><translation>更新を完了できなかったため、自動コミット一覧を再読み込みしました：
+%1</source><translation>更新を完了できなかったため、ファイルステージングの一覧を再読み込みしました：
 %1</translation></message>
-    <message><source>File staging is unavailable: %1</source><translation>ファイルの保存待ち: %1</translation></message>
-    <message><source>Committed automatically before safe shutdown or restart.</source><translation>安全なシャットダウンまたは再起動の前に、自動でコミットします。</translation></message>
-    <message><source>%1 staged entries · %2 files · %3 folders</source><translation>ファイルの保存待ち: %1 · ファイル: %2 · フォルダー: %3</translation></message>
-    <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>ファイルの保存待ち一覧を再起動後も保持するため、このレジストリ除外が必要です。</translation></message>
+    <message><source>File staging is unavailable: %1</source><translation>ファイルステージングを利用できません：%1</translation></message>
+
+    <message><source>%1 staged entries · %2 files · %3 folders</source><translation>ステージング項目 %1 件 · ファイル %2 件 · フォルダー %3 件</translation></message>
+    <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>ファイルステージング一覧を再起動後も保持するため、このレジストリ除外が必要です。</translation></message>
     <message><source>Built-in</source><translation>組み込み</translation></message>
     <message><source>The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit.</source><translation>UWF フィルターが無効のため、オーバーレイに変更は蓄積されておらず、コミットする内容はありません。</translation></message>
     <message><source>Per-file commit is not supported on the %1 file system.</source><translation>%1 ではファイル単位のコミットに対応していません。</translation></message>
     <message><source>This volume is not supported by UWF.</source><translation>このボリュームは UWF 非対応です。</translation></message>
-    <message><source>This volume does not support file commit. Only registry commit is available (registry exclusions are global).</source><translation>このボリュームでファイルのコミットは利用できません。 レジストリのコミットのみ可能です（レジストリ除外は全体設定）。</translation></message>
     <message><source>Per-file commit is not supported on the %1 file system. Only registry commit is available (registry exclusions are global).</source><translation>%1 ではファイル単位のコミットに対応していません。 レジストリのコミットのみ可能です（レジストリ除外は全体設定）。</translation></message>
     <message><source>This volume is not currently protected by UWF; there are no file changes to commit.</source><translation>このボリュームは現在保護されていないため、コミットするファイル変更はありません。</translation></message>
-    <message><source>This volume is not currently protected by UWF. Only registry commit is available (registry exclusions are global).</source><translation>このボリュームは現在保護されていないため、コミットするファイル変更はありません。 レジストリのコミットのみ可能です（レジストリ除外は全体設定）。</translation></message>
     <message><source>Select a file to commit to disk</source><translation>ディスクにコミットするファイルを選択</translation></message>
     <message><source>Select a folder to commit to disk</source><translation>ディスクにコミットするフォルダーを選択</translation></message>
     <message><source>Select a file whose deletion you want to commit</source><translation>削除をコミットするファイルを選択</translation></message>
@@ -130,16 +128,16 @@
     <message><source>(Default)</source><translation>（既定）</translation></message>
     <message><source>(value not set)</source><translation>（値の設定なし）</translation></message>
     <message><source>(empty)</source><translation>（空）</translation></message>
-    <message><source>Preview unavailable (value is too large)</source><translation>不明 (値: ファイルが大きすぎます)</translation></message>
-    <message><source>Open a diagnostic view of files currently cached in the overlay for this volume.</source><translation>オーバーレイのファイルを表示. &lt;b&gt;診断用のスナップショットです。&lt;/b&gt;コミット対象の判断には使用しないでください。</translation></message>
+    <message><source>Preview unavailable (value is too large)</source><translation>プレビューできません（値が大きすぎます）</translation></message>
+    <message><source>Open a diagnostic view of files currently cached in the overlay for this volume.</source><translation>このボリュームのオーバーレイに現在キャッシュされているファイルの診断ビューを開きます。</translation></message>
     <message><source>Overlay file listing is only supported on NTFS volumes.</source><translation>オーバーレイ一覧は NTFS ボリュームのみ対応しています。</translation></message>
-    <message><source>The UWF filter is currently disabled, so no volume has an overlay to inspect.</source><translation>UWF が無効のため、検査できるオーバーレイはありません。</translation></message>
+    <message><source>The UWF filter is disabled; no volume has an overlay to inspect.</source><translation>UWF フィルターが無効なため、オーバーレイを表示できるボリュームはありません。</translation></message>
     <message><source>This volume is not currently protected by UWF, so it has no overlay to inspect.</source><translation>このボリュームは UWF で保護されていないため、検査できるオーバーレイはありません。</translation></message>
     <message><source>Failed: %1</source><translation>失敗: %1</translation></message>
-    <message><source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure.</source><translation>列挙中に WMI プロバイダーがクラッシュしました。オーバーレイが大きい場合や I/O 負荷が高い場合に発生する UWF_Overlay.GetOverlayFiles の既知の不具合です。</translation></message>
-    <message><source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source><translation>メモリ不足、またはプロバイダーが操作に対応していません。NTFS と十分な空きメモリが必要です。オーバーレイを小さくするか、メモリを多く使うアプリを閉じて再試行してください。</translation></message>
-    <message><source>Raw error: %1</source><translation>エラーコード: %1</translation></message>
-    <message><source>Export overlay file list</source><translation>ファイルにエクスポート… · オーバーレイ · ファイル</translation></message>
+    <message><source>The previous enumeration may still be running. Another read cannot start yet.</source><translation>前回の列挙がまだ実行中の可能性があります。新しい読み取りはまだ開始できません。</translation></message><message><source>The UWF service is unavailable while enumerating overlay files.</source><translation>オーバーレイファイルの列挙中に UWF サービスを利用できません。</translation></message>
+    <message><source>Out of memory, or this operation is not supported. This feature requires an NTFS volume; close memory-intensive applications and try again.</source><translation>メモリ不足、またはシステムがこの操作に対応していません。この機能には NTFS ボリュームが必要です。メモリを多く使用するアプリケーションを閉じてから再試行してください。</translation></message>
+    <message><source>Raw error: %1</source><translation>元のエラー：%1</translation></message>
+    <message><source>Export overlay file list</source><translation>オーバーレイのファイル一覧をエクスポート</translation></message>
     <message><source>Text files (*.txt);;All files (*)</source><translation>テキストファイル (*.txt);;すべてのファイル (*)</translation></message>
     <message><source>Command files (*.cmd);;All files (*)</source><translation>コマンドファイル (*.cmd);;すべてのファイル (*)</translation></message>
     <message><source>Export failed</source><translation>エクスポート失敗</translation></message>
@@ -147,10 +145,10 @@
     <message><source>Could not open file for writing: %1</source><translation>失敗: ファイルを開く (%1).</translation></message>
     <message><source>Could not write file: %1</source><translation>失敗: ファイルの書き込み (%1).</translation></message>
     <message><source>Saved %1 entries to:
-%2</source><translation>設定: ファイルの書き込み · 項目: %1
+%2</source><translation>%1 件の項目を次の場所に保存しました：
 %2</translation></message>
     <message><source>Cannot add an entire volume (%1) to the exclusion list.</source><translation>ボリューム全体（%1）は除外できません。</translation></message>
-    <message><source>The pagefile, swapfile and hibernation file cannot be excluded; UWF itself depends on these system files.</source><translation>ページファイル・スワップファイル・休止状態ファイルは、UWF 自体が依存するため除外できません。</translation></message>
+    <message><source>The pagefile, swapfile and hibernation file cannot be added as exclusions.</source><translation>ページファイル、スワップファイル、休止状態ファイルは除外一覧に追加できません。</translation></message>
     <message><source>The entire \Windows directory cannot be excluded.</source><translation>ディレクトリ全体は除外できません： \Windows.</translation></message>
     <message><source>The entire \Windows\System32 directory cannot be excluded.</source><translation>ディレクトリ全体は除外できません： \Windows\System32.</translation></message>
     <message><source>The entire \Windows\System32\Drivers directory cannot be excluded.</source><translation>ディレクトリ全体は除外できません： \Windows\System32\Drivers.</translation></message>
@@ -158,26 +156,12 @@
     <message><source>The per-user registry file NTUSER.DAT cannot be excluded.</source><translation>ユーザー別のレジストリファイル NTUSER.DAT は除外できません。</translation></message>
     <message><source>Registry key cannot be empty.</source><translation>レジストリキーを入力してください。</translation></message>
     <message><source>Registry key cannot start with a backslash.</source><translation>レジストリキーの先頭にバックスラッシュは使えません。</translation></message>
-    <message><source>The path contains consecutive backslashes; this is not valid.</source><translation>連続したバックスラッシュを含むパスは無効です。</translation></message>
-    <message><source>Registry paths use backslash `\` as the separator; do not use forward slash `/`.</source><translation>レジストリパスの区切りは `\` です。`/` は使用しないでください。</translation></message>
-    <message><source>The path contains invisible control characters; this is not valid.</source><translation>見えない制御文字を含むパスは無効です。</translation></message>
-    <message><source>HKLM\SECURITY\Policy\Secrets\$MACHINE.ACC cannot be excluded; this is the domain machine account secret, which UWF documentation explicitly forbids excluding.</source><translation>ドメインのコンピューターアカウントの秘密情報は、UWF の仕様で除外が禁止されています：HKLM\SECURITY\Policy\Secrets\$MACHINE.ACC</translation></message>
-    <message><source>UWF only allows exclusions under the following top-level registry keys. Please pick a specific subkey under one of them:
-  HKLM\BCD00000000
-  HKLM\SYSTEM
-  HKLM\SOFTWARE
-  HKLM\SAM
-  HKLM\SECURITY
-  HKLM\COMPONENTS</source><translation>次の最上位キー内のサブキーのみ除外できます。具体的なサブキーを選択してください：
-  HKLM\BCD00000000
-  HKLM\SYSTEM
-  HKLM\SOFTWARE
-  HKLM\SAM
-  HKLM\SECURITY
-  HKLM\COMPONENTS</translation></message>
-    <message><source>Add a file or folder to the exclusion list. Excluded entries are not protected by UWF.</source><translation>ファイルやフォルダーを除外一覧に追加します。除外した対象は UWF で保護されません。</translation></message>
+    <message><source>Registry paths cannot contain null characters.</source><translation>レジストリ パスにヌル文字を含めることはできません。</translation></message>
+    <message><source>A registry key component is too long.</source><translation>レジストリ キーの構成要素が長すぎます。</translation></message>
+    <message><source>The registry path exceeds UWF's nesting limit.</source><translation>レジストリ パスが UWF の入れ子の深さの上限を超えています。</translation></message>
+    <message><source>Add a file or folder to the exclusion list.</source><translation>ファイルまたはフォルダーを除外リストに追加します。</translation></message>
     <message><source>Pick a file to add to the exclusion list.</source><translation>追加するファイルを選択 · ファイルの除外.</translation></message>
-    <message><source>Pick a folder (and all of its contents) to add to the exclusion list.</source><translation>追加するフォルダーを選択 · ファイルの除外. 全サブフォルダーを含みます。</translation></message>
+    <message><source>Pick a folder (and all of its contents) to add to the exclusion list.</source><translation>除外一覧に追加するフォルダーを選択します。フォルダー内のすべての内容が含まれます。</translation></message>
     <message><source>Enter a registry key path to add to the exclusion list.</source><translation>除外するレジストリキーのパスを入力してください。</translation></message>
     <message><source>Add a registry key to the exclusion list, or enable a persistence switch.</source><translation>除外するレジストリキーのパスを入力してください。 / 永続化.</translation></message>
     <message><source>Registry key…</source><translation>レジストリ · キー…</translation></message>
@@ -194,14 +178,14 @@
     <message><source>Commit folder changes to disk…</source><translation>フォルダーの変更をオーバーレイからディスクにコミット…</translation></message>
     <message><source>Commit file changes to disk…</source><translation>ファイルの変更をオーバーレイからディスクにコミット…</translation></message>
     <message><source>Copied to clipboard</source><translation>クリップボードにコピーしました</translation></message>
-    <message><source>Select files to add to the exclusion list (multiple selection allowed)</source><translation>追加するファイルを選択 · ファイルの除外. ファイルを複数選択できます。</translation></message>
+    <message><source>Select files to add to the exclusion list (multiple selection allowed)</source><translation>除外一覧に追加するファイルを選択（複数選択可）</translation></message>
     <message><source>Select a folder to add to the exclusion list</source><translation>追加するフォルダーを選択 · ファイルの除外</translation></message>
     <message><source>Add registry exclusion</source><translation>レジストリ除外の追加</translation></message>
     <message><source>The selected path %1 is not on volume %2, and therefore cannot be added as an exclusion for this volume.</source><translation>パス %1 はボリューム %2 上にないため、このボリュームの除外項目に追加できません。</translation></message>
     <message><source>Path is not on this volume</source><translation>このボリューム上のパスではありません</translation></message>
     <message><source>Cannot add this exclusion</source><translation>この除外項目を追加できません</translation></message>
-    <message><source>File: %1</source><translation>ファイル… %1</translation></message>
-    <message><source>Folder: %1</source><translation>フォルダー… %1</translation></message>
+    <message><source>File: %1</source><translation>ファイル：%1</translation></message>
+    <message><source>Folder: %1</source><translation>フォルダー：%1</translation></message>
     <message><source>Registry: %1</source><translation>レジストリ: %1</translation></message>
     <message><source>Excluded by default; change it anytime.</source><translation>既定で除外されています。いつでも変更できます。</translation></message>
     <message><source>Current session: %1
@@ -209,9 +193,9 @@ Next session: %2</source><translation>現在のセッション: %1
 次のセッション: %2</translation></message>
     <message><source>Pending change: %1</source><translation>保留中の変更: %1</translation></message>
     <message><source>Unified Write Filter (UWF) Manager</source><translation>統合書き込みフィルター (UWF) マネージャー</translation></message>
-    <message><source>Re-read the current session state and next-session configuration of UWF.</source><translation>UWF の現在のセッション状態と次回の設定を読み直します。</translation></message>
+    <message><source>Re-read the current session state and next-session configuration of UWF.</source><translation>UWF の現在のセッションの状態と、次のセッションの設定を再読み取りします。</translation></message>
     <message><source>Review and apply</source><translation>確認して適用</translation></message>
-    <message><source>Review all pending changes and apply them in one batch. Most changes take effect after the next reboot.</source><translation>保留中の変更をすべて確認し、まとめて適用します。 多くの変更は次回の再起動後に反映されます。</translation></message>
+    <message><source>Review all pending changes and apply them in one batch.</source><translation>保留中の変更をすべて確認し、まとめて適用します。</translation></message>
     <message><source>Safe shutdown</source><translation>安全なシャットダウン</translation></message>
     <message><source>Shut down safely, even when the UWF overlay is full.</source><translation>UWF を使用して安全にシャットダウンします。 UWF のオーバーレイが満杯でも実行できます。</translation></message>
     <message><source>Safe restart</source><translation>安全な再起動</translation></message>
@@ -228,22 +212,21 @@ Next session: %2</source><translation>現在のセッション: %1
     <message><source>System information</source><translation>システム情報</translation></message>
     <message><source>Diagnostic snapshot</source><translation>診断スナップショット</translation></message>
     <message><source>Read only</source><translation>読み取り専用</translation></message>
-    <message><source>The target was not found; there is nothing in the overlay to commit.</source><translation>対象が見つかりません。オーバーレイにコミットする内容はありません。</translation></message>
-    <message><source>Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It will disappear on reboot; commit-delete is neither needed nor possible.</source><translation>対象は物理ディスクや永続レジストリにはなく、保護中に作成されたオーバーレイ内にのみ存在します。再起動で消えるため、削除のコミットは不要で、実行もできません。</translation></message>
+    <message><source>The system did not find the target.</source><translation>システムで対象が見つかりませんでした。</translation></message>
     <message><source>A parameter was rejected by the system (invalid path or argument).</source><translation>システムが引数を拒否しました（パスまたは引数が無効です）。</translation></message>
     <message><source>The operation failed. The target may be in use by another process (e.g. an Explorer window browsing the folder, or the file is open). Close any program holding it and try again.</source><translation>操作に失敗しました。ファイルが開かれている、フォルダーをエクスプローラーで表示中など、別のプロセスが使用している可能性があります。使用中のプログラムを閉じて再試行してください。</translation></message>
     <message><source>The operation failed (see log for details).</source><translation>操作に失敗しました。詳細はログを確認してください。</translation></message>
     <message><source>Operation rejected (code %1).</source><translation>操作が拒否されました（コード %1）。</translation></message>
-    <message><source>Unknown cause.</source><translation>不明.</translation></message>
+    <message><source>Unknown cause.</source><translation>原因不明。</translation></message>
     <message><source>Commit canceled</source><translation>コミットをキャンセルしました</translation></message>
 
     <message><source>Succeeded</source><translation>成功</translation></message>
     <message><source>Skipped</source><translation>スキップ</translation></message>
     <message><source>Failed</source><translation>失敗</translation></message>
-    <message><source>%1 succeeded; %2 skipped; %3 failed.</source><translation>成功: %1; スキップ: %2; 失敗: %3.</translation></message>
+    <message><source>%1 succeeded; %2 failed.</source><translation>成功：%1 件、失敗：%2 件。</translation></message>
 
-    <message><source>Existed before</source><translation>操作前に存在</translation></message>
-    <message><source>Exists after</source><translation>操作後に存在</translation></message>
+    <message><source>Existed before</source><translation>削除前に存在</translation></message>
+    <message><source>Exists after</source><translation>削除後に存在</translation></message>
     <message><source>Error code</source><translation>エラーコード</translation></message>
     <message><source>Reason</source><translation>理由</translation></message>
     <message><source>Previous page</source><translation>前のページ</translation></message>
@@ -252,25 +235,21 @@ Next session: %2</source><translation>現在のセッション: %1
     <message><source>Next page</source><translation>次のページ</translation></message>
     <message><source>Copy selected rows</source><translation>選択行をコピー</translation></message>
     <message><source>Copy all</source><translation>すべてコピー</translation></message>
-    <message><source>This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it.</source><translation>自動コミット一覧に保存済み項目がある間、このレジストリ除外は必要です. ファイルの保存待ち: クリア → レジストリ除外の削除.</translation></message>
+    <message><source>This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it.</source><translation>ファイルステージングに保存済みの項目がある間は、このレジストリ除外が必要です。削除する前に、ファイルステージングの一覧を空にしてください。</translation></message>
     <message><source>Copy current page</source><translation>このページをコピー</translation></message>
     <message><source>No pending changes</source><translation>保留中の変更なし</translation></message>
     <message><source> (Also manages global registry exclusions.)</source><translation> (レジストリの除外 · 全体設定.)</translation></message>
-    <message><source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source><translation>ボリューム %1: UWF 保護 / ファイルの除外 / ファイルの保存待ち.%2</translation></message>
-    <message><source>UWF namespace is not available</source><translation>UWF: 未対応</translation></message>
+    <message><source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source><translation>ボリューム %1 の UWF 保護設定、ファイル除外、ファイルステージングに切り替えます。%2</translation></message>
+    <message><source>UWF namespace is not available</source><translation>UWF の名前空間を利用できません</translation></message>
     <message><source>Review and apply changes</source><translation>変更を確認して適用</translation></message>
     <message><source>Confirm apply</source><translation>適用の確認</translation></message>
     <message><source>Result</source><translation>結果</translation></message>
     <message><source>✓ Filter: %1</source><translation>✓ フィルター: %1</translation></message>
     <message><source>✓ Overlay warning threshold set to %1 MB</source><translation>✓ 警告しきい値の設定: %1 MB</translation></message>
     <message><source>✓ Overlay critical threshold set to %1 MB</source><translation>✓ 重大しきい値の設定: %1 MB</translation></message>
-    <message><source>✘ Type / maximum size not applied: the filter is currently enabled. Disable the filter and reboot first.</source><translation>✘ オーバーレイ種類の設定 / 最大サイズの設定: 種類と最大サイズを変更するには：
-1. 上のスイッチでフィルターを無効にします。
-2. 再起動し、無効な状態にします。
-3. 設定を変更します。</translation></message>
+    <message><source>✘ Type / maximum capacity not applied: UWF is enabled. Disable UWF and restart first.</source><translation>✘ 種類／最大容量を適用できません：UWF が有効です。先に UWF を無効にして再起動してください。</translation></message>
     <message><source>✓ Overlay type set to %1</source><translation>✓ オーバーレイ種類の設定: %1</translation></message>
-    <message><source>✓ Overlay maximum size set to %1 MB</source><translation>✓ 最大サイズの設定: %1 MB</translation></message>
-    <message><source>✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.</source><translation>✘ 最大サイズの設定: Disk ≥ %1 MB.</translation></message>
+    <message><source>✓ Maximum overlay capacity set to %1 MB</source><translation>✓ オーバーレイの最大容量を %1 MB に設定しました</translation></message>
     <message><source>✓ Volume %1 protection: %2</source><translation>✓ ボリューム %1 · UWF 保護: %2</translation></message>
     <message><source>✓ Volume %1 bind by: %2</source><translation>✓ ボリューム %1 · 識別方法： %2</translation></message>
     <message><source>✓ Volume %1 added file exclusion: %2</source><translation>✓ ボリューム %1 · ファイル除外の追加: %2</translation></message>
@@ -279,20 +258,14 @@ Next session: %2</source><translation>現在のセッション: %1
     <message><source>✓ Removed registry exclusion: %1</source><translation>✓ レジストリ除外の削除: %1</translation></message>
     <message><source>Time</source><translation>時刻</translation></message>
     <message><source>Level</source><translation>レベル</translation></message>
-    <message><source>Tag</source><translation>タグ</translation></message>
+
     <message><source>Message</source><translation>メッセージ</translation></message>
-    <message><source>Calculating files for automatic commit…</source><translation>自動コミット対象のファイルを集計中…</translation></message>
-    <message><source>Committing staged files</source><translation>自動コミット中</translation></message>
-    <message><source>Processed %1 of %2 file(s).</source><translation>%2 個中 %1 個のファイルを処理しました。</translation></message>
+    <message><source>Committing staged files</source><translation>ステージング対象ファイルをコミット中</translation></message>
     <message><source>No additional error details were provided.</source><translation>追加のエラー情報はありません。</translation></message>
     <message><source>Automatic file staging stopped unexpectedly:
-%1</source><translation>ファイルの保存待ちが予期せず停止しました：
+%1</source><translation>自動ファイルステージングが予期せず停止しました：
 %1</translation></message>
-    <message><source>Automatic file staging stopped because of an unknown error.</source><translation>ファイルの保存待ちが完了しませんでした: 不明なエラー.</translation></message>
-    <message><source>File staging will be skipped</source><translation>ファイルの保存待ちをスキップします</translation></message>
-    <message><source>Direct restart skips File staging commits.</source><translation>直接再起動: ファイルの保存待ちをスキップします.</translation></message>
-    <message><source>Direct shutdown skips File staging commits.</source><translation>直接シャットダウン: ファイルの保存待ちをスキップします.</translation></message>
-    <message><source>File staging was skipped because a direct power action was selected.</source><translation>直接の電源操作を選択したため、自動コミットをスキップしました。</translation></message>
+    <message><source>Automatic file staging stopped because of an unknown error.</source><translation>不明なエラーにより、自動ファイルステージングが停止しました。</translation></message>
     <message><source>Safe shutdown failed</source><translation>安全なシャットダウン: 失敗</translation></message>
     <message><source>Shutdown failed: %1</source><translation>シャットダウン: 失敗 (%1)</translation></message>
     <message><source>Safe restart failed</source><translation>安全な再起動: 失敗</translation></message>
@@ -300,11 +273,11 @@ Next session: %2</source><translation>現在のセッション: %1
     <message><source>Direct shutdown failed</source><translation>直接シャットダウン: 失敗</translation></message>
     <message><source>Restart failed: %1</source><translation>再起動: 失敗 (%1)</translation></message>
     <message><source>The file staging list could not be read:
-%1</source><translation>自動コミット一覧の読み取りに失敗しました:
+%1</source><translation>ファイルステージングの一覧の読み取りに失敗しました:
 %1</translation></message>
-    <message><source>The file staging list could not be read because of an unknown error.</source><translation>自動コミット一覧の読み取りに失敗しました: 不明なエラー.</translation></message>
-    <message><source>Discovered files: %1 · Committed: %2 · Skipped files: %3 · Skipped entries: %4 · Failed: %5</source><translation>ファイル: %1 · 成功: %2 · スキップ (ファイル): %3 · スキップ (項目): %4 · 失敗: %5</translation></message>
-    <message><source>File staging preparation</source><translation>ファイルの保存待ち: 操作の詳細</translation></message>
+    <message><source>The file staging list could not be read because of an unknown error.</source><translation>不明なエラーにより、ファイルステージングの一覧を読み取れませんでした。</translation></message>
+    <message><source>Discovered files: %1 · Committed: %2 · Skipped files: %3 · Skipped entries: %4 · Failed: %5</source><translation>検出ファイル：%1 · コミット済み：%2 · スキップしたファイル：%3 · スキップした項目：%4 · 失敗：%5</translation></message>
+    <message><source>File staging preparation</source><translation>ファイルステージングの準備</translation></message>
     <message><source>Reparse points are not supported.</source><translation>再解析ポイントには対応していません。</translation></message>
     <message><source>Only absolute paths on local volumes can be staged.</source><translation>ローカルボリューム上の絶対パスのみ追加できます。</translation></message>
     <message><source>Only absolute paths on local volumes can be added to automatic file staging:
@@ -314,13 +287,13 @@ Next session: %2</source><translation>現在のセッション: %1
     <message><source>The staged file now refers to a different path type.</source><translation>登録したファイルのパス種類が変わっています。</translation></message>
     <message><source>The staged folder now refers to a different path type.</source><translation>登録したフォルダーのパス種類が変わっています。</translation></message>
     <message><source>The staged folder could not be enumerated completely.</source><translation>登録したフォルダーの全内容を列挙できませんでした。</translation></message>
-    <message><source>The path has no drive letter.</source><translation>パスにドライブ文字がありません。</translation></message>
+
     <message><source>A volume root cannot be processed recursively.</source><translation>ボリュームのルートは再帰処理できません。</translation></message>
     <message><source>The UWF provider rejected the commit.</source><translation>UWF プロバイダーがコミットを拒否しました。</translation></message>
-    <message><source>The commit failed with an unknown error.</source><translation>コミット失敗: 不明なエラー.</translation></message>
+    <message><source>The commit failed with an unknown error.</source><translation>不明なエラーにより、コミットに失敗しました。</translation></message>
     <message><source>%1 additional failure(s) were written to the log.</source><translation>追加の %1 件の失敗はログに記録しました。</translation></message>
 
-    <message><source>The path has no drive letter; cannot identify the target volume.</source><translation>パスにドライブ文字がありません。 対象ボリュームの特定: 失敗.</translation></message>
+
 
     <message><source>No current-session record found for volume %1.</source><translation>ボリューム %1 の現在のセッション情報がありません。</translation></message>
     <message><source>This path is in the file exclusion list.
@@ -338,17 +311,17 @@ Exclusion: %1</source><translation>このキーはレジストリ除外一覧に
 
     <message><source>Export commands to file</source><translation>コマンドをファイルにエクスポート</translation></message>
     <message><source>Exported %1 commands to:
-%2</source><translation>ファイルにエクスポート… · コマンド: %1
+%2</source><translation>%1 件のコマンドを次の場所にエクスポートしました：
 %2</translation></message>
     <message><source>Import</source><translation>インポート</translation></message>
-    <message><source>Paste, type, or load a script of uwfmgr commands and turn each line into a pending UI change. Nothing is written to the system until you click "Review and apply".</source><translation>uwfmgr: コマンドを一行ずつ入力または貼り付けてください。 ログやスクリプトなどのテキスト形式（.txt、.bat、.ps1）から、このコマンドを含む行を追加します。 インポートは変更を保留状態にします。システムに書き込むには、ツールバーの「確認して適用」を選んでください。</translation></message>
+    <message><source>Import uwfmgr commands into the draft. Changes are written only after confirmation in Review and apply.</source><translation>uwfmgr コマンドを下書きにインポートします。「確認して適用」で確定するまで、変更は書き込まれません。</translation></message>
     <message><source>Load from file…</source><translation>ファイルから読み込む…</translation></message>
     <message><source>Load recommended configuration</source><translation>推奨設定を読み込む</translation></message>
     <message><source>Choose recommended configuration</source><translation>推奨設定を選択</translation></message>
     <message><source>Select the recommended configuration groups to append. You can review or delete individual commands before importing.</source><translation>追加する推奨設定のグループを選んでください。インポート前に個々のコマンドを確認・削除できます。</translation></message>
     <message><source>From Microsoft official documentation.</source><translation>Microsoft 公式ドキュメントより。</translation></message>
     <message><source>Microsoft recommended UWF exclusions</source><translation>Microsoft 推奨の UWF 除外項目</translation></message>
-    <message><source>Review these recommendations before importing; folders should exist before UWF accepts file exclusions.</source><translation>インポート前に確認してください。ファイル除外を UWF に追加する前に、対象フォルダーが存在する必要があります。</translation></message>
+    <message><source>Review these recommendations before importing.</source><translation>インポート前に、これらの推奨項目を確認してください。</translation></message>
     <message><source>Source: Microsoft official UWF documentation, including common write filter exclusions and antimalware support.</source><translation>出典：Microsoft 公式 UWF ドキュメント（一般的な除外項目およびマルウェア対策のサポート）。</translation></message>
     <message><source>Customer Experience Improvement Program (CEIP)</source><translation>カスタマー エクスペリエンス向上プログラム (CEIP)</translation></message>
     <message><source>CEIP: persist policy opt-in state</source><translation>CEIP: 永続保存: ポリシーでの参加状態</translation></message>
@@ -392,7 +365,7 @@ Exclusion: %1</source><translation>このキーはレジストリ除外一覧に
     <message><source>Text files (*.txt *.cmd);;All files (*)</source><translation>テキストファイル (*.txt *.cmd);;すべてのファイル (*)</translation></message>
     <message><source>Status</source><translation>状態</translation></message>
     <message><source>Import failed</source><translation>インポート失敗</translation></message>
-    <message><source>Internal error: no applier registered.</source><translation>内部エラー：適用処理が登録されていません。</translation></message>
+    <message><source>Command import is not ready.</source><translation>コマンドのインポートはまだ準備できていません。</translation></message>
     <message><source>Nothing to import</source><translation>インポートするコマンドがありません</translation></message>
     <message><source>No uwfmgr commands found in the input.</source><translation>入力に uwfmgr コマンドが見つかりませんでした。</translation></message>
     <message><source>Duplicates: %1</source><translation>重複: %1</translation></message>
@@ -405,14 +378,14 @@ Exclusion: %1</source><translation>このキーはレジストリ除外一覧に
     <message><source>Cannot read file</source><translation>ファイルを読み取れません</translation></message>
     <message><source>Could not open file %1: %2</source><translation>失敗: ファイルを開く (%1): %2</translation></message>
     <message><source>Discard pending changes?</source><translation>保留中の変更を破棄しますか？</translation></message>
-    <message><source>There are %1 pending change(s) that have not been applied.
+    <message><source>%1 change(s) have not been applied.
 
-Continue and discard them?</source><translation>未適用の変更が %1 件あります。
+Discard them and continue?</source><translation>%1 件の変更がまだ適用されていません。
 
 破棄して続行しますか？</translation></message>
     <message><source>Incomplete uwfmgr command</source><translation>uwfmgr コマンドが不完全です</translation></message>
     <message><source>Missing size argument (MB)</source><translation>引数がありません： サイズ (MB)</translation></message>
-    <message><source>Size must be a non-negative integer in MB</source><translation>サイズは MB 単位の 0 以上の整数にしてください</translation></message>
+    <message><source>Size must be a non-negative integer (MB)</source><translation>容量は 0 以上の整数（MB）で指定してください</translation></message>
     <message><source>Missing overlay type argument (RAM or Disk)</source><translation>引数がありません： オーバーレイ · 種類 (RAM / Disk)</translation></message>
     <message><source>Unknown overlay type %1 (expected RAM or Disk)</source><translation>無効な値： オーバーレイ · 種類: %1 (RAM / Disk)</translation></message>
     <message><source>Missing volume argument (e.g. C:)</source><translation>引数がありません： ボリューム (C:)</translation></message>
@@ -421,30 +394,30 @@ Continue and discard them?</source><translation>未適用の変更が %1 件あ�
     <message><source>Missing registry key argument</source><translation>引数がありません： レジストリ · キー</translation></message>
     <message><source>Unclosed double quote in command</source><translation>コマンド内の二重引用符が閉じられていません</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>余分な引数があります：%1</translation></message>
-    <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>UI の操作に対応付けられない uwfmgr コマンドです</translation></message>
+    <message><source>This uwfmgr command cannot be imported.</source><translation>この uwfmgr コマンドはインポートできません。</translation></message>
     <message><source>Already in the target state — no-op</source><translation>既に指定した状態のため、操作は不要です</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>このボリューム外のパスか、ファイル除外に非対応のボリュームです（exFAT / ReFS など）</translation></message>
-    <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>UWF の禁止リストにより拒否されました（システムファイル、Windows、ページファイルなど）</translation></message>
+    <message><source>This path cannot be added as an exclusion.</source><translation>このパスは除外に追加できません。</translation></message>
     <message><source>Invalid size value: %1</source><translation>無効な値： サイズ: %1</translation></message>
-    <message><source>maximum size</source><translation>最大サイズ</translation></message>
+    <message><source>maximum capacity</source><translation>最大容量</translation></message>
     <message><source>warning threshold</source><translation>警告しきい値</translation></message>
     <message><source>critical threshold</source><translation>重大しきい値</translation></message>
     <message><source>Global configuration is unavailable; the command was not queued.</source><translation>全体設定を利用できないため、このコマンドは適用待ちに追加されませんでした。</translation></message>
-    <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>不明なボリューム %1（このドライブ文字に UWF 対応ディスクがありません）</translation></message>
+    <message><source>Unknown volume %1 (no matching volume configuration)</source><translation>不明なボリューム %1（一致するボリューム構成がありません）</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>ボリューム %1: 既に指定した状態のため、操作は不要です</translation></message>
-    <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: パスにドライブ文字がありません。 対象ボリュームの特定: 失敗.</translation></message>
+    <message><source>Path %1 has no drive letter; its volume tab cannot be identified.</source><translation>パス %1 にはドライブ文字がないため、対応するボリュームのタブを特定できません。</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>ボリューム %1: UWF 未対応</translation></message>
     <message><source>file exclusion</source><translation>ファイルの除外</translation></message>
     <message><source>registry exclusion</source><translation>レジストリの除外</translation></message>
     <message><source>Registry exclusions are only available on the registry tab, which is not present</source><translation>レジストリ除外を扱うタブがありません</translation></message>
     <message><source>Unsupported command</source><translation>コマンド: 未対応</translation></message>
-    <message><source>Show or hide the overlay hub.</source><translation>HUB: 表示切り替え.</translation></message>
+    <message><source>Show or hide the overlay widget.</source><translation>オーバーレイウィジェットを表示または非表示にします。</translation></message>
     <message><source>UWF: Enabled</source><translation>UWF: 有効</translation></message>
-    <message><source>UWF: Disabled</source><translation>UWF: 無効</translation></message>
+    <message><source>UWF: Disabled</source><translation>UWF：無効</translation></message>
     <message><source>UWF status unavailable</source><translation>UWF: 不明</translation></message>
     <message><source>Used %1 MB / Total %2 MB</source><translation>使用中 %1 MB / %2 MB</translation></message>
     <message><source>Enhanced mode</source><translation>拡張モード</translation></message>
-    <message><source>Coordinate automatic file staging with Windows shutdown and restart.</source><translation>Windows の終了・再起動時に、ファイルの保存待ちを連携させます。</translation></message>
+    <message><source>Coordinate automatic file staging with Windows shutdown and restart.</source><translation>自動ファイルステージングを Windows のシャットダウンや再起動と連携させます。</translation></message>
     <message><source>The enhanced mode status read failed because of an unknown error.</source><translation>失敗: 拡張モード状態の読み取り (不明なエラー).</translation></message>
     <message><source>The current service state could not be read:
 %1</source><translation>失敗: サービス状態の読み取り:
@@ -457,7 +430,7 @@ Continue and discard them?</source><translation>未適用の変更が %1 件あ�
     <message><source>The service executable path or startup arguments do not match this executable.</source><translation>サービスの実行パスまたは起動引数が、現在のプログラムと一致しません。</translation></message>
     <message><source>The service preshutdown timeout is not configured correctly.</source><translation>サービスのシャットダウン事前通知の待機時間が正しく設定されていません。</translation></message>
     <message><source>The service does not declare the privileges required to start the UI agent.</source><translation>UI エージェントの起動に必要な権限が、サービスで宣言されていません。</translation></message>
-    <message><source>The service has not accepted Windows preshutdown notifications.</source><translation>サービスが Windows のシャットダウン事前通知を受け付けていません。</translation></message>
+    <message><source>The service cannot receive Windows preshutdown notifications.</source><translation>現在のサービスは Windows のシャットダウン事前通知を受信できません。</translation></message>
     <message><source>Enable enhanced mode</source><translation>拡張モードを有効化</translation></message>
     <message><source>Disable enhanced mode</source><translation>拡張モードを無効化</translation></message>
     <message><source>Start service</source><translation>サービスを開始</translation></message>
@@ -470,7 +443,7 @@ Continue and discard them?</source><translation>未適用の変更が %1 件あ�
     <message><source>UWF Manager enhanced mode helper service</source><translation>UWF Manager 拡張モード補助サービス</translation></message>
     <message><source>The enhanced mode configuration was applied.</source><translation>拡張モード · 設定: 適用済み.</translation></message>
     <message><source>The service configuration was applied, but UWF persistence reported:
-%1</source><translation>設定: 適用済み. UWF の永続化からの報告:
+%1</source><translation>サービス設定は適用されましたが、UWF の永続化で次の問題が報告されました：
 %1</translation></message>
     <message><source>The enhanced mode configuration failed:
 %1</source><translation>拡張モード · 設定: 失敗:
@@ -484,16 +457,11 @@ Continue and discard them?</source><translation>未適用の変更が %1 件あ�
 %1</source><translation>拡張モード: サービスを削除: 失敗:
 %1</translation></message>
     <message><source>The enhanced mode service could not be deleted because of an unknown error.</source><translation>拡張モード: サービスを削除: 失敗 (不明なエラー).</translation></message>
-    <message><source>File staging completed</source><translation>ファイルの保存待ち: 成功</translation></message>
-    <message><source>File staging failed</source><translation>ファイルの保存待ち: 失敗</translation></message>
-    <message><source>All staged targets were processed.</source><translation>すべての対象を処理しました。</translation></message>
-    <message><source>All staged targets were processed; one or more operations failed.</source><translation>すべての対象を処理しましたが、一部の操作に失敗しました。</translation></message>
     <message><source>Show main window</source><translation>メインウィンドウを表示</translation></message>
     <message><source>Restore default position</source><translation>既定の位置に戻す</translation></message>
-    <message><source>Show overlay hub</source><translation>オーバーレイ HUB を表示</translation></message>
-    <message><source>Hide overlay hub</source><translation>オーバーレイ HUB を隠す</translation></message>
+    <message><source>Show overlay widget</source><translation>オーバーレイウィジェットを表示</translation></message>
+    <message><source>Hide overlay widget</source><translation>オーバーレイウィジェットを非表示</translation></message>
     <message><source>Exit application</source><translation>アプリケーションを終了</translation></message>
-    <message><source>✘ Failed to connect to the system</source><translation>✘ 失敗: システムへの接続</translation></message>
     <message><source>Failed to read registry values: %1</source><translation>失敗: レジストリ値の読み取り (%1)</translation></message>
     <message><source>Unexpected error while enumerating overlay files.</source><translation>オーバーレイファイルの列挙: 不明なエラー.</translation></message>
     <message><source>✘ Failed to %1 filter</source><translation>✘ 失敗: フィルターの%1</translation></message>
@@ -502,25 +470,22 @@ Continue and discard them?</source><translation>未適用の変更が %1 件あ�
     <message><source>✘ Failed to set critical threshold</source><translation>✘ 失敗: 重大しきい値の設定</translation></message>
     <message><source>✘ Failed to read overlay state</source><translation>✘ 失敗: オーバーレイ状態の読み取り</translation></message>
     <message><source>✘ Failed to set overlay type</source><translation>✘ 失敗: オーバーレイ種類の設定</translation></message>
-    <message><source>✘ Failed to set maximum size</source><translation>✘ 失敗: 最大サイズの設定</translation></message>
+    <message><source>✘ Failed to set maximum capacity</source><translation>✘ 最大容量を設定できませんでした</translation></message>
     <message><source>✘ Failed to read overlay configuration</source><translation>✘ 失敗: オーバーレイ設定の読み取り</translation></message>
-    <message><source>✘ Volume %1: failed to register with UWF</source><translation>✘ 失敗: ボリューム %1 の UWF 登録</translation></message>
     <message><source>✘ Failed to %1 protection on volume %2</source><translation>✘ 失敗: ボリューム %2 の保護を%1</translation></message>
     <message><source>✘ Failed to set binding for volume %1</source><translation>✘ 失敗: ボリューム %1 の識別方法の設定</translation></message>
     <message><source>✘ Volume %1 failed to add file exclusion %2</source><translation>✘ ボリューム %1 · 失敗: ファイル除外の追加 %2</translation></message>
-    <message><source>✓ Volume %1 file exclusion already absent: %2</source><translation>✓ ボリューム %1 のファイル除外は既にありません：%2</translation></message>
     <message><source>✘ Volume %1 failed to remove file exclusion %2</source><translation>✘ ボリューム %1 · 失敗: ファイル除外の削除 %2</translation></message>
     <message><source>✘ Failed to read volume configuration</source><translation>✘ 失敗: ボリューム設定の読み取り</translation></message>
     <message><source>✘ Failed to add registry exclusion %1</source><translation>✘ 失敗: レジストリ除外の追加 %1</translation></message>
     <message><source>✘ Failed to remove registry exclusion %1</source><translation>✘ 失敗: レジストリ除外の削除 %1</translation></message>
     <message><source>✘ Failed to update registry persistence switches</source><translation>✘ 失敗: レジストリ永続化スイッチの更新</translation></message>
     <message><source>✘ Failed to read registry filter</source><translation>✘ 失敗: レジストリフィルターの読み取り</translation></message>
-    <message><source>UWF is not available</source><translation>UWF: 未対応</translation></message>
+    <message><source>UWF is not available</source><translation>UWF を利用できません</translation></message>
     <message><source>Unknown error while reading the target state.</source><translation>対象の状態の読み取り: 不明なエラー.</translation></message>
-    <message><source>The target no longer exists, so there is nothing to delete.</source><translation>パスが存在しないため、削除するものはありません。</translation></message>
     <message><source>The operation failed with an unknown error.</source><translation>不明なエラー.</translation></message>
-    <message><source>The operation result could not be confirmed because the target state reread failed: %1</source><translation>操作後の状態を再読み取りできず、結果を確認できませんでした：%1</translation></message>
-    <message><source>The provider accepted the deletion, but the target still exists after the authoritative reread.</source><translation>プロバイダーは削除を受け付けましたが、確実な情報源から再確認したところ、対象はまだ存在します。</translation></message>
+    <message><source>The target state could not be verified, so the operation result is unknown: %1</source><translation>対象の状態を検証できないため、操作結果は不明です：%1</translation></message>
+    <message><source>The system accepted the deletion request, but the target still exists after verification.</source><translation>削除要求はシステムに受け付けられましたが、検証後も対象が存在します。</translation></message>
     <message><source>Unknown</source><translation>不明</translation></message>
     <message><source>Failed to load logs: %1</source><translation>失敗: ログの読み込み (%1)</translation></message>
     <message><source>Failed to load logs: unexpected error.</source><translation>失敗: ログの読み込み (不明なエラー).</translation></message>
@@ -567,8 +532,8 @@ Saving will replace its contents.</source><translation>この場所には既に�
 保存すると内容が置き換わります。</translation></message>
     <message><source>A graphical manager for Windows Unified Write Filter.
 Manage volume protection, overlay, exclusions, and staged files.</source><translation>Windows Unified Write Filter のグラフィカル管理ツール。
-ボリューム保護、オーバーレイ、除外、保存待ちファイルを管理します。</translation></message>
-    <message><source>About this snapshot</source><translation>このスナップショットについて</translation></message>
+ボリューム保護、オーバーレイ、除外、ステージング対象ファイルを管理します。</translation></message>
+    <message><source>Snapshot details</source><translation>スナップショットの詳細</translation></message>
     <message><source>Account</source><translation>アカウント</translation></message>
     <message><source>Add UWF configuration from a script or text.</source><translation>スクリプトやテキストから UWF 設定を追加します。</translation></message>
     <message><source>Add exclusion</source><translation>除外を追加</translation></message>
@@ -576,7 +541,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Add selected items</source><translation>選択した項目を追加</translation></message>
     <message><source>Added</source><translation>追加済み</translation></message>
     <message><source>Administrator</source><translation>管理者</translation></message>
-    <message><source>All changes have been saved to disk and will persist without a restart.</source><translation>すべての変更をディスクに保存しました。再起動せずに保持されます。</translation></message>
+    <message><source>The selected operations completed. UWF may skip excluded targets.</source><translation>選択した操作が完了しました。UWF は除外対象をスキップする場合があります。</translation></message>
     <message><source>All files (*)</source><translation>すべてのファイル (*)</translation></message>
     <message><source>All levels</source><translation>すべてのレベル</translation></message>
 
@@ -586,9 +551,9 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Apply changes</source><translation>変更を適用</translation></message>
     <message><source>Architecture</source><translation>アーキテクチャ</translation></message>
     <message><source>Automatic</source><translation>自動</translation></message>
-    <message><source>Automatic file staging</source><translation>保存待ちファイルの自動保存</translation></message>
-    <message><source>Automatic saving incomplete</source><translation>自動保存が未完了</translation></message>
-    <message><source>Automatically save eligible staged files during normal shutdown and restart.</source><translation>通常のシャットダウンや再起動時に、対象の保存待ちファイルを自動的に保存します。</translation></message>
+    <message><source>Automatic staged file commits</source><translation>ステージング対象ファイルの自動コミット</translation></message>
+    <message><source>Automatic file commits incomplete</source><translation>ファイルの自動コミットが未完了です</translation></message>
+    <message><source>Automatically commit eligible staged files during Windows shutdown and restart.</source><translation>Windows のシャットダウン時や再起動時に、条件を満たすステージング対象ファイルを自動コミットします。</translation></message>
     <message><source>Available</source><translation>利用可能</translation></message>
     <message><source>Back</source><translation>戻る</translation></message>
     <message><source>Background service</source><translation>バックグラウンドサービス</translation></message>
@@ -596,7 +561,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>By drive letter</source><translation>ドライブ文字で識別</translation></message>
     <message><source>By volume ID</source><translation>ボリューム ID で識別</translation></message>
     <message><source>Cancel reading</source><translation>読み取りをキャンセル</translation></message>
-    <message><source>Changes already committed are retained.</source><translation>確定済みの変更は保持されます。</translation></message>
+    <message><source>Completed operations cannot be undone.</source><translation>完了した操作は元に戻せません。</translation></message>
     <message><source>Select the registry key to exclude from UWF protection, including its subkeys and values.</source><translation>UWF の保護から除外するレジストリ キーを選択します。サブキーと値も含まれます。</translation></message>
     <message><source>Choose a location to save the file.</source><translation>ファイルの保存先を選択してください。</translation></message>
     <message><source>Choose a location within the allowed drive or folder.</source><translation>許可されたドライブまたはフォルダー内の場所を選択してください。</translation></message>
@@ -606,14 +571,12 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Clear logs</source><translation>ログを消去</translation></message>
     <message><source>Clear logs?</source><translation>ログを消去しますか？</translation></message>
     <message><source>Collapse</source><translation>折りたたむ</translation></message>
-    <message><source>Commit changes</source><translation>変更を確定</translation></message>
-    <message><source>Commit changes…</source><translation>変更を確定…</translation></message>
-    <message><source>Commit complete</source><translation>確定完了</translation></message>
-    <message><source>Commit file changes?</source><translation>ファイルの変更を確定しますか？</translation></message>
-    <message><source>Commit folder changes?</source><translation>フォルダーの変更を確定しますか？</translation></message>
-    <message><source>Commit registry key changes?</source><translation>レジストリキーの変更を確定しますか？</translation></message>
-    <message><source>Commit registry value changes?</source><translation>レジストリ値の変更を確定しますか？</translation></message>
-    <message><source>Commits staged files before normal shutdown and restart</source><translation>通常のシャットダウンや再起動の前に保存待ちファイルを確定</translation></message>
+    <message><source>Commit changes</source><translation>変更をコミット</translation></message>
+    <message><source>Commit changes…</source><translation>変更をコミット…</translation></message>
+    <message><source>Commit file changes?</source><translation>ファイルの変更をコミットしますか？</translation></message>
+    <message><source>Commit folder changes?</source><translation>フォルダーの変更をコミットしますか？</translation></message>
+    <message><source>Commit registry key changes?</source><translation>レジストリキーの変更をコミットしますか？</translation></message>
+    <message><source>Commit registry value changes?</source><translation>レジストリ値の変更をコミットしますか？</translation></message>
     <message><source>Compatibility mode</source><translation>互換モード</translation></message>
     <message><source>Configuration applied</source><translation>設定を適用しました</translation></message>
     <message><source>Configuration error</source><translation>設定エラー</translation></message>
@@ -623,8 +586,8 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Connecting…</source><translation>接続中…</translation></message>
     <message><source>Contact author</source><translation>作者に連絡</translation></message>
     <message><source>Continue editing</source><translation>編集を続ける</translation></message>
-    <message><source>Continuing restart will discard changes in files that could not be saved.</source><translation>再起動を続けると、保存できなかったファイルの変更が失われます。</translation></message>
-    <message><source>Continuing shutdown will discard changes in files that could not be saved.</source><translation>シャットダウンを続けると、保存できなかったファイルの変更が失われます。</translation></message>
+    <message><source>If you continue restart, uncommitted file changes may be lost.</source><translation>再起動を続行すると、未コミットのファイル変更が失われる可能性があります。</translation></message>
+    <message><source>If you continue shutdown, uncommitted file changes may be lost.</source><translation>シャットダウンを続行すると、未コミットのファイル変更が失われる可能性があります。</translation></message>
     <message><source>Coordinate with Windows shutdown</source><translation>Windows のシャットダウンと連携</translation></message>
     <message><source>Copy all logs</source><translation>すべてのログをコピー</translation></message>
     <message><source>Copy full report</source><translation>レポート全体をコピー</translation></message>
@@ -632,19 +595,19 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Copy path</source><translation>パスをコピー</translation></message>
     <message><source>Copy selection</source><translation>選択範囲をコピー</translation></message>
     <message><source>Copy version</source><translation>バージョンをコピー</translation></message>
-    <message><source>Counting staged files…</source><translation>保存待ちファイルを数えています…</translation></message>
+    <message><source>Counting staged files…</source><translation>ステージング対象ファイルを数えています…</translation></message>
     <message><source>Create</source><translation>作成</translation></message>
-    <message><source>Critical %1 MB</source><translation>危険 %1 MB</translation></message>
+    <message><source>Critical %1 MB</source><translation>重大 %1 MB</translation></message>
     <message><source>Current filter</source><translation>現在のフィルター</translation></message>
     <message><source>Current run</source><translation>今回の実行</translation></message>
     <message><source>Current selection</source><translation>現在の選択</translation></message>
     <message><source>Current usage</source><translation>現在の使用量</translation></message>
     <message><source>Date modified</source><translation>更新日時</translation></message>
     <message><source>Debug</source><translation>デバッグ</translation></message>
-    <message><source>Delete and commit this file?</source><translation>このファイルを削除して確定しますか？</translation></message>
-    <message><source>Delete and commit this folder?</source><translation>このフォルダーを削除して確定しますか？</translation></message>
-    <message><source>Delete and commit this registry key?</source><translation>このレジストリキーを削除して確定しますか？</translation></message>
-    <message><source>Delete and commit this registry value?</source><translation>このレジストリ値を削除して確定しますか？</translation></message>
+    <message><source>Delete and commit this file?</source><translation>このファイルを削除してコミットしますか？</translation></message>
+    <message><source>Delete and commit this folder?</source><translation>このフォルダーを削除してコミットしますか？</translation></message>
+    <message><source>Delete and commit this registry key?</source><translation>このレジストリキーを削除してコミットしますか？</translation></message>
+    <message><source>Delete and commit this registry value?</source><translation>このレジストリ値を削除してコミットしますか？</translation></message>
 
     <message><source>Direct restart?</source><translation>直接再起動しますか？</translation></message>
     <message><source>Direct shutdown?</source><translation>直接シャットダウンしますか？</translation></message>
@@ -656,7 +619,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Editable</source><translation>編集可能</translation></message>
     <message><source>Enable the filter and restart to display live usage</source><translation>フィルターを有効にして再起動すると現在の使用量を表示できます</translation></message>
     <message><source>Enhanced mode adds a background service that starts with Windows. Remove the service before moving or deleting the application.</source><translation>拡張モードでは、Windows とともに起動するバックグラウンドサービスが追加されます。アプリを移動または削除する前に、このサービスを削除してください。</translation></message>
-    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to save staged files.</source><translation>拡張モードは利用できません。保存待ちファイルを保存するには、安全なシャットダウンまたは安全な再起動を使用してください。</translation></message>
+    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to commit staged files.</source><translation>拡張モードを利用できません。「安全なシャットダウン」または「安全な再起動」でステージング対象ファイルをコミットしてください。</translation></message>
     <message><source>Enter HKLM\SOFTWARE\… and press Enter to navigate</source><translation>HKLM\SOFTWARE\… を入力し、Enter キーで移動</translation></message>
     <message><source>Enter a file name</source><translation>ファイル名を入力</translation></message>
     <message><source>Enter a valid file name.</source><translation>有効なファイル名を入力してください。</translation></message>
@@ -671,34 +634,30 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Failed to clear logs: unexpected error.</source><translation>ログを消去できませんでした：予期しないエラー。</translation></message>
     <message><source>File name</source><translation>ファイル名</translation></message>
     <message><source>File or folder</source><translation>ファイルまたはフォルダー</translation></message>
-    <message><source>File saving has started and cannot be canceled.</source><translation>ファイルの保存が始まったため、キャンセルできません。</translation></message>
-    <message><source>File saving incomplete</source><translation>ファイルの保存が未完了</translation></message>
-    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after restart.</source><translation>保存待ちファイルの処理を省略します。保護されたパスの未確定の変更は、再起動後に失われます。</translation></message>
-    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after shutdown.</source><translation>保存待ちファイルの処理を省略します。保護されたパスの未確定の変更は、シャットダウン後に失われます。</translation></message>
+    <message><source>File commits have started and cannot be canceled.</source><translation>ファイルのコミットが開始されたため、キャンセルできません。</translation></message>
+    <message><source>File commits incomplete</source><translation>ファイルのコミットが未完了です</translation></message>
     <message><source>File type</source><translation>ファイルの種類</translation></message>
     <message><source>Files and folders</source><translation>ファイルとフォルダー</translation></message>
     <message><source>Files and folders can be selected together.</source><translation>ファイルとフォルダーを一緒に選択できます。</translation></message>
-    <message><source>Files in File staging will not be saved.</source><translation>保存待ちのファイルは保存されません。</translation></message>
     <message><source>Filter is disabled</source><translation>フィルターは無効です</translation></message>
-    <message><source>Fit columns to contents</source><translation>列幅を内容に合わせる</translation></message>
+    <message><source>Fit columns to contents</source><translation>内容に合わせて列幅を調整</translation></message>
     <message><source>Folder address</source><translation>フォルダーのアドレス</translation></message>
     <message><source>Folder name</source><translation>フォルダー名</translation></message>
     <message><source>Folders</source><translation>フォルダー</translation></message>
-    <message><source>Full configuration</source><translation>設定全体</translation></message>
-    <message><source>Future writes to this key will not be protected by UWF.</source><translation>今後このキーへの書き込みは UWF で保護されません。</translation></message>
-    <message><source>Future writes to this path will not be protected by UWF.</source><translation>今後このパスへの書き込みは UWF で保護されません。</translation></message>
+    <message><source>Add this key to the next-session exclusions.</source><translation>このキーを次のセッションの除外リストに追加します。</translation></message>
+    <message><source>Add this path to the next-session exclusions.</source><translation>このパスを次のセッションの除外リストに追加します。</translation></message>
     <message><source>Global registry exclusion · includes subkeys</source><translation>グローバルなレジストリ除外 · サブキーを含む</translation></message>
     <message><source>Go up one folder or choose another location.</source><translation>親フォルダーへ移動するか、別の場所を選択してください。</translation></message>
     <message><source>Home</source><translation>ホーム</translation></message>
     <message><source>Import configuration</source><translation>設定をインポート</translation></message>
-    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>インポートは設定の下書きを更新します。変更をシステムに書き込むには「確認して適用」を使用してください。</translation></message>
+    <message><source>Import updates the draft. Confirm the changes in Review and apply to write them to the system.</source><translation>インポートすると下書きが更新されます。「確認して適用」で変更を確定すると、システムに書き込まれます。</translation></message>
     <message><source>Import results</source><translation>インポート結果</translation></message>
     <message><source>Imported</source><translation>インポート済み</translation></message>
-    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>レポートには、設定の下書きに対する各コマンドの処理結果が表示されます。行を選択すると、コマンドと結果の全文を確認できます。</translation></message>
+    <message><source>The list shows command results for the configuration draft. Select a row to view the complete command and details.</source><translation>一覧には、設定の下書きに対するコマンドの処理結果が表示されます。行を選択すると、コマンド全文と詳細を確認できます。</translation></message>
     <message><source>Imported: %1</source><translation>インポート済み：%1</translation></message>
     <message><source>Information</source><translation>情報</translation></message>
     <message><source>Item details</source><translation>項目の詳細</translation></message>
-    <message><source>Large staging lists may take longer to save.</source><translation>保存待ち一覧が大きい場合、保存に時間がかかることがあります。</translation></message>
+    <message><source>Committing many staged files may take longer.</source><translation>多数のステージング対象ファイルをコミットすると、時間がかかる場合があります。</translation></message>
     <message><source>License and copyright</source><translation>ライセンスと著作権</translation></message>
     <message><source>Line</source><translation>行</translation></message>
     <message><source>Local disk (%1)</source><translation>ローカルディスク (%1)</translation></message>
@@ -710,15 +669,15 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Module</source><translation>モジュール</translation></message>
     <message><source>More</source><translation>その他</translation></message>
     <message><source>Move</source><translation>移動</translation></message>
-    <message><source>If UWF protects the application drive, first make sure the application files will remain after a restart. Committing many staged files can make shutdown or restart take longer.</source><translation>アプリがあるドライブを UWF で保護している場合は、まず再起動後もアプリのファイルが残ることを確認してください。保存待ちファイルを大量に保存すると、シャットダウンや再起動に時間がかかる場合があります。</translation></message>
+    <message><source>If UWF protects the application drive, first make sure the application files will remain after a restart. Committing many staged files can make shutdown or restart take longer.</source><translation>アプリケーションのドライブが UWF で保護されている場合は、再起動後もアプリケーションのファイルが保持されることを先に確認してください。多数のステージング対象ファイルをコミットすると、シャットダウンや再起動に時間がかかる場合があります。</translation></message>
     <message><source>Multiple files can be selected.</source><translation>複数のファイルを選択できます。</translation></message>
     <message><source>Name and location</source><translation>名前と場所</translation></message>
     <message><source>Named value: %1 · this value only</source><translation>名前付きの値：%1 · この値のみ</translation></message>
     <message><source>Navigate to registry path</source><translation>レジストリのパスに移動</translation></message>
     <message><source>New folder</source><translation>新しいフォルダー</translation></message>
     <message><source>New records will appear after refreshing.</source><translation>更新すると新しいレコードが表示されます。</translation></message>
-    <message><source>Next-session configuration</source><translation>次回セッションの設定</translation></message>
-    <message><source>No files to commit</source><translation>確定するファイルはありません</translation></message>
+    <message><source>Next-session configuration</source><translation>次のセッションの設定</translation></message>
+    <message><source>No files to commit</source><translation>コミットするファイルはありません</translation></message>
     <message><source>No logs yet</source><translation>ログはまだありません</translation></message>
     <message><source>No matching items</source><translation>一致する項目はありません</translation></message>
     <message><source>No matching logs</source><translation>一致するログはありません</translation></message>
@@ -733,17 +692,16 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>On</source><translation>オン</translation></message>
     <message><source>One uwfmgr command per line</source><translation>1 行に 1 つの uwfmgr コマンド</translation></message>
     <message><source>Keep the application in a fixed folder that standard users cannot modify. Suggested location:</source><translation>アプリは、標準ユーザーが変更できない固定のフォルダーに保存してください。推奨の場所：</translation></message>
-    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after restart.</source><translation>保存待ちファイルのみ自動的に保存されます。保護されたパスのその他の未確定の変更は、再起動後に失われます。</translation></message>
-    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after shutdown.</source><translation>保存待ちファイルのみ自動的に保存されます。保護されたパスのその他の未確定の変更は、シャットダウン後に失われます。</translation></message>
+    <message><source>Only staged files are committed automatically. Other uncommitted changes may be lost after restart.</source><translation>自動コミットされるのはステージング対象ファイルのみです。その他の未コミットの変更は、再起動後に失われる可能性があります。</translation></message>
+    <message><source>Only staged files are committed automatically. Other uncommitted changes may be lost after shutdown.</source><translation>自動コミットされるのはステージング対象ファイルのみです。その他の未コミットの変更は、シャットダウン後に失われる可能性があります。</translation></message>
     <message><source>Open</source><translation>開く</translation></message>
     <message><source>Open folder</source><translation>フォルダーを開く</translation></message>
     <message><source>Operating system</source><translation>オペレーティングシステム</translation></message>
     <message><source>Operation and security</source><translation>動作とセキュリティ</translation></message>
     <message><source>Original command</source><translation>元のコマンド</translation></message>
-    <message><source>Overlay critical threshold reached. Save changes and safely restart.</source><translation>オーバーレイが危険しきい値に達しました。変更を保存し、安全に再起動してください。</translation></message>
-    <message><source>Overlay maximum size</source><translation>オーバーレイの最大サイズ</translation></message>
+    <message><source>Overlay critical threshold reached. Save changes and safely restart.</source><translation>オーバーレイが重大しきい値に達しました。変更を保存し、安全に再起動してください。</translation></message>
+    <message><source>Maximum overlay capacity</source><translation>オーバーレイの最大容量</translation></message>
     <message><source>Overlay type</source><translation>オーバーレイの種類</translation></message>
-    <message><source>Overlay usage</source><translation>オーバーレイの使用量</translation></message>
     <message><source>Overlay warning threshold reached. Save changes and safely restart.</source><translation>オーバーレイが警告しきい値に達しました。変更を保存し、安全に再起動してください。</translation></message>
     <message><source>Overview</source><translation>概要</translation></message>
     <message><source>Paste commands, or load them from a file…</source><translation>コマンドを貼り付けるか、ファイルから読み込みます…</translation></message>
@@ -769,14 +727,14 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Reading logs</source><translation>ログを読み取り中</translation></message>
     <message><source>Reading overlay</source><translation>オーバーレイを読み取り中</translation></message>
     <message><source>Ready</source><translation>準備完了</translation></message>
-    <message><source>Ready to save</source><translation>保存の準備完了</translation></message>
+    <message><source>Files to commit</source><translation>コミット対象のファイル</translation></message>
     <message><source>Records from the current run will appear here when reading is complete.</source><translation>読み取りが完了すると、今回の実行のレコードが表示されます。</translation></message>
-    <message><source>Recursive staging</source><translation>再帰的な保存待ち</translation></message>
+
     <message><source>Refresh folder</source><translation>フォルダーを更新</translation></message>
     <message><source>Registry key or persistence setting</source><translation>レジストリキーまたは永続化設定</translation></message>
-    <message><source>Remaining tasks can be canceled after the current target finishes.</source><translation>現在の対象の処理が終わると、残りのタスクをキャンセルできます。</translation></message>
-    <message><source>Remove this key from the next-session exclusions.</source><translation>このキーを次回セッションの除外から削除します。</translation></message>
-    <message><source>Remove this path from the next-session exclusions.</source><translation>このパスを次回セッションの除外から削除します。</translation></message>
+    <message><source>Canceling stops remaining tasks after the current operation finishes.</source><translation>キャンセルを要求すると、現在の操作が終了した時点で残りのタスクを停止します。</translation></message>
+    <message><source>Remove this key from the next-session exclusions.</source><translation>このキーを次のセッションの除外から削除します。</translation></message>
+    <message><source>Remove this path from the next-session exclusions.</source><translation>このパスを次のセッションの除外から削除します。</translation></message>
     <message><source>Removed</source><translation>削除済み</translation></message>
     <message><source>Rename</source><translation>名前の変更</translation></message>
     <message><source>Rename…</source><translation>名前の変更…</translation></message>
@@ -785,22 +743,22 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Replace the existing file?</source><translation>既存のファイルを置き換えますか？</translation></message>
     <message><source>Required configuration</source><translation>必須の設定</translation></message>
     <message><source>Restart anyway</source><translation>そのまま再起動</translation></message>
-    <message><source>Restart will continue after saving. Keep the application open.</source><translation>保存後に再起動を続けます。アプリを閉じないでください。</translation></message>
+    <message><source>Restart will continue after committing. Keep the application open.</source><translation>コミット後に再起動を続行します。アプリケーションを開いたままにしてください。</translation></message>
     <message><source>Restore</source><translation>元に戻す</translation></message>
     <message><source>Retry</source><translation>再試行</translation></message>
     <message><source>Review the failure details before continuing shutdown.</source><translation>シャットダウンを続ける前に、失敗の詳細を確認してください。</translation></message>
     <message><source>Review the failure details before restarting.</source><translation>再起動する前に、失敗の詳細を確認してください。</translation></message>
-    <message><source>Review the operation details. Read the current system state before retrying changes that may have been written.</source><translation>操作の詳細を確認してください。既に書き込まれた可能性がある変更を再試行する前に、現在のシステム状態を読み取ってください。</translation></message>
+    <message><source>Some changes may already have been written. Refresh the system state before retrying.</source><translation>一部の変更はすでに書き込まれている可能性があります。再試行する前にシステムの状態を更新してください。</translation></message>
     <message><source>Review the result for each target.</source><translation>各対象の結果を確認してください。</translation></message>
     <message><source>Review these changes before writing them to the system.</source><translation>システムに書き込む前に、これらの変更を確認してください。</translation></message>
     <message><source>Running</source><translation>実行中</translation></message>
     <message><source>Save</source><translation>保存</translation></message>
-    <message><source>Save staged files to disk, then restart.</source><translation>保存待ちファイルをディスクに保存してから再起動します。</translation></message>
-    <message><source>Save staged files to disk, then shut down.</source><translation>保存待ちファイルをディスクに保存してからシャットダウンします。</translation></message>
-    <message><source>Saving staged files</source><translation>保存待ちファイルを保存中</translation></message>
-    <message><source>Saving to disk</source><translation>ディスクに保存中</translation></message>
-    <message><source>Saving…</source><translation>保存中…</translation></message>
-    <message><source>Scanning staged paths</source><translation>保存待ちパスをスキャン中</translation></message>
+    <message><source>Commit staged files to disk, then restart.</source><translation>ステージング対象ファイルをディスクにコミットしてから再起動します。</translation></message>
+    <message><source>Commit staged files to disk, then shut down.</source><translation>ステージング対象ファイルをディスクにコミットしてからシャットダウンします。</translation></message>
+
+    <message><source>Committing to disk</source><translation>ディスクにコミット中</translation></message>
+    <message><source>Committing…</source><translation>コミット中…</translation></message>
+    <message><source>Scanning staged paths</source><translation>ステージング対象パスをスキャン中</translation></message>
     <message><source>Search logs</source><translation>ログを検索</translation></message>
     <message><source>Search messages or modules</source><translation>メッセージまたはモジュールを検索</translation></message>
     <message><source>Search paths</source><translation>パスを検索</translation></message>
@@ -830,14 +788,14 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Service status</source><translation>サービスの状態</translation></message>
     <message><source>Service stopped</source><translation>サービス停止中</translation></message>
     <message><source>Shut down anyway</source><translation>そのままシャットダウン</translation></message>
-    <message><source>Shutdown will continue after saving. Keep the application open.</source><translation>保存後にシャットダウンを続けます。アプリを閉じないでください。</translation></message>
+    <message><source>Shutdown will continue after committing. Keep the application open.</source><translation>コミット後にシャットダウンを続行します。アプリケーションを開いたままにしてください。</translation></message>
     <message><source>Size</source><translation>サイズ</translation></message>
     <message><source>Some changes could not be applied</source><translation>一部の変更を適用できませんでした</translation></message>
-    <message><source>Some files could not be saved</source><translation>一部のファイルを保存できませんでした</translation></message>
+    <message><source>Some files could not be committed</source><translation>一部のファイルをコミットできませんでした</translation></message>
     <message><source>Some hardware information could not be read. Other diagnostic information remains available to view and copy.</source><translation>一部のハードウェア情報を読み取れませんでした。他の診断情報は引き続き表示・コピーできます。</translation></message>
     <message><source>Source code</source><translation>ソースコード</translation></message>
-    <message><source>Staged file</source><translation>保存待ちファイル</translation></message>
-    <message><source>Staged path</source><translation>保存待ちパス</translation></message>
+
+    <message><source>Staged path</source><translation>ステージング対象パス</translation></message>
     <message><source>Standard user</source><translation>標準ユーザー</translation></message>
     <message><source>Starts automatically with Windows</source><translation>Windows と同時に自動起動</translation></message>
     <message><source>Startup type</source><translation>スタートアップの種類</translation></message>
@@ -848,28 +806,30 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>System changes when UWF is first enabled</source><translation>UWF を初めて有効にしたときのシステム変更</translation></message>
     <message><source>System memory</source><translation>システムメモリ</translation></message>
     <message><source>System metadata</source><translation>システムメタデータ</translation></message>
-    <message><source>System metadata is for diagnosis only and cannot be committed.</source><translation>システムメタデータは診断専用で、確定できません。</translation></message>
+    <message><source>System metadata is for diagnosis only and cannot be committed.</source><translation>システムメタデータは診断専用で、コミットできません。</translation></message>
     <message><source>Takes effect after restart</source><translation>再起動後に有効</translation></message>
+    <message><source>Takes effect when applied</source><translation>適用時に有効</translation></message>
+    <message><source>Used when UWF starts</source><translation>UWF 起動時に使用</translation></message>
+    <message><source>Mixed activation times</source><translation>有効になるタイミングが混在</translation></message>
     <message><source>Target</source><translation>対象</translation></message>
     <message><source>Terminal Services license persistence</source><translation>ターミナルサービスライセンスの永続化</translation></message>
     <message><source>The UWF provider could not complete enumeration. This can occur with a large overlay or insufficient system resources.</source><translation>UWF プロバイダーが列挙を完了できませんでした。オーバーレイが大きい場合やシステムリソースが不足している場合に発生することがあります。</translation></message>
-    <message><source>The configuration has been written to the system. Most changes take effect after restart.</source><translation>設定をシステムに書き込みました。ほとんどの変更は再起動後に有効になります。</translation></message>
-    <message><source>The configuration matches the next-session target. View or export commands in Full configuration.</source><translation>設定は次回セッションの目標と一致しています。「設定全体」でコマンドを表示・エクスポートできます。</translation></message>
+    <message><source>The configuration has been written to the system.</source><translation>構成をシステムに書き込みました。</translation></message>
     <message><source>The current log records will be cleared and cannot be restored.</source><translation>現在のログレコードを消去します。元には戻せません。</translation></message>
     <message><source>The destination folder does not exist.</source><translation>保存先フォルダーが存在しません。</translation></message>
     <message><source>The enhanced mode service status could not be read. Check service permissions and retry.</source><translation>拡張モードのサービス状態を読み取れませんでした。サービスの権限を確認して再試行してください。</translation></message>
-    <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>一覧には欠落や確定済みのファイルが含まれる場合があります。確定対象の一覧として使用しないでください。</translation></message>
+    <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>ファイルが一覧から漏れたり、コミット済みのファイルが含まれたりする場合があります。コミット対象の一覧として使用しないでください。</translation></message>
 
     <message><source>The selected item no longer exists: %1</source><translation>選択した項目は既に存在しません：%1</translation></message>
-    <message><source>The service is installed but stopped. Start it to restore automatic saving.</source><translation>サービスはインストール済みですが停止しています。自動保存を復旧するには起動してください。</translation></message>
+    <message><source>The service is installed but stopped. Start it to resume automatic file commits.</source><translation>サービスはインストールされていますが停止しています。ファイルの自動コミットを再開するには、サービスを開始してください。</translation></message>
     <message><source>This PC</source><translation>PC</translation></message>
     <message><source>This folder is empty</source><translation>このフォルダーは空です</translation></message>
 
     <message><source>This report may contain account names, device identifiers, and file paths. Review it before sharing.</source><translation>このレポートにはアカウント名、デバイス識別子、ファイルパスが含まれる場合があります。共有する前に確認してください。</translation></message>
-    <message><source>Save this UTF-8 CMD script as a .cmd file and run it in Command Prompt. Export uses the same script.</source><translation>この UTF-8 CMD スクリプトを .cmd ファイルとして保存し、コマンド プロンプトで実行してください。エクスポートでも同じスクリプトを使用します。</translation></message>
+
     <message><source>Try another keyword or log level.</source><translation>別のキーワードまたはログレベルを試してください。</translation></message>
     <message><source>Try another search term.</source><translation>別の検索語を試してください。</translation></message>
-    <message><source>Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>フィルターが有効な間は種類と最大サイズを変更できません。フィルターを無効にし、先に再起動してください。</translation></message>
+    <message><source>Disable UWF and restart before changing the overlay type or maximum capacity.</source><translation>オーバーレイの種類や最大容量を変更する前に、UWF を無効にして再起動してください。</translation></message>
     <message><source>UI agent</source><translation>UI エージェント</translation></message>
     <message><source>UTF-8 · %1 lines</source><translation>UTF-8 · %1 行</translation></message>
     <message><source>UWF configuration could not be read. Confirm that Unified Write Filter is installed in Windows, then read again.</source><translation>UWF 設定を読み取れませんでした。Windows に Unified Write Filter がインストールされていることを確認し、再読み取りしてください。</translation></message>
@@ -888,7 +848,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Unavailable</source><translation>利用不可</translation></message>
     <message><source>Undo removal</source><translation>削除を取り消す</translation></message>
     <message><source>Unprotected</source><translation>未保護</translation></message>
-    <message><source>Unsuccessful items have not been saved. Select a row to view the full path and reason.</source><translation>失敗した項目は保存されていません。行を選択すると完全なパスと理由を確認できます。</translation></message>
+    <message><source>Some items were not completed or could not be verified. Select an item to view its full path and details.</source><translation>一部の項目が未完了、または検証できませんでした。項目を選択すると、完全なパスと詳細を確認できます。</translation></message>
     <message><source>Up one folder</source><translation>親フォルダーへ</translation></message>
     <message><source>Usage unavailable</source><translation>使用量を取得できません</translation></message>
     <message><source>Use the whole key, including all subkeys</source><translation>すべてのサブキーを含むキー全体を使用</translation></message>
@@ -905,10 +865,10 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Warning %1 MB</source><translation>警告 %1 MB</translation></message>
     <message><source>Whole key and all subkeys · recursive</source><translation>キー全体とすべてのサブキー · 再帰的</translation></message>
     <message><source>Windows UWF provides write protection. This application configures and manages it.</source><translation>書き込み保護は Windows の UWF が提供し、このアプリで設定・管理します。</translation></message>
-    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to save staged files.</source><translation>拡張モードを使わない場合は、このアプリの安全なシャットダウンまたは安全な再起動で保存待ちファイルを保存してください。</translation></message>
+    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to commit staged files.</source><translation>拡張モードを使用しない場合は、このアプリケーションの「安全なシャットダウン」または「安全な再起動」でステージング対象ファイルをコミットしてください。</translation></message>
     <message><source>Write protection</source><translation>書き込み保護</translation></message>
-    <message><source>Write these configuration changes to the system? Most changes take effect after restart.</source><translation>これらの設定変更をシステムに書き込みますか？ほとんどの変更は再起動後に有効になります。</translation></message>
-    <message><source>staged files</source><translation>保存待ちファイル</translation></message>
+    <message><source>Write these configuration changes to the system?</source><translation>これらの構成変更をシステムに書き込みますか？</translation></message>
+    <message><source>staged files</source><translation>ステージング対象ファイル</translation></message>
     <message><source>uwfmgr commands</source><translation>uwfmgr コマンド</translation></message>
     <message><source>Mark selected paths for removal. Takes effect after Apply.</source><translation>選択したパスを削除予定としてマークします。適用後に反映されます。</translation></message>
     <message><source>Remove from automatic file staging after Apply.</source><translation>適用後に自動ステージングの一覧から削除します。</translation></message>
@@ -937,7 +897,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Committing changes</source><translation>変更をコミット中</translation></message>
     <message><source>Completed deletions and commits cannot be undone.</source><translation>完了した削除とコミットは元に戻せません。</translation></message>
     <message><source>Continue…</source><translation>続行…</translation></message>
-    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>検出済みの対象のみ削除してコミットします。読み取れなかった分岐とその親フォルダーやキーは保持します。</translation></message>
+    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>走査できた対象のみ削除してコミットします。読み取れなかった分岐とその親フォルダーやキーは保持します。</translation></message>
     <message><source>Deleting and committing</source><translation>削除してコミット中</translation></message>
     <message><source>Deletion and commit cannot be undone. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>削除とコミットは元に戻せません。選択範囲のみ処理し、保留中の UWF 設定は適用しません。</translation></message>
     <message><source>Determining the scope. Unread branches are recorded while traversal continues elsewhere.</source><translation>操作範囲を確認中です。読み取れない分岐を記録し、他の内容の走査を続けます。</translation></message>
@@ -947,7 +907,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>No changes have been committed.</source><translation>変更はまだコミットされていません</translation></message>
     <message><source>Nothing has been deleted or committed.</source><translation>削除やコミットはまだ実行していません</translation></message>
     <message><source>Path</source><translation>パス</translation></message>
-    <message><source>Permanently delete the selected scope and save the deletions to the protected volume.</source><translation>選択範囲を完全に削除し、削除結果を保護ボリュームに保存します。</translation></message>
+    <message><source>Permanently delete the selected content and commit the deletions.</source><translation>選択した内容を完全に削除し、その削除をコミットします。</translation></message>
     <message><source>Preparation complete</source><translation>準備完了</translation></message>
     <message><source>Preparing commit</source><translation>コミットの準備中</translation></message>
     <message><source>Preparing deletion and commit</source><translation>削除とコミットの準備中</translation></message>
@@ -956,7 +916,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Reparse points are skipped to keep traversal within the selected scope.</source><translation>選択範囲を超えて走査しないよう、再解析ポイントをスキップします。</translation></message>
     <message><source>Restarting cannot undo a commit. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>コミットは再起動しても元に戻せません。選択範囲のみ処理し、保留中の UWF 設定は適用しません。</translation></message>
     <message><source>Retry failed items</source><translation>失敗した項目を再試行</translation></message>
-    <message><source>Save changes in the selected scope to the protected volume.</source><translation>選択範囲の変更を保護ボリュームに保存します。</translation></message>
+    <message><source>Commit changes in the selected scope.</source><translation>選択範囲の変更をコミットします。</translation></message>
     <message><source>Stopping the operation</source><translation>操作を停止中</translation></message>
     <message><source>Successful and failed records are retained</source><translation>成功と失敗の記録を保持しています</translation></message>
     <message><source>The folder is not empty; unprocessed content has been retained.</source><translation>フォルダーが空ではありません。未処理の内容は保持されました。</translation></message>
@@ -974,10 +934,10 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Unable to prepare the operation</source><translation>操作を準備できません</translation></message>
     <message><source>View results</source><translation>結果を表示</translation></message>
 
-    <message><source>All changes committed</source><translation>すべての変更をコミットしました</translation></message>
-    <message><source>Some changes committed</source><translation>一部の変更をコミットしました</translation></message>
-    <message><source>No changes could be committed</source><translation>変更をコミットできませんでした</translation></message>
-    <message><source>No changes to commit</source><translation>コミットする変更はありません</translation></message>
+    <message><source>All operations succeeded</source><translation>すべての操作が成功しました</translation></message>
+    <message><source>Some operations succeeded</source><translation>一部の操作が成功しました</translation></message>
+    <message><source>No operations succeeded</source><translation>成功した操作はありません</translation></message>
+    <message><source>No targets to process</source><translation>処理する対象はありません</translation></message>
     <message><source>Commit interrupted</source><translation>コミットが中断されました</translation></message>
     <message><source>%1 items were not processed.</source><translation>%1 件は処理されていません。</translation></message>
     <message><source>%1 registry operation(s) failed.</source><translation>%1 件のレジストリ操作が失敗しました。</translation></message>
@@ -990,9 +950,9 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>The file staging draft changed after this plan was opened. Review a new plan.</source><translation>このプランを開いた後にファイルステージングの下書きが変更されました。新しいプランを確認してください。</translation></message>
     <message><source>The saved file staging list changed after this plan was opened. Refresh and review the changes.</source><translation>このプランを開いた後に保存済みのファイルステージング一覧が変更されました。更新して変更内容を確認してください。</translation></message>
     <message><source>The saved file staging list does not match the accepted plan.</source><translation>保存済みのファイルステージング一覧が承認したプランと一致しません。</translation></message>
-    <message><source>Export configuration</source><translation>設定をエクスポート</translation></message>
-    <message><source>Save the current theme, language, and HUB visibility to UWF.ini next to this application.</source><translation>現在のテーマ、言語、HUB の表示状態を、このアプリケーションと同じフォルダーの UWF.ini に保存します。</translation></message>
-    <message><source>Configuration saved</source><translation>設定を保存しました</translation></message>
+    <message><source>Export interface settings</source><translation>インターフェイス設定をエクスポート</translation></message>
+    <message><source>Save the current theme, language, and overlay widget visibility to UWF.ini beside this application.</source><translation>現在のテーマ、言語、オーバーレイウィジェットの表示状態を、このアプリケーションと同じ場所の UWF.ini に保存します。</translation></message>
+    <message><source>Interface settings saved</source><translation>インターフェイス設定を保存しました</translation></message>
     <message><source>Saved the current interface settings to:
 %1</source><translation>現在のインターフェイス設定を次の場所に保存しました:
 %1</translation></message>
@@ -1007,7 +967,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Desktop</source><translation>デスクトップ</translation></message>
     <message><source>Downloads</source><translation>ダウンロード</translation></message>
     <message><source>Documents</source><translation>ドキュメント</translation></message>
-    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>ファイルの保存待ち処理が中止されました。エラーを解決してから再試行してください。</translation></message>
+    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>ファイルステージングが停止しました。エラーを解決してから再試行してください。</translation></message>
     <message><source>No net change for this setting</source><translation>この設定の最終値はインポート前と変わりません</translation></message>
     <message><source>Final draft %1 → %2</source><translation>下書きの最終値: %1 → %2</translation></message>
     <message><source>Final draft %1 → %2 (requested %3)</source><translation>下書きの最終値: %1 → %2（要求値: %3）</translation></message>
@@ -1016,5 +976,586 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Updated volume %1 protection draft → %2</source><translation>ボリューム %1 の保護設定の下書きを更新しました → %2</translation></message>
     <message><source>Select entries to remove.</source><translation>削除する項目を選択してください。</translation></message>
     <message><source>Selected entries cannot currently be restored.</source><translation>選択した項目は現在復元できません。</translation></message>
+    <message>
+        <source>Freespace Passthrough</source>
+        <translation>空き領域パススルー</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay</source>
+        <translation>永続オーバーレイ</translation>
+    </message>
+    <message>
+        <source>Clear persistent data on next startup</source>
+        <translation>次回起動時に永続データを消去</translation>
+    </message>
+    <message>
+        <source>Read-Only Media mode</source>
+        <translation>読み取り専用メディアモード</translation>
+    </message>
+    <message>
+        <source>Uses free disk space for writes, reducing reserved overlay usage; supports RAM (not recommended) and Disk (recommended).</source>
+        <translation>ディスクの空き領域に書き込みを保存し、予約オーバーレイの使用量を減らします。RAM（非推奨）と Disk（推奨）に対応します。</translation>
+    </message>
+    <message>
+        <source>Preserves writes in the Disk overlay across restarts; not available for RAM overlays.</source>
+        <translation>Disk オーバーレイへの書き込みを再起動後も保持します。RAM オーバーレイでは使用できません。</translation>
+    </message>
+    <message>
+        <source>Resets the persistent overlay: clears its writes at the next startup, restoring the state when the overlay was enabled</source>
+        <translation>永続オーバーレイをリセットします。次回起動時に書き込みを消去し、オーバーレイを有効にした時点の状態に戻します</translation>
+    </message>
+
+
+    <message>
+        <source>Administrator privileges are required; the overlay configuration is read-only.</source>
+        <translation>管理者権限が必要です。現在はオーバーレイ設定の表示のみ可能です。</translation>
+    </message>
+    <message>
+        <source>Configuration editing is temporarily unavailable. Wait for the current operation to finish.</source>
+        <translation>設定を一時的に編集できません。現在の操作が完了するまでお待ちください。</translation>
+    </message>
+    <message>
+        <source>The overlay configuration could not be read. Refresh before editing.</source>
+        <translation>オーバーレイ設定を読み取れませんでした。更新してから編集してください。</translation>
+    </message>
+    <message>
+        <source>This system does not support clearing persistent data at the next startup.</source>
+        <translation>このシステムは次回起動時の永続データ消去に対応していません。</translation>
+    </message>
+    <message>
+        <source>The current clear request is unknown. Refresh the configuration before editing.</source>
+        <translation>現在の消去要求が不明です。設定を更新してから編集してください。</translation>
+    </message>
+    <message>
+        <source>Changing this request requires UWF and Disk Persistent Overlay to be active in the current session.</source>
+        <translation>この要求を変更するには、現在のセッションで UWF と Disk 永続オーバーレイが有効である必要があります。</translation>
+    </message>
+    <message>
+        <source>Clearing persistent data at the next startup requires Disk Persistent Overlay. Cancel the clear request or retain Persistent Overlay.</source>
+        <translation>次回起動時の消去には Disk 永続オーバーレイの保持が必要です。消去要求を取り消すか、永続オーバーレイを保持してください。</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay requires Disk. Disable Persistent Overlay or select Disk.</source>
+        <translation>永続オーバーレイには Disk が必要です。永続オーバーレイを無効にするか、Disk を選択してください。</translation>
+    </message>
+    <message>
+        <source>Read-Only Media mode requires RAM. Disable Read-Only Media mode or select RAM.</source>
+        <translation>読み取り専用メディアモードには RAM が必要です。このモードを無効にするか、RAM を選択してください。</translation>
+    </message>
+    <message>
+        <source>UWF is enabled in the current session. Disable UWF and restart before changing this setting.</source>
+        <translation>現在のセッションで UWF が有効です。この設定を変更するには、UWF を無効にして再起動してください。</translation>
+    </message>
+    <message>
+        <source>The configuration has changed. Close and reopen this dialog before editing.</source>
+        <translation>設定が変更されました。このダイアログを閉じて開き直してから編集してください。</translation>
+    </message>
+    <message>
+        <source>Overlay advanced settings</source>
+        <translation>オーバーレイの詳細設定</translation>
+    </message>
+
+    <message>
+        <source>Current overlay</source>
+        <translation>現在のオーバーレイ</translation>
+    </message>
+    <message>
+        <source>Next overlay</source>
+        <translation>次回のオーバーレイ</translation>
+    </message>
+
+
+
+
+
+    <message>
+        <source>The draft contains incompatible or unavailable overlay settings. Return to editing and correct the overlay configuration.</source>
+        <translation>下書きに互換性のない、または使用できないオーバーレイ設定があります。編集に戻って設定を修正してください。</translation>
+    </message>
+    <message>
+        <source>A clear is scheduled for the next startup. Cancel the clear request before disabling Persistent Overlay.</source>
+        <translation>次回起動時の消去が予約されています。永続オーバーレイを無効にする前に、消去要求を取り消してください。</translation>
+    </message>
+    <message>
+        <source>The next session does not retain Disk Persistent Overlay. Retain it before requesting a clear.</source>
+        <translation>次のセッションで Disk の永続オーバーレイを保持する設定になっていません。消去を要求する前に、保持する設定にしてください。</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay is only available for Disk; the next overlay is RAM.</source>
+        <translation>永続オーバーレイは Disk でのみ利用できます。次のセッションのオーバーレイは RAM です。</translation>
+    </message>
+    <message>
+        <source>Enabling Read-Only Media mode requires RAM; the next overlay is Disk.</source>
+        <translation>読み取り専用メディアモードには RAM が必要ですが、次のセッションのオーバーレイは Disk です。</translation>
+    </message>
+    <message>
+        <source>The current Persistent Overlay state could not be confirmed. Read the configuration again.</source>
+        <translation>現在の永続オーバーレイの状態を確認できません。設定を再読み取りしてください。</translation>
+    </message>
+    <message>
+        <source>Will take effect at the next startup after applying.</source>
+        <translation>適用後、次回の起動時に有効になります。</translation>
+    </message>
+    <message>
+        <source>Scheduled to clear</source>
+        <translation>消去を予約済み</translation>
+    </message>
+    <message>
+        <source>Not scheduled to clear</source>
+        <translation>消去の予約なし</translation>
+    </message>
+    <message>
+        <source>Clears once at the next startup, then preserves data. The current session is not cleared immediately.</source>
+        <translation>次回起動時に一度だけ消去し、その後はデータを保持します。現在のセッションはすぐには消去されません。</translation>
+    </message>
+    <message>
+        <source>Cancels the scheduled clear at the next startup, preserving persistent overlay data.</source>
+        <translation>次回起動時の消去予約を取り消し、永続オーバーレイのデータを保持します。</translation>
+    </message>
+    <message>
+        <source>Reset persistent overlay · One-time request</source>
+        <translation>永続オーバーレイのリセット · 一回限りの要求</translation>
+    </message>
+    <message>
+        <source>Working…</source>
+        <translation>処理中…</translation>
+    </message>
+    <message>
+        <source>Please wait for the operation to finish.</source>
+        <translation>操作が完了するまでお待ちください。</translation>
+    </message>
+    <message>
+        <source>%1 · Next session</source>
+        <translation>%1 · 次のセッション</translation>
+    </message>
+    <message>
+        <source>Back to settings</source>
+        <translation>設定に戻る</translation>
+    </message>
+    <message>
+        <source>Change requirements</source>
+        <translation>変更条件</translation>
+    </message>
+    <message>
+        <source>Changed</source>
+        <translation>変更済み</translation>
+    </message>
+    <message>
+        <source>Check configuration conflicts</source>
+        <translation>設定の競合を確認</translation>
+    </message>
+    <message>
+        <source>Configuration conflict</source>
+        <translation>設定が競合しています</translation>
+    </message>
+    <message>
+        <source>Disable requirements</source>
+        <translation>無効化の条件</translation>
+    </message>
+    <message>
+        <source>UWF and Disk Persistent Overlay must be active in the current session. Clearing data also requires retaining Disk Persistent Overlay for the next session.</source>
+        <translation>現在のセッションで UWF と Disk 永続オーバーレイが有効である必要があります。データを消去する場合は、次のセッションでも Disk 永続オーバーレイを維持する必要があります。</translation>
+    </message>
+    <message>
+        <source>Enable requirements</source>
+        <translation>有効化の条件</translation>
+    </message>
+    <message>
+        <source>Feature</source>
+        <translation>機能</translation>
+    </message>
+    <message>
+        <source>Feature details</source>
+        <translation>機能の説明</translation>
+    </message>
+    <message>
+        <source>Learn about %1</source>
+        <translation>%1 について</translation>
+    </message>
+    <message>
+        <source>Resolve these configuration conflicts before keeping the draft.</source>
+        <translation>下書きを保持する前に、以下の設定の競合を解消してください。</translation>
+    </message>
+    <message>
+        <source>Revert</source>
+        <translation>元に戻す</translation>
+    </message>
+    <message>
+        <source>Takes effect</source>
+        <translation>適用時期</translation>
+    </message>
+    <message>
+        <source>This setting cannot be changed right now</source>
+        <translation>現在、この設定は変更できません</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session, and the next-session overlay must use Disk.</source>
+        <translation>現在のセッションで UWF が無効になっており、次のセッションのオーバーレイが Disk である必要があります。</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session, and the next-session overlay must use RAM.</source>
+        <translation>現在のセッションで UWF が無効になっており、次のセッションのオーバーレイが RAM である必要があります。</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session. Cancel any scheduled persistent-data clear before disabling Persistent Overlay.</source>
+        <translation>現在のセッションで UWF が無効になっている必要があります。永続オーバーレイを無効にする前に、予定されている永続データの消去を取り消してください。</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session. Setting only the next session to disabled still requires a restart before editing.</source>
+        <translation>現在のセッションで UWF が無効になっている必要があります。次のセッションだけを無効に設定した場合は、変更前に再起動が必要です。</translation>
+    </message>
+    <message>
+        <source>Usage requirements</source>
+        <translation>使用条件</translation>
+    </message>
+    <message>
+        <source>View details</source>
+        <translation>詳細を表示</translation>
+    </message>
+    <message>
+        <source>View only</source>
+        <translation>表示のみ</translation>
+    </message>
+    <message>
+        <source>Why %1 cannot be changed</source>
+        <translation>%1 を変更できない理由</translation>
+    </message>
+    <message>
+        <source>UWF is enabled in the current session, so these overlay settings cannot be changed. Revert the changes, or disable UWF and restart.</source>
+        <translation>現在のセッションで UWF が有効なため、これらのオーバーレイ設定は変更できません。変更を元に戻すか、UWF を無効にして再起動してください。</translation>
+    </message>
+    <message>
+        <source>View change requirements</source>
+        <translation>変更条件を確認</translation>
+    </message>
+    <message>
+        <source>No configuration changes were written. You can retry.</source>
+        <translation>構成の変更は書き込まれていません。再試行できます。</translation>
+    </message>
+    <message>
+        <source>No configuration changes were needed.</source>
+        <translation>構成を変更する必要はありませんでした。</translation>
+    </message>
+    <message>
+        <source>Use Domain Secret Key persistence for the domain machine account secret ($MACHINE.ACC).</source>
+        <translation>ドメインのコンピューターアカウントの秘密情報（$MACHINE.ACC）には「ドメインシークレットキーの永続化」を使用してください。</translation>
+    </message>
+    <message>
+        <source>This key cannot be excluded itself. Select one of its subkeys.</source>
+        <translation>このキー自体は除外できません。サブキーを選択してください。</translation>
+    </message>
+    <message>
+        <source>Registry exclusions must specify a nonempty subkey under HKEY_LOCAL_MACHINE (HKLM).</source>
+        <translation>レジストリの除外には、HKEY_LOCAL_MACHINE（HKLM）の空でないサブキーを指定してください。</translation>
+    </message>
+    <message>
+        <source>This script contains only settings supported by uwfmgr commands. Not included:</source>
+        <translation>このスクリプトには uwfmgr コマンドで表現できる設定のみが含まれます。次の設定は含まれません：</translation>
+    </message>
+    <message>
+        <source>Volume binding</source>
+        <translation>ボリュームのバインド方式</translation>
+    </message>
+    <message>
+        <source>Settings without a reliable drive-letter address</source>
+        <translation>ドライブ文字で確実に指定できない設定</translation>
+    </message>
+    <message>
+        <source>Command script</source>
+        <translation>コマンドスクリプト</translation>
+    </message>
+    <message>
+        <source>The configuration matches the next-session target. View or export the supported settings in Command script.</source>
+        <translation>構成は次のセッションの目標と一致しています。「コマンドスクリプト」で対応する設定を表示またはエクスポートできます。</translation>
+    </message>
+    <message>
+        <source>Settings with control characters in paths or names</source>
+        <translation>パスや名前に制御文字を含む設定</translation>
+    </message>
+    <message>
+        <source>Commands that depend on omitted settings</source>
+        <translation>省略された設定に依存するコマンド</translation>
+    </message>
+    <message>
+        <source>UWF exclusion settings prevent a reliable commit of this target. Remove the conflicting exclusion and restart before committing it.</source>
+        <translation>UWF の除外設定により、この対象の変更を確実にコミットできません。競合する除外を削除して再起動してから、コミットしてください。</translation>
+    </message>
+    <message>
+        <source>UWF exclusion settings prevent a reliable commit of the file staging list. Remove the conflicting exclusion and restart before applying this change.</source>
+        <translation>UWF の除外設定により、ファイルステージングの一覧を確実にコミットできません。競合する除外を削除して再起動してから、この変更を適用してください。</translation>
+    </message>
+    <message>
+        <source>UWF cannot preserve the exact registry target for this key.</source>
+        <translation>UWF は、このキーへの操作が意図したレジストリの対象を保持することを保証できません。</translation>
+    </message>
+    <message>
+        <source>Confirm that the saved staging list is empty before removing its registry exclusion.</source>
+        <translation>レジストリの除外を削除する前に、保存済みのファイルステージング一覧が空であることを確認します。</translation>
+    </message>
+    <message>
+        <source>Pending confirmation</source>
+        <translation>確認待ち</translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <translation>空</translation>
+    </message>
+    <message>
+        <source>The system volume is not currently protected by UWF; there are no registry changes to commit.</source>
+        <translation>システムボリュームは現在 UWF で保護されていないため、コミットするレジストリの変更はありません。</translation>
+    </message>
+    <message>
+        <source>Registry changes are already persistent; no UWF commit is required.</source>
+        <translation>レジストリの変更は既に永続化されているため、UWF によるコミットは不要です。</translation>
+    </message>
+    <message>
+        <source>Registry changes are already persistent; UWF cannot perform this deletion.</source>
+        <translation>レジストリの変更は既に永続化されているため、UWF ではこの削除を実行できません。</translation>
+    </message>
+    <message><source>UWF exclusion paths must use backslashes.</source><translation>UWF の除外パスにはバックスラッシュを使用してください。</translation></message>
+    <message><source>File paths cannot contain null characters.</source><translation>ファイル パスにヌル文字を含めることはできません。</translation></message>
+    <message><source>Enable volume protection in this draft before adding file exclusions.</source><translation>ファイルの除外を追加する前に、この下書きでボリューム保護を有効にしてください。</translation></message>
+    <message><source>The exclusion path contains characters that UWF does not support.</source><translation>除外パスに UWF がサポートしていない文字が含まれています。</translation></message>
+    <message><source>The exclusion path exceeds UWF's length limit.</source><translation>除外パスが UWF の長さ制限を超えています。</translation></message>
+    <message><source>File and registry commits are unavailable while HORM is active.</source><translation>HORM が有効な間は、ファイルとレジストリの変更をコミットできません。</translation></message>
+    <message><source>Registry writes are unavailable while HORM is active.</source><translation>HORM が有効な間は、レジストリに書き込めません。</translation></message>
+    <message><source>Registry writes cannot be persisted while Read-Only Media mode is active.</source><translation>読み取り専用メディアモードが有効な間は、レジストリへの書き込みを永続化できません。</translation></message>
+    <message><source>File and registry commits are unavailable while Read-Only Media mode is active.</source><translation>読み取り専用メディアモードが有効な間は、ファイルとレジストリの変更をコミットできません。</translation></message>
+    <message><source>Intercepts physical media writes, including metadata. Exclusions do not bypass protection. Individual file and registry commits are unavailable; Full Commit is a separate global operation.</source><translation>メタデータを含む物理メディアへの書き込みを捕捉します。除外設定でも保護を回避できません。ファイルとレジストリの変更を個別にコミットすることはできません。Full Commit は別の全体操作です。</translation></message>
+    <message><source>UWF settings cannot be changed while HORM is active.</source><translation>HORM が有効な間は、UWF 設定を変更できません。</translation></message>
+    <message><source>Default value · this value only</source><translation>既定の値 · この値のみ</translation></message>
+    <message><source>File changes are already persistent; no UWF commit is required.</source><translation>ファイルの変更は既に永続化されているため、UWF のコミットは不要です。</translation></message>
+    <message><source>Last successful overlay usage observation: %1</source><translation>オーバーレイ使用量の最終取得成功日時：%1</translation></message>
+    <message><source>Observed overlay storage outside the writable size/type range</source><translation>取得したオーバーレイのサイズまたは種類が書き込み可能な範囲外です</translation></message>
+    <message><source>Overlay (last observed)</source><translation>オーバーレイ（最終取得時）</translation></message>
+    <message><source>Overlay usage refresh failed.
+%1</source><translation>オーバーレイ使用量の更新に失敗しました。
+%1</translation></message>
+    <message><source>Overlay usage refresh failed. Showing the last successful observation from %1.
+%2</source><translation>オーバーレイ使用量の更新に失敗しました。%1 に最後に取得できた情報を表示しています。
+%2</translation></message>
+    <message><source>The path could not be resolved to a local volume.</source><translation>パスをローカルボリュームに解決できませんでした。</translation></message>
+    <message><source>UWF: Enabled (last observed)</source><translation>UWF：有効（最終取得時）</translation></message>
+    <message><source>File changes are already persistent; UWF cannot perform this deletion.</source><translation>ファイルの変更は既に永続化されているため、UWF でこの削除は実行できません。</translation></message>
+    <message><source>%1 (%2)</source><translation>%1 (%2)</translation></message>
+    <message><source>%1 GB available</source><translation>%1 GB 使用可能</translation></message>
+    <message><source>%1 MB</source><translation>%1 MB</translation></message>
+    <message><source>%1 · %2</source><translation>%1 · %2</translation></message>
+
+    <message><source>Administrator privileges are required.</source><translation>管理者権限が必要です。</translation></message>
+
+
+    <message><source>An operation is in progress. Please wait.</source><translation>操作を実行中です。お待ちください。</translation></message>
+    <message><source>Attempts to save all additions, changes and deletions made on every protected volume since this startup. This includes files and system settings; you cannot select only some changes.</source><translation>今回の起動以降に、すべての保護されたボリュームで行われた追加、変更、削除の保存を試みます。ファイルやシステム設定も対象です。一部の変更だけを選ぶことはできません。</translation></message>
+
+    <message><source>Automatic saving is unavailable in the current mode</source><translation>現在のモードでは自動保存を利用できません</translation></message>
+    <message><source>Cannot be undone once started</source><translation>開始後は取り消せません</translation></message>
+    <message><source>Choose where to store the disk overlay</source><translation>ディスクオーバーレイの保存先を選択</translation></message>
+    <message><source>Choose where to store the disk overlay.</source><translation>ディスクオーバーレイの保存先を選択してください。</translation></message>
+    <message><source>Configuration changes are temporarily unavailable.</source><translation>設定の変更を一時的に利用できません。</translation></message>
+    <message><source>Configured, inactive this session</source><translation>設定済み、現在のセッションでは無効</translation></message>
+    <message><source>Configured; takes effect after restarting</source><translation>設定済み、再起動後に有効</translation></message>
+    <message><source>Configured; takes effect after restarting. The overlay from this startup will not be moved to the new location.</source><translation>設定済みで、再起動後に有効になります。今回の起動で使用しているオーバーレイは、新しい保存先には移動されません。</translation></message>
+    <message><source>Configure…</source><translation>設定…</translation></message>
+    <message><source>Current UWF</source><translation>現在の UWF</translation></message>
+    <message><source>Currently configured storage volume</source><translation>現在設定されている保存先ボリューム</translation></message>
+    <message><source>Default behavior</source><translation>既定の動作</translation></message>
+    <message><source>Disable HORM and restart before using full volume commit.</source><translation>ボリューム全体をコミットする前に、HORM を無効にして再起動してください。</translation></message>
+    <message><source>Disabled · restart required</source><translation>無効 · 再起動が必要</translation></message>
+    <message><source>Disabling HORM does not turn off UWF or Read-Only Media mode and does not save changes on protected disks. Restart before checking the available actions.</source><translation>HORM を無効にしても、UWF や読み取り専用メディアモードは無効にならず、保護されたディスクの変更も保存されません。再起動してから、利用できる操作を確認してください。</translation></message>
+
+    <message><source>Enable UWF and restart before enabling HORM.</source><translation>HORM を有効にする前に、UWF を有効にして再起動してください。</translation></message>
+
+    <message><source>Full volume commit</source><translation>ボリューム全体をコミット</translation></message>
+    <message><source>Full volume commit mode (enabled until restart)</source><translation>ボリューム全体のコミットモード（再起動まで有効）</translation></message>
+    <message><source>Full volume commit mode is already enabled. Restart before using it again.</source><translation>ボリューム全体のコミットモードはすでに有効です。再度使用するには再起動してください。</translation></message>
+    <message><source>Full volume commit has started. Restart before enabling HORM.</source><translation>ボリューム全体のコミットは開始済みです。HORM を有効にする前に再起動してください。</translation></message>
+    <message><source>Full volume commit is available only while Read-Only Media mode is active.</source><translation>ボリューム全体のコミットは、読み取り専用メディアモードが有効な場合にのみ利用できます。</translation></message>
+    <message><source>Full volume commit mode remains enabled until restart. New changes are saved directly. Individual commits remain unavailable.</source><translation>ボリューム全体のコミットモードは再起動まで有効です。新しい変更は直接保存されます。個別のコミットは引き続き利用できません。</translation></message>
+    <message><source>Full volume commit is not available on this system.</source><translation>このシステムではボリューム全体をコミットできません。</translation></message>
+
+    <message><source>HORM is active. UWF settings and individual commits are unavailable. Disable HORM and restart before changing them.</source><translation>HORM が有効です。UWF の設定変更と個別のコミットは利用できません。HORM を無効にして再起動してから変更してください。</translation></message>
+    <message><source>HORM is disabled. Restart the computer before changing UWF settings.</source><translation>HORM は無効です。UWF の設定を変更する前に、コンピューターを再起動してください。</translation></message>
+    <message><source>HORM is not available on this system.</source><translation>このシステムでは HORM を利用できません。</translation></message>
+    <message><source>HORM requires the current RAM Read-Only Media configuration.</source><translation>HORM には、現在の RAM オーバーレイで読み取り専用メディアモードを使用している必要があります。</translation></message>
+    <message><source>HORM requires the current RAM overlay.</source><translation>HORM には、現在のオーバーレイが RAM である必要があります。</translation></message>
+
+    <message><source>In Disk mode, the system implementation may enable this option by default; check the current state shown in settings.</source><translation>Disk モードでは、システムの実装によってこのオプションが既定で有効になる場合があります。設定画面に表示される現在の状態を確認してください。</translation></message>
+    <message><source>Inactive this session</source><translation>現在のセッションでは無効</translation></message>
+    <message><source>Later changes will also be saved until you restart</source><translation>再起動までは、その後の変更も保存されます</translation></message>
+
+    <message><source>Maintenance and recovery</source><translation>保守と復元</translation></message>
+    <message><source>Make sure this is the state you want to keep before continuing.</source><translation>続行する前に、現在の状態が保持したい状態であることを確認してください。</translation></message>
+
+    <message><source>Next startup: %1</source><translation>次回起動時：%1</translation></message>
+    <message><source>No suitable storage volume is available. Refresh the volume list.</source><translation>適切な保存先ボリュームがありません。ボリュームの一覧を更新してください。</translation></message>
+    <message><source>Not enabled</source><translation>未有効化</translation></message>
+    <message><source>Not selected</source><translation>未選択</translation></message>
+    <message><source>Not supported</source><translation>非対応</translation></message>
+    <message><source>Once started, new changes are written directly to disk until you restart the computer.</source><translation>開始後は、コンピューターを再起動するまで、新しい変更がディスクに直接書き込まれます。</translation></message>
+    <message><source>Only one storage volume can be used at a time. Choosing a new volume replaces the previous location and sets the next overlay to Disk.</source><translation>保存先として使用できるボリュームは一度に一つです。新しいボリュームを選択すると以前の保存先が置き換わり、次回のオーバーレイは Disk になります。</translation></message>
+    <message><source>Overlay capacity (keep current setting)</source><translation>オーバーレイ容量（現在の設定を維持）</translation></message>
+    <message><source>Overlay configuration</source><translation>オーバーレイ設定</translation></message>
+
+    <message><source>Processing…</source><translation>処理中…</translation></message>
+    <message><source>Read state again</source><translation>状態を再読み取り</translation></message>
+    <message><source>Read the current UWF state first.</source><translation>最初に現在の UWF の状態を読み取ってください。</translation></message>
+
+    <message><source>Read-only media mode does not support individual commits or automatic saving of staged files.</source><translation>読み取り専用メディアモードでは、個別のコミットやステージング済みファイルの自動保存を利用できません。</translation></message>
+    <message><source>Reading state…</source><translation>状態を読み取り中…</translation></message>
+    <message><source>Restart and read the current state before enabling HORM again.</source><translation>HORM を再度有効にする前に、再起動して現在の状態を読み取ってください。</translation></message>
+    <message><source>Restore the same desktop and running programs at every startup.</source><translation>起動のたびに同じデスクトップと実行中のプログラムを復元します。</translation></message>
+    <message><source>Review available commit operations and their requirements.</source><translation>利用できるコミット操作と、その実行条件を確認してください。</translation></message>
+    <message><source>Save changes on all protected volumes</source><translation>すべての保護されたボリュームの変更を保存</translation></message>
+    <message><source>Save changes on all protected volumes. Review the effects before continuing.</source><translation>すべての保護されたボリュームの変更を保存します。続行する前に影響を確認してください。</translation></message>
+
+
+    <message><source>State unknown</source><translation>状態不明</translation></message>
+
+    <message><source>Successfully saved changes can no longer be undone by restarting.</source><translation>保存に成功した変更は、再起動しても元に戻せません。</translation></message>
+    <message><source>Successfully saved changes will remain</source><translation>保存に成功した変更は保持されます</translation></message>
+    <message><source>The HORM state is unknown. Read the state again before continuing.</source><translation>HORM の状態が不明です。続行する前に、状態を再度読み取ってください。</translation></message>
+    <message><source>The HORM state is unknown. Refresh before continuing.</source><translation>HORM の状態が不明です。続行する前に更新してください。</translation></message>
+    <message><source>The commit or HORM state is unknown. Refresh before continuing.</source><translation>コミットまたは HORM の状態が不明です。続行する前に更新してください。</translation></message>
+    <message><source>The current UWF state could not be read. Refresh before continuing.</source><translation>現在の UWF の状態を読み取れませんでした。続行する前に更新してください。</translation></message>
+    <message><source>The current overlay uses RAM Read-Only Media mode</source><translation>現在のオーバーレイは RAM の読み取り専用メディアモードを使用しています</translation></message>
+    <message><source>The current protection mode could not be read. Refresh the state.</source><translation>現在の保護モードを読み取れませんでした。状態を更新してください。</translation></message>
+    <message><source>The result could not be confirmed</source><translation>結果を確認できませんでした</translation></message>
+    <message><source>This exclusion is configured but does not bypass protection in the current session.</source><translation>この除外項目は設定済みですが、現在のセッションでは保護の対象から除外されません。</translation></message>
+    <message><source>This may also change Freespace Passthrough and Persistent Overlay. Review advanced settings before restarting.</source><translation>空き領域パススルーや永続オーバーレイも変更される可能性があります。再起動する前に詳細設定を確認してください。</translation></message>
+    <message><source>UWF protection is active in the current session</source><translation>現在のセッションで UWF 保護が有効です</translation></message>
+    <message><source>%1 (will be replaced)</source><translation>%1（置き換え予定）</translation></message>
+    <message><source>Add full volume commit to the draft?</source><translation>ボリューム全体のコミットを下書きに追加しますか？</translation></message>
+    <message><source>Add to draft</source><translation>下書きに追加</translation></message>
+    <message><source>Applies to every protected volume; starts only when this draft is applied.</source><translation>すべての保護されたボリュームが対象です。この下書きを適用したときにのみ開始します。</translation></message>
+    <message><source>Applying this draft starts full volume commit. Saved changes cannot be undone by restarting, and new changes are saved until restart.</source><translation>この下書きを適用すると、ボリューム全体のコミットが始まります。保存された変更は再起動しても元に戻せず、再起動までは新しい変更も保存されます。</translation></message>
+    <message><source>Configure storage location</source><translation>保存先を設定</translation></message>
+    <message><source>Configuring the storage location is not available on this system.</source><translation>このシステムでは保存先を設定できません。</translation></message>
+    <message><source>Current: %1</source><translation>現在：%1</translation></message>
+    <message><source>Disable HORM and restart before configuring the storage location.</source><translation>保存先を設定する前に、HORM を無効にして再起動してください。</translation></message>
+    <message><source>Disable saved-state startup?</source><translation>保存状態からの起動を無効にしますか？</translation></message>
+    <message><source>Draft: %1 · apply required</source><translation>下書き：%1 · 適用が必要</translation></message>
+    <message><source>Enable saved-state startup?</source><translation>保存状態からの起動を有効にしますか？</translation></message>
+    <message><source>Full volume commit (pending apply)</source><translation>ボリューム全体をコミット（適用待ち）</translation></message>
+    <message><source>Full volume commit is pending. It will start only after you confirm Review and apply.</source><translation>ボリューム全体のコミットは下書きにあります。「確認して適用」で確定した後にのみ開始します。</translation></message>
+    <message><source>Hibernate once / resume many</source><translation>一度休止 / 繰り返し再開</translation></message>
+    <message><source>Not started</source><translation>未開始</translation></message>
+    <message><source>Remove full volume commit from pending changes.</source><translation>保留中の変更からボリューム全体のコミットを削除します。</translation></message>
+    <message><source>Save draft</source><translation>下書きを保存</translation></message>
+
+    <message><source>Will start when applied</source><translation>適用時に開始</translation></message>
+    <message><source>A mounted fixed disk failed the protection check. Review the listed disks before enabling HORM.</source><translation>マウントされている固定ディスクが保護チェックに合格しませんでした。HORM を有効にする前に、一覧のディスクを確認してください。</translation></message>
+    <message><source>Checks UWF-eligible fixed disks that remain mounted. Unmounted partitions may be skipped.</source><translation>UWF の対象条件を満たし、現在もマウントされている固定ディスクを確認します。マウントされていないパーティションは省略される場合があります。</translation></message>
+    <message><source>HORM prerequisites could not be verified. Read the state again before continuing.</source><translation>HORM の前提条件を確認できませんでした。続行する前に状態を再読み取りしてください。</translation></message>
+    <message><source>Mounted fixed-disk protection check</source><translation>マウントされている固定ディスクの保護チェック</translation></message>
+    <message><source>Not using a Disk overlay</source><translation>Disk オーバーレイは使用されていません</translation></message>
+    <message><source>Selected storage volume</source><translation>選択した保存先ボリューム</translation></message>
+    <message><source>System drive default (%1)</source><translation>既定のシステムドライブ (%1)</translation></message>
+
+    <message><source>The protection state changed during this startup. Restart before enabling HORM.</source><translation>今回の起動中に保護状態が変更されました。HORM を有効にする前に再起動してください。</translation></message>
+    <message><source>Unable to read</source><translation>読み取りできません</translation></message>
+
+    <message><source>Choose the disk used to store temporary changes. Takes effect at the next startup.</source><translation>一時的な変更の保存に使うディスクを選択します。次回起動時に有効になります。</translation></message>
+    <message><source>Disable UWF and restart before configuring the storage location.</source><translation>保存先を設定する前に UWF を無効にして再起動してください。</translation></message>
+    <message><source>Met</source><translation>充足</translation></message>
+    <message><source>Not met</source><translation>未充足</translation></message>
+    <message><source>Partition</source><translation>パーティション</translation></message>
+
+
+    <message><source>Protect all</source><translation>すべて保護</translation></message>
+    <message><source>Hibernation is not supported</source><translation>休止状態はサポートされていません</translation></message>
+    <message><source>Hibernation is not enabled</source><translation>休止状態が有効になっていません</translation></message>
+    <message><source>Fast startup only</source><translation>高速スタートアップのみ</translation></message>
+    <message><source>Bulk volume protection is not available on this system.</source><translation>このシステムではボリュームの一括保護を利用できません。</translation></message>
+    <message><source>Disable HORM and restart before changing volume protection.</source><translation>ボリューム保護を変更する前に、HORM を無効にして再起動してください。</translation></message>
+    <message><source>Setup and operation</source><translation>設定と操作</translation></message>
+
+    <message><source>1. Prepare the configuration</source><translation>1. 設定を準備</translation></message>
+    <message><source>With UWF currently disabled, configure RAM overlay, read-only media mode, volume protection, and UWF enablement for the next startup. Apply the draft. Prepare S4 hibernation with a present, full hibernation file.</source><translation>現在の UWF が無効な状態で、次回起動時の RAM オーバーレイ、読み取り専用メディアモード、ボリューム保護、UWF の有効化を設定し、下書きを適用します。S4 休止状態に対応し、完全形式の休止状態ファイルが存在する環境を準備します。</translation></message>
+    <message><source>Restart, then confirm that Current shows UWF enabled, RAM overlay, read-only media mode, and protection for all UWF-eligible mounted fixed volumes. Confirm that system hibernation is available.</source><translation>再起動後、現在のセッションで UWF が有効、RAM オーバーレイと読み取り専用メディアモードが使用中であり、UWF が保護可能なマウント済み固定ディスクボリュームすべてが保護されていることを確認します。システムの休止状態も利用可能であることを確認します。</translation></message>
+    <message><source>2. Restart and verify</source><translation>2. 再起動して確認</translation></message>
+    <message><source>3. Enable HORM and hibernate</source><translation>3. HORM を有効にして休止状態にする</translation></message>
+    <message><source>Add Enable HORM to the draft, then use Review and apply. Applying the draft performs the HORM enable operation, equivalent to:</source><translation>HORM の有効化を下書きに追加し、「確認して適用」を実行します。下書きを適用すると HORM が実際に有効になり、次のコマンドに相当する操作が行われます：</translation></message>
+    <message><source>After enablement succeeds, prepare the desktop and applications, then hibernate once to save the baseline state:</source><translation>有効化に成功したら、デスクトップとアプリケーションを準備し、一度休止状態にして基準状態を保存します：</translation></message>
+    <message><source>HORM usage</source><translation>HORM の使用方法</translation></message>
+    <message><source>Volume protection</source><translation>ボリューム保護</translation></message>
+    <message><source>Configure protection for all volumes in the next session.</source><translation>すべてのボリュームの次回セッションでの保護状態を設定します。</translation></message>
+    <message><source>Unprotect all</source><translation>すべての保護を解除</translation></message>
+    <message><source>Next startup: all volumes protected</source><translation>次回起動：すべてのボリュームを保護</translation></message>
+    <message><source>Next startup: all volumes unprotected</source><translation>次回起動：すべてのボリュームの保護を解除</translation></message>
+    <message><source>Next startup: individual volume settings</source><translation>次回起動：ボリュームごとの設定</translation></message>
+    <message><source>System hibernation is available</source><translation>システムの休止状態が利用可能</translation></message>
+    <message><source>Usage guide</source><translation>使用ガイド</translation></message>
+
+    <message><source>Protection for all volumes is pending apply</source><translation>すべてのボリュームの保護設定は適用待ちです</translation></message>
+    <message><source>Volume protection takes effect after restarting</source><translation>ボリューム保護は再起動後に有効になります</translation></message>
+
+    <message><source>Unprotect all and enabling HORM cannot be applied together.</source><translation>すべての保護の解除と HORM の有効化は同時に適用できません。</translation></message>
+    <message><source>Batch volume protection is not supported.</source><translation>ボリュームの一括保護はサポートされていません。</translation></message>
+    <message><source>Applied</source><translation>適用済み</translation></message>
+    <message><source>Not applied</source><translation>未適用</translation></message>
+    <message><source>Could not confirm</source><translation>確認できません</translation></message>
+
+
+
+    <message><source>Storage volume:</source><translation>保存先ボリューム：</translation></message>
+    <message><source>Exclusions do not bypass protection during this startup. Individual commits and automatic file staging commits are unavailable. Full volume commit affects all protected volumes; review its description before continuing.</source><translation>今回の起動中、除外項目でも保護は適用されます。項目ごとのコミットと、一時保存ファイルの自動コミットは利用できません。ボリューム全体のコミットは、保護されているすべてのボリュームに影響します。続行する前に説明を確認してください。</translation></message>
+    <message><source>Resume the same hibernation state repeatedly</source><translation>同じ休止状態から繰り返し再開</translation></message>
+    <message><source>Remove full volume commit draft</source><translation>ボリューム全体のコミットの下書きを削除</translation></message>
+    <message><source>Read-Only Media mode is active</source><translation>読み取り専用メディアモードが有効です</translation></message>
+    <message><source>%1 → %2</source><translation>%1 → %2</translation></message>
+    <message><source>A configured storage marker could not be read.</source><translation>設定された保存先マーカーを読み取れませんでした。</translation></message>
+    <message><source>File staging conflicts with a file exclusion:
+%1
+%2</source><translation>ファイルステージングがファイル除外と競合しています：
+%1
+%2</translation></message>
+    <message><source>Full hibernation is not available on this computer</source><translation>このコンピューターでは完全な休止状態を使用できません</translation></message>
+    <message><source>More than one storage volume has a nonzero marker.</source><translation>複数の保存先ボリュームにゼロ以外のマーカーがあります。</translation></message>
+    <message><source>The Disk overlay type could not be established.</source><translation>オーバーレイがディスク型かどうかを確認できませんでした。</translation></message>
+    <message><source>The configured storage location could not be read.</source><translation>設定された保存場所を読み取れませんでした。</translation></message>
+    <message><source>The system drive could not be identified.</source><translation>システムドライブを特定できませんでした。</translation></message>
+    <message><source>Direct restart skips staged file commits.</source><translation>直接再起動すると、ステージング対象ファイルのコミットをスキップします。</translation></message>
+    <message><source>Direct shutdown skips staged file commits.</source><translation>直接シャットダウンすると、ステージング対象ファイルのコミットをスキップします。</translation></message>
+    <message><source>Staged files will not be committed. Uncommitted changes may be lost after restart.</source><translation>ステージング対象ファイルはコミットされません。未コミットの変更は、再起動後に失われる可能性があります。</translation></message>
+    <message><source>Staged files will not be committed. Uncommitted changes may be lost after shutdown.</source><translation>ステージング対象ファイルはコミットされません。未コミットの変更は、シャットダウン後に失われる可能性があります。</translation></message>
+    <message><source>Commits staged files before normal shutdown or restart.</source><translation>通常のシャットダウンまたは再起動の前にステージング対象ファイルをコミットします。</translation></message>
+    <message><source>Full volume commit and enabling HORM cannot be applied together.</source><translation>ボリューム全体のコミットと HORM の有効化は同時に適用できません。</translation></message>
+    <message><source>Configuring the storage location and enabling HORM cannot be applied together.</source><translation>保存先の設定と HORM の有効化は同時に適用できません。</translation></message>
+    <message><source>Configuring the storage location and full volume commit require different current UWF modes.</source><translation>保存先の設定とボリューム全体のコミットでは、現在の UWF モードの要件が異なります。</translation></message>
+    <message><source>Choose a storage volume before applying.</source><translation>適用前に保存先のボリュームを選択してください。</translation></message>
+    <message><source>Configuring a disk storage location conflicts with a requested RAM overlay.</source><translation>ディスクの保存先の設定は、指定した RAM オーバーレイと競合します。</translation></message>
+    <message><source>Apply the filter change and restart before requesting full volume commit.</source><translation>ボリューム全体のコミットを要求する前に、フィルターの変更を適用して再起動してください。</translation></message>
+    <message><source>Canceled</source><translation>キャンセル済み</translation></message>
+    <message><source>The reviewed storage volume is no longer available. Return to editing and choose another volume.</source><translation>確認済みの保存先ボリュームは使用できなくなりました。編集に戻り、別のボリュームを選択してください。</translation></message>
+    <message><source>This volume cannot be registered with UWF because its storage bus is not supported.</source><translation>このボリュームのストレージバスはサポートされていないため、UWF に登録できません。</translation></message>
+    <message><source>Physical volume support could not be confirmed. Refresh before enabling protection.</source><translation>物理ボリュームがサポートされているか確認できませんでした。保護を有効にする前に更新してください。</translation></message>
+    <message><source>Paused</source><translation>一時停止</translation></message>
+    <message><source>Partially paused</source><translation>一部一時停止</translation></message>
+    <message><source>Persistent overlay data will be retained at the next startup. Automatic commits are paused.</source><translation>永続オーバーレイのデータは次回起動時も保持されるため、自動コミットを一時停止しています。</translation></message>
+
+    <message><source>Paused entries: %1 · Paused files: %2</source><translation>一時停止した項目: %1 · 一時停止したファイル: %2</translation></message>
+    <message><source>Read-only ROM</source><translation>読み取り専用 ROM</translation></message>
+    <message><source>%1 changes · %2 commands</source><translation>%1 件の変更 · %2 個のコマンド</translation></message>
+    <message><source>%1 file system: file exclusions and per-file commit are not supported.</source><translation>%1 ファイルシステムでは、ファイル除外とファイル単位のコミットはサポートされていません。</translation></message>
+    <message><source>Applying changes</source><translation>変更を適用しています</translation></message>
+    <message><source>Automatic commits paused</source><translation>自動コミットを一時停止中</translation></message>
+    <message><source>Automatic file commits are paused until restart after a HORM mode change.</source><translation>HORM モードの変更後、再起動するまでファイルの自動コミットを一時停止します。</translation></message>
+    <message><source>Automatic file commits are unavailable after FullCommit.</source><translation>FullCommit の実行後はファイルの自動コミットを利用できません。</translation></message>
+    <message><source>Automatic file commits are unavailable while HORM is active.</source><translation>HORM が有効な間はファイルの自動コミットを利用できません。</translation></message>
+    <message><source>Automatic staged-file commits are paused for this restart.</source><translation>今回の再起動では、ステージング済みファイルの自動コミットを一時停止します。</translation></message>
+    <message><source>Automatic staged-file commits are paused for this shutdown.</source><translation>今回のシャットダウンでは、ステージング済みファイルの自動コミットを一時停止します。</translation></message>
+    <message><source>Configuration persistence could not be confirmed. Refresh the system state before changing this setting.</source><translation>構成が永続保存されることを確認できませんでした。この設定を変更する前にシステム状態を更新してください。</translation></message>
+    <message><source>Elapsed: %1 s</source><translation>経過時間：%1 秒</translation></message>
+    <message><source>Only eligible staged files will be committed.</source><translation>条件を満たすステージング済みファイルのみコミットします。</translation></message>
+    <message><source>Read-only ROM cannot persist ordinary UWF settings on the protected system volume. Disable UWF and restart before changing them.</source><translation>読み取り専用 ROM では、保護されたシステムボリューム上の通常の UWF 設定を永続保存できません。設定を変更する前に UWF を無効にして再起動してください。</translation></message>
+    <message><source>Skipped staged files are not committed by this operation.</source><translation>スキップしたステージング済みファイルは、この操作ではコミットされません。</translation></message>
+    <message><source>Staged files are already on unprotected storage. No automatic commit is needed.</source><translation>ステージング済みファイルはすでに保護されていないストレージ上にあります。自動コミットは不要です。</translation></message>
+    <message><source>Threshold changes require a registry commit, which is unavailable in read-only ROM.</source><translation>しきい値の変更にはレジストリのコミットが必要ですが、読み取り専用 ROM では利用できません。</translation></message>
+    <message><source>Waiting for Windows to finish. This may take a while.</source><translation>Windows の完了を待っています。時間がかかる場合があります。</translation></message>
+    <message><source>HORM is disabled. Automatic staged-file commits are paused until restart. Manual operations follow the current UWF capabilities.</source><translation>HORM は無効です。再起動するまでステージング済みファイルの自動コミットを一時停止します。手動操作は現在の UWF の機能に従います。</translation></message>
+    <message><source>This configuration snapshot includes settings that require UWF disabled in the current session. Disable UWF and restart before running it.</source><translation>この構成スナップショットには、現在のセッションで UWF を無効にする必要がある設定が含まれます。実行前に UWF を無効にして再起動してください。</translation></message>
+    <message><source>Current-session actions (HORM, FullCommit, and persistent overlay reset; export them from Pending changes)</source><translation>現在のセッションの操作（HORM、FullCommit、永続オーバーレイのリセット。「保留中の変更」からエクスポートしてください）</translation></message>
+    <message><source>Bulk unprotection requires a confirmed complete next-session volume scope.</source><translation>一括保護解除には、次回セッションのボリューム範囲全体の確認が必要です。</translation></message>
 </context>
 </TS>

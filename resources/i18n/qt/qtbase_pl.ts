@@ -59,15 +59,15 @@
         </message>
         <message>
             <source>ZWJ Zero width joiner</source>
-            <translation>ZWJ Łącznik zerowej długości</translation>
+            <translation>ZWJ Łącznik zerowej szerokości</translation>
         </message>
         <message>
             <source>ZWNJ Zero width non-joiner</source>
-            <translation>ZWNJ Rozdzielnik zerowej długości</translation>
+            <translation>ZWNJ Rozdzielnik zerowej szerokości</translation>
         </message>
         <message>
             <source>ZWSP Zero width space</source>
-            <translation>ZWSP Przerwa zerowej długości</translation>
+            <translation>ZWSP Spacja zerowej szerokości</translation>
         </message>
         <message>
             <source>LRE Start of left-to-right embedding</source>
@@ -87,7 +87,7 @@
         </message>
         <message>
             <source>PDF Pop directional formatting</source>
-            <translation>PDF Formatowanie kierunkowe pop</translation>
+            <translation>PDF Koniec formatowania kierunkowego</translation>
         </message>
         <message>
             <source>LRI Left-to-right isolate</source>

@@ -7,7 +7,7 @@
 #include <atomic>
 #include <memory>
 
-#include "ui/overlay/taskbar/Win11TaskbarLayoutStrategyImpl.h"
+#include "presentation/views/overlay/taskbar/Win11TaskbarLayoutStrategyImpl.h"
 
 namespace uwf::ui {
 namespace {

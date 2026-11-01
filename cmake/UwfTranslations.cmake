@@ -13,15 +13,25 @@ foreach(locale IN LISTS UWF_I18N_LOCALES)
 endforeach()
 
 function(uwf_add_translations target)
-    set(qm_directory "${CMAKE_CURRENT_BINARY_DIR}/${target}_translations")
-    qt_add_lrelease(${target}
-        TS_FILES ${UWF_APP_I18N_TS_FILES} ${UWF_QT_I18N_TS_FILES}
-        QM_OUTPUT_DIRECTORY "${qm_directory}"
-        QM_FILES_OUTPUT_VARIABLE qm_files
-    )
-    qt_add_resources(${target} "${target}_translations"
-        PREFIX "/i18n"
-        BASE "${qm_directory}"
-        FILES ${qm_files}
-    )
+    if(NOT TARGET UwfTranslationResources)
+        # All consumers use identical catalogs. Compile and embed them once;
+        # direct object-library linkage retains Qt's resource initializer.
+        add_library(UwfTranslationResources OBJECT)
+        set_target_properties(UwfTranslationResources PROPERTIES AUTOMOC OFF AUTOUIC OFF)
+        target_link_libraries(UwfTranslationResources PRIVATE Qt6::Core)
+        uwf_configure_cpp_target(UwfTranslationResources)
+
+        set(qm_directory "${PROJECT_BINARY_DIR}/translations")
+        qt_add_lrelease(UwfTranslationResources
+            TS_FILES ${UWF_APP_I18N_TS_FILES} ${UWF_QT_I18N_TS_FILES}
+            QM_OUTPUT_DIRECTORY "${qm_directory}"
+            QM_FILES_OUTPUT_VARIABLE qm_files
+        )
+        qt_add_resources(UwfTranslationResources UWF_translations
+            PREFIX "/i18n"
+            BASE "${qm_directory}"
+            FILES ${qm_files}
+        )
+    endif()
+    target_link_libraries(${target} PRIVATE UwfTranslationResources)
 endfunction()

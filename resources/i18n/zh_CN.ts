@@ -12,6 +12,7 @@
     <message><source>disable</source><translation>停用</translation></message>
     <message><source>Enabled</source><translation>已启用</translation></message>
     <message><source>Disabled</source><translation>已停用</translation></message>
+    <message><source>Disabled</source><comment>service startup type</comment><translation>已禁用</translation></message>
     <message><source>OK</source><translation>确定</translation></message>
     <message><source>Cancel</source><translation>取消</translation></message>
     <message><source>Close</source><translation>关闭</translation></message>
@@ -37,11 +38,11 @@
         <translation>本卷在当前会话中的保护状态（只读）。</translation>
     </message>
     <message>
-        <source>Protect this volume in the next session. Writes to this volume are redirected to the overlay and discarded on reboot.</source>
-        <translation>下次会话保护本卷。本卷的所有写入都会被重定向到覆盖层，重启后丢弃。</translation>
+        <source>Protect this volume in the next session. Writes to protected paths are redirected to the overlay; retention across restarts depends on the overlay settings.</source>
+        <translation>在下次会话保护此卷。受保护路径的写入将重定向到覆盖层，是否跨重启保留取决于覆盖层设置。</translation>
     </message>
     <message><source>Current session</source><translation>当前会话</translation></message>
-    <message><source>Next session</source><translation>下次启动</translation></message>
+    <message><source>Next session</source><translation>下次会话</translation></message>
     <message>
         <source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source>
         <translation>UWF 识别本卷的方式。盘符直观，但增减其他磁盘等情况下盘符可能被重新分配，绑定会失效；卷 ID 不随盘符变化，更稳定。</translation>
@@ -58,30 +59,30 @@
         <translation>UWF 筛选器在当前会话中的启用状态（只读）。</translation>
     </message>
     <message>
-        <source>Enable the UWF filter in the next session. Writes to protected volumes are redirected to the overlay and discarded on reboot.</source>
-        <translation>下次会话启用 UWF 筛选器。对受保护卷的所有写入都会被重定向到覆盖层，重启后丢弃。</translation>
+        <source>Enable UWF in the next session. Writes to protected paths are redirected to the overlay; retention across restarts depends on the overlay settings.</source>
+        <translation>在下次会话启用 UWF。受保护路径的写入将重定向到覆盖层，是否跨重启保留取决于覆盖层设置。</translation>
     </message>
     <message>
-        <source>Overlay type and maximum size can only be changed while the filter is disabled:
-1. Disable the filter using the switch above.
-2. Reboot (the filter will be off after reboot).
+        <source>To change the overlay type or maximum capacity:
+1. Disable UWF.
+2. Restart the device.
 3. Change this setting.</source>
-        <translation>覆盖层的类型 / 最大大小只能在筛选器停用时修改：
-1. 用上方的「筛选状态」开关停用筛选器
-2. 重启电脑（重启后筛选器为停用状态）
-3. 重新尝试修改此项</translation>
+        <translation>要调整覆盖层类型或最大容量：
+1. 停用 UWF。
+2. 重启设备。
+3. 更改此设置。</translation>
     </message>
     <message>
-        <source>Overlay storage location. RAM is faster but consumes memory; Disk uses the system drive and offers more capacity. Both are discarded on reboot.</source>
-        <translation>覆盖层的存放位置。RAM 速度快但占用内存；Disk 存放在系统盘，可用容量更大。重启后两者都会丢弃。</translation>
+        <source>RAM uses system memory. Disk uses the system drive and supports larger overlays. Persistent Overlay can retain Disk overlay data across restarts.</source>
+        <translation>RAM 使用系统内存；Disk 使用系统磁盘，支持更大的覆盖层。启用持久覆盖后，可跨重启保留 Disk 覆盖层中的写入。</translation>
     </message>
     <message><source>Type</source><translation>类型</translation></message>
     <message>
-        <source>Maximum overlay capacity. In RAM mode, capped by total system memory. Disk mode requires at least 1024 MB and enough free space on the system volume.</source>
-        <translation>覆盖层的最大容量。RAM 模式下受系统总内存限制。Disk 模式要求至少 1024 MB，且系统盘可用空间需大于该值。</translation>
+        <source>RAM overlay capacity is limited by system memory. A Disk overlay requires at least 1024 MB and sufficient free space on the system drive.</source>
+        <translation>RAM 覆盖层容量受系统内存限制。Disk 覆盖层至少需要 1024 MB，系统盘还需有足够的可用空间。</translation>
     </message>
-    <message><source>Maximum size</source><translation>最大大小</translation></message>
-    <message><source>Maximum size · RAM %1</source><translation>最大大小 · RAM %1</translation></message>
+    <message><source>Maximum capacity</source><translation>最大容量</translation></message>
+    <message><source>Maximum capacity · RAM %1</source><translation>最大容量 · RAM %1</translation></message>
     <message><source>Warning threshold</source><translation>警告阈值</translation></message>
     <message>
         <source>Triggers a warning-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be lower than the critical threshold. Set to 0 to disable only the warning event.</source>
@@ -103,26 +104,21 @@
         <source>Volume capacity exceeds the UWF limit of 16 TiB for a single protected volume.</source>
         <translation>卷容量超过 UWF 单个受保护卷 16 TiB 的上限。</translation>
     </message>
-    <message>
-        <source>%1 file system: this volume can be protected, but file exclusions and per-file commit are not supported.</source>
-        <translation>%1 文件系统：可以保护此卷，但不支持文件排除和单文件提交。</translation>
-    </message>
-    <message><source>Failed to read volume information.</source><translation>读取卷信息失败。</translation></message>
     <message><source>%1 free / %2</source><translation>%1 可用 / %2</translation></message>
     <message><source>Commit</source><translation>提交</translation></message>
     <message>
-        <source>Commit overlay changes to disk / registry. This action cannot be undone.</source>
-        <translation>把覆盖层中的修改提交到磁盘 / 注册表。此操作不可撤销。</translation>
+        <source>Commit changes from the overlay to disk or the registry. This cannot be undone.</source>
+        <translation>将覆盖层中的更改提交到磁盘或注册表。此操作无法撤销。</translation>
     </message>
-    <message><source>Commit file changes…</source><translation>提交文件修改…</translation></message>
+    <message><source>Commit file changes…</source><translation>提交文件更改…</translation></message>
     <message>
         <source>Pick a file and commit its overlay changes to disk.</source>
-        <translation>选择一个文件，把它在覆盖层中的修改提交到磁盘。</translation>
+        <translation>选择文件，将其覆盖层更改提交到磁盘。</translation>
     </message>
-    <message><source>Commit folder changes…</source><translation>提交文件夹修改…</translation></message>
+    <message><source>Commit folder changes…</source><translation>提交文件夹更改…</translation></message>
     <message>
         <source>Pick a folder and commit overlay changes for every file inside it to disk.</source>
-        <translation>选择一个目录，把里面所有文件在覆盖层中的修改提交到磁盘。</translation>
+        <translation>选择文件夹，将其中全部文件的覆盖层更改提交到磁盘。</translation>
     </message>
     <message><source>Delete and commit file…</source><translation>删除并提交文件…</translation></message>
     <message>
@@ -131,34 +127,31 @@
     </message>
     <message><source>Delete and commit folder…</source><translation>删除并提交文件夹…</translation></message>
     <message>
-        <source>Pick a folder to delete (recursively, with everything inside it) and commit the deletions to disk.</source>
-        <translation>选择一个要删除的文件夹（连同其内部所有内容一并递归删除），把这些删除提交到磁盘。</translation>
+        <source>Select a folder, recursively delete it and all its contents, and commit the deletions to disk.</source>
+        <translation>选择文件夹，递归删除该文件夹及其全部内容，并将删除结果提交到磁盘。</translation>
     </message>
-    <message><source>Commit registry changes…</source><translation>提交注册表修改…</translation></message>
+    <message><source>Commit registry changes…</source><translation>提交注册表更改…</translation></message>
     <message>
         <source>Enter a registry key (and optional value name) and commit changes to the registry. Leaving the value name empty commits every value under the key and all its subkeys (recursively).</source>
-        <translation>输入注册表键（可选值名），把修改提交到注册表。值名留空则递归提交该键及其所有子键中的每一个值。</translation>
+        <translation>输入注册表键及可选的值名。值名留空时，递归提交该键及其全部子键中的值。</translation>
     </message>
     <message><source>Delete and commit registry…</source><translation>删除并提交注册表…</translation></message>
     <message>
-        <source>Enter a registry key (and optional value name) to delete, and commit the deletion to the registry. Leaving the value name empty deletes the whole subtree (the key plus all its values and subkeys, recursively).</source>
-        <translation>输入要删除的注册表键（可选值名），把这次删除提交到注册表。值名留空则递归删除整棵子树（该键、它的所有值、以及它所有的子键）。</translation>
+        <source>Enter a registry key and an optional value name. Leave the value name empty to delete the key and all its subkeys and values, then commit the deletions.</source>
+        <translation>输入注册表键及可选的值名。值名留空时，将删除并提交整个键及其全部子键和值。</translation>
     </message>
-    <message><source>File exclusions</source><translation>文件排除</translation></message>
+    <message><source>File exclusions</source><translation>文件排除项</translation></message>
     <message>
         <source>Files and folders on this volume excluded from UWF protection. Double-click an entry to copy its path.</source>
-        <translation>本卷不受 UWF 保护的文件 / 目录列表。双击条目可复制路径。</translation>
+        <translation>此卷中不受 UWF 保护的文件和文件夹。双击条目可复制路径。</translation>
     </message>
-    <message><source>Registry exclusions</source><translation>注册表排除</translation></message>
+    <message><source>Registry exclusions</source><translation>注册表排除项</translation></message>
     <message>
-        <source>Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is shared across all volumes and shown only once in the disk tabs. Double-click an entry to copy its path.</source>
-        <translation>注册表排除是全局的：由全局 UWF 筛选器开关控制，与本卷的保护状态无关。该列表跨所有卷共享，并且只会在磁盘标签页中显示一次。双击条目可复制路径。</translation>
+        <source>Registry exclusions are global and are shown only on the system drive.</source>
+        <translation>注册表排除项为全局设置，仅在系统卷显示。</translation>
     </message>
     <message><source>File staging</source><translation>文件暂存</translation></message>
-    <message>
-        <source>Files and folders in this list are committed automatically before safe shutdown or restart. Folders are processed recursively. While the list contains data, UWF Manager excludes HKLM\SOFTWARE\HsingYun\UWF Manager so the list persists across protected sessions.</source>
-        <translation>列表中的文件和文件夹会在安全关机或重启前自动提交，文件夹将递归处理。列表中存在数据时，UWF Manager 会排除 HKLM\SOFTWARE\HsingYun\UWF Manager，以确保该列表在受保护会话之间保持有效。</translation>
-    </message>
+
     <message><source>Add files or a folder to the automatic commit list.</source><translation>将文件或文件夹加入自动提交列表。</translation></message>
     <message>
         <source>Select one or more files to commit automatically before safe shutdown or restart.</source>
@@ -174,13 +167,13 @@
     <message>
         <source>This path overlaps a UWF file exclusion. Remove the exclusion before adding the staged path:
 %1</source>
-        <translation>该路径与 UWF 文件排除项存在重叠。请先移除以下排除项，再添加暂存路径：
+        <translation>此路径与 UWF 文件排除项重叠。请先移除以下排除项，再添加暂存项：
 %1</translation>
     </message>
     <message>
         <source>This path overlaps a file staging entry. Remove the staged path before adding the exclusion:
 %1</source>
-        <translation>该路径与文件暂存项存在重叠。请先移除以下暂存路径，再添加排除项：
+        <translation>此路径与文件暂存项重叠。请先移除以下暂存项，再添加排除项：
 %1</translation>
     </message>
     <message><source>The path overlaps an existing file staging entry</source><translation>路径与现有文件暂存项存在重叠</translation></message>
@@ -207,9 +200,9 @@
 %1</translation>
     </message>
     <message>
-        <source>The path has no drive letter and cannot be committed by UWF:
+        <source>The path has no drive letter and cannot be added to file staging:
 %1</source>
-        <translation>此路径没有盘符，UWF 无法提交：
+        <translation>路径没有盘符，无法加入文件暂存：
 %1</translation>
     </message>
     <message>
@@ -228,13 +221,13 @@
 %1</translation>
     </message>
     <message><source>File staging is unavailable: %1</source><translation>文件暂存不可用：%1</translation></message>
-    <message><source>Committed automatically before safe shutdown or restart.</source><translation>将在安全关机或重启前自动提交。</translation></message>
+
     <message><source>%1 staged entries · %2 files · %3 folders</source><translation>%1 个暂存项 · %2 个文件 · %3 个文件夹</translation></message>
     <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>文件暂存依赖此注册表排除项，以便在重启后保留暂存列表。</translation></message>
     <message><source>Built-in</source><translation>内建</translation></message>
     <message>
         <source>The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit.</source>
-        <translation>UWF 筛选器当前已停用，覆盖层中不会累积修改，没有可提交的内容。</translation>
+        <translation>UWF 筛选器当前已停用，覆盖层中不会累积更改，没有可提交的内容。</translation>
     </message>
     <message>
         <source>Per-file commit is not supported on the %1 file system.</source>
@@ -245,20 +238,12 @@
         <translation>此卷不受 UWF 支持。</translation>
     </message>
     <message>
-        <source>This volume does not support file commit. Only registry commit is available (registry exclusions are global).</source>
-        <translation>此卷不支持文件提交。只能提交注册表修改（注册表排除是全局的）。</translation>
-    </message>
-    <message>
         <source>Per-file commit is not supported on the %1 file system. Only registry commit is available (registry exclusions are global).</source>
-        <translation>%1 文件系统不支持单文件提交，只能提交注册表修改（注册表是全局的）。</translation>
+        <translation>%1 文件系统不支持单文件提交，只能提交注册表更改（注册表排除项为全局设置）。</translation>
     </message>
     <message>
         <source>This volume is not currently protected by UWF; there are no file changes to commit.</source>
-        <translation>本卷当前未受 UWF 保护，没有可提交的文件修改。</translation>
-    </message>
-    <message>
-        <source>This volume is not currently protected by UWF. Only registry commit is available (registry exclusions are global).</source>
-        <translation>本卷当前未受 UWF 保护，只能提交注册表修改（注册表是全局的）。</translation>
+        <translation>本卷当前未受 UWF 保护，没有可提交的文件更改。</translation>
     </message>
     <message>
         <source>Select a file to commit to disk</source>
@@ -266,7 +251,7 @@
     </message>
     <message>
         <source>Select a folder to commit to disk</source>
-        <translation>选择要提交到磁盘的目录</translation>
+        <translation>选择要提交到磁盘的文件夹</translation>
     </message>
     <message>
         <source>Select a file whose deletion you want to commit</source>
@@ -295,8 +280,8 @@
         <translation>仅 NTFS 卷支持查看覆盖层文件列表。</translation>
     </message>
     <message>
-        <source>The UWF filter is currently disabled, so no volume has an overlay to inspect.</source>
-        <translation>UWF 筛选器当前处于禁用状态，没有任何卷存在可查看的覆盖层。</translation>
+        <source>The UWF filter is disabled; no volume has an overlay to inspect.</source>
+        <translation>UWF 筛选器当前已停用，所有卷均无可查看的覆盖层。</translation>
     </message>
     <message>
         <source>This volume is not currently protected by UWF, so it has no overlay to inspect.</source>
@@ -304,12 +289,12 @@
     </message>
     <message><source>Failed: %1</source><translation>失败 %1</translation></message>
     <message>
-        <source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure.</source>
-        <translation>WMI 提供程序在枚举覆盖层文件时崩溃。这是 UWF_Overlay.GetOverlayFiles 在覆盖层较大或磁盘 I/O 繁忙时的已知不稳定行为。</translation>
+        <source>The previous enumeration may still be running. Another read cannot start yet.</source><translation>上一次枚举可能仍在运行，暂时无法开始新的读取。</translation></message><message><source>The UWF service is unavailable while enumerating overlay files.</source>
+        <translation>枚举覆盖层文件时 UWF 服务不可用。</translation>
     </message>
     <message>
-        <source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source>
-        <translation>内存不足或提供程序不支持此操作。覆盖层文件枚举仅在 NTFS 卷上可用，且需要一定的可用内存；请减小覆盖层容量或关闭占用内存较多的程序后再试。</translation>
+        <source>Out of memory, or this operation is not supported. This feature requires an NTFS volume; close memory-intensive applications and try again.</source>
+        <translation>内存不足，或系统不支持此操作。此功能仅支持 NTFS 卷；请先关闭占用内存较多的程序后重试。</translation>
     </message>
     <message><source>Raw error: %1</source><translation>原始错误：%1</translation></message>
     <message><source>Export overlay file list</source><translation>导出覆盖层文件列表</translation></message>
@@ -320,7 +305,7 @@
     <message><source>Could not open file for writing: %1</source><translation>无法打开文件写入：%1</translation></message>
     <message><source>Could not write file: %1</source><translation>无法写入文件：%1</translation></message>
     <message><source>Saved %1 entries to:
-%2</source><translation>已保存 %1 条记录到：
+%2</source><translation>已将 %1 项保存到：
 %2</translation></message>
 
     <!-- ExclusionListWidget -->
@@ -329,8 +314,8 @@
         <translation>不允许把整个卷 %1 加入排除列表。</translation>
     </message>
     <message>
-        <source>The pagefile, swapfile and hibernation file cannot be excluded; UWF itself depends on these system files.</source>
-        <translation>分页文件 / 交换文件 / 休眠文件不能加入排除（这些是 UWF 本身依赖的系统文件）。</translation>
+        <source>The pagefile, swapfile and hibernation file cannot be added as exclusions.</source>
+        <translation>分页文件、交换文件和休眠文件不能添加为排除项。</translation>
     </message>
     <message>
         <source>The entire \Windows directory cannot be excluded.</source>
@@ -354,38 +339,12 @@
     </message>
     <message><source>Registry key cannot be empty.</source><translation>注册表键不能为空。</translation></message>
     <message><source>Registry key cannot start with a backslash.</source><translation>注册表键不能以反斜杠开头。</translation></message>
-    <message><source>The path contains consecutive backslashes; this is not valid.</source><translation>路径含有连续反斜杠，无效。</translation></message>
+    <message><source>Registry paths cannot contain null characters.</source><translation>注册表路径不能包含空字符。</translation></message>
+    <message><source>A registry key component is too long.</source><translation>注册表键名过长。</translation></message>
+    <message><source>The registry path exceeds UWF's nesting limit.</source><translation>注册表路径超过 UWF 的嵌套层数限制。</translation></message>
     <message>
-        <source>Registry paths use backslash `\` as the separator; do not use forward slash `/`.</source>
-        <translation>注册表路径使用反斜杠 `\` 作为分隔符，不要用正斜杠 `/`。</translation>
-    </message>
-    <message>
-        <source>The path contains invisible control characters; this is not valid.</source>
-        <translation>路径含有不可见字符，无效。</translation>
-    </message>
-    <message>
-        <source>HKLM\SECURITY\Policy\Secrets\$MACHINE.ACC cannot be excluded; this is the domain machine account secret, which UWF documentation explicitly forbids excluding.</source>
-        <translation>不允许把 HKLM\SECURITY\Policy\Secrets\$MACHINE.ACC 加入排除（域机器账户密钥；UWF 文档明确禁止排除此键）。</translation>
-    </message>
-    <message>
-        <source>UWF only allows exclusions under the following top-level registry keys. Please pick a specific subkey under one of them:
-  HKLM\BCD00000000
-  HKLM\SYSTEM
-  HKLM\SOFTWARE
-  HKLM\SAM
-  HKLM\SECURITY
-  HKLM\COMPONENTS</source>
-        <translation>UWF 只允许排除以下顶层注册表键的子项，请在这些键下面选择具体位置：
-  HKLM\BCD00000000
-  HKLM\SYSTEM
-  HKLM\SOFTWARE
-  HKLM\SAM
-  HKLM\SECURITY
-  HKLM\COMPONENTS</translation>
-    </message>
-    <message>
-        <source>Add a file or folder to the exclusion list. Excluded entries are not protected by UWF.</source>
-        <translation>把文件或文件夹加入排除列表。排除的对象不受 UWF 保护。</translation>
+        <source>Add a file or folder to the exclusion list.</source>
+        <translation>将文件或文件夹加入排除列表。</translation>
     </message>
     <message><source>Pick a file to add to the exclusion list.</source><translation>选择一个文件加入排除列表。</translation></message>
     <message><source>Pick a folder (and all of its contents) to add to the exclusion list.</source><translation>选择一个文件夹（包含其中所有内容）加入排除列表。</translation></message>
@@ -409,8 +368,8 @@
     <message><source>Open containing folder</source><translation>打开所在文件夹</translation></message>
     <message><source>Copy file path</source><translation>复制文件路径</translation></message>
     <message><source>Copy registry path</source><translation>复制注册表路径</translation></message>
-    <message><source>Commit folder changes to disk…</source><translation>提交文件夹改动到磁盘…</translation></message>
-    <message><source>Commit file changes to disk…</source><translation>提交文件改动到磁盘…</translation></message>
+    <message><source>Commit folder changes to disk…</source><translation>提交文件夹更改到磁盘…</translation></message>
+    <message><source>Commit file changes to disk…</source><translation>提交文件更改到磁盘…</translation></message>
     <message><source>Copied to clipboard</source><translation>已复制到剪贴板</translation></message>
     <message>
         <source>Select files to add to the exclusion list (multiple selection allowed)</source>
@@ -420,7 +379,7 @@
         <source>Select a folder to add to the exclusion list</source>
         <translation>选择要加入排除的文件夹</translation>
     </message>
-    <message><source>Add registry exclusion</source><translation>添加注册表排除</translation></message>
+    <message><source>Add registry exclusion</source><translation>添加注册表排除项</translation></message>
     <message>
         <source>The selected path %1 is not on volume %2, and therefore cannot be added as an exclusion for this volume.</source>
         <translation>所选路径 %1 不在 %2 卷上，无法作为此卷的排除项。</translation>
@@ -447,8 +406,8 @@ Next session: %2</source>
     </message>
     <message><source>Review and apply</source><translation>预览并应用</translation></message>
     <message>
-        <source>Review all pending changes and apply them in one batch. Most changes take effect after the next reboot.</source>
-        <translation>预览本次所有待应用的变更，确认后一次性应用（多数变更在下次重启后生效）。</translation>
+        <source>Review all pending changes and apply them in one batch.</source>
+        <translation>预览本次所有待应用的更改，确认后一次性应用。</translation>
     </message>
     <message><source>Safe shutdown</source><translation>安全关机</translation></message>
     <message>
@@ -481,12 +440,8 @@ Next session: %2</source>
 
     <!-- Commit failure explanations -->
     <message>
-        <source>The target was not found; there is nothing in the overlay to commit.</source>
-        <translation>未找到目标，覆盖层中没有可提交的内容。</translation>
-    </message>
-    <message>
-        <source>Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It will disappear on reboot; commit-delete is neither needed nor possible.</source>
-        <translation>目标不在物理卷 / 持久化注册表上——它只存在于覆盖层中（在 UWF 保护下新建，从未提交过）。重启后会自动消失，无需也无法用「提交删除」处理。</translation>
+        <source>The system did not find the target.</source>
+        <translation>系统未找到目标。</translation>
     </message>
     <message>
         <source>A parameter was rejected by the system (invalid path or argument).</source>
@@ -510,12 +465,12 @@ Next session: %2</source>
     <message><source>Skipped</source><translation>跳过</translation></message>
     <message><source>Failed</source><translation>失败</translation></message>
     <message>
-        <source>%1 succeeded; %2 skipped; %3 failed.</source>
-        <translation>成功 %1 个；跳过 %2 个；失败 %3 个。</translation>
+        <source>%1 succeeded; %2 failed.</source>
+        <translation>%1 项成功；%2 项失败。</translation>
     </message>
 
-    <message><source>Existed before</source><translation>删除前</translation></message>
-    <message><source>Exists after</source><translation>删除后</translation></message>
+    <message><source>Existed before</source><translation>删除前存在</translation></message>
+    <message><source>Exists after</source><translation>删除后存在</translation></message>
     <message><source>Error code</source><translation>错误码</translation></message>
     <message><source>Reason</source><translation>原因</translation></message>
     <message><source>Previous page</source><translation>上一页</translation></message>
@@ -531,7 +486,7 @@ Next session: %2</source>
     <message><source>Copy current page</source><translation>复制当前页</translation></message>
 
     <!-- MainWindow: status bar / tabs / refresh -->
-    <message><source>No pending changes</source><translation>无待应用变更</translation></message>
+    <message><source>No pending changes</source><translation>无待应用更改</translation></message>
     <message><source> (Also manages global registry exclusions.)</source><translation>（同时管理全局注册表排除）</translation></message>
     <message>
         <source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source>
@@ -549,12 +504,11 @@ Next session: %2</source>
     <message><source>✓ Overlay warning threshold set to %1 MB</source><translation>✓ 覆盖层 警告阈值设为 %1 MB</translation></message>
     <message><source>✓ Overlay critical threshold set to %1 MB</source><translation>✓ 覆盖层 严重阈值设为 %1 MB</translation></message>
     <message>
-        <source>✘ Type / maximum size not applied: the filter is currently enabled. Disable the filter and reboot first.</source>
-        <translation>✘ 类型 / 最大大小未应用：筛选器当前已启用，需要先停用筛选器并重启后再修改。</translation>
+        <source>✘ Type / maximum capacity not applied: UWF is enabled. Disable UWF and restart first.</source>
+        <translation>✘ 类型或最大容量未应用：UWF 已启用，请先停用并重启。</translation>
     </message>
     <message><source>✓ Overlay type set to %1</source><translation>✓ 覆盖层 类型设为 %1</translation></message>
-    <message><source>✓ Overlay maximum size set to %1 MB</source><translation>✓ 覆盖层 最大大小设为 %1 MB</translation></message>
-    <message><source>✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.</source><translation>✘ 最大大小未应用：基于磁盘的覆盖层要求至少 %1 MB。</translation></message>
+    <message><source>✓ Maximum overlay capacity set to %1 MB</source><translation>✓ 覆盖层最大容量已设为 %1 MB</translation></message>
     <message><source>✓ Volume %1 protection: %2</source><translation>✓ 卷 %1 保护：%2</translation></message>
     <message><source>✓ Volume %1 bind by: %2</source><translation>✓ 卷 %1 绑定方式：%2</translation></message>
     <message><source>✓ Volume %1 added file exclusion: %2</source><translation>✓ 卷 %1 新增文件排除：%2</translation></message>
@@ -565,25 +519,19 @@ Next session: %2</source>
     <!-- Log dialog -->
     <message><source>Time</source><translation>时间</translation></message>
     <message><source>Level</source><translation>等级</translation></message>
-    <message><source>Tag</source><translation>TAG</translation></message>
+
     <message><source>Message</source><translation>消息</translation></message>
 
     <!-- Safe shutdown / restart -->
-    <message><source>Calculating files for automatic commit…</source><translation>正在计算需要自动提交的文件…</translation></message>
     <message><source>Committing staged files</source><translation>正在提交暂存文件</translation></message>
-    <message><source>Processed %1 of %2 file(s).</source><translation>已处理 %1 / %2 个文件。</translation></message>
     <message><source>No additional error details were provided.</source><translation>未提供更多错误详情。</translation></message>
     <message>
         <source>Automatic file staging stopped unexpectedly:
 %1</source>
-        <translation>文件暂存意外中止：
+        <translation>暂存文件提交意外中止：
 %1</translation>
     </message>
-    <message><source>Automatic file staging stopped because of an unknown error.</source><translation>文件暂存因未知错误中止。</translation></message>
-    <message><source>File staging will be skipped</source><translation>将跳过文件暂存区</translation></message>
-    <message><source>Direct restart skips File staging commits.</source><translation>直接重启会跳过文件暂存区提交。</translation></message>
-    <message><source>Direct shutdown skips File staging commits.</source><translation>直接关机会跳过文件暂存区提交。</translation></message>
-    <message><source>File staging was skipped because a direct power action was selected.</source><translation>已选择直接操作，因此跳过文件暂存区提交。</translation></message>
+    <message><source>Automatic file staging stopped because of an unknown error.</source><translation>暂存文件提交因未知错误中止。</translation></message>
     <message><source>Safe shutdown failed</source><translation>安全关机失败</translation></message>
     <message><source>Shutdown failed: %1</source><translation>关机失败：%1</translation></message>
     <message><source>Safe restart failed</source><translation>安全重启失败</translation></message>
@@ -598,7 +546,7 @@ Next session: %2</source>
     </message>
     <message><source>The file staging list could not be read because of an unknown error.</source><translation>读取文件暂存列表时发生未知错误。</translation></message>
     <message><source>Discovered files: %1 · Committed: %2 · Skipped files: %3 · Skipped entries: %4 · Failed: %5</source><translation>发现文件：%1 · 已提交：%2 · 已跳过文件：%3 · 已跳过条目：%4 · 失败：%5</translation></message>
-    <message><source>File staging preparation</source><translation>文件暂存准备阶段</translation></message>
+    <message><source>File staging preparation</source><translation>暂存文件提交准备</translation></message>
     <message><source>Reparse points are not supported.</source><translation>不支持重解析点。</translation></message>
     <message><source>Only absolute paths on local volumes can be staged.</source><translation>仅可暂存本地卷上的绝对路径。</translation></message>
     <message><source>Only absolute paths on local volumes can be added to automatic file staging:
@@ -608,7 +556,7 @@ Next session: %2</source>
     <message><source>The staged file now refers to a different path type.</source><translation>暂存文件当前已变为其他路径类型。</translation></message>
     <message><source>The staged folder now refers to a different path type.</source><translation>暂存文件夹当前已变为其他路径类型。</translation></message>
     <message><source>The staged folder could not be enumerated completely.</source><translation>无法完整枚举暂存文件夹。</translation></message>
-    <message><source>The path has no drive letter.</source><translation>路径没有盘符。</translation></message>
+
     <message><source>A volume root cannot be processed recursively.</source><translation>不能递归处理卷根目录。</translation></message>
     <message><source>The UWF provider rejected the commit.</source><translation>UWF 提供程序拒绝了提交请求。</translation></message>
     <message><source>The commit failed with an unknown error.</source><translation>提交因未知错误失败。</translation></message>
@@ -616,10 +564,7 @@ Next session: %2</source>
 
     <!-- commitFilePath -->
 
-    <message>
-        <source>The path has no drive letter; cannot identify the target volume.</source>
-        <translation>路径缺少盘符，无法确定目标卷。</translation>
-    </message>
+
 
     <message>
         <source>No current-session record found for volume %1.</source>
@@ -663,8 +608,8 @@ Exclusion: %1</source>
     <!-- toolbar: Import button -->
     <message><source>Import</source><translation>导入</translation></message>
     <message>
-        <source>Paste, type, or load a script of uwfmgr commands and turn each line into a pending UI change. Nothing is written to the system until you click "Review and apply".</source>
-        <translation>粘贴、键入或从文件加载一段 uwfmgr 命令脚本，把每一行翻译成 UI 上的待应用变更。点击「预览并应用」之前不会真的写入系统。</translation>
+        <source>Import uwfmgr commands into the draft. Changes are written only after confirmation in Review and apply.</source>
+        <translation>将 uwfmgr 命令导入草稿；在“预览并应用”中确认后才写入系统。</translation>
     </message>
 
     <!-- ImportDialog -->
@@ -674,7 +619,7 @@ Exclusion: %1</source>
     <message><source>Select the recommended configuration groups to append. You can review or delete individual commands before importing.</source><translation>选择要追加的推荐配置分组。导入前仍可检查或删除单条命令。</translation></message>
     <message><source>From Microsoft official documentation.</source><translation>来自 Microsoft 官方文档。</translation></message>
     <message><source>Microsoft recommended UWF exclusions</source><translation>Microsoft 推荐的 UWF 排除规则</translation></message>
-    <message><source>Review these recommendations before importing; folders should exist before UWF accepts file exclusions.</source><translation>导入前请先检查这些推荐项；文件夹需要已存在，UWF 才会接受文件排除。</translation></message>
+    <message><source>Review these recommendations before importing.</source><translation>导入前请先检查这些推荐项。</translation></message>
     <message><source>Source: Microsoft official UWF documentation, including common write filter exclusions and antimalware support.</source><translation>来源：Microsoft 官方 UWF 文档，包括常见写入筛选器排除项以及反恶意软件支持。</translation></message>
     <message><source>Customer Experience Improvement Program (CEIP)</source><translation>客户体验改善计划（CEIP）</translation></message>
     <message><source>CEIP: persist policy opt-in state</source><translation>CEIP：持久化策略参与状态</translation></message>
@@ -718,7 +663,7 @@ Exclusion: %1</source>
     <message><source>Text files (*.txt *.cmd);;All files (*)</source><translation>文本文件 (*.txt *.cmd);;所有文件 (*)</translation></message>
     <message><source>Status</source><translation>状态</translation></message>
     <message><source>Import failed</source><translation>导入失败</translation></message>
-    <message><source>Internal error: no applier registered.</source><translation>内部错误：未注册命令应用器。</translation></message>
+    <message><source>Command import is not ready.</source><translation>命令导入功能尚未就绪。</translation></message>
     <message><source>Nothing to import</source><translation>没有可导入的内容</translation></message>
     <message><source>No uwfmgr commands found in the input.</source><translation>输入中未找到任何 uwfmgr 命令。</translation></message>
     <message><source>Duplicates: %1</source><translation>重复 %1</translation></message>
@@ -732,17 +677,17 @@ Exclusion: %1</source>
     <message><source>Could not open file %1: %2</source><translation>无法打开文件 %1：%2</translation></message>
 
     <!-- pending change guard -->
-    <message><source>Discard pending changes?</source><translation>放弃待应用变更？</translation></message>
-    <message><source>There are %1 pending change(s) that have not been applied.
+    <message><source>Discard pending changes?</source><translation>放弃待应用更改？</translation></message>
+    <message><source>%1 change(s) have not been applied.
 
-Continue and discard them?</source><translation>还有 %1 个待应用变更尚未应用。
+Discard them and continue?</source><translation>有 %1 项更改尚未应用。
 
-继续并放弃这些变更？</translation></message>
+放弃这些更改并继续？</translation></message>
 
     <!-- ImportDialog: parse errors -->
     <message><source>Incomplete uwfmgr command</source><translation>uwfmgr 命令不完整</translation></message>
     <message><source>Missing size argument (MB)</source><translation>缺少大小参数（MB）</translation></message>
-    <message><source>Size must be a non-negative integer in MB</source><translation>大小必须是非负的 MB 整数</translation></message>
+    <message><source>Size must be a non-negative integer (MB)</source><translation>大小必须为非负整数，单位为 MB。</translation></message>
     <message><source>Missing overlay type argument (RAM or Disk)</source><translation>缺少覆盖层类型参数（RAM 或 Disk）</translation></message>
     <message><source>Unknown overlay type %1 (expected RAM or Disk)</source><translation>未知的覆盖层类型 %1（应为 RAM 或 Disk）</translation></message>
     <message><source>Missing volume argument (e.g. C:)</source><translation>缺少卷参数（如 C:）</translation></message>
@@ -751,30 +696,30 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>Missing registry key argument</source><translation>缺少注册表键参数</translation></message>
     <message><source>Unclosed double quote in command</source><translation>命令中存在未闭合的双引号</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>存在多余参数：%1</translation></message>
-    <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>不支持的 uwfmgr 命令（无法翻译成 UI 操作）</translation></message>
+    <message><source>This uwfmgr command cannot be imported.</source><translation>无法导入此 uwfmgr 命令。</translation></message>
 
     <!-- showImport applier: per-command results -->
-    <message><source>Already in the target state — no-op</source><translation>已经处于目标状态——无须变更</translation></message>
+    <message><source>Already in the target state — no-op</source><translation>已经处于目标状态——无须更改</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>路径不在本卷，或本卷不支持文件排除（如 exFAT / ReFS）</translation></message>
-    <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>被 UWF 黑名单拒绝（系统文件 / Windows / 分页文件等）</translation></message>
+    <message><source>This path cannot be added as an exclusion.</source><translation>无法将此路径添加为排除项。</translation></message>
     <message><source>Invalid size value: %1</source><translation>大小数值非法：%1</translation></message>
-    <message><source>maximum size</source><translation>最大大小</translation></message>
+    <message><source>maximum capacity</source><translation>最大容量</translation></message>
     <message><source>warning threshold</source><translation>警告阈值</translation></message>
     <message><source>critical threshold</source><translation>严重阈值</translation></message>
     <message><source>Global configuration is unavailable; the command was not queued.</source><translation>全局配置当前不可用，未将此命令加入待应用更改。</translation></message>
-    <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>未知的卷 %1（没有该盘符对应的 UWF 可保护磁盘）</translation></message>
+    <message><source>Unknown volume %1 (no matching volume configuration)</source><translation>未知的卷 %1（没有匹配的卷配置）</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>卷 %1 的保护状态已是目标值</translation></message>
-    <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>路径 %1 没有盘符，无法定位到卷 TAB</translation></message>
+    <message><source>Path %1 has no drive letter; its volume tab cannot be identified.</source><translation>路径 %1 没有盘符，无法定位到对应卷的标签页。</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>没有盘符 %1 对应的 UWF 可保护磁盘</translation></message>
-    <message><source>file exclusion</source><translation>文件排除</translation></message>
-    <message><source>registry exclusion</source><translation>注册表排除</translation></message>
+    <message><source>file exclusion</source><translation>文件排除项</translation></message>
+    <message><source>registry exclusion</source><translation>注册表排除项</translation></message>
     <message><source>Registry exclusions are only available on the registry tab, which is not present</source><translation>注册表排除只能在注册表标签页中配置，但当前没有该标签页</translation></message>
     <message><source>Unsupported command</source><translation>不支持的命令</translation></message>
 
     <!-- System tray -->
-    <message><source>Show or hide the overlay hub.</source><translation>显示或隐藏覆盖层 Hub。</translation></message>
+    <message><source>Show or hide the overlay widget.</source><translation>显示或隐藏覆盖层悬浮窗。</translation></message>
     <message><source>UWF: Enabled</source><translation>UWF：已启用</translation></message>
-    <message><source>UWF: Disabled</source><translation>UWF：已禁用</translation></message>
+    <message><source>UWF: Disabled</source><translation>UWF：已停用</translation></message>
     <message><source>UWF status unavailable</source><translation>UWF 状态不可用</translation></message>
     <message><source>Used %1 MB / Total %2 MB</source><translation>已用 %1 MB / 总计 %2 MB</translation></message>
 
@@ -793,7 +738,7 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>The service executable path or startup arguments do not match this executable.</source><translation>服务配置的可执行文件路径或启动参数与当前程序不一致。</translation></message>
     <message><source>The service preshutdown timeout is not configured correctly.</source><translation>服务的预关机超时配置不正确。</translation></message>
     <message><source>The service does not declare the privileges required to start the UI agent.</source><translation>服务未声明启动 UI 代理所需的权限。</translation></message>
-    <message><source>The service has not accepted Windows preshutdown notifications.</source><translation>服务尚未接受 Windows 预关机通知。</translation></message>
+    <message><source>The service cannot receive Windows preshutdown notifications.</source><translation>当前服务无法接收 Windows 预关机通知。</translation></message>
     <message><source>Enable enhanced mode</source><translation>启用增强模式</translation></message>
     <message><source>Disable enhanced mode</source><translation>停用增强模式</translation></message>
     <message><source>Start service</source><translation>启动服务</translation></message>
@@ -847,19 +792,14 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
         <source>The enhanced mode service could not be deleted because of an unknown error.</source>
         <translation>删除增强模式服务时发生未知错误。</translation>
     </message>
-    <message><source>File staging completed</source><translation>文件暂存提交完成</translation></message>
-    <message><source>File staging failed</source><translation>文件暂存提交失败</translation></message>
-    <message><source>All staged targets were processed.</source><translation>所有暂存目标均已处理。</translation></message>
-    <message><source>All staged targets were processed; one or more operations failed.</source><translation>所有暂存目标均已处理，但部分操作失败。</translation></message>
 
     <!-- Overlay floating window -->
     <message><source>Show main window</source><translation>显示主界面</translation></message>
     <message><source>Restore default position</source><translation>恢复默认位置</translation></message>
-    <message><source>Show overlay hub</source><translation>显示覆盖层 HUB</translation></message>
-    <message><source>Hide overlay hub</source><translation>隐藏覆盖层 HUB</translation></message>
+    <message><source>Show overlay widget</source><translation>显示覆盖层悬浮窗</translation></message>
+    <message><source>Hide overlay widget</source><translation>隐藏覆盖层悬浮窗</translation></message>
     <message><source>Exit application</source><translation>退出应用</translation></message>
     <!-- 由 lupdate 校验出的当前源码文案。 -->
-    <message><source>✘ Failed to connect to the system</source><translation>✘ 连接系统失败</translation></message>
     <message><source>Failed to read registry values: %1</source><translation>读取注册表值失败：%1</translation></message>
     <message><source>Unexpected error while enumerating overlay files.</source><translation>枚举覆盖层文件时发生意外错误。</translation></message>
     <message><source>✘ Failed to %1 filter</source><translation>✘ %1 筛选器失败</translation></message>
@@ -868,13 +808,11 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>✘ Failed to set critical threshold</source><translation>✘ 设置严重阈值失败</translation></message>
     <message><source>✘ Failed to read overlay state</source><translation>✘ 读取覆盖层状态失败</translation></message>
     <message><source>✘ Failed to set overlay type</source><translation>✘ 设置覆盖层类型失败</translation></message>
-    <message><source>✘ Failed to set maximum size</source><translation>✘ 设置最大大小失败</translation></message>
+    <message><source>✘ Failed to set maximum capacity</source><translation>✘ 设置最大容量失败</translation></message>
     <message><source>✘ Failed to read overlay configuration</source><translation>✘ 读取覆盖层配置失败</translation></message>
-    <message><source>✘ Volume %1: failed to register with UWF</source><translation>✘ 卷 %1：注册到 UWF 失败</translation></message>
     <message><source>✘ Failed to %1 protection on volume %2</source><translation>✘ 卷 %2 %1 保护失败</translation></message>
     <message><source>✘ Failed to set binding for volume %1</source><translation>✘ 设置卷 %1 的绑定方式失败</translation></message>
     <message><source>✘ Volume %1 failed to add file exclusion %2</source><translation>✘ 卷 %1 添加文件排除项 %2 失败</translation></message>
-    <message><source>✓ Volume %1 file exclusion already absent: %2</source><translation>✓ 卷 %1 已不存在文件排除项：%2</translation></message>
     <message><source>✘ Volume %1 failed to remove file exclusion %2</source><translation>✘ 卷 %1 移除文件排除项 %2 失败</translation></message>
     <message><source>✘ Failed to read volume configuration</source><translation>✘ 读取卷配置失败</translation></message>
     <message><source>✘ Failed to add registry exclusion %1</source><translation>✘ 添加注册表排除项 %1 失败</translation></message>
@@ -883,10 +821,9 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>✘ Failed to read registry filter</source><translation>✘ 读取注册表筛选器失败</translation></message>
     <message><source>UWF is not available</source><translation>UWF 不可用</translation></message>
     <message><source>Unknown error while reading the target state.</source><translation>读取目标状态时发生未知错误。</translation></message>
-    <message><source>The target no longer exists, so there is nothing to delete.</source><translation>目标已不存在，无需删除。</translation></message>
     <message><source>The operation failed with an unknown error.</source><translation>操作因未知错误而失败。</translation></message>
-    <message><source>The operation result could not be confirmed because the target state reread failed: %1</source><translation>重新读取目标状态失败，无法确认操作结果：%1</translation></message>
-    <message><source>The provider accepted the deletion, but the target still exists after the authoritative reread.</source><translation>提供程序已接受删除请求，但重新读取权威状态后目标仍然存在。</translation></message>
+    <message><source>The target state could not be verified, so the operation result is unknown: %1</source><translation>无法检查目标状态，因此无法确认操作结果：%1</translation></message>
+    <message><source>The system accepted the deletion request, but the target still exists after verification.</source><translation>系统已接受删除请求，但检查后目标仍然存在。</translation></message>
     <message><source>Unknown</source><translation>未知</translation></message>
     <message><source>Failed to load logs: %1</source><translation>加载日志失败：%1</translation></message>
     <message><source>Failed to load logs: unexpected error.</source><translation>加载日志时发生意外错误。</translation></message>
@@ -900,7 +837,7 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>Skipped because a prerequisite operation failed or could not be confirmed.</source><translation>前置操作失败或无法确认，已跳过此操作。</translation></message>
     <message><source>Ready</source><translation>就绪</translation></message>
     <message><source>Copy</source><translation>复制</translation></message>
-    <message><source>Discard changes</source><translation>放弃变更</translation></message>
+    <message><source>Discard changes</source><translation>放弃更改</translation></message>
     <message><source>More</source><translation>更多</translation></message>
     <message><source>Minimize</source><translation>最小化</translation></message>
     <message><source>Maximize</source><translation>最大化</translation></message>
@@ -928,8 +865,8 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>uwfmgr commands</source><translation>uwfmgr 命令</translation></message>
     <message><source>Editable</source><translation>可编辑</translation></message>
     <message><source>Paste commands, or load them from a file…</source><translation>粘贴命令，或从文件加载…</translation></message>
-    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>导入会更新配置草稿。点击“预览并应用”可将更改写入系统。</translation></message>
-    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>报告列出了各条命令对配置草稿的处理结果。选择一行可查看完整命令和处理结果。</translation></message>
+    <message><source>Import updates the draft. Confirm the changes in Review and apply to write them to the system.</source><translation>导入会更新草稿。在“预览并应用”中确认后，才会将更改写入系统。</translation></message>
+    <message><source>The list shows command results for the configuration draft. Select a row to view the complete command and details.</source><translation>列表显示命令对配置草稿的处理结果；选择一行可查看完整命令与详情。</translation></message>
     <message><source>Edit commands</source><translation>编辑命令</translation></message>
     <message><source>Import results</source><translation>导入结果</translation></message>
     <message><source>Line</source><translation>行</translation></message>
@@ -937,7 +874,7 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>Processing result</source><translation>处理结果</translation></message>
     <message><source>Imported</source><translation>已导入</translation></message>
     <message><source>Imported: %1</source><translation>已导入 %1</translation></message>
-    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to save staged files.</source><translation>增强模式不可用；请使用安全关机或安全重启保存暂存文件。</translation></message>
+    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to commit staged files.</source><translation>增强模式不可用。请使用安全关机或安全重启提交暂存文件。</translation></message>
     <message><source>Not written to the system</source><translation>尚未写入系统</translation></message>
     <message><source>UTF-8 · %1 lines</source><translation>UTF-8 · %1 行</translation></message>
     <message><source>Continue editing</source><translation>继续编辑</translation></message>
@@ -945,30 +882,29 @@ Continue and discard them?</source><translation>还有 %1 个待应用变更尚�
     <message><source>View overlay</source><translation>查看覆盖层</translation></message>
     <message><source>Binding</source><translation>绑定</translation></message>
     <message><source>Search paths</source><translation>搜索路径</translation></message>
-    <message><source>Files in File staging will not be saved.</source><translation>不会保存暂存文件。</translation></message>
-    <message><source>Save staged files to disk, then shut down.</source><translation>先将暂存文件提交到磁盘，再关机。</translation></message>
-    <message><source>Save staged files to disk, then restart.</source><translation>先将暂存文件提交到磁盘，再重启。</translation></message>
+    <message><source>Commit staged files to disk, then shut down.</source><translation>先将暂存文件提交到磁盘，再关机。</translation></message>
+    <message><source>Commit staged files to disk, then restart.</source><translation>先将暂存文件提交到磁盘，再重启。</translation></message>
     <message><source>staged files</source><translation>个暂存文件</translation></message>
-    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after shutdown.</source><translation>仅暂存文件会自动提交。其他受保护路径中的未提交更改将在关机后丢失。</translation></message>
-    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after restart.</source><translation>仅暂存文件会自动提交。其他受保护路径中的未提交更改将在重启后丢失。</translation></message>
-    <message><source>Ready to save</source><translation>即将保存</translation></message>
+    <message><source>Only staged files are committed automatically. Other uncommitted changes may be lost after shutdown.</source><translation>仅自动提交暂存文件。其他未提交的更改可能在关机后丢失。</translation></message>
+    <message><source>Only staged files are committed automatically. Other uncommitted changes may be lost after restart.</source><translation>仅自动提交暂存文件。其他未提交的更改可能在重启后丢失。</translation></message>
+    <message><source>Files to commit</source><translation>待提交文件</translation></message>
     <message><source>No files to commit</source><translation>没有待提交文件</translation></message>
-    <message><source>Large staging lists may take longer to save.</source><translation>文件较多时可能需要更长时间。</translation></message>
+    <message><source>Committing many staged files may take longer.</source><translation>暂存文件较多时，提交可能需要更长时间。</translation></message>
     <message><source>UWF safe shutdown will run directly.</source><translation>将直接执行 UWF 安全关机。</translation></message>
     <message><source>UWF safe restart will run directly.</source><translation>将直接执行 UWF 安全重启。</translation></message>
     <message><source>/ %1 files</source><translation>/ %1 个文件</translation></message>
-    <message><source>Saving staged files</source><translation>正在保存暂存文件</translation></message>
-    <message><source>Shutdown will continue after saving. Keep the application open.</source><translation>保存完成后将继续关机。请勿关闭程序。</translation></message>
-    <message><source>Restart will continue after saving. Keep the application open.</source><translation>保存完成后将继续重启。请勿关闭程序。</translation></message>
-    <message><source>Saving to disk</source><translation>正在提交到磁盘</translation></message>
-    <message><source>Saving…</source><translation>正在保存…</translation></message>
-    <message><source>File saving has started and cannot be canceled.</source><translation>文件提交已开始，暂时无法取消。</translation></message>
-    <message><source>Some files could not be saved</source><translation>部分文件未能保存</translation></message>
+
+    <message><source>Shutdown will continue after committing. Keep the application open.</source><translation>提交完成后将继续关机。请保持程序运行。</translation></message>
+    <message><source>Restart will continue after committing. Keep the application open.</source><translation>提交完成后将继续重启。请保持程序运行。</translation></message>
+    <message><source>Committing to disk</source><translation>正在提交到磁盘</translation></message>
+    <message><source>Committing…</source><translation>正在提交…</translation></message>
+    <message><source>File commits have started and cannot be canceled.</source><translation>文件提交已开始，无法取消。</translation></message>
+    <message><source>Some files could not be committed</source><translation>部分文件未能提交</translation></message>
     <message><source>Review the failure details before continuing shutdown.</source><translation>请查看失败详情，再决定是否继续关机。</translation></message>
     <message><source>Review the failure details before restarting.</source><translation>请查看失败详情，再决定是否继续重启。</translation></message>
-    <message><source>File saving incomplete</source><translation>文件提交未完成</translation></message>
-    <message><source>Continuing shutdown will discard changes in files that could not be saved.</source><translation>继续关机将丢失未能保存的文件更改。</translation></message>
-    <message><source>Continuing restart will discard changes in files that could not be saved.</source><translation>继续重启将丢失未能保存的文件更改。</translation></message>
+    <message><source>File commits incomplete</source><translation>文件提交未完成</translation></message>
+    <message><source>If you continue shutdown, uncommitted file changes may be lost.</source><translation>继续关机可能丢失尚未提交的文件更改。</translation></message>
+    <message><source>If you continue restart, uncommitted file changes may be lost.</source><translation>继续重启可能丢失尚未提交的文件更改。</translation></message>
     <message><source>Shut down anyway</source><translation>仍然关机</translation></message>
     <message><source>Restart anyway</source><translation>仍然重启</translation></message>
     <message><source>Counting staged files…</source><translation>正在统计暂存文件…</translation></message>
@@ -1019,16 +955,15 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Failed to clear logs: %1</source><translation>清空日志失败：%1</translation></message>
     <message><source>Failed to clear logs: unexpected error.</source><translation>清空日志失败：发生意外错误。</translation></message>
     <message><source>%1 items · %2</source><translation>%1 项 · %2</translation></message>
-    <message><source>About this snapshot</source><translation>了解范围</translation></message>
+    <message><source>Snapshot details</source><translation>快照说明</translation></message>
     <message><source>Account</source><translation>运行账户</translation></message>
     <message><source>An empty diagnostic snapshot does not mean that the overlay contains no changes.</source><translation>该诊断快照未返回文件，不代表覆盖层中没有更改。</translation></message>
     <message><source>Application path</source><translation>程序路径</translation></message>
     <message><source>Automatic</source><translation>自动</translation></message>
-    <message><source>Automatic file staging</source><translation>自动保存暂存文件</translation></message>
-    <message><source>Automatically save eligible staged files during normal shutdown and restart.</source><translation>正常关机或重启时，自动保存符合条件的暂存文件。</translation></message>
+    <message><source>Automatic staged file commits</source><translation>自动提交暂存文件</translation></message>
+    <message><source>Automatically commit eligible staged files during Windows shutdown and restart.</source><translation>Windows 关机或重启时，自动提交符合条件的暂存文件。</translation></message>
     <message><source>Background service</source><translation>后台服务</translation></message>
     <message><source>Commit changes…</source><translation>提交更改…</translation></message>
-    <message><source>Commits staged files before normal shutdown and restart</source><translation>接管正常关机与重启前的文件提交</translation></message>
     <message><source>Configuration error</source><translation>配置异常</translation></message>
     <message><source>Connected and authenticated</source><translation>已连接 · 身份已验证</translation></message>
     <message><source>Connecting…</source><translation>正在连接…</translation></message>
@@ -1066,13 +1001,13 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>System metadata</source><translation>系统元数据</translation></message>
     <message><source>System metadata is for diagnosis only and cannot be committed.</source><translation>系统元数据仅供诊断，不提供提交操作。</translation></message>
     <message><source>The UWF provider could not complete enumeration. This can occur with a large overlay or insufficient system resources.</source><translation>UWF 提供程序未能完成枚举。覆盖层较大或系统资源不足时可能发生此问题。</translation></message>
-    <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>列表可能遗漏或包含已提交文件，请勿将其作为提交清单。</translation></message>
+    <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>列表可能遗漏文件，也可能包含已提交的文件，请勿将其作为提交清单。</translation></message>
     <message><source>UI agent</source><translation>界面代理</translation></message>
     <message><source>Unable to read service status</source><translation>服务状态读取失败</translation></message>
     <message><source>Unable to read the overlay right now</source><translation>暂时无法读取覆盖层</translation></message>
     <message><source>Unavailable</source><translation>不可用</translation></message>
     <message><source>View the file diagnostic snapshot for %1.</source><translation>查看 %1 的文件诊断快照。</translation></message>
-    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to save staged files.</source><translation>未启用时，仍可使用程序内的“安全关机”和“安全重启”保存暂存文件。</translation></message>
+    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to commit staged files.</source><translation>未启用增强模式时，可使用程序内的“安全关机”或“安全重启”提交暂存文件。</translation></message>
     <message>
         <source>A diagnostic snapshot of the system, privileges, and UWF.</source>
         <translation>系统、权限与 UWF 的诊断快照。</translation>
@@ -1146,8 +1081,8 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
         <translation>服务账户</translation>
     </message>
     <message>
-        <source>Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source>
-        <translation>停用筛选器并重启后，可调整类型与大小。</translation>
+        <source>Disable UWF and restart before changing the overlay type or maximum capacity.</source>
+        <translation>停用 UWF 并重启后，可调整覆盖层类型和最大容量。</translation>
     </message>
     <message>
         <source>Disk</source>
@@ -1170,8 +1105,8 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
         <translation>存储介质</translation>
     </message>
     <message>
-        <source>Overlay maximum size</source>
-        <translation>覆盖层最大大小</translation>
+        <source>Maximum overlay capacity</source>
+        <translation>覆盖层最大容量</translation>
     </message>
     <message>
         <source>Volume %1 protection</source>
@@ -1198,16 +1133,16 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
         <translation>移除</translation>
     </message>
     <message>
-        <source>Future writes to this path will not be protected by UWF.</source>
-        <translation>此路径的后续写入不受 UWF 保护。</translation>
+        <source>Add this path to the next-session exclusions.</source>
+        <translation>将此路径加入下次会话的排除列表。</translation>
     </message>
     <message>
         <source>Remove this path from the next-session exclusions.</source>
         <translation>从下次启动的排除项中移除此路径。</translation>
     </message>
     <message>
-        <source>Future writes to this key will not be protected by UWF.</source>
-        <translation>此键的后续写入不受 UWF 保护。</translation>
+        <source>Add this key to the next-session exclusions.</source>
+        <translation>将此键加入下次会话的排除列表。</translation>
     </message>
     <message>
         <source>Remove this key from the next-session exclusions.</source>
@@ -1223,44 +1158,36 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     </message>
     <message>
         <source>Review these changes before writing them to the system.</source>
-        <translation>核对本次变更，确认后写入系统。</translation>
+        <translation>核对本次更改，确认后写入系统。</translation>
     </message>
     <message>
         <source>%1 changes</source>
-        <translation>%1 项变更</translation>
+        <translation>%1 项更改</translation>
     </message>
     <message>
         <source>Takes effect after restart</source>
         <translation>下次启动生效</translation>
     </message>
+    <message><source>Takes effect when applied</source><translation>应用时生效</translation></message>
+    <message><source>Used when UWF starts</source><translation>UWF 启动时使用</translation></message>
+    <message><source>Mixed activation times</source><translation>生效时间不同</translation></message>
     <message>
         <source>View commands for these changes</source>
-        <translation>查看本次变更的命令</translation>
-    </message>
-    <message>
-        <source>The configuration matches the next-session target. View or export commands in Full configuration.</source>
-        <translation>配置与下一会话目标一致。可在“完整配置”中查看或导出命令。</translation>
+        <translation>查看本次更改的命令</translation>
     </message>
     <message>
         <source>Pending changes</source>
-        <translation>待应用变更</translation>
+        <translation>待应用更改</translation>
     </message>
     <message>
         <source>Next-session configuration</source>
-        <translation>下一会话配置</translation>
+        <translation>下次会话配置</translation>
     </message>
     <message>
         <source>%1 commands</source>
         <translation>%1 条命令</translation>
     </message>
-    <message>
-        <source>Save this UTF-8 CMD script as a .cmd file and run it in Command Prompt. Export uses the same script.</source>
-        <translation>将此 UTF-8 CMD 脚本保存为 .cmd 文件，并在命令提示符中运行。导出使用同一脚本。</translation>
-    </message>
-    <message>
-        <source>Full configuration</source>
-        <translation>完整配置</translation>
-    </message>
+
     <message>
         <source>Apply changes</source>
         <translation>应用更改</translation>
@@ -1275,31 +1202,27 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     </message>
     <message>
         <source>Some changes could not be applied</source>
-        <translation>部分变更未能应用</translation>
+        <translation>部分更改未能应用</translation>
     </message>
     <message>
         <source>Configuration applied</source>
         <translation>配置已应用</translation>
     </message>
     <message>
-        <source>Review the operation details. Read the current system state before retrying changes that may have been written.</source>
-        <translation>请查看操作详情；重新读取系统状态后，再修正未完成项。</translation>
+        <source>Some changes may already have been written. Refresh the system state before retrying.</source>
+        <translation>部分更改可能已写入。请刷新系统状态后再重试。</translation>
     </message>
     <message>
-        <source>The configuration has been written to the system. Most changes take effect after restart.</source>
-        <translation>配置已写入系统，大部分变更在下次启动时生效。</translation>
+        <source>The configuration has been written to the system.</source>
+        <translation>配置已写入系统。</translation>
     </message>
     <message>
         <source>Application result</source>
         <translation>应用结果</translation>
     </message>
     <message>
-        <source>Write these configuration changes to the system? Most changes take effect after restart.</source>
-        <translation>将这些配置变更写入系统？大部分配置将在下次启动时生效。</translation>
-    </message>
-    <message>
-        <source>Overlay usage</source>
-        <translation>覆盖层使用量</translation>
+        <source>Write these configuration changes to the system?</source>
+        <translation>将这些配置更改写入系统？</translation>
     </message>
     <message>
         <source>Standard user</source>
@@ -1310,21 +1233,17 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
         <translation>无</translation>
     </message>
     <message>
-        <source>Commit complete</source>
-        <translation>提交完成</translation>
-    </message>
-    <message>
         <source>Review the result for each target.</source>
         <translation>查看各目标的操作结果。</translation>
     </message>
 
     <message>
-        <source>Unsuccessful items have not been saved. Select a row to view the full path and reason.</source>
-        <translation>失败项的更改尚未保存。选择一行查看完整路径和原因。</translation>
+        <source>Some items were not completed or could not be verified. Select an item to view its full path and details.</source>
+        <translation>部分项目未完成或结果未能确认。选择一项查看完整路径和详情。</translation>
     </message>
     <message>
-        <source>All changes have been saved to disk and will persist without a restart.</source>
-        <translation>所有更改已提交到磁盘，无需重启即可持久保存。</translation>
+        <source>The selected operations completed. UWF may skip excluded targets.</source>
+        <translation>所选操作已完成。UWF 可能跳过排除项。</translation>
     </message>
     <message>
         <source>Item details</source>
@@ -1364,7 +1283,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     </message>
     <message>
         <source>Add exclusion</source>
-        <translation>添加排除</translation>
+        <translation>添加排除项</translation>
     </message>
     <message>
         <source>No registry key selected</source>
@@ -1408,7 +1327,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Select folders only.</source><translation>仅选择文件夹</translation></message>
     <message><source>Choose a location to save the file.</source><translation>选择文件保存位置</translation></message>
     <message><source>Multiple files can be selected.</source><translation>支持多选</translation></message>
-    <message><source>Select a file to open.</source><translation>选择要加载的配置文件</translation></message>
+    <message><source>Select a file to open.</source><translation>选择要打开的文件。</translation></message>
     <message><source>Save</source><translation>保存</translation></message>
     <message><source>Open</source><translation>打开</translation></message>
     <message><source>Add selected items</source><translation>添加所选项</translation></message>
@@ -1446,11 +1365,11 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>Select this registry key</source><translation>选择此注册表键</translation></message>
     <message><source>Select this registry value</source><translation>选择此注册表值</translation></message>
     <message><source>Choose a location within the allowed drive or folder.</source><translation>请选择限定磁盘或文件夹内的位置。</translation></message>
-    <message><source>Registry key or persistence setting</source><translation>注册表项或持久化设置</translation></message>
+    <message><source>Registry key or persistence setting</source><translation>注册表键或持久化设置</translation></message>
     <message><source>Staged path</source><translation>暂存路径</translation></message>
     <message><source>Required configuration</source><translation>必要配置</translation></message>
-    <message><source>Recursive staging</source><translation>递归暂存</translation></message>
-    <message><source>Staged file</source><translation>暂存文件</translation></message>
+
+
     <message><source>Home</source><translation>主目录</translation></message>
     <message><source>Compatibility mode</source><translation>兼容模式</translation></message>
     <message><source>Overlay warning threshold reached. Save changes and safely restart.</source><translation>覆盖层已达到警告阈值。请保存更改，再安全重启。</translation></message>
@@ -1473,7 +1392,7 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>64-bit</source><translation>64 位</translation></message>
     <message><source>All files (*)</source><translation>所有文件 (*)</translation></message>
 
-    <message><source>Changes already committed are retained.</source><translation>已提交的更改会保留。</translation></message>
+    <message><source>Completed operations cannot be undone.</source><translation>已完成的操作无法撤销。</translation></message>
     <message><source>Commit changes</source><translation>提交更改</translation></message>
     <message><source>Commit file changes?</source><translation>提交文件更改？</translation></message>
     <message><source>Commit folder changes?</source><translation>提交文件夹更改？</translation></message>
@@ -1487,19 +1406,17 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
 
     <message><source>Direct restart?</source><translation>直接重启？</translation></message>
     <message><source>Direct shutdown?</source><translation>直接关机？</translation></message>
-    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after restart.</source><translation>将跳过文件暂存。受保护路径中尚未提交的更改会在重启后丢失。</translation></message>
-    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after shutdown.</source><translation>将跳过文件暂存。受保护路径中尚未提交的更改会在关机后丢失。</translation></message>
     <message><source>Processed %1 / %2 items</source><translation>已处理 %1 / %2 项</translation></message>
-    <message><source>Remaining tasks can be canceled after the current target finishes.</source><translation>当前目标处理完成后，可取消剩余任务。</translation></message>
+    <message><source>Canceling stops remaining tasks after the current operation finishes.</source><translation>取消后，将在当前操作结束时停止后续任务。</translation></message>
     <message><source>Target</source><translation>目标</translation></message>
 
     <message><source>Select registry key or value</source><translation>选择注册表键或值</translation></message>
     <message><source>Select registry key or value to delete</source><translation>选择要删除的注册表键或值</translation></message>
-    <message><source>The service is installed but stopped. Start it to restore automatic saving.</source><translation>服务已安装但未运行。启动服务以恢复自动保存。</translation></message>
+    <message><source>The service is installed but stopped. Start it to resume automatic file commits.</source><translation>服务已安装但未运行。启动服务以恢复自动文件提交。</translation></message>
     <message><source>The enhanced mode service status could not be read. Check service permissions and retry.</source><translation>无法读取增强模式服务状态。请检查服务权限后重试。</translation></message>
     <message><source>Committing</source><translation>提交中</translation></message>
     <message><source>Confirm before continuing</source><translation>请确认是否继续</translation></message>
-    <message><source>Automatic saving incomplete</source><translation>自动保存未完成</translation></message>
+    <message><source>Automatic file commits incomplete</source><translation>自动文件提交未完成</translation></message>
     <message><source>Choose another folder, or check access permissions and retry.</source><translation>请选择其他文件夹，或检查访问权限后重试。</translation></message>
     <message><source>UWF is currently unavailable</source><translation>UWF 当前不可用</translation></message>
     <message><source>UWF configuration could not be read. Confirm that Unified Write Filter is installed in Windows, then read again.</source><translation>未能读取 UWF 配置。确认 Windows 已安装统一写入筛选器后重新读取。</translation></message>
@@ -1528,7 +1445,7 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>Copy command</source><translation>复制命令</translation></message>
     <message><source> · %1 branches could not be read</source><translation> · %1 个分支读取失败</translation></message>
     <message><source>%1 branches could not be read. Continue with discovered content, or retry only the failed items.</source><translation>%1 个分支无法读取。可继续处理已发现内容，或仅重试失败项。</translation></message>
-    <message><source>%1 files · %2 folders</source><translation>%1 个文件 · %2 个目录</translation></message>
+    <message><source>%1 files · %2 folders</source><translation>%1 个文件 · %2 个文件夹</translation></message>
     <message><source>%1 values · %2 keys</source><translation>%1 个值 · %2 个键</translation></message>
     <message><source>Attempts</source><translation>尝试次数</translation></message>
     <message><source>Cancel remaining tasks</source><translation>取消剩余任务</translation></message>
@@ -1536,7 +1453,7 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>Committing changes</source><translation>正在提交更改</translation></message>
     <message><source>Completed deletions and commits cannot be undone.</source><translation>已完成的删除及提交无法撤销。</translation></message>
     <message><source>Continue…</source><translation>继续…</translation></message>
-    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>仅删除已成功遍历的目标并保存删除结果；读取失败的分支及其上级目录或键会保留。</translation></message>
+    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>仅删除并提交成功遍历的目标；读取失败的分支及其上级目录或键会保留。</translation></message>
     <message><source>Deleting and committing</source><translation>正在删除并提交</translation></message>
     <message><source>Deletion and commit cannot be undone. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>删除及提交无法撤销。仅处理所选范围，不会应用待应用的 UWF 配置。</translation></message>
     <message><source>Determining the scope. Unread branches are recorded while traversal continues elsewhere.</source><translation>正在确定操作范围。读取失败的分支会记录下来，并继续遍历其余内容。</translation></message>
@@ -1546,7 +1463,7 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>No changes have been committed.</source><translation>尚未提交任何更改</translation></message>
     <message><source>Nothing has been deleted or committed.</source><translation>尚未删除或提交任何内容</translation></message>
     <message><source>Path</source><translation>路径</translation></message>
-    <message><source>Permanently delete the selected scope and save the deletions to the protected volume.</source><translation>将永久删除所选范围，并将删除结果保存到受保护卷。</translation></message>
+    <message><source>Permanently delete the selected content and commit the deletions.</source><translation>永久删除所选内容，并提交删除结果。</translation></message>
     <message><source>Preparation complete</source><translation>准备完成</translation></message>
     <message><source>Preparing commit</source><translation>准备提交</translation></message>
     <message><source>Preparing deletion and commit</source><translation>准备删除并提交</translation></message>
@@ -1555,7 +1472,7 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>Reparse points are skipped to keep traversal within the selected scope.</source><translation>跳过重解析点，以确保遍历不超出所选范围。</translation></message>
     <message><source>Restarting cannot undo a commit. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>提交后无法通过重启撤销。仅处理所选范围，不会应用待应用的 UWF 配置。</translation></message>
     <message><source>Retry failed items</source><translation>重试失败项</translation></message>
-    <message><source>Save changes in the selected scope to the protected volume.</source><translation>将所选范围的更改保存到受保护卷。</translation></message>
+    <message><source>Commit changes in the selected scope.</source><translation>提交所选范围内的更改。</translation></message>
     <message><source>Stopping the operation</source><translation>正在停止操作</translation></message>
     <message><source>Successful and failed records are retained</source><translation>已保留成功与失败记录</translation></message>
     <message><source>The folder is not empty; unprocessed content has been retained.</source><translation>文件夹不为空，未处理的内容已保留。</translation></message>
@@ -1573,10 +1490,10 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>Unable to prepare the operation</source><translation>无法完成操作准备</translation></message>
     <message><source>View results</source><translation>查看结果</translation></message>
 
-    <message><source>All changes committed</source><translation>全部提交成功</translation></message>
-    <message><source>Some changes committed</source><translation>部分提交成功</translation></message>
-    <message><source>No changes could be committed</source><translation>提交失败，未能提交任何更改</translation></message>
-    <message><source>No changes to commit</source><translation>没有需要提交的更改</translation></message>
+    <message><source>All operations succeeded</source><translation>全部操作成功</translation></message>
+    <message><source>Some operations succeeded</source><translation>部分操作成功</translation></message>
+    <message><source>No operations succeeded</source><translation>没有操作成功</translation></message>
+    <message><source>No targets to process</source><translation>没有需要处理的目标</translation></message>
     <message><source>Commit interrupted</source><translation>提交已中断</translation></message>
     <message><source>%1 items were not processed.</source><translation>%1 项未处理。</translation></message>
     <message><source>%1 registry operation(s) failed.</source><translation>%1 项注册表操作失败。</translation></message>
@@ -1589,14 +1506,14 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>The file staging draft changed after this plan was opened. Review a new plan.</source><translation>打开此计划后，文件暂存草稿发生了变化。请重新查看计划。</translation></message>
     <message><source>The saved file staging list changed after this plan was opened. Refresh and review the changes.</source><translation>打开此计划后，已保存的文件暂存列表发生了变化。请刷新并查看更改。</translation></message>
     <message><source>The saved file staging list does not match the accepted plan.</source><translation>已保存的文件暂存列表与确认的计划不一致。</translation></message>
-    <message><source>Export configuration</source><translation>导出配置</translation></message>
-    <message><source>Save the current theme, language, and HUB visibility to UWF.ini next to this application.</source><translation>将当前主题、语言和 HUB 显示状态保存到程序所在目录的 UWF.ini。</translation></message>
-    <message><source>Configuration saved</source><translation>配置已保存</translation></message>
+    <message><source>Export interface settings</source><translation>导出界面设置</translation></message>
+    <message><source>Save the current theme, language, and overlay widget visibility to UWF.ini beside this application.</source><translation>将当前主题、语言和覆盖层悬浮窗的显示状态保存到程序所在目录的 UWF.ini。</translation></message>
+    <message><source>Interface settings saved</source><translation>界面设置已保存</translation></message>
     <message><source>Saved the current interface settings to:
 %1</source><translation>已将当前界面设置保存到：
 %1</translation></message>
     <message><source>UWF.ini already exists. The existing file was not changed:
-%1</source><translation>UWF.ini 已存在，未修改现有文件：
+%1</source><translation>UWF.ini 已存在，未更改现有文件：
 %1</translation></message>
     <message><source>Could not save UWF.ini:
 %1
@@ -1606,7 +1523,7 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>Desktop</source><translation>桌面</translation></message>
     <message><source>Downloads</source><translation>下载</translation></message>
     <message><source>Documents</source><translation>文档</translation></message>
-    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>文件暂存已中止。请先解决错误，再重试。</translation></message>
+    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>暂存文件提交已中止。请先解决错误，再重试。</translation></message>
     <message><source>No net change for this setting</source><translation>本次导入后，此设置的最终值未变</translation></message>
     <message><source>Final draft %1 → %2</source><translation>草稿最终值：%1 → %2</translation></message>
     <message><source>Final draft %1 → %2 (requested %3)</source><translation>草稿最终值：%1 → %2（请求值为 %3）</translation></message>
@@ -1615,5 +1532,592 @@ Saving will replace its contents.</source><translation>此位置已存在文件�
     <message><source>Updated volume %1 protection draft → %2</source><translation>已更新卷 %1 的保护设置草稿 → %2</translation></message>
     <message><source>Select entries to remove.</source><translation>请选择要移除的条目。</translation></message>
     <message><source>Selected entries cannot currently be restored.</source><translation>当前无法恢复所选条目。</translation></message>
+    <message>
+        <source>Freespace Passthrough</source>
+        <translation>可用空间直通</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay</source>
+        <translation>持久覆盖</translation>
+    </message>
+    <message>
+        <source>Clear persistent data on next startup</source>
+        <translation>下次启动清空持久数据</translation>
+    </message>
+    <message>
+        <source>Read-Only Media mode</source>
+        <translation>只读媒体模式</translation>
+    </message>
+    <message>
+        <source>Uses free disk space for writes, reducing reserved overlay usage; supports RAM (not recommended) and Disk (recommended).</source>
+        <translation>利用磁盘空闲空间存储写入，减少保留覆盖层的占用；支持 RAM（不推荐） 和 Disk（推荐）。</translation>
+    </message>
+    <message>
+        <source>Preserves writes in the Disk overlay across restarts; not available for RAM overlays.</source>
+        <translation>使 Disk 覆盖层中的写入跨重启保留；不适用于 RAM 覆盖层。</translation>
+    </message>
+    <message>
+        <source>Resets the persistent overlay: clears its writes at the next startup, restoring the state when the overlay was enabled</source>
+        <translation>重置持久覆盖：下次启动时清空其中的写入，恢复到启用覆盖层时的状态</translation>
+    </message>
+
+
+    <message>
+        <source>Administrator privileges are required; the overlay configuration is read-only.</source>
+        <translation>需要管理员权限；当前只能查看覆盖层配置。</translation>
+    </message>
+    <message>
+        <source>Configuration editing is temporarily unavailable. Wait for the current operation to finish.</source>
+        <translation>配置编辑暂不可用，请等待当前操作完成。</translation>
+    </message>
+    <message>
+        <source>The overlay configuration could not be read. Refresh before editing.</source>
+        <translation>无法读取覆盖层配置；请刷新后再编辑。</translation>
+    </message>
+    <message>
+        <source>This system does not support clearing persistent data at the next startup.</source>
+        <translation>当前系统不支持此功能，无法安排下次启动清空。</translation>
+    </message>
+    <message>
+        <source>The current clear request is unknown. Refresh the configuration before editing.</source>
+        <translation>无法识别清空请求的当前状态；请刷新配置后再编辑。</translation>
+    </message>
+    <message>
+        <source>Changing this request requires UWF and Disk Persistent Overlay to be active in the current session.</source>
+        <translation>更改此请求要求当前会话已启用 UWF 和 Disk 持久覆盖。</translation>
+    </message>
+    <message>
+        <source>Clearing persistent data at the next startup requires Disk Persistent Overlay. Cancel the clear request or retain Persistent Overlay.</source>
+        <translation>下次启动清空持久数据需要保留 Disk 持久覆盖，请取消清空或保留持久覆盖。</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay requires Disk. Disable Persistent Overlay or select Disk.</source>
+        <translation>持久覆盖仅支持 Disk，请关闭持久覆盖或将覆盖层改为 Disk。</translation>
+    </message>
+    <message>
+        <source>Read-Only Media mode requires RAM. Disable Read-Only Media mode or select RAM.</source>
+        <translation>只读媒体模式仅支持 RAM，请关闭只读媒体模式或将覆盖层改为 RAM。</translation>
+    </message>
+    <message>
+        <source>UWF is enabled in the current session. Disable UWF and restart before changing this setting.</source>
+        <translation>当前会话的 UWF 已启用。请停用 UWF 并重启后，再更改此设置。</translation>
+    </message>
+    <message>
+        <source>The configuration has changed. Close and reopen this dialog before editing.</source>
+        <translation>配置已更新，请关闭并重新打开此对话框后再编辑。</translation>
+    </message>
+    <message>
+        <source>Overlay advanced settings</source>
+        <translation>覆盖层高级设置</translation>
+    </message>
+
+    <message>
+        <source>Current overlay</source>
+        <translation>当前覆盖层</translation>
+    </message>
+    <message>
+        <source>Next overlay</source>
+        <translation>下次覆盖层</translation>
+    </message>
+
+
+
+
+
+    <message>
+        <source>The draft contains incompatible or unavailable overlay settings. Return to editing and correct the overlay configuration.</source>
+        <translation>草稿中的覆盖层设置存在冲突或不可用，请返回编辑并调整覆盖层配置。</translation>
+    </message>
+    <message>
+        <source>A clear is scheduled for the next startup. Cancel the clear request before disabling Persistent Overlay.</source>
+        <translation>已安排下次启动清空；请先取消清空请求，再关闭持久覆盖。</translation>
+    </message>
+    <message>
+        <source>The next session does not retain Disk Persistent Overlay. Retain it before requesting a clear.</source>
+        <translation>下次会话未保留 Disk 持久覆盖；请先保留此配置，再安排清空。</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay is only available for Disk; the next overlay is RAM.</source>
+        <translation>持久覆盖仅支持 Disk；下次会话使用 RAM。</translation>
+    </message>
+    <message>
+        <source>Enabling Read-Only Media mode requires RAM; the next overlay is Disk.</source>
+        <translation>只读媒体模式需要 RAM；下次会话使用 Disk。</translation>
+    </message>
+    <message>
+        <source>The current Persistent Overlay state could not be confirmed. Read the configuration again.</source>
+        <translation>无法确认当前持久覆盖的启用状态；请重新读取配置。</translation>
+    </message>
+    <message>
+        <source>Will take effect at the next startup after applying.</source>
+        <translation>应用后，在下次启动时生效。</translation>
+    </message>
+    <message>
+        <source>Scheduled to clear</source>
+        <translation>已安排清空</translation>
+    </message>
+    <message>
+        <source>Not scheduled to clear</source>
+        <translation>未安排清空</translation>
+    </message>
+    <message>
+        <source>Clears once at the next startup, then preserves data. The current session is not cleared immediately.</source>
+        <translation>仅在下次启动清空一次，之后继续保留数据。当前会话不会立即清空。</translation>
+    </message>
+    <message>
+        <source>Cancels the scheduled clear at the next startup, preserving persistent overlay data.</source>
+        <translation>取消已安排的下次启动清空请求，保留持久覆盖数据。</translation>
+    </message>
+    <message>
+        <source>Reset persistent overlay · One-time request</source>
+        <translation>重置持久覆盖 · 一次性请求</translation>
+    </message>
+    <message>
+        <source>Working…</source>
+        <translation>正在处理…</translation>
+    </message>
+    <message>
+        <source>Please wait for the operation to finish.</source>
+        <translation>请等待操作完成。</translation>
+    </message>
+    <message>
+        <source>%1 · Next session</source>
+        <translation>%1 · 下次会话</translation>
+    </message>
+    <message>
+        <source>Back to settings</source>
+        <translation>返回设置</translation>
+    </message>
+    <message>
+        <source>Change requirements</source>
+        <translation>修改条件</translation>
+    </message>
+    <message>
+        <source>Changed</source>
+        <translation>已更改</translation>
+    </message>
+    <message>
+        <source>Check configuration conflicts</source>
+        <translation>检查配置冲突</translation>
+    </message>
+    <message>
+        <source>Configuration conflict</source>
+        <translation>配置有冲突</translation>
+    </message>
+    <message>
+        <source>Disable requirements</source>
+        <translation>关闭条件</translation>
+    </message>
+    <message>
+        <source>UWF and Disk Persistent Overlay must be active in the current session. Clearing data also requires retaining Disk Persistent Overlay for the next session.</source>
+        <translation>当前会话须已启用 UWF 和 Disk 持久覆盖；清空数据还要求下次会话保留 Disk 持久覆盖。</translation>
+    </message>
+    <message>
+        <source>Enable requirements</source>
+        <translation>启用条件</translation>
+    </message>
+    <message>
+        <source>Feature</source>
+        <translation>功能</translation>
+    </message>
+    <message>
+        <source>Feature details</source>
+        <translation>功能说明</translation>
+    </message>
+    <message>
+        <source>Learn about %1</source>
+        <translation>了解%1</translation>
+    </message>
+    <message>
+        <source>Resolve these configuration conflicts before keeping the draft.</source>
+        <translation>请处理以下配置后，再保留草稿。</translation>
+    </message>
+    <message>
+        <source>Revert</source>
+        <translation>还原</translation>
+    </message>
+    <message>
+        <source>Takes effect</source>
+        <translation>生效时间</translation>
+    </message>
+    <message>
+        <source>This setting cannot be changed right now</source>
+        <translation>当前无法修改此设置</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session, and the next-session overlay must use Disk.</source>
+        <translation>当前会话的 UWF 必须已停用，下次会话的覆盖层须使用 Disk。</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session, and the next-session overlay must use RAM.</source>
+        <translation>当前会话的 UWF 必须已停用，下次会话的覆盖层须使用 RAM。</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session. Cancel any scheduled persistent-data clear before disabling Persistent Overlay.</source>
+        <translation>当前会话的 UWF 必须已停用；若已安排清空持久数据，请先取消清空请求。</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session. Setting only the next session to disabled still requires a restart before editing.</source>
+        <translation>当前会话的 UWF 必须已停用；仅将下次会话设为停用，仍需重启后才能修改。</translation>
+    </message>
+    <message>
+        <source>Usage requirements</source>
+        <translation>使用条件</translation>
+    </message>
+    <message>
+        <source>View details</source>
+        <translation>查看详情</translation>
+    </message>
+    <message>
+        <source>View only</source>
+        <translation>仅供查看</translation>
+    </message>
+    <message>
+        <source>Why %1 cannot be changed</source>
+        <translation>查看%1不可修改的原因</translation>
+    </message>
+    <message>
+        <source>UWF is enabled in the current session, so these overlay settings cannot be changed. Revert the changes, or disable UWF and restart.</source>
+        <translation>当前会话的 UWF 已启用，无法更改这些覆盖层设置。请还原更改，或停用 UWF 并重启。</translation>
+    </message>
+    <message>
+        <source>View change requirements</source>
+        <translation>查看修改条件</translation>
+    </message>
+    <message>
+        <source>No configuration changes were written. You can retry.</source>
+        <translation>未写入任何配置更改，可以重试。</translation>
+    </message>
+    <message>
+        <source>No configuration changes were needed.</source>
+        <translation>无需更改配置。</translation>
+    </message>
+    <message>
+        <source>Use Domain Secret Key persistence for the domain machine account secret ($MACHINE.ACC).</source>
+        <translation>请通过“域密钥持久化”设置管理域计算机账户密钥（$MACHINE.ACC）。</translation>
+    </message>
+    <message>
+        <source>This key cannot be excluded itself. Select one of its subkeys.</source>
+        <translation>此键本身不能加入排除，请选择其子键。</translation>
+    </message>
+    <message>
+        <source>Registry exclusions must specify a nonempty subkey under HKEY_LOCAL_MACHINE (HKLM).</source>
+        <translation>注册表排除项必须指定 HKEY_LOCAL_MACHINE（HKLM）下的非空子键。</translation>
+    </message>
+    <message>
+        <source>This script contains only settings supported by uwfmgr commands. Not included:</source>
+        <translation>此脚本仅包含可由 uwfmgr 命令表达的设置，不包含：</translation>
+    </message>
+    <message>
+        <source>Volume binding</source>
+        <translation>卷绑定方式</translation>
+    </message>
+    <message>
+        <source>Settings without a reliable drive-letter address</source>
+        <translation>无法通过盘符可靠定位的设置</translation>
+    </message>
+    <message>
+        <source>Command script</source>
+        <translation>命令脚本</translation>
+    </message>
+    <message>
+        <source>The configuration matches the next-session target. View or export the supported settings in Command script.</source>
+        <translation>配置与下次会话目标一致。可在“命令脚本”中查看或导出受支持的设置。</translation>
+    </message>
+    <message>
+        <source>Settings with control characters in paths or names</source>
+        <translation>路径或名称含控制字符的设置</translation>
+    </message>
+    <message>
+        <source>Commands that depend on omitted settings</source>
+        <translation>依赖已省略设置的命令</translation>
+    </message>
+    <message>
+        <source>UWF exclusion settings prevent a reliable commit of this target. Remove the conflicting exclusion and restart before committing it.</source>
+        <translation>UWF 排除设置使此目标无法可靠提交。请移除冲突的排除项并重启后再提交。</translation>
+    </message>
+    <message>
+        <source>UWF exclusion settings prevent a reliable commit of the file staging list. Remove the conflicting exclusion and restart before applying this change.</source>
+        <translation>UWF 排除设置使文件暂存列表无法可靠提交。请移除冲突的排除项并重启后再应用此更改。</translation>
+    </message>
+    <message>
+        <source>UWF cannot preserve the exact registry target for this key.</source>
+        <translation>UWF 无法保证操作指向所选注册表键。</translation>
+    </message>
+    <message>
+        <source>Confirm that the saved staging list is empty before removing its registry exclusion.</source>
+        <translation>移除注册表排除项前，确认已保存的文件暂存列表为空。</translation>
+    </message>
+    <message>
+        <source>Pending confirmation</source>
+        <translation>待确认</translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <translation>空</translation>
+    </message>
+    <message>
+        <source>The system volume is not currently protected by UWF; there are no registry changes to commit.</source>
+        <translation>系统卷当前未受 UWF 保护，没有可提交的注册表更改。</translation>
+    </message>
+    <message>
+        <source>Registry changes are already persistent; no UWF commit is required.</source>
+        <translation>注册表更改已直接持久化，无需 UWF 提交。</translation>
+    </message>
+    <message>
+        <source>Registry changes are already persistent; UWF cannot perform this deletion.</source>
+        <translation>注册表更改已直接持久化，UWF 无法执行此删除。</translation>
+    </message>
+    <message><source>UWF exclusion paths must use backslashes.</source><translation>UWF 排除路径必须使用反斜杠。</translation></message>
+    <message><source>File paths cannot contain null characters.</source><translation>文件路径不能包含空字符。</translation></message>
+    <message><source>Enable volume protection in this draft before adding file exclusions.</source><translation>请先在草稿中启用卷保护，再添加文件排除项。</translation></message>
+    <message><source>The exclusion path contains characters that UWF does not support.</source><translation>排除路径包含 UWF 不支持的字符。</translation></message>
+    <message><source>The exclusion path exceeds UWF's length limit.</source><translation>排除路径超过 UWF 的长度限制。</translation></message>
+    <message><source>File and registry commits are unavailable while HORM is active.</source><translation>HORM 生效时，无法提交文件和注册表更改。</translation></message>
+    <message><source>Registry writes are unavailable while HORM is active.</source><translation>HORM 生效时，无法写入注册表。</translation></message>
+    <message><source>Registry writes cannot be persisted while Read-Only Media mode is active.</source><translation>只读媒体模式生效时，无法持久保存注册表写入。</translation></message>
+    <message><source>File and registry commits are unavailable while Read-Only Media mode is active.</source><translation>只读媒体模式生效时，无法提交文件和注册表更改。</translation></message>
+    <message><source>Intercepts physical media writes, including metadata. Exclusions do not bypass protection. Individual file and registry commits are unavailable; Full Commit is a separate global operation.</source><translation>拦截物理媒体写入，包括元数据。排除项不会绕过保护。无法逐项提交文件和注册表更改；Full Commit 是独立的全局操作。</translation></message>
+    <message><source>UWF settings cannot be changed while HORM is active.</source><translation>HORM 生效时，无法更改 UWF 设置。</translation></message>
+    <message><source>Default value · this value only</source><translation>默认值 · 仅此值</translation></message>
+    <message><source>File changes are already persistent; no UWF commit is required.</source><translation>文件更改已持久化，无需执行 UWF 提交。</translation></message>
+    <message><source>Last successful overlay usage observation: %1</source><translation>上次成功观测覆盖层用量：%1</translation></message>
+    <message><source>Observed overlay storage outside the writable size/type range</source><translation>观测到的覆盖层存储配置超出可写入的大小或类型范围</translation></message>
+    <message><source>Overlay (last observed)</source><translation>覆盖层（上次观测）</translation></message>
+    <message><source>Overlay usage refresh failed.
+%1</source><translation>覆盖层用量刷新失败。
+%1</translation></message>
+    <message><source>Overlay usage refresh failed. Showing the last successful observation from %1.
+%2</source><translation>覆盖层用量刷新失败，显示 %1 的上次成功观测。
+%2</translation></message>
+    <message><source>The path could not be resolved to a local volume.</source><translation>无法将此路径解析到本地卷。</translation></message>
+    <message><source>UWF: Enabled (last observed)</source><translation>UWF：已启用（上次观测）</translation></message>
+    <message><source>File changes are already persistent; UWF cannot perform this deletion.</source><translation>文件更改已持久化，UWF 无法执行此删除操作。</translation></message>
+
+    <!-- Overlay maintenance -->
+    <message><source>%1 (%2)</source><translation>%1 (%2)</translation></message>
+    <message><source>%1 GB available</source><translation>%1 GB 可用</translation></message>
+    <message><source>%1 MB</source><translation>%1 MB</translation></message>
+    <message><source>%1 · %2</source><translation>%1 · %2</translation></message>
+
+    <message><source>Administrator privileges are required.</source><translation>需要管理员权限。</translation></message>
+
+
+    <message><source>An operation is in progress. Please wait.</source><translation>正在处理，请稍候。</translation></message>
+    <message><source>Attempts to save all additions, changes and deletions made on every protected volume since this startup. This includes files and system settings; you cannot select only some changes.</source><translation>会尝试将本次启动以来，所有受保护卷上的新增、修改和删除保存到磁盘。范围包括文件、系统设置等全部更改，不能只选其中一部分。</translation></message>
+
+    <message><source>Automatic saving is unavailable in the current mode</source><translation>当前模式下无法自动保存</translation></message>
+    <message><source>Cannot be undone once started</source><translation>开始后不能撤销</translation></message>
+    <message><source>Choose where to store the disk overlay</source><translation>为磁盘覆盖层选择存储位置</translation></message>
+    <message><source>Choose where to store the disk overlay.</source><translation>选择磁盘覆盖层的存放位置。</translation></message>
+    <message><source>Configuration changes are temporarily unavailable.</source><translation>暂时无法修改配置。</translation></message>
+    <message><source>Configured, inactive this session</source><translation>已配置 · 本次不生效</translation></message>
+    <message><source>Configured; takes effect after restarting</source><translation>已配置，重启后生效</translation></message>
+    <message><source>Configured; takes effect after restarting. The overlay from this startup will not be moved to the new location.</source><translation>Swap 存放位置已配置，重启后生效。当前启动的覆盖层不会迁移到新位置。</translation></message>
+    <message><source>Configure…</source><translation>配置…</translation></message>
+    <message><source>Current UWF</source><translation>当前 UWF</translation></message>
+    <message><source>Currently configured storage volume</source><translation>系统已配置的存放位置</translation></message>
+    <message><source>Default behavior</source><translation>默认行为</translation></message>
+    <message><source>Disable HORM and restart before using full volume commit.</source><translation>请先停用 HORM 并重启电脑，再进行完整卷提交。</translation></message>
+    <message><source>Disabled · restart required</source><translation>已停用 · 请重启</translation></message>
+    <message><source>Disabling HORM does not turn off UWF or Read-Only Media mode and does not save changes on protected disks. Restart before checking the available actions.</source><translation>停用 HORM 不会自动关闭 UWF 或只读媒体模式，也不会自动保存受保护磁盘上的改动。请重启后再查看可用操作。</translation></message>
+
+    <message><source>Enable UWF and restart before enabling HORM.</source><translation>请先启用 UWF 并重启电脑，再启用 HORM。</translation></message>
+
+    <message><source>Full volume commit</source><translation>完整卷提交</translation></message>
+    <message><source>Full volume commit mode (enabled until restart)</source><translation>完整卷提交模式（已启用，持续至重启）</translation></message>
+    <message><source>Full volume commit mode is already enabled. Restart before using it again.</source><translation>完整卷提交模式已启用。再次使用前请重启。</translation></message>
+    <message><source>Full volume commit has started. Restart before enabling HORM.</source><translation>本次已开始完整卷提交，请重启后再启用 HORM。</translation></message>
+    <message><source>Full volume commit is available only while Read-Only Media mode is active.</source><translation>仅在当前已启用只读媒体模式时使用。</translation></message>
+    <message><source>Full volume commit mode remains enabled until restart. New changes are saved directly. Individual commits remain unavailable.</source><translation>完整卷提交模式会持续启用至重启。新更改会直接保存，逐项提交仍不可用。</translation></message>
+    <message><source>Full volume commit is not available on this system.</source><translation>当前系统不支持完整卷提交。</translation></message>
+
+    <message><source>HORM is active. UWF settings and individual commits are unavailable. Disable HORM and restart before changing them.</source><translation>HORM 已启用。UWF 设置和逐项提交暂不可用；需要修改时，请先停用 HORM 并重启电脑。</translation></message>
+    <message><source>HORM is disabled. Restart the computer before changing UWF settings.</source><translation>HORM 已停用。请重启电脑后，再调整 UWF 设置。</translation></message>
+    <message><source>HORM is not available on this system.</source><translation>当前系统不支持 HORM。</translation></message>
+    <message><source>HORM requires the current RAM Read-Only Media configuration.</source><translation>HORM 需要当前使用 RAM 只读媒体模式。</translation></message>
+    <message><source>HORM requires the current RAM overlay.</source><translation>HORM 需要当前使用 RAM 覆盖层。</translation></message>
+    <message><source>In Disk mode, the system implementation may enable this option by default; check the current state shown in settings.</source><translation>在磁盘模式下，系统实现可能会默认打开本开关；请以界面显示的当前状态为准。</translation></message>
+    <message><source>Inactive this session</source><translation>本次不生效</translation></message>
+    <message><source>Later changes will also be saved until you restart</source><translation>重启前，后续更改也会保存</translation></message>
+
+    <message><source>Maintenance and recovery</source><translation>维护与恢复</translation></message>
+    <message><source>Make sure this is the state you want to keep before continuing.</source><translation>请先确认当前状态就是你希望长期保留的状态。</translation></message>
+
+    <message><source>Next startup: %1</source><translation>下次启动：%1</translation></message>
+    <message><source>No suitable storage volume is available. Refresh the volume list.</source><translation>没有可用的存放卷，请重新读取磁盘列表。</translation></message>
+    <message><source>Not enabled</source><translation>未启用</translation></message>
+    <message><source>Not selected</source><translation>未选择</translation></message>
+    <message><source>Not supported</source><translation>不支持</translation></message>
+    <message><source>Once started, new changes are written directly to disk until you restart the computer.</source><translation>开始后，新产生的更改会直接写入磁盘，直到你重启电脑。</translation></message>
+    <message><source>Only one storage volume can be used at a time. Choosing a new volume replaces the previous location and sets the next overlay to Disk.</source><translation>存放位置仅支持单卷配置。更改后将替换现有位置，并将下次覆盖层类型设为磁盘。</translation></message>
+    <message><source>Overlay capacity (keep current setting)</source><translation>覆盖层容量（沿用当前设置）</translation></message>
+    <message><source>Overlay configuration</source><translation>覆盖层配置</translation></message>
+
+    <message><source>Processing…</source><translation>正在处理…</translation></message>
+    <message><source>Read state again</source><translation>重新读取状态</translation></message>
+    <message><source>Read the current UWF state first.</source><translation>请先读取当前 UWF 状态。</translation></message>
+
+    <message><source>Read-only media mode does not support individual commits or automatic saving of staged files.</source><translation>只读媒体模式不支持逐项提交，文件暂存也无法自动保存。</translation></message>
+    <message><source>Reading state…</source><translation>正在读取状态…</translation></message>
+    <message><source>Restart and read the current state before enabling HORM again.</source><translation>请重启电脑并重新读取状态后，再启用 HORM。</translation></message>
+    <message><source>Restore the same desktop and running programs at every startup.</source><translation>每次启动，恢复同一份桌面和程序状态。</translation></message>
+    <message><source>Review available commit operations and their requirements.</source><translation>查看可用的提交操作及使用条件。</translation></message>
+    <message><source>Save changes on all protected volumes</source><translation>保存所有受保护卷上的更改</translation></message>
+    <message><source>Save changes on all protected volumes. Review the effects before continuing.</source><translation>保存所有受保护卷的更改，请先查看影响说明。</translation></message>
+
+
+    <message><source>State unknown</source><translation>状态未知</translation></message>
+
+    <message><source>Successfully saved changes can no longer be undone by restarting.</source><translation>成功保存的更改无法再通过重启还原。</translation></message>
+    <message><source>Successfully saved changes will remain</source><translation>成功保存的更改会保留</translation></message>
+    <message><source>The HORM state is unknown. Read the state again before continuing.</source><translation>无法确认 HORM 状态，请先重新读取。</translation></message>
+    <message><source>The HORM state is unknown. Refresh before continuing.</source><translation>无法确认 HORM 状态，请先重新读取。</translation></message>
+    <message><source>The commit or HORM state is unknown. Refresh before continuing.</source><translation>无法确认提交或 HORM 状态，请先重新读取。</translation></message>
+    <message><source>The current UWF state could not be read. Refresh before continuing.</source><translation>无法读取当前 UWF 状态，请重新读取后再继续。</translation></message>
+    <message><source>The current overlay uses RAM Read-Only Media mode</source><translation>当前使用 RAM 只读媒体模式</translation></message>
+    <message><source>The current protection mode could not be read. Refresh the state.</source><translation>无法读取当前保护模式，请重新读取状态。</translation></message>
+    <message><source>The result could not be confirmed</source><translation>未能确认操作结果</translation></message>
+    <message><source>This exclusion is configured but does not bypass protection in the current session.</source><translation>此排除项已配置，但在本次启动期间不会绕过保护。</translation></message>
+    <message><source>This may also change Freespace Passthrough and Persistent Overlay. Review advanced settings before restarting.</source><translation>此操作可能同时更改可用空间直通和持久覆盖层设置。</translation></message>
+    <message><source>UWF protection is active in the current session</source><translation>当前已开启 UWF 保护</translation></message>
+
+    <message><source>%1 (will be replaced)</source><translation>%1（将替换）</translation></message>
+
+    <!-- Unified maintenance drafts -->
+    <message><source>Add full volume commit to the draft?</source><translation>将完整卷提交加入草稿？</translation></message>
+    <message><source>Add to draft</source><translation>加入草稿</translation></message>
+    <message><source>Applies to every protected volume; starts only when this draft is applied.</source><translation>影响所有受保护卷，仅在应用此草稿时开始。</translation></message>
+    <message><source>Applying this draft starts full volume commit. Saved changes cannot be undone by restarting, and new changes are saved until restart.</source><translation>应用此草稿会开始完整卷提交。成功保存的更改无法通过重启还原，重启前的新更改也会直接保存。</translation></message>
+    <message><source>Configure storage location</source><translation>配置存放位置</translation></message>
+    <message><source>Configuring the storage location is not available on this system.</source><translation>当前系统不支持配置存放位置。</translation></message>
+    <message><source>Current: %1</source><translation>当前：%1</translation></message>
+    <message><source>Disable HORM and restart before configuring the storage location.</source><translation>配置存放位置前，请先停用 HORM 并重启。</translation></message>
+    <message><source>Disable saved-state startup?</source><translation>停用休眠一次/恢复许多？</translation></message>
+    <message><source>Draft: %1 · apply required</source><translation>草稿：%1 · 待应用</translation></message>
+    <message><source>Enable saved-state startup?</source><translation>启用休眠一次/恢复许多？</translation></message>
+    <message><source>Full volume commit (pending apply)</source><translation>完整卷提交（待应用）</translation></message>
+    <message><source>Full volume commit is pending. It will start only after you confirm Review and apply.</source><translation>完整卷提交已加入草稿，仅在“预览并应用”中确认后开始。</translation></message>
+    <message><source>Hibernate once / resume many</source><translation>休眠一次/恢复许多</translation></message>
+    <message><source>Not started</source><translation>尚未发起</translation></message>
+    <message><source>Remove full volume commit from pending changes.</source><translation>从待应用更改中移除完整卷提交。</translation></message>
+    <message><source>Save draft</source><translation>保存草稿</translation></message>
+
+    <message><source>Will start when applied</source><translation>应用时开始</translation></message>
+    <message><source>A mounted fixed disk failed the protection check. Review the listed disks before enabling HORM.</source><translation>已挂载的固定磁盘未通过保护检查，请先查看列出的磁盘再启用 HORM。</translation></message>
+    <message><source>Checks UWF-eligible fixed disks that remain mounted. Unmounted partitions may be skipped.</source><translation>检查仍挂载且 UWF 可保护的固定磁盘；已卸载的分区允许跳过。</translation></message>
+    <message><source>HORM prerequisites could not be verified. Read the state again before continuing.</source><translation>无法确认 HORM 启用条件，请重新读取状态后再继续。</translation></message>
+    <message><source>Mounted fixed-disk protection check</source><translation>本机磁盘保护检查</translation></message>
+    <message><source>Not using a Disk overlay</source><translation>未使用磁盘覆盖层</translation></message>
+    <message><source>Selected storage volume</source><translation>本次选择的存放卷</translation></message>
+    <message><source>System drive default (%1)</source><translation>系统盘默认位置（%1）</translation></message>
+
+    <message><source>The protection state changed during this startup. Restart before enabling HORM.</source><translation>本次启动期间保护状态已变更，请重启后再启用 HORM。</translation></message>
+    <message><source>Unable to read</source><translation>无法读取</translation></message>
+
+    <message><source>Choose the disk used to store temporary changes. Takes effect at the next startup.</source><translation>选择用于存放临时改动的磁盘。配置在下次启动时生效。</translation></message>
+    <message><source>Disable UWF and restart before configuring the storage location.</source><translation>配置存放位置前，须停用 UWF 并重新启动。</translation></message>
+    <message><source>Met</source><translation>已满足</translation></message>
+    <message><source>Not met</source><translation>尚未满足</translation></message>
+    <message><source>Partition</source><translation>分区</translation></message>
+
+
+    <message><source>Protect all</source><translation>保护全部</translation></message>
+    <message><source>Applied</source><translation>已应用</translation></message>
+    <message><source>Not applied</source><translation>未应用</translation></message>
+    <message><source>Could not confirm</source><translation>无法确认</translation></message>
+    <message><source>Hibernation is not supported</source><translation>不支持休眠</translation></message>
+    <message><source>Hibernation is not enabled</source><translation>休眠未启用</translation></message>
+    <message><source>Fast startup only</source><translation>仅支持快速启动</translation></message>
+    <message><source>Bulk volume protection is not available on this system.</source><translation>此系统不支持批量卷保护。</translation></message>
+    <message><source>Disable HORM and restart before changing volume protection.</source><translation>更改卷保护前，须停用 HORM 并重新启动。</translation></message>
+    <message><source>Setup and operation</source><translation>配置与操作流程</translation></message>
+
+    <message><source>1. Prepare the configuration</source><translation>1. 配置下次启动</translation></message>
+    <message><source>With UWF currently disabled, configure RAM overlay, read-only media mode, volume protection, and UWF enablement for the next startup. Apply the draft. Prepare S4 hibernation with a present, full hibernation file.</source><translation>当前 UWF 已停用时，配置下次启动使用 RAM 覆盖层、只读媒体模式和卷保护，并启用 UWF，统一应用上述设置。同时启用系统 S4 休眠并配置完整休眠文件。</translation></message>
+    <message><source>Restart, then confirm that Current shows UWF enabled, RAM overlay, read-only media mode, and protection for all UWF-eligible mounted fixed volumes. Confirm that system hibernation is available.</source><translation>重新启动后，确认当前会话已启用 UWF、使用 RAM 覆盖层和只读媒体模式，且 UWF 可保护、已挂载的固定磁盘卷均已受保护。确认系统休眠可用。</translation></message>
+    <message><source>2. Restart and verify</source><translation>2. 重新启动并验证</translation></message>
+    <message><source>3. Enable HORM and hibernate</source><translation>3. 启用 HORM 并保存休眠状态</translation></message>
+    <message><source>Add Enable HORM to the draft, then use Review and apply. Applying the draft performs the HORM enable operation, equivalent to:</source><translation>将“启用 HORM”加入草稿并统一应用。此操作等效于：</translation></message>
+    <message><source>After enablement succeeds, prepare the desktop and applications, then hibernate once to save the baseline state:</source><translation>启用成功后，配置桌面与应用程序的运行状态，执行一次休眠以保存基准状态：</translation></message>
+    <message><source>HORM usage</source><translation>HORM 使用说明</translation></message>
+    <message><source>Volume protection</source><translation>卷保护</translation></message>
+    <message><source>Configure protection for all volumes in the next session.</source><translation>统一配置所有卷的下次保护状态。</translation></message>
+    <message><source>Unprotect all</source><translation>取消全部保护</translation></message>
+    <message><source>Next startup: all volumes protected</source><translation>下次启动：全部受保护</translation></message>
+    <message><source>Next startup: all volumes unprotected</source><translation>下次启动：全部未保护</translation></message>
+    <message><source>Next startup: individual volume settings</source><translation>下次启动：按卷配置</translation></message>
+    <message><source>System hibernation is available</source><translation>系统休眠可用</translation></message>
+    <message><source>Usage guide</source><translation>使用说明</translation></message>
+
+    <message><source>Protection for all volumes is pending apply</source><translation>全部保护待应用</translation></message>
+    <message><source>Volume protection takes effect after restarting</source><translation>卷保护在重新启动后生效</translation></message>
+
+    <message><source>Unprotect all and enabling HORM cannot be applied together.</source><translation>取消全部保护与启用 HORM 无法同时应用。</translation></message>
+    <message><source>Batch volume protection is not supported.</source><translation>不支持批量卷保护。</translation></message>
+
+
+
+    <message><source>Storage volume:</source><translation>存放卷：</translation></message>
+    <message><source>Exclusions do not bypass protection during this startup. Individual commits and automatic file staging commits are unavailable. Full volume commit affects all protected volumes; review its description before continuing.</source><translation>排除项在本次启动期间不起作用，逐项提交与文件暂存自动保存不可用。完整卷提交会影响所有受保护卷，请先查看说明。</translation></message>
+    <message><source>Resume the same hibernation state repeatedly</source><translation>重复恢复同一休眠状态</translation></message>
+    <message><source>Remove full volume commit draft</source><translation>移除完整卷提交草稿</translation></message>
+    <message><source>Read-Only Media mode is active</source><translation>只读媒体模式已启用</translation></message>
+    <message><source>%1 → %2</source><translation>%1 → %2</translation></message>
+    <message><source>A configured storage marker could not be read.</source><translation>无法读取已配置的存储标记。</translation></message>
+    <message><source>File staging conflicts with a file exclusion:
+%1
+%2</source><translation>文件暂存与文件排除项冲突：
+%1
+%2</translation></message>
+    <message><source>Full hibernation is not available on this computer</source><translation>此计算机无法使用完整休眠</translation></message>
+    <message><source>More than one storage volume has a nonzero marker.</source><translation>多个存储卷的标记为非零值。</translation></message>
+    <message><source>The Disk overlay type could not be established.</source><translation>无法确定覆盖层是否为磁盘类型。</translation></message>
+    <message><source>The configured storage location could not be read.</source><translation>无法读取已配置的存储位置。</translation></message>
+    <message><source>The system drive could not be identified.</source><translation>无法识别系统驱动器。</translation></message>
+    <message><source>Direct restart skips staged file commits.</source><translation>直接重启会跳过暂存文件提交。</translation></message>
+    <message><source>Direct shutdown skips staged file commits.</source><translation>直接关机会跳过暂存文件提交。</translation></message>
+    <message><source>Staged files will not be committed. Uncommitted changes may be lost after restart.</source><translation>将跳过暂存文件提交。未提交的更改可能在重启后丢失。</translation></message>
+    <message><source>Staged files will not be committed. Uncommitted changes may be lost after shutdown.</source><translation>将跳过暂存文件提交。未提交的更改可能在关机后丢失。</translation></message>
+    <message><source>Commits staged files before normal shutdown or restart.</source><translation>在正常关机或重启前提交暂存文件。</translation></message>
+    <message><source>Full volume commit and enabling HORM cannot be applied together.</source><translation>完整卷提交与启用 HORM 无法同时应用。</translation></message>
+    <message><source>Configuring the storage location and enabling HORM cannot be applied together.</source><translation>配置存放位置与启用 HORM 无法同时应用。</translation></message>
+    <message><source>Configuring the storage location and full volume commit require different current UWF modes.</source><translation>配置存放位置与完整卷提交对当前 UWF 模式的要求不同。</translation></message>
+    <message><source>Choose a storage volume before applying.</source><translation>应用前请选择存放卷。</translation></message>
+    <message><source>Configuring a disk storage location conflicts with a requested RAM overlay.</source><translation>配置磁盘存放位置与请求的 RAM 覆盖层冲突。</translation></message>
+    <message><source>Apply the filter change and restart before requesting full volume commit.</source><translation>请求完整卷提交前，请先应用筛选器更改并重启。</translation></message>
+    <message><source>Canceled</source><translation>已取消</translation></message>
+    <message><source>The reviewed storage volume is no longer available. Return to editing and choose another volume.</source><translation>已审查的存放卷已不可用。请返回编辑并选择其他卷。</translation></message>
+    <message><source>This volume cannot be registered with UWF because its storage bus is not supported.</source><translation>此卷的存储总线不受支持，无法向 UWF 注册。</translation></message>
+    <message><source>Physical volume support could not be confirmed. Refresh before enabling protection.</source><translation>无法确认物理卷是否受支持。请刷新后再启用保护。</translation></message>
+    <message><source>Paused</source><translation>暂停</translation></message>
+    <message><source>Partially paused</source><translation>部分暂停</translation></message>
+    <message><source>Persistent overlay data will be retained at the next startup. Automatic commits are paused.</source><translation>当前使用持久化覆盖层，下次启动保留数据，已暂停自动提交。</translation></message>
+
+    <message><source>Paused entries: %1 · Paused files: %2</source><translation>暂停的条目：%1 · 暂停的文件：%2</translation></message>
+    <message><source>Read-only ROM</source><translation>只读 ROM</translation></message>
+
+    <message><source>%1 changes · %2 commands</source><translation>%1 项变更 · %2 条命令</translation></message>
+    <message><source>%1 file system: file exclusions and per-file commit are not supported.</source><translation>%1 文件系统不支持文件排除和单文件提交。</translation></message>
+    <message><source>Applying changes</source><translation>正在应用更改</translation></message>
+    <message><source>Automatic commits paused</source><translation>自动提交已暂停</translation></message>
+    <message><source>Automatic file commits are paused until restart after a HORM mode change.</source><translation>HORM 模式已变更，重启前暂停自动提交。</translation></message>
+    <message><source>Automatic file commits are unavailable after FullCommit.</source><translation>整卷提交后不再执行单文件自动提交。</translation></message>
+    <message><source>Automatic file commits are unavailable while HORM is active.</source><translation>HORM 生效期间不支持自动提交。</translation></message>
+    <message><source>Automatic staged-file commits are paused for this restart.</source><translation>本次重启暂停自动提交暂存文件。</translation></message>
+    <message><source>Automatic staged-file commits are paused for this shutdown.</source><translation>本次关机暂停自动提交暂存文件。</translation></message>
+    <message><source>Configuration persistence could not be confirmed. Refresh the system state before changing this setting.</source><translation>无法确认配置能否持久保存。请刷新系统状态后再修改。</translation></message>
+    <message><source>Elapsed: %1 s</source><translation>已用时 %1 秒</translation></message>
+    <message><source>Only eligible staged files will be committed.</source><translation>仅提交符合条件的暂存文件。</translation></message>
+    <message><source>Read-only ROM cannot persist ordinary UWF settings on the protected system volume. Disable UWF and restart before changing them.</source><translation>只读 ROM 无法在受保护的系统卷上持久保存普通 UWF 配置。请停用 UWF 并重启后修改。</translation></message>
+    <message><source>Skipped staged files are not committed by this operation.</source><translation>本次操作不提交已跳过的暂存文件。</translation></message>
+    <message><source>Staged files are already on unprotected storage. No automatic commit is needed.</source><translation>暂存文件位于未受保护的存储上，无需自动提交。</translation></message>
+    <message><source>Threshold changes require a registry commit, which is unavailable in read-only ROM.</source><translation>阈值修改需要提交注册表，只读 ROM 下不可用。</translation></message>
+    <message><source>Waiting for Windows to finish. This may take a while.</source><translation>正在等待 Windows 完成操作，请稍候。</translation></message>
+
+    <message><source>HORM is disabled. Automatic staged-file commits are paused until restart. Manual operations follow the current UWF capabilities.</source><translation>HORM 已停用，重启前暂停自动提交暂存文件。手动操作按当前 UWF 能力开放。</translation></message>
+    <message><source>This configuration snapshot includes settings that require UWF disabled in the current session. Disable UWF and restart before running it.</source><translation>此配置快照包含要求当前会话停用 UWF 的设置。请先停用 UWF 并重启，再运行此快照。</translation></message>
+    <message><source>Current-session actions (HORM, FullCommit, and persistent overlay reset; export them from Pending changes)</source><translation>当前会话操作（HORM、FullCommit 和持久覆盖层重置；请从“待应用更改”导出）</translation></message>
+    <message><source>Bulk unprotection requires a confirmed complete next-session volume scope.</source><translation>批量取消保护需要确认完整的下次会话卷范围。</translation></message>
 </context>
 </TS>

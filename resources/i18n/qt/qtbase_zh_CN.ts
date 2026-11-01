@@ -10,19 +10,19 @@
         <message>
             <source>&amp;Step up</source>
             <translatorcomment>这是数值框的加减按钮</translatorcomment>
-            <translation>升高(&amp;S)</translation>
+            <translation>增大(&amp;S)</translation>
         </message>
         <message>
             <source>Step &amp;down</source>
             <translatorcomment>这是数值框的加减按钮</translatorcomment>
-            <translation>降低(&amp;D)</translation>
+            <translation>减小(&amp;D)</translation>
         </message>
     </context>
     <context>
         <name>QLineEdit</name>
         <message>
             <source>&amp;Undo</source>
-            <translation>撤消(&amp;U)</translation>
+            <translation>撤销(&amp;U)</translation>
         </message>
         <message>
             <source>&amp;Redo</source>
@@ -61,15 +61,15 @@
         </message>
         <message>
             <source>ZWJ Zero width joiner</source>
-            <translation>ZWJ 零宽连字</translation>
+            <translation>ZWJ 零宽连接符</translation>
         </message>
         <message>
             <source>ZWNJ Zero width non-joiner</source>
-            <translation>ZWNJ 零宽不连字</translation>
+            <translation>ZWNJ 零宽非连接符</translation>
         </message>
         <message>
             <source>ZWSP Zero width space</source>
-            <translation>ZWSP 零宽度空格</translation>
+            <translation>ZWSP 零宽空格</translation>
         </message>
         <message>
             <source>LRE Start of left-to-right embedding</source>
@@ -116,7 +116,7 @@
         <name>QWidgetTextControl</name>
         <message>
             <source>&amp;Undo</source>
-            <translation>撤消(&amp;U)</translation>
+            <translation>撤销(&amp;U)</translation>
         </message>
         <message>
             <source>&amp;Redo</source>

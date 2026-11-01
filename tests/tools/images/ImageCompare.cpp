@@ -12,6 +12,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "foundation/text/ObjectNameComparison.h"
+
 namespace uwf::test::tools {
 namespace {
 
@@ -67,7 +69,7 @@ QJsonObject compareImageDirectories(const QString& reference, const QString& act
   const QDir referenceDirectory(reference);
   const QDir actualDirectory(actual);
   if (!referenceDirectory.exists() || !actualDirectory.exists()) throw std::runtime_error("Both capture directories must exist.");
-  if (QFileInfo(reference).canonicalFilePath().compare(QFileInfo(actual).canonicalFilePath(), Qt::CaseInsensitive) == 0)
+  if (compareObjectNames(QFileInfo(reference).canonicalFilePath().toStdU16String(), QFileInfo(actual).canonicalFilePath().toStdU16String()) == 0)
     throw std::runtime_error("Reference and actual directories must differ.");
   if (expectedCount < 0) throw std::runtime_error("Expected image count cannot be negative.");
   const auto referenceNames = imageNames(referenceDirectory);

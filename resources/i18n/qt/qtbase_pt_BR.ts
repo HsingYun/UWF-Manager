@@ -134,7 +134,7 @@
         </message>
         <message>
             <source>FSI First strong isolate</source>
-            <translation>FSI Isolado Forte Primeiro</translation>
+            <translation>FSI Isolamento conforme o primeiro caractere forte</translation>
         </message>
         <message>
             <source>PDI Pop directional isolate</source>

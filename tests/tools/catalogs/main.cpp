@@ -11,7 +11,7 @@
 #include <utility>
 
 #include "CatalogCheck.h"
-#include "app/settings/UiPreferences.h"
+#include "application/settings/UiPreferences.h"
 
 int main(int argc, char** argv) {
   QCoreApplication app(argc, argv);
@@ -36,9 +36,10 @@ int main(int argc, char** argv) {
     if (parser.isSet(QStringLiteral("lupdate"))) {
       extracted = temporary.filePath(QStringLiteral("source.ts"));
       QProcess process;
-      process.start(parser.value(QStringLiteral("lupdate")),
-                    {root.filePath(QStringLiteral("main.cpp")), root.filePath(QStringLiteral("src")), QStringLiteral("-no-obsolete"),
-                     QStringLiteral("-locations"), QStringLiteral("none"), QStringLiteral("-ts"), extracted});
+      process.start(
+          parser.value(QStringLiteral("lupdate")),
+          {QStringLiteral("-I"), root.filePath(QStringLiteral("src")), root.filePath(QStringLiteral("main.cpp")), root.filePath(QStringLiteral("src")),
+           QStringLiteral("-no-obsolete"), QStringLiteral("-locations"), QStringLiteral("none"), QStringLiteral("-ts"), extracted});
       if (!process.waitForFinished(120000) || process.exitStatus() != QProcess::NormalExit || process.exitCode() != 0)
         throw std::runtime_error((QStringLiteral("lupdate failed: ") + QString::fromUtf8(process.readAllStandardError())).toStdString());
     }

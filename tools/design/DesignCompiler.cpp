@@ -9,9 +9,17 @@
 #include <QSaveFile>
 #include <QTextStream>
 #include <QUrl>
-#include <algorithm>
 
 namespace {
+bool writeIfChanged(const QString& path, const QByteArray& bytes) {
+  {
+    QFile current(path);
+    if (current.open(QIODevice::ReadOnly) && current.readAll() == bytes) return true;
+  }
+  if (!QDir().mkpath(QFileInfo(path).absolutePath())) return false;
+  QSaveFile output(path);
+  return output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size() && output.commit();
+}
 QString identifier(const QString& name) {
   QString result;
   bool capitalize = true;
@@ -24,14 +32,6 @@ QString identifier(const QString& name) {
     capitalize = false;
   }
   return result;
-}
-bool write(const QString& path, const QByteArray& bytes) {
-  if (!QDir().mkpath(QFileInfo(path).absolutePath())) return false;
-  QFile previous(path);
-  if (previous.open(QIODevice::ReadOnly) && previous.readAll() == bytes) return true;
-  previous.close();
-  QSaveFile output(path);
-  return output.open(QIODevice::WriteOnly) && output.write(bytes) == bytes.size() && output.commit();
 }
 }  // namespace
 int main(int argc, char** argv) {
@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
   header += QStringLiteral("}\n");
   auto webDesign = root;
   QJsonObject scrollbarImages;
-  QDir resources(QFileInfo(input).absoluteDir());
+  QDir resources = QFileInfo(args[1]).absoluteDir();
   resources.cdUp();
   for (const auto& theme : {QStringLiteral("light"), QStringLiteral("dark")}) {
     QJsonObject images;
@@ -118,7 +118,7 @@ int main(int argc, char** argv) {
   browser +=
       R"JS((() => { const s = document.createElement("style"); const metrics = Object.entries(UWF_DESIGN.metrics).map(([name, value]) => `--${name.replace(/Ms$/, "").replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}: ${value}${name.endsWith("Ms") ? "ms" : "px"};`).join(" "); s.textContent = `:root { ${metrics} }\n` + Object.entries(UWF_DESIGN.colors).map(([theme, colors]) => `[data-theme="${theme}"] { ${Object.entries(colors).map(([name, value]) => `--${name}: ${value};`).join(" ")} ${Object.entries(UWF_DESIGN.scrollbarImages[theme]).map(([name, value]) => `--${name}: url("${value}");`).join(" ")} }`).join("\n"); document.head.append(s); })();
 )JS";
-  if (!write(args[2], header.toUtf8()) || !write(args[3], browser)) {
+  if (!writeIfChanged(args[2], header.toUtf8()) || !writeIfChanged(args[3], browser)) {
     QTextStream(stderr) << "Cannot write generated design files\n";
     return 1;
   }

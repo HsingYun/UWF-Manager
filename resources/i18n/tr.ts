@@ -10,6 +10,7 @@
     <message><source>disable</source><translation>devre dışı bırak</translation></message>
     <message><source>Enabled</source><translation>Etkin</translation></message>
     <message><source>Disabled</source><translation>Devre dışı</translation></message>
+    <message><source>Disabled</source><comment>service startup type</comment><translation>Devre dışı</translation></message>
     <message><source>OK</source><translation>Tamam</translation></message>
     <message><source>Cancel</source><translation>İptal</translation></message>
     <message><source>Close</source><translation>Kapat</translation></message>
@@ -27,69 +28,68 @@
     <message><source>Drive letter</source><translation>Sürücü harfi</translation></message>
     <message><source>Volume ID</source><translation>Birim kimliği</translation></message>
     <message><source>Protection state of this volume in the current session (read-only).</source><translation>Bu birimin geçerli oturumdaki koruma durumu (salt okunur).</translation></message>
-    <message><source>Protect this volume in the next session. Writes to this volume are redirected to the overlay and discarded on reboot.</source><translation>Sonraki oturumda bu birimi korur. Yazma işlemleri yer paylaşımına yönlendirilir ve yeniden başlatmada silinir.</translation></message>
+    <message><source>Protect this volume in the next session. Writes to protected paths are redirected to the overlay; retention across restarts depends on the overlay settings.</source><translation>Bu birimi sonraki oturumda koru. Korunan yollara yapılan yazmalar kaplamaya yönlendirilir; yeniden başlatmalar arasında verilerin korunması kaplama ayarlarına bağlıdır.</translation></message>
     <message><source>Current session</source><translation>Geçerli oturum</translation></message>
     <message><source>Next session</source><translation>Sonraki oturum</translation></message>
     <message><source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source><translation>Birimi tanımlama yöntemi. Sürücü harfi daha basittir; ancak disk ekleme veya çıkarma sonrası harf değişirse bağ kopar. Birim kimliği sabit kalır.</translation></message>
     <message><source>This volume is not supported by UWF: </source><translation>UWF bu birimi desteklemiyor: </translation></message>
     <message><source>Global settings</source><translation>Genel ayarlar</translation></message>
     <message><source>UWF filter state in the current session (read-only).</source><translation>Geçerli oturumdaki UWF filtre durumu (salt okunur).</translation></message>
-    <message><source>Enable the UWF filter in the next session. Writes to protected volumes are redirected to the overlay and discarded on reboot.</source><translation>Sonraki oturumda UWF’yi etkinleştirir. Korunan birimlere yazmalar yer paylaşımına yönlendirilir ve yeniden başlatmada silinir.</translation></message>
-    <message><source>Overlay type and maximum size can only be changed while the filter is disabled:
-1. Disable the filter using the switch above.
-2. Reboot (the filter will be off after reboot).
-3. Change this setting.</source><translation>Tür ve en büyük boyutu değiştirmek için:
-1. Yukarıdan filtreyi devre dışı bırakın.
-2. Filtrenin kapanması için yeniden başlatın.
-3. Ayarı değiştirin.</translation></message>
-    <message><source>Overlay storage location. RAM is faster but consumes memory; Disk uses the system drive and offers more capacity. Both are discarded on reboot.</source><translation>Yer paylaşımı konumu: RAM hızlıdır ancak bellek kullanır; Disk sistem sürücüsünü kullanır ve daha fazla kapasite sunar. İkisi de yeniden başlatmada silinir.</translation></message>
+    <message><source>Enable UWF in the next session. Writes to protected paths are redirected to the overlay; retention across restarts depends on the overlay settings.</source><translation>UWF'yi sonraki oturumda etkinleştir. Korunan yollara yapılan yazmalar kaplamaya yönlendirilir; yeniden başlatmalar arasında verilerin korunması kaplama ayarlarına bağlıdır.</translation></message>
+    <message><source>To change the overlay type or maximum capacity:
+1. Disable UWF.
+2. Restart the device.
+3. Change this setting.</source><translation>Kaplama türünü veya en yüksek kapasitesini değiştirmek için:
+1. UWF'yi devre dışı bırakın.
+2. Cihazı yeniden başlatın.
+3. Bu ayarı değiştirin.</translation></message>
+    <message><source>RAM uses system memory. Disk uses the system drive and supports larger overlays. Persistent Overlay can retain Disk overlay data across restarts.</source><translation>RAM sistem belleğini kullanır. Disk sistem sürücüsünü kullanır ve daha büyük kaplamaları destekler. Kalıcı kaplama, Disk kaplama verilerini yeniden başlatmalar arasında koruyabilir.</translation></message>
     <message><source>Type</source><translation>Tür</translation></message>
-    <message><source>Maximum overlay capacity. In RAM mode, capped by total system memory. Disk mode requires at least 1024 MB and enough free space on the system volume.</source><translation>En büyük yer paylaşımı kapasitesi. RAM toplam bellekle sınırlıdır. Disk en az 1024 MB ve sistem biriminde yeterli boş alan gerektirir.</translation></message>
-    <message><source>Maximum size</source><translation>En büyük boyut</translation></message>
-    <message><source>Maximum size · RAM %1</source><translation>En büyük boyut · RAM %1</translation></message>
+    <message><source>RAM overlay capacity is limited by system memory. A Disk overlay requires at least 1024 MB and sufficient free space on the system drive.</source><translation>RAM kaplamasının kapasitesi sistem belleğiyle sınırlıdır. Disk kaplaması en az 1024 MB ve sistem sürücüsünde yeterli boş alan gerektirir.</translation></message>
+    <message><source>Maximum capacity</source><translation>En yüksek kapasite</translation></message>
+    <message><source>Maximum capacity · RAM %1</source><translation>En yüksek kapasite · RAM %1</translation></message>
     <message><source>Warning threshold</source><translation>Uyarı eşiği</translation></message>
     <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be lower than the critical threshold. Set to 0 to disable only the warning event.</source><translation>Katman kullanımı bu değere ulaştığında olay günlüğüne uyarı düzeyinde bir bildirim kaydeder. Her iki olay da etkinse bu değer kritik eşikten düşük olmalıdır. 0 değeri yalnızca uyarı olayını devre dışı bırakır.</translation></message>
     <message><source>Critical threshold</source><translation>Kritik eşik</translation></message>
     <message><source>Triggers a critical-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be higher than the warning threshold. Set to 0 to disable only the critical event.</source><translation>Katman kullanımı bu değere ulaştığında olay günlüğüne kritik düzeyde bir bildirim kaydeder. Her iki olay da etkinse bu değer uyarı eşiğinden yüksek olmalıdır. 0 değeri yalnızca kritik olayı devre dışı bırakır.</translation></message>
-    <message><source>Overlay</source><translation>Yer paylaşımı</translation></message>
+    <message><source>Overlay</source><translation>Kaplama</translation></message>
     <message><source>Unsupported drive type (only fixed local disks are supported).</source><translation>Desteklenmeyen sürücü türü (yalnızca yerel sabit diskler).</translation></message>
     <message><source>Volume capacity exceeds the UWF limit of 16 TiB for a single protected volume.</source><translation>Birim, UWF’nin korunan birim başına 16 TiB sınırını aşıyor.</translation></message>
-    <message><source>%1 file system: this volume can be protected, but file exclusions and per-file commit are not supported.</source><translation>%1: birim korunabilir ancak dosya dışlamaları ve dosya bazında kalıcı kayıt desteklenmez.</translation></message>
-    <message><source>Failed to read volume information.</source><translation>Başarısız: Birim bilgilerini okuma.</translation></message>
+
     <message><source>%1 free / %2</source><translation>%1 boş / %2</translation></message>
     <message><source>Commit</source><translation>Kalıcı kaydet</translation></message>
-    <message><source>Commit overlay changes to disk / registry. This action cannot be undone.</source><translation>Bu dosyanın yer paylaşımı değişikliklerini diske kalıcı kaydet / Kayıt defteri değişikliklerini kalıcı kaydet. Bu işlem geri alınamaz.</translation></message>
+    <message><source>Commit changes from the overlay to disk or the registry. This cannot be undone.</source><translation>Kaplamadaki değişiklikleri diske veya kayıt defterine kalıcı olarak kaydet. Bu işlem geri alınamaz.</translation></message>
     <message><source>Commit file changes…</source><translation>Dosya değişikliklerini kalıcı kaydet…</translation></message>
-    <message><source>Pick a file and commit its overlay changes to disk.</source><translation>Diske kalıcı kaydedilecek dosyayı seç. Bu dosyanın yer paylaşımı değişikliklerini diske kalıcı kaydet.</translation></message>
+    <message><source>Pick a file and commit its overlay changes to disk.</source><translation>Bir dosya seçip kaplamadaki değişikliklerini diske kalıcı kaydedin.</translation></message>
     <message><source>Commit folder changes…</source><translation>Klasör değişikliklerini kalıcı kaydet…</translation></message>
-    <message><source>Pick a folder and commit overlay changes for every file inside it to disk.</source><translation>Diske kalıcı kaydedilecek klasörü seç. Bu klasörün yer paylaşımı değişikliklerini diske kalıcı kaydet. Tüm alt klasörler dahildir.</translation></message>
+    <message><source>Pick a folder and commit overlay changes for every file inside it to disk.</source><translation>Bir klasör seçip içindeki her dosyanın kaplama değişikliklerini diske kalıcı kaydedin.</translation></message>
     <message><source>Delete and commit file…</source><translation>Dosyayı sil ve silmeyi diske kalıcı kaydet…</translation></message>
-    <message><source>Pick a file to delete, and commit the deletion to disk.</source><translation>Silinmesi kalıcı kaydedilecek dosyayı seç. Dosyayı sil ve silmeyi diske kalıcı kaydet.</translation></message>
+    <message><source>Pick a file to delete, and commit the deletion to disk.</source><translation>Silinecek dosyayı seçip silme işlemini diske kalıcı kaydedin.</translation></message>
     <message><source>Delete and commit folder…</source><translation>Klasörü ve içeriğini sil, silmeleri diske kalıcı kaydet…</translation></message>
-    <message><source>Pick a folder to delete (recursively, with everything inside it) and commit the deletions to disk.</source><translation>Silinmesi kalıcı kaydedilecek klasörü seç. Klasörü ve içeriğini sil, silmeleri diske kalıcı kaydet. Tüm alt klasörler dahildir.</translation></message>
+    <message><source>Select a folder, recursively delete it and all its contents, and commit the deletions to disk.</source><translation>Tüm içeriği ve alt klasörleriyle silinecek bir klasör seçip silme işlemlerini diske kalıcı kaydedin.</translation></message>
     <message><source>Commit registry changes…</source><translation>Kayıt defteri değişikliklerini kalıcı kaydet…</translation></message>
-    <message><source>Enter a registry key (and optional value name) and commit changes to the registry. Leaving the value name empty commits every value under the key and all its subkeys (recursively).</source><translation>Anahtarı ve isteğe bağlı değer adını girin. Değer adı boşsa anahtarın ve tüm alt anahtarlarının bütün değerleri kalıcı kaydedilir.</translation></message>
+    <message><source>Enter a registry key (and optional value name) and commit changes to the registry. Leaving the value name empty commits every value under the key and all its subkeys (recursively).</source><translation>Bir kayıt defteri anahtarı ve isteğe bağlı değer adı girip değişiklikleri kayıt defterine kalıcı kaydedin. Değer adı boşsa anahtarın ve tüm alt anahtarlarının bütün değerleri kalıcı kaydedilir.</translation></message>
     <message><source>Delete and commit registry…</source><translation>Kayıt defteri silmesini kalıcı kaydet…</translation></message>
-    <message><source>Enter a registry key (and optional value name) to delete, and commit the deletion to the registry. Leaving the value name empty deletes the whole subtree (the key plus all its values and subkeys, recursively).</source><translation>Silinecek anahtarı ve isteğe bağlı değer adını girin. Ad boşsa anahtar, tüm değerleri ve alt anahtarları silinir ve silmeler kalıcı kaydedilir.</translation></message>
+    <message><source>Enter a registry key and an optional value name. Leave the value name empty to delete the key and all its subkeys and values, then commit the deletions.</source><translation>Bir kayıt defteri anahtarı ve isteğe bağlı bir değer adı girin. Anahtarı tüm alt anahtar ve değerleriyle silip silme işlemlerini kalıcı kaydetmek için değer adını boş bırakın.</translation></message>
     <message><source>File exclusions</source><translation>Dosya dışlamaları</translation></message>
     <message><source>Files and folders on this volume excluded from UWF protection. Double-click an entry to copy its path.</source><translation>Bu birimde UWF koruması dışında tutulan dosya ve klasörler. Yolu kopyalamak için girdiye çift tıklayın.</translation></message>
     <message><source>Registry exclusions</source><translation>Kayıt defteri dışlamaları</translation></message>
-    <message><source>Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is shared across all volumes and shown only once in the disk tabs. Double-click an entry to copy its path.</source><translation>Kayıt defteri dışlamaları geneldir; birim korumasına değil UWF filtresine bağlıdır. Ortak liste disk sekmelerinde yalnızca bir kez gösterilir. Yolu kopyalamak için çift tıklayın.</translation></message>
-    <message><source>File staging</source><translation>Otomatik dosya kaydı</translation></message>
-    <message><source>Files and folders in this list are committed automatically before safe shutdown or restart. Folders are processed recursively. While the list contains data, UWF Manager excludes HKLM\SOFTWARE\HsingYun\UWF Manager so the list persists across protected sessions.</source><translation>dosya / klasör: Güvenli kapatma veya yeniden başlatma öncesinde otomatik kalıcı kayıt. Tüm alt klasörler dahildir. Liste doluyken şu kayıt defteri dışlaması listeyi korunan oturumlar arasında saklar: HKLM\SOFTWARE\HsingYun\UWF Manager</translation></message>
+    <message><source>Registry exclusions are global and are shown only on the system drive.</source><translation>Kayıt defteri dışlamaları geneldir ve yalnızca Windows'un kurulu olduğu birimde gösterilir.</translation></message>
+    <message><source>File staging</source><translation>Otomatik kayıt listesi</translation></message>
+
     <message><source>Add files or a folder to the automatic commit list.</source><translation>Otomatik kayıt listesine dosya veya klasör ekleyin.</translation></message>
-    <message><source>Select one or more files to commit automatically before safe shutdown or restart.</source><translation>Diske kalıcı kaydedilecek dosyayı seç. Güvenli kapatma veya yeniden başlatma öncesinde otomatik kalıcı kayıt.</translation></message>
-    <message><source>Select a folder whose files will be committed recursively before safe shutdown or restart.</source><translation>Diske kalıcı kaydedilecek klasörü seç. Güvenli kapatma veya yeniden başlatma öncesinde otomatik kalıcı kayıt. Tüm alt klasörler dahildir.</translation></message>
-    <message><source>Select files for automatic commit</source><translation>Diske kalıcı kaydedilecek dosyayı seç · Otomatik dosya kaydı</translation></message>
-    <message><source>Select a folder for automatic recursive commit</source><translation>Diske kalıcı kaydedilecek klasörü seç · Otomatik dosya kaydı · Tüm alt klasörler dahildir.</translation></message>
+    <message><source>Select one or more files to commit automatically before safe shutdown or restart.</source><translation>Güvenli kapatma veya yeniden başlatma öncesinde otomatik olarak kalıcı kaydedilecek bir veya daha fazla dosya seçin.</translation></message>
+    <message><source>Select a folder whose files will be committed recursively before safe shutdown or restart.</source><translation>Dosyaları tüm alt klasörleriyle birlikte güvenli kapatma veya yeniden başlatma öncesinde kalıcı kaydedilecek bir klasör seçin.</translation></message>
+    <message><source>Select files for automatic commit</source><translation>Otomatik kalıcı kaydetme için dosya seçin</translation></message>
+    <message><source>Select a folder for automatic recursive commit</source><translation>Alt klasörleriyle otomatik kalıcı kaydetme için klasör seçin</translation></message>
     <message><source>Cannot stage this path</source><translation>Bu yol otomatik kayda eklenemiyor</translation></message>
     <message><source>This path overlaps a UWF file exclusion. Remove the exclusion before adding the staged path:
-%1</source><translation>Yol bir UWF dışlamasıyla çakışıyor. Önce dışlamayı kaldırın:
+%1</source><translation>Bu yol bir UWF dosya dışlamasıyla örtüşüyor. Yolu listeye eklemeden önce dışlamayı kaldırın:
 %1</translation></message>
     <message><source>This path overlaps a file staging entry. Remove the staged path before adding the exclusion:
-%1</source><translation>Yol otomatik kayıt girdisiyle çakışıyor. Dışlamadan önce girdiyi kaldırın:
+%1</source><translation>Bu yol, otomatik kayıt listesindeki bir kayıtla örtüşüyor. Dışlama eklemeden önce yolu listeden kaldırın:
 %1</translation></message>
-    <message><source>The path overlaps an existing file staging entry</source><translation>Yol mevcut bir otomatik kayıt girdisiyle çakışıyor</translation></message>
+    <message><source>The path overlaps an existing file staging entry</source><translation>Yol, otomatik kayıt listesindeki mevcut bir kayıtla örtüşüyor</translation></message>
     <message><source>The registry exclusion is required while File staging contains saved entries</source><translation>Otomatik kayıt listesi boş değilken bu kayıt defteri dışlaması gereklidir</translation></message>
     <message><source>The selected path does not exist or is not the expected file type:
 %1</source><translation>Yol yok veya beklenen dosya türünde değil:
@@ -98,29 +98,27 @@
 %1</source><translation>Yol incelenemedi:
 %1</translation></message>
     <message><source>Reparse points cannot be added to automatic file staging:
-%1</source><translation>Yeniden ayrıştırma noktaları otomatik kayda eklenemez:
+%1</source><translation>Yeniden ayrıştırma noktaları otomatik kayıt listesine eklenemez:
 %1</translation></message>
-    <message><source>The path has no drive letter and cannot be committed by UWF:
-%1</source><translation>Sürücü harfi yok; UWF kalıcı kaydedemez:
+    <message><source>The path has no drive letter and cannot be added to file staging:
+%1</source><translation>Yolun sürücü harfi olmadığından otomatik kayıt listesine eklenemez:
 %1</translation></message>
-    <message><source>The selected path is on volume %1. Add it from that volume's File staging tab.</source><translation>Yol %1 biriminde. İlgili birimin otomatik dosya kaydı sekmesinden ekleyin.</translation></message>
-    <message><source>A volume root cannot be staged because it would recursively commit the entire volume.</source><translation>Birim kökü eklenemez; aksi hâlde tüm birim özyinelemeli kaydedilir.</translation></message>
-    <message><source>File staging could not be saved</source><translation>Başarısız: Otomatik dosya kaydı listesini saklama</translation></message>
+    <message><source>The selected path is on volume %1. Add it from that volume's File staging tab.</source><translation>Seçilen yol %1 biriminde. İlgili birimin Otomatik kayıt listesi sekmesinden ekleyin.</translation></message>
+    <message><source>A volume root cannot be staged because it would recursively commit the entire volume.</source><translation>Birim kökü listeye eklenemez; aksi hâlde tüm birim alt klasörleriyle birlikte kalıcı kaydedilir.</translation></message>
+    <message><source>File staging could not be saved</source><translation>Otomatik kayıt listesi kaydedilemedi</translation></message>
     <message><source>The file staging state was reloaded after the update could not be completed:
 %1</source><translation>Güncelleme tamamlanamadığından otomatik kayıt listesi yeniden yüklendi:
 %1</translation></message>
-    <message><source>File staging is unavailable: %1</source><translation>Otomatik dosya kaydı: %1</translation></message>
-    <message><source>Committed automatically before safe shutdown or restart.</source><translation>Güvenli kapatma veya yeniden başlatma öncesinde otomatik kalıcı kayıt.</translation></message>
-    <message><source>%1 staged entries · %2 files · %3 folders</source><translation>Otomatik dosya kaydı: %1 · dosya: %2 · klasör: %3</translation></message>
-    <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>Otomatik dosya kaydı, yeniden başlatmalardan sonra listesini korumak için bu kayıt defteri dışlamasına ihtiyaç duyar.</translation></message>
+    <message><source>File staging is unavailable: %1</source><translation>Otomatik kayıt listesi kullanılamıyor: %1</translation></message>
+
+    <message><source>%1 staged entries · %2 files · %3 folders</source><translation>Listedeki kayıtlar: %1 · dosyalar: %2 · klasörler: %3</translation></message>
+    <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>Otomatik kayıt listesi, yeniden başlatmalar arasında korunmak için bu kayıt defteri dışlamasına ihtiyaç duyar.</translation></message>
     <message><source>Built-in</source><translation>Yerleşik</translation></message>
-    <message><source>The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit.</source><translation>UWF filtresi devre dışı. Yer paylaşımında birikmiş değişiklik olmadığından kaydedilecek bir şey yok.</translation></message>
+    <message><source>The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit.</source><translation>UWF filtresi şu anda devre dışı; kaplamada değişiklik birikmediğinden kalıcı kaydedilecek bir şey yok.</translation></message>
     <message><source>Per-file commit is not supported on the %1 file system.</source><translation>%1 dosya sistemi dosya bazında kalıcı kaydı desteklemiyor.</translation></message>
     <message><source>This volume is not supported by UWF.</source><translation>Bu birim UWF tarafından desteklenmiyor.</translation></message>
-    <message><source>This volume does not support file commit. Only registry commit is available (registry exclusions are global).</source><translation>Bu birim dosya kalıcı kaydını desteklemiyor. Yalnızca kayıt defteri kalıcı kaydı kullanılabilir (dışlamaları geneldir).</translation></message>
     <message><source>Per-file commit is not supported on the %1 file system. Only registry commit is available (registry exclusions are global).</source><translation>%1 dosya sistemi dosya bazında kalıcı kaydı desteklemiyor. Yalnızca kayıt defteri kalıcı kaydı kullanılabilir (dışlamaları geneldir).</translation></message>
-    <message><source>This volume is not currently protected by UWF; there are no file changes to commit.</source><translation>Birim şu anda UWF ile korunmuyor; kaydedilecek dosya değişikliği yok.</translation></message>
-    <message><source>This volume is not currently protected by UWF. Only registry commit is available (registry exclusions are global).</source><translation>Birim şu anda UWF ile korunmuyor; kaydedilecek dosya değişikliği yok. Yalnızca kayıt defteri kalıcı kaydı kullanılabilir (dışlamaları geneldir).</translation></message>
+    <message><source>This volume is not currently protected by UWF; there are no file changes to commit.</source><translation>Bu birim şu anda UWF ile korunmuyor; kalıcı kaydedilecek dosya değişikliği yok.</translation></message>
     <message><source>Select a file to commit to disk</source><translation>Diske kalıcı kaydedilecek dosyayı seç</translation></message>
     <message><source>Select a folder to commit to disk</source><translation>Diske kalıcı kaydedilecek klasörü seç</translation></message>
     <message><source>Select a file whose deletion you want to commit</source><translation>Silinmesi kalıcı kaydedilecek dosyayı seç</translation></message>
@@ -130,16 +128,16 @@
     <message><source>(Default)</source><translation>(Varsayılan)</translation></message>
     <message><source>(value not set)</source><translation>(değer ayarlanmadı)</translation></message>
     <message><source>(empty)</source><translation>(boş)</translation></message>
-    <message><source>Preview unavailable (value is too large)</source><translation>Bilinmiyor (Değer: Dosya çok büyük)</translation></message>
-    <message><source>Open a diagnostic view of files currently cached in the overlay for this volume.</source><translation>Yer paylaşımı dosyalarını göster. &lt;b&gt;Yalnızca tanılama görüntüsüdür.&lt;/b&gt; Kaydedilecekleri bu listeye göre belirlemeyin.</translation></message>
-    <message><source>Overlay file listing is only supported on NTFS volumes.</source><translation>Yer paylaşımı dosyaları yalnızca NTFS birimlerinde listelenebilir.</translation></message>
-    <message><source>The UWF filter is currently disabled, so no volume has an overlay to inspect.</source><translation>UWF devre dışı; incelenebilecek yer paylaşımı yok.</translation></message>
-    <message><source>This volume is not currently protected by UWF, so it has no overlay to inspect.</source><translation>Birim UWF ile korunmuyor; incelenebilecek yer paylaşımı yok.</translation></message>
+    <message><source>Preview unavailable (value is too large)</source><translation>Önizleme kullanılamıyor (değer çok büyük)</translation></message>
+    <message><source>Open a diagnostic view of files currently cached in the overlay for this volume.</source><translation>Bu birimin kaplamasında şu anda önbelleğe alınmış dosyaların tanılama görünümünü açın.</translation></message>
+    <message><source>Overlay file listing is only supported on NTFS volumes.</source><translation>Kaplama dosyaları yalnızca NTFS birimlerinde listelenebilir.</translation></message>
+    <message><source>The UWF filter is disabled; no volume has an overlay to inspect.</source><translation>UWF filtresi şu anda devre dışı; hiçbir birimde incelenebilecek kaplama yok.</translation></message>
+    <message><source>This volume is not currently protected by UWF, so it has no overlay to inspect.</source><translation>Birim UWF ile korunmuyor; incelenebilecek kaplama yok.</translation></message>
     <message><source>Failed: %1</source><translation>Başarısız: %1</translation></message>
-    <message><source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure.</source><translation>Dosyalar listelenirken WMI sağlayıcısı çöktü. Büyük yer paylaşımlarında veya yüksek G/Ç yükünde UWF_Overlay.GetOverlayFiles için bilinen bir kararsızlıktır.</translation></message>
-    <message><source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source><translation>Bellek yetersiz veya sağlayıcı işlemi desteklemiyor. NTFS ve boş bellek gerekir. Daha küçük yer paylaşımıyla veya bellek tüketen uygulamaları kapattıktan sonra yeniden deneyin.</translation></message>
+    <message><source>The previous enumeration may still be running. Another read cannot start yet.</source><translation>Önceki listeleme hâlâ çalışıyor olabilir. Henüz yeni bir okuma başlatılamaz.</translation></message><message><source>The UWF service is unavailable while enumerating overlay files.</source><translation>Kaplama dosyaları listelenirken UWF hizmeti kullanılamıyor.</translation></message>
+    <message><source>Out of memory, or this operation is not supported. This feature requires an NTFS volume; close memory-intensive applications and try again.</source><translation>Bellek yetersiz veya sistem bu işlemi desteklemiyor. Bu özellik yalnızca NTFS birimlerini destekler; çok bellek kullanan uygulamaları kapatıp yeniden deneyin.</translation></message>
     <message><source>Raw error: %1</source><translation>Hata kodu: %1</translation></message>
-    <message><source>Export overlay file list</source><translation>Dosyaya aktar… · Yer paylaşımı · dosya</translation></message>
+    <message><source>Export overlay file list</source><translation>Kaplama dosya listesini dışa aktar</translation></message>
     <message><source>Text files (*.txt);;All files (*)</source><translation>Metin dosyaları (*.txt);;Tüm dosyalar (*)</translation></message>
     <message><source>Command files (*.cmd);;All files (*)</source><translation>Komut dosyaları (*.cmd);;Tüm dosyalar (*)</translation></message>
     <message><source>Export failed</source><translation>Dışa aktarma başarısız</translation></message>
@@ -147,10 +145,10 @@
     <message><source>Could not open file for writing: %1</source><translation>Başarısız: Dosyayı açma (%1).</translation></message>
     <message><source>Could not write file: %1</source><translation>Başarısız: Dosyaya yazma (%1).</translation></message>
     <message><source>Saved %1 entries to:
-%2</source><translation>Yapılandırma: Dosyaya yazma · girdi: %1
+%2</source><translation>%1 kayıt şuraya kaydedildi:
 %2</translation></message>
     <message><source>Cannot add an entire volume (%1) to the exclusion list.</source><translation>Birimin tamamı (%1) dışlanamaz.</translation></message>
-    <message><source>The pagefile, swapfile and hibernation file cannot be excluded; UWF itself depends on these system files.</source><translation>Disk belleği, takas ve hazırda bekletme dosyaları dışlanamaz; UWF bu dosyalara bağlıdır.</translation></message>
+    <message><source>The pagefile, swapfile and hibernation file cannot be added as exclusions.</source><translation>Disk belleği, takas ve hazırda bekletme dosyaları dışlama olarak eklenemez.</translation></message>
     <message><source>The entire \Windows directory cannot be excluded.</source><translation>Dizinin tamamı dışlanamaz: \Windows.</translation></message>
     <message><source>The entire \Windows\System32 directory cannot be excluded.</source><translation>Dizinin tamamı dışlanamaz: \Windows\System32.</translation></message>
     <message><source>The entire \Windows\System32\Drivers directory cannot be excluded.</source><translation>Dizinin tamamı dışlanamaz: \Windows\System32\Drivers.</translation></message>
@@ -158,24 +156,10 @@
     <message><source>The per-user registry file NTUSER.DAT cannot be excluded.</source><translation>Kullanıcı kayıt defteri dosyası NTUSER.DAT dışlanamaz.</translation></message>
     <message><source>Registry key cannot be empty.</source><translation>Kayıt defteri anahtarı boş olamaz.</translation></message>
     <message><source>Registry key cannot start with a backslash.</source><translation>Kayıt defteri anahtarı ters eğik çizgiyle başlayamaz.</translation></message>
-    <message><source>The path contains consecutive backslashes; this is not valid.</source><translation>Yol art arda ters eğik çizgiler içeriyor ve geçersiz.</translation></message>
-    <message><source>Registry paths use backslash `\` as the separator; do not use forward slash `/`.</source><translation>Kayıt defteri yollarında ayırıcı `\` olmalıdır, `/` kullanmayın.</translation></message>
-    <message><source>The path contains invisible control characters; this is not valid.</source><translation>Yol görünmez denetim karakterleri içeriyor ve geçersiz.</translation></message>
-    <message><source>HKLM\SECURITY\Policy\Secrets\$MACHINE.ACC cannot be excluded; this is the domain machine account secret, which UWF documentation explicitly forbids excluding.</source><translation>UWF belgeleri etki alanı bilgisayar hesabı sırrının dışlanmasını yasaklar: HKLM\SECURITY\Policy\Secrets\$MACHINE.ACC</translation></message>
-    <message><source>UWF only allows exclusions under the following top-level registry keys. Please pick a specific subkey under one of them:
-  HKLM\BCD00000000
-  HKLM\SYSTEM
-  HKLM\SOFTWARE
-  HKLM\SAM
-  HKLM\SECURITY
-  HKLM\COMPONENTS</source><translation>Yalnızca şu üst düzey anahtarların belirli alt anahtarları dışlanabilir:
-  HKLM\BCD00000000
-  HKLM\SYSTEM
-  HKLM\SOFTWARE
-  HKLM\SAM
-  HKLM\SECURITY
-  HKLM\COMPONENTS</translation></message>
-    <message><source>Add a file or folder to the exclusion list. Excluded entries are not protected by UWF.</source><translation>Dosya veya klasörü dışlama listesine ekleyin. Dışlananlar UWF ile korunmaz.</translation></message>
+    <message><source>Registry paths cannot contain null characters.</source><translation>Kayıt defteri yolları boş karakter içeremez.</translation></message>
+    <message><source>A registry key component is too long.</source><translation>Kayıt defteri anahtarının bir bileşeni çok uzun.</translation></message>
+    <message><source>The registry path exceeds UWF's nesting limit.</source><translation>Kayıt defteri yolu UWF iç içe geçme sınırını aşıyor.</translation></message>
+    <message><source>Add a file or folder to the exclusion list.</source><translation>Dışlama listesine bir dosya veya klasör ekleyin.</translation></message>
     <message><source>Pick a file to add to the exclusion list.</source><translation>Eklenecek dosyayı seç · Dosya dışlamaları.</translation></message>
     <message><source>Pick a folder (and all of its contents) to add to the exclusion list.</source><translation>Eklenecek klasörü seç · Dosya dışlamaları. Tüm alt klasörler dahildir.</translation></message>
     <message><source>Enter a registry key path to add to the exclusion list.</source><translation>Dışlanacak kayıt defteri anahtarının yolunu girin.</translation></message>
@@ -191,8 +175,8 @@
     <message><source>Open containing folder</source><translation>İçeren klasörü aç</translation></message>
     <message><source>Copy file path</source><translation>Dosya yolunu kopyala</translation></message>
     <message><source>Copy registry path</source><translation>Kayıt defteri yolunu kopyala</translation></message>
-    <message><source>Commit folder changes to disk…</source><translation>Bu klasörün yer paylaşımı değişikliklerini diske kalıcı kaydet…</translation></message>
-    <message><source>Commit file changes to disk…</source><translation>Bu dosyanın yer paylaşımı değişikliklerini diske kalıcı kaydet…</translation></message>
+    <message><source>Commit folder changes to disk…</source><translation>Klasör değişikliklerini diske kalıcı kaydet…</translation></message>
+    <message><source>Commit file changes to disk…</source><translation>Dosya değişikliklerini diske kalıcı kaydet…</translation></message>
     <message><source>Copied to clipboard</source><translation>Panoya kopyalandı</translation></message>
     <message><source>Select files to add to the exclusion list (multiple selection allowed)</source><translation>Eklenecek dosyayı seç · Dosya dışlamaları. Birden fazla dosya seçilebilir.</translation></message>
     <message><source>Select a folder to add to the exclusion list</source><translation>Eklenecek klasörü seç · Dosya dışlamaları</translation></message>
@@ -211,13 +195,13 @@ Sonraki oturum: %2</translation></message>
     <message><source>Unified Write Filter (UWF) Manager</source><translation>Birleşik Yazma Filtresi (UWF) Yöneticisi</translation></message>
     <message><source>Re-read the current session state and next-session configuration of UWF.</source><translation>Geçerli UWF durumunu ve sonraki oturum yapılandırmasını yeniden okur.</translation></message>
     <message><source>Review and apply</source><translation>İncele ve uygula</translation></message>
-    <message><source>Review all pending changes and apply them in one batch. Most changes take effect after the next reboot.</source><translation>Bekleyen tüm değişiklikleri inceleyip topluca uygular. Çoğu değişiklik sonraki yeniden başlatmada geçerli olur.</translation></message>
+    <message><source>Review all pending changes and apply them in one batch.</source><translation>Bekleyen tüm değişiklikleri inceleyip topluca uygular.</translation></message>
     <message><source>Safe shutdown</source><translation>Güvenli kapat</translation></message>
-    <message><source>Shut down safely, even when the UWF overlay is full.</source><translation>Sistem UWF üzerinden güvenli kapatılacak. UWF yer paylaşımı dolu olsa da kullanılabilir.</translation></message>
-    <message><source>Safe restart</source><translation>Güvenli yeniden başlat</translation></message>
+    <message><source>Shut down safely, even when the UWF overlay is full.</source><translation>Sistem UWF üzerinden güvenli kapatılacak. UWF kaplama dolu olsa da kullanılabilir.</translation></message>
+    <message><source>Safe restart</source><translation>Güvenli yeniden başlatma</translation></message>
     <message><source>Direct restart</source><translation>Doğrudan yeniden başlat</translation></message>
     <message><source>Direct shutdown</source><translation>Doğrudan kapat</translation></message>
-    <message><source>Restart safely, even when the UWF overlay is full.</source><translation>Sistem UWF üzerinden güvenli yeniden başlatılacak. UWF yer paylaşımı dolu olsa da kullanılabilir.</translation></message>
+    <message><source>Restart safely, even when the UWF overlay is full.</source><translation>Sistem UWF üzerinden güvenli yeniden başlatılacak. UWF kaplama dolu olsa da kullanılabilir.</translation></message>
     <message><source>Log</source><translation>Günlük</translation></message>
     <message><source>View the internal log accumulated during this session, for troubleshooting.</source><translation>Sorun giderme için bu oturumun iç günlüğünü gösterir.</translation></message>
     <message><source>About</source><translation>Hakkında</translation></message>
@@ -228,8 +212,7 @@ Sonraki oturum: %2</translation></message>
     <message><source>System information</source><translation>Sistem bilgileri</translation></message>
     <message><source>Diagnostic snapshot</source><translation>Tanılama anlık görüntüsü</translation></message>
     <message><source>Read only</source><translation>Salt okunur</translation></message>
-    <message><source>The target was not found; there is nothing in the overlay to commit.</source><translation>Hedef bulunamadı; yer paylaşımında kaydedilecek bir şey yok.</translation></message>
-    <message><source>Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It will disappear on reboot; commit-delete is neither needed nor possible.</source><translation>Hedef yalnızca yer paylaşımında: UWF altında oluşturulmuş, diske veya kalıcı kayıt defterine hiç kaydedilmemiş. Yeniden başlatmada kaybolur; silmeyi kaydetmek gereksiz ve olanaksızdır.</translation></message>
+    <message><source>The system did not find the target.</source><translation>Sistem hedefi bulamadı.</translation></message>
     <message><source>A parameter was rejected by the system (invalid path or argument).</source><translation>Sistem bir parametreyi reddetti (geçersiz yol veya bağımsız değişken).</translation></message>
     <message><source>The operation failed. The target may be in use by another process (e.g. an Explorer window browsing the folder, or the file is open). Close any program holding it and try again.</source><translation>İşlem başarısız. Hedef başka bir işlemde kullanılıyor olabilir; örneğin klasör Dosya Gezgini’nde veya dosya bir uygulamada açık olabilir. İlgili programları kapatıp yeniden deneyin.</translation></message>
     <message><source>The operation failed (see log for details).</source><translation>İşlem başarısız; ayrıntılar günlükte.</translation></message>
@@ -240,10 +223,10 @@ Sonraki oturum: %2</translation></message>
     <message><source>Succeeded</source><translation>Başarılı</translation></message>
     <message><source>Skipped</source><translation>Atlandı</translation></message>
     <message><source>Failed</source><translation>Başarısız</translation></message>
-    <message><source>%1 succeeded; %2 skipped; %3 failed.</source><translation>Başarılı: %1; Atlandı: %2; Başarısız: %3.</translation></message>
+    <message><source>%1 succeeded; %2 failed.</source><translation>Başarılı: %1; başarısız: %2.</translation></message>
 
-    <message><source>Existed before</source><translation>Önceden var</translation></message>
-    <message><source>Exists after</source><translation>Sonrasında var</translation></message>
+    <message><source>Existed before</source><translation>Silme öncesinde vardı</translation></message>
+    <message><source>Exists after</source><translation>Silme sonrasında var</translation></message>
     <message><source>Error code</source><translation>Hata kodu</translation></message>
     <message><source>Reason</source><translation>Neden</translation></message>
     <message><source>Previous page</source><translation>Önceki sayfa</translation></message>
@@ -252,11 +235,11 @@ Sonraki oturum: %2</translation></message>
     <message><source>Next page</source><translation>Sonraki sayfa</translation></message>
     <message><source>Copy selected rows</source><translation>Seçili satırları kopyala</translation></message>
     <message><source>Copy all</source><translation>Tümünü kopyala</translation></message>
-    <message><source>This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it.</source><translation>Otomatik kayıt listesi boş değilken bu kayıt defteri dışlaması gereklidir. Otomatik dosya kaydı: Temizle → Kayıt defteri dışlamasını kaldırma.</translation></message>
+    <message><source>This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it.</source><translation>Otomatik kayıt listesi kayıtlı girdiler içerdiği sürece bu kayıt defteri dışlaması gereklidir. Dışlamayı kaldırmadan önce listeyi temizleyin.</translation></message>
     <message><source>Copy current page</source><translation>Geçerli sayfayı kopyala</translation></message>
     <message><source>No pending changes</source><translation>Bekleyen değişiklik yok</translation></message>
     <message><source> (Also manages global registry exclusions.)</source><translation> (Kayıt defteri dışlamaları · Genel ayarlar.)</translation></message>
-    <message><source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source><translation>Birim %1: UWF koruması / Dosya dışlamaları / Otomatik dosya kaydı.%2</translation></message>
+    <message><source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source><translation>%1 biriminin koruma ayarlarına, dosya dışlamalarına ve otomatik kayıt listesine geçin.%2</translation></message>
     <message><source>UWF namespace is not available</source><translation>UWF: Desteklenmiyor</translation></message>
     <message><source>Review and apply changes</source><translation>Değişiklikleri incele ve uygula</translation></message>
     <message><source>Confirm apply</source><translation>Uygulamayı onayla</translation></message>
@@ -264,13 +247,9 @@ Sonraki oturum: %2</translation></message>
     <message><source>✓ Filter: %1</source><translation>✓ Filtre: %1</translation></message>
     <message><source>✓ Overlay warning threshold set to %1 MB</source><translation>✓ Uyarı eşiğini ayarlama: %1 MB</translation></message>
     <message><source>✓ Overlay critical threshold set to %1 MB</source><translation>✓ Kritik eşiği ayarlama: %1 MB</translation></message>
-    <message><source>✘ Type / maximum size not applied: the filter is currently enabled. Disable the filter and reboot first.</source><translation>✘ Yer paylaşımı türünü ayarlama / En büyük boyutu ayarlama: Tür ve en büyük boyutu değiştirmek için:
-1. Yukarıdan filtreyi devre dışı bırakın.
-2. Filtrenin kapanması için yeniden başlatın.
-3. Ayarı değiştirin.</translation></message>
-    <message><source>✓ Overlay type set to %1</source><translation>✓ Yer paylaşımı türünü ayarlama: %1</translation></message>
-    <message><source>✓ Overlay maximum size set to %1 MB</source><translation>✓ En büyük boyutu ayarlama: %1 MB</translation></message>
-    <message><source>✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.</source><translation>✘ En büyük boyutu ayarlama: Disk ≥ %1 MB.</translation></message>
+    <message><source>✘ Type / maximum capacity not applied: UWF is enabled. Disable UWF and restart first.</source><translation>✘ Tür / en yüksek kapasite uygulanmadı: UWF etkin. Önce UWF'yi devre dışı bırakıp yeniden başlatın.</translation></message>
+    <message><source>✓ Overlay type set to %1</source><translation>✓ Kaplama türünü ayarlama: %1</translation></message>
+    <message><source>✓ Maximum overlay capacity set to %1 MB</source><translation>✓ En yüksek kaplama kapasitesi %1 MB olarak ayarlandı</translation></message>
     <message><source>✓ Volume %1 protection: %2</source><translation>✓ Birim %1 · UWF koruması: %2</translation></message>
     <message><source>✓ Volume %1 bind by: %2</source><translation>✓ Birim %1 · Bağlama ölçütü: %2</translation></message>
     <message><source>✓ Volume %1 added file exclusion: %2</source><translation>✓ Birim %1 · Dosya dışlaması ekleme: %2</translation></message>
@@ -279,20 +258,14 @@ Sonraki oturum: %2</translation></message>
     <message><source>✓ Removed registry exclusion: %1</source><translation>✓ Kayıt defteri dışlamasını kaldırma: %1</translation></message>
     <message><source>Time</source><translation>Zaman</translation></message>
     <message><source>Level</source><translation>Düzey</translation></message>
-    <message><source>Tag</source><translation>Etiket</translation></message>
+
     <message><source>Message</source><translation>İleti</translation></message>
-    <message><source>Calculating files for automatic commit…</source><translation>Otomatik kaydedilecek dosyalar hesaplanıyor…</translation></message>
-    <message><source>Committing staged files</source><translation>Hazırlanan dosyalar kaydediliyor</translation></message>
-    <message><source>Processed %1 of %2 file(s).</source><translation>%2 dosyadan %1 işlendi.</translation></message>
+    <message><source>Committing staged files</source><translation>Listedeki dosyalar kalıcı kaydediliyor</translation></message>
     <message><source>No additional error details were provided.</source><translation>Ek hata ayrıntısı sağlanmadı.</translation></message>
     <message><source>Automatic file staging stopped unexpectedly:
-%1</source><translation>Otomatik kayıt beklenmedik şekilde durdu:
+%1</source><translation>Otomatik dosya kalıcı kaydı beklenmedik şekilde durdu:
 %1</translation></message>
-    <message><source>Automatic file staging stopped because of an unknown error.</source><translation>Otomatik dosya kaydı tamamlanmadı: Bilinmeyen hata.</translation></message>
-    <message><source>File staging will be skipped</source><translation>Otomatik dosya kaydı atlanacak</translation></message>
-    <message><source>Direct restart skips File staging commits.</source><translation>Doğrudan yeniden başlat: Otomatik dosya kaydı atlanacak.</translation></message>
-    <message><source>Direct shutdown skips File staging commits.</source><translation>Doğrudan kapat: Otomatik dosya kaydı atlanacak.</translation></message>
-    <message><source>File staging was skipped because a direct power action was selected.</source><translation>Doğrudan güç işlemi seçildiğinden otomatik kayıt atlandı.</translation></message>
+    <message><source>Automatic file staging stopped because of an unknown error.</source><translation>Otomatik dosya kalıcı kaydı bilinmeyen bir hata nedeniyle durdu.</translation></message>
     <message><source>Safe shutdown failed</source><translation>Güvenli kapat: Başarısız</translation></message>
     <message><source>Shutdown failed: %1</source><translation>Kapat: Başarısız (%1)</translation></message>
     <message><source>Safe restart failed</source><translation>Güvenli yeniden başlat: Başarısız</translation></message>
@@ -303,24 +276,24 @@ Sonraki oturum: %2</translation></message>
 %1</source><translation>Otomatik kayıt listesi okunamadı:
 %1</translation></message>
     <message><source>The file staging list could not be read because of an unknown error.</source><translation>Otomatik kayıt listesi okunamadı: Bilinmeyen hata.</translation></message>
-    <message><source>Discovered files: %1 · Committed: %2 · Skipped files: %3 · Skipped entries: %4 · Failed: %5</source><translation>dosya: %1 · Başarılı: %2 · Atlandı (dosya): %3 · Atlandı (girdi): %4 · Başarısız: %5</translation></message>
-    <message><source>File staging preparation</source><translation>Otomatik dosya kaydı: İşlem ayrıntıları</translation></message>
+    <message><source>Discovered files: %1 · Committed: %2 · Skipped files: %3 · Skipped entries: %4 · Failed: %5</source><translation>Bulunan dosyalar: %1 · Kalıcı kaydedilen: %2 · Atlanan dosyalar: %3 · Atlanan kayıtlar: %4 · Başarısız: %5</translation></message>
+    <message><source>File staging preparation</source><translation>Listedeki dosyaları kalıcı kaydetmeye hazırlık</translation></message>
     <message><source>Reparse points are not supported.</source><translation>Yeniden ayrıştırma noktaları desteklenmiyor.</translation></message>
     <message><source>Only absolute paths on local volumes can be staged.</source><translation>Yalnızca yerel birimlerdeki mutlak yollar eklenebilir.</translation></message>
     <message><source>Only absolute paths on local volumes can be added to automatic file staging:
 %1</source><translation>Yalnızca yerel birimlerdeki mutlak yollar eklenebilir.
 %1</translation></message>
-    <message><source>The staged path could not be inspected.</source><translation>Otomatik kayıt yolu incelenemedi.</translation></message>
-    <message><source>The staged file now refers to a different path type.</source><translation>Hazırlanan dosya yolu artık farklı bir türü gösteriyor.</translation></message>
-    <message><source>The staged folder now refers to a different path type.</source><translation>Hazırlanan klasör yolu artık farklı bir türü gösteriyor.</translation></message>
-    <message><source>The staged folder could not be enumerated completely.</source><translation>Hazırlanan klasörün tamamı listelenemedi.</translation></message>
-    <message><source>The path has no drive letter.</source><translation>Yolun sürücü harfi yok.</translation></message>
+    <message><source>The staged path could not be inspected.</source><translation>Listedeki yol incelenemedi.</translation></message>
+    <message><source>The staged file now refers to a different path type.</source><translation>Listedeki dosya artık farklı bir yol türünü gösteriyor.</translation></message>
+    <message><source>The staged folder now refers to a different path type.</source><translation>Listedeki klasör artık farklı bir yol türünü gösteriyor.</translation></message>
+    <message><source>The staged folder could not be enumerated completely.</source><translation>Listedeki klasör tamamen listelenemedi.</translation></message>
+
     <message><source>A volume root cannot be processed recursively.</source><translation>Birim kökü özyinelemeli işlenemez.</translation></message>
     <message><source>The UWF provider rejected the commit.</source><translation>UWF sağlayıcısı kalıcı kaydı reddetti.</translation></message>
     <message><source>The commit failed with an unknown error.</source><translation>Kalıcı kayıt başarısız: Bilinmeyen hata.</translation></message>
     <message><source>%1 additional failure(s) were written to the log.</source><translation>%1 ek hata günlüğe yazıldı.</translation></message>
 
-    <message><source>The path has no drive letter; cannot identify the target volume.</source><translation>Yolun sürücü harfi yok. Hedef birimi belirleme: Başarısız.</translation></message>
+
 
     <message><source>No current-session record found for volume %1.</source><translation>%1 birimi için geçerli oturum kaydı yok.</translation></message>
     <message><source>This path is in the file exclusion list.
@@ -341,14 +314,14 @@ Dışlama: %1</translation></message>
 %2</source><translation>Dosyaya aktar… · Komut: %1
 %2</translation></message>
     <message><source>Import</source><translation>İçe aktar</translation></message>
-    <message><source>Paste, type, or load a script of uwfmgr commands and turn each line into a pending UI change. Nothing is written to the system until you click "Review and apply".</source><translation>uwfmgr: Her satıra bir komut yazın veya yapıştırın. Metin, günlük veya betik (.txt, .bat, .ps1) yükleyin; bu komutu içeren satırlar eklenir. İçe aktarma değişiklikleri hazırlar. Sisteme yazmak için araç çubuğundaki “İncele ve uygula” seçeneğini kullanın.</translation></message>
+    <message><source>Import uwfmgr commands into the draft. Changes are written only after confirmation in Review and apply.</source><translation>uwfmgr komutlarını taslağa aktarın. Değişiklikler yalnızca İncele ve uygula bölümünde onaylandıktan sonra yazılır.</translation></message>
     <message><source>Load from file…</source><translation>Dosyadan yükle…</translation></message>
     <message><source>Load recommended configuration</source><translation>Önerilen yapılandırmayı yükle</translation></message>
     <message><source>Choose recommended configuration</source><translation>Önerilen yapılandırmayı seç</translation></message>
     <message><source>Select the recommended configuration groups to append. You can review or delete individual commands before importing.</source><translation>Eklenecek önerilen grupları seçin. İçe aktarmadan önce komutları tek tek inceleyebilir veya silebilirsiniz.</translation></message>
     <message><source>From Microsoft official documentation.</source><translation>Microsoft’un resmî belgelerinden.</translation></message>
     <message><source>Microsoft recommended UWF exclusions</source><translation>Microsoft’un önerdiği UWF dışlamaları</translation></message>
-    <message><source>Review these recommendations before importing; folders should exist before UWF accepts file exclusions.</source><translation>İçe aktarmadan önce inceleyin: UWF’nin dışlamaları kabul etmesi için klasörler mevcut olmalıdır.</translation></message>
+    <message><source>Review these recommendations before importing.</source><translation>İçe aktarmadan önce bu önerileri gözden geçirin.</translation></message>
     <message><source>Source: Microsoft official UWF documentation, including common write filter exclusions and antimalware support.</source><translation>Kaynak: genel filtre dışlamaları ve kötü amaçlı yazılım önleme desteği için resmî Microsoft UWF belgeleri.</translation></message>
     <message><source>Customer Experience Improvement Program (CEIP)</source><translation>Müşteri Deneyimini Geliştirme Programı (CEIP)</translation></message>
     <message><source>CEIP: persist policy opt-in state</source><translation>CEIP: Kalıcı sakla: İlke katılım durumu</translation></message>
@@ -392,7 +365,7 @@ Dışlama: %1</translation></message>
     <message><source>Text files (*.txt *.cmd);;All files (*)</source><translation>Metin dosyaları (*.txt *.cmd);;Tüm dosyalar (*)</translation></message>
     <message><source>Status</source><translation>Durum</translation></message>
     <message><source>Import failed</source><translation>İçe aktarma başarısız</translation></message>
-    <message><source>Internal error: no applier registered.</source><translation>İç hata: uygulayıcı kaydedilmemiş.</translation></message>
+    <message><source>Command import is not ready.</source><translation>Komut içe aktarma hazır değil.</translation></message>
     <message><source>Nothing to import</source><translation>İçe aktarılacak komut yok</translation></message>
     <message><source>No uwfmgr commands found in the input.</source><translation>Girdide uwfmgr komutu bulunamadı.</translation></message>
     <message><source>Duplicates: %1</source><translation>Yinelenen: %1</translation></message>
@@ -405,46 +378,46 @@ Dışlama: %1</translation></message>
     <message><source>Cannot read file</source><translation>Dosya okunamıyor</translation></message>
     <message><source>Could not open file %1: %2</source><translation>Başarısız: Dosyayı açma (%1): %2</translation></message>
     <message><source>Discard pending changes?</source><translation>Bekleyen değişiklikler atılsın mı?</translation></message>
-    <message><source>There are %1 pending change(s) that have not been applied.
+    <message><source>%1 change(s) have not been applied.
 
-Continue and discard them?</source><translation>Uygulanmamış %1 değişiklik var.
+Discard them and continue?</source><translation>%1 değişiklik uygulanmadı.
 
-Atıp devam edilsin mi?</translation></message>
+Bunlar atılıp devam edilsin mi?</translation></message>
     <message><source>Incomplete uwfmgr command</source><translation>Eksik uwfmgr komutu</translation></message>
     <message><source>Missing size argument (MB)</source><translation>Eksik bağımsız değişken: Boyut (MB)</translation></message>
-    <message><source>Size must be a non-negative integer in MB</source><translation>Boyut MB cinsinden negatif olmayan bir tam sayı olmalıdır</translation></message>
-    <message><source>Missing overlay type argument (RAM or Disk)</source><translation>Eksik bağımsız değişken: Yer paylaşımı · Tür (RAM / Disk)</translation></message>
-    <message><source>Unknown overlay type %1 (expected RAM or Disk)</source><translation>Geçersiz değer: Yer paylaşımı · Tür: %1 (RAM / Disk)</translation></message>
+    <message><source>Size must be a non-negative integer (MB)</source><translation>Boyut, negatif olmayan bir tam sayı olmalıdır (MB)</translation></message>
+    <message><source>Missing overlay type argument (RAM or Disk)</source><translation>Eksik bağımsız değişken: Kaplama · Tür (RAM / Disk)</translation></message>
+    <message><source>Unknown overlay type %1 (expected RAM or Disk)</source><translation>Geçersiz değer: Kaplama · Tür: %1 (RAM / Disk)</translation></message>
     <message><source>Missing volume argument (e.g. C:)</source><translation>Eksik bağımsız değişken: Birim (C:)</translation></message>
     <message><source>Volume must be a drive letter such as C:</source><translation>Birim C: gibi bir sürücü harfi olmalıdır</translation></message>
     <message><source>Missing path argument</source><translation>Eksik bağımsız değişken: Yol</translation></message>
     <message><source>Missing registry key argument</source><translation>Eksik bağımsız değişken: Kayıt defteri · Anahtar</translation></message>
     <message><source>Unclosed double quote in command</source><translation>Komutta kapatılmamış çift tırnak</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Beklenmeyen ek bağımsız değişken: %1</translation></message>
-    <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Desteklenmeyen uwfmgr komutu (arayüz işlemiyle eşleştirilemiyor)</translation></message>
+    <message><source>This uwfmgr command cannot be imported.</source><translation>Bu uwfmgr komutu içe aktarılamaz.</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Zaten hedef durumda; işlem gerekmiyor</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Yol bu birimde değil veya birim dosya dışlamalarını desteklemiyor (ör. exFAT / ReFS)</translation></message>
-    <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>UWF engel listesi reddetti (sistem dosyası / Windows / disk belleği vb.)</translation></message>
+    <message><source>This path cannot be added as an exclusion.</source><translation>Bu yol dışlama olarak eklenemez.</translation></message>
     <message><source>Invalid size value: %1</source><translation>Geçersiz değer: Boyut: %1</translation></message>
-    <message><source>maximum size</source><translation>En büyük boyut</translation></message>
+    <message><source>maximum capacity</source><translation>en yüksek kapasite</translation></message>
     <message><source>warning threshold</source><translation>Uyarı eşiği</translation></message>
     <message><source>critical threshold</source><translation>Kritik eşik</translation></message>
     <message><source>Global configuration is unavailable; the command was not queued.</source><translation>Genel yapılandırma kullanılamıyor; komut bekleyen değişikliklere eklenmedi.</translation></message>
-    <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Bilinmeyen birim %1 (bu harfte UWF’ye uygun disk yok)</translation></message>
+    <message><source>Unknown volume %1 (no matching volume configuration)</source><translation>Bilinmeyen birim %1 (eşleşen birim yapılandırması yok)</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Birim %1: Zaten hedef durumda; işlem gerekmiyor</translation></message>
-    <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: Yolun sürücü harfi yok. Hedef birimi belirleme: Başarısız.</translation></message>
+    <message><source>Path %1 has no drive letter; its volume tab cannot be identified.</source><translation>%1 yolunda sürücü harfi yok; birim sekmesi belirlenemiyor.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Birim %1: UWF Desteklenmiyor</translation></message>
     <message><source>file exclusion</source><translation>Dosya dışlamaları</translation></message>
     <message><source>registry exclusion</source><translation>Kayıt defteri dışlamaları</translation></message>
     <message><source>Registry exclusions are only available on the registry tab, which is not present</source><translation>Kayıt defteri sekmesi bulunmadığından kayıt defteri dışlamaları kullanılamıyor</translation></message>
     <message><source>Unsupported command</source><translation>Komut: Desteklenmiyor</translation></message>
-    <message><source>Show or hide the overlay hub.</source><translation>HUB: Göster veya gizle.</translation></message>
+    <message><source>Show or hide the overlay widget.</source><translation>Kaplama göstergesini göster veya gizle.</translation></message>
     <message><source>UWF: Enabled</source><translation>UWF: Etkin</translation></message>
     <message><source>UWF: Disabled</source><translation>UWF: Devre dışı</translation></message>
     <message><source>UWF status unavailable</source><translation>UWF: Bilinmiyor</translation></message>
     <message><source>Used %1 MB / Total %2 MB</source><translation>Kullanılan %1 MB / %2 MB</translation></message>
     <message><source>Enhanced mode</source><translation>Gelişmiş mod</translation></message>
-    <message><source>Coordinate automatic file staging with Windows shutdown and restart.</source><translation>Otomatik kaydı Windows kapatma ve yeniden başlatmayla eşgüdümler.</translation></message>
+    <message><source>Coordinate automatic file staging with Windows shutdown and restart.</source><translation>Otomatik dosya kalıcı kaydını Windows kapatma ve yeniden başlatmayla eşgüdümle.</translation></message>
     <message><source>The enhanced mode status read failed because of an unknown error.</source><translation>Başarısız: Gelişmiş mod durumunu okuma (Bilinmeyen hata).</translation></message>
     <message><source>The current service state could not be read:
 %1</source><translation>Başarısız: Hizmet durumunu okuma:
@@ -457,7 +430,7 @@ Atıp devam edilsin mi?</translation></message>
     <message><source>The service executable path or startup arguments do not match this executable.</source><translation>Hizmet dosya yolu veya başlangıç bağımsız değişkenleri bu programla eşleşmiyor.</translation></message>
     <message><source>The service preshutdown timeout is not configured correctly.</source><translation>Hizmetin kapatma öncesi zaman aşımı yanlış ayarlanmış.</translation></message>
     <message><source>The service does not declare the privileges required to start the UI agent.</source><translation>Hizmet, arayüz aracısını başlatmak için gereken yetkileri bildirmiyor.</translation></message>
-    <message><source>The service has not accepted Windows preshutdown notifications.</source><translation>Hizmet Windows kapatma öncesi bildirimlerini kabul etmedi.</translation></message>
+    <message><source>The service cannot receive Windows preshutdown notifications.</source><translation>Hizmet şu anda Windows'un kapatma öncesi bildirimlerini alamıyor.</translation></message>
     <message><source>Enable enhanced mode</source><translation>Gelişmiş modu etkinleştir</translation></message>
     <message><source>Disable enhanced mode</source><translation>Gelişmiş modu devre dışı bırak</translation></message>
     <message><source>Start service</source><translation>Hizmeti başlat</translation></message>
@@ -484,31 +457,24 @@ Atıp devam edilsin mi?</translation></message>
 %1</source><translation>Gelişmiş mod: Hizmeti sil: Başarısız:
 %1</translation></message>
     <message><source>The enhanced mode service could not be deleted because of an unknown error.</source><translation>Gelişmiş mod: Hizmeti sil: Başarısız (Bilinmeyen hata).</translation></message>
-    <message><source>File staging completed</source><translation>Otomatik dosya kaydı: Başarılı</translation></message>
-    <message><source>File staging failed</source><translation>Otomatik dosya kaydı: Başarısız</translation></message>
-    <message><source>All staged targets were processed.</source><translation>Hazırlanan tüm hedefler işlendi.</translation></message>
-    <message><source>All staged targets were processed; one or more operations failed.</source><translation>Tüm hedefler işlendi; bir veya daha fazla işlem başarısız oldu.</translation></message>
     <message><source>Show main window</source><translation>Ana pencereyi göster</translation></message>
     <message><source>Restore default position</source><translation>Varsayılan konumu geri yükle</translation></message>
-    <message><source>Show overlay hub</source><translation>Yer paylaşımı HUB’ını göster</translation></message>
-    <message><source>Hide overlay hub</source><translation>Yer paylaşımı HUB’ını gizle</translation></message>
+    <message><source>Show overlay widget</source><translation>Kaplama göstergesini göster</translation></message>
+    <message><source>Hide overlay widget</source><translation>Kaplama göstergesini gizle</translation></message>
     <message><source>Exit application</source><translation>Uygulamadan çık</translation></message>
-    <message><source>✘ Failed to connect to the system</source><translation>✘ Başarısız: Sisteme bağlanma</translation></message>
     <message><source>Failed to read registry values: %1</source><translation>Başarısız: Kayıt defteri değerlerini okuma (%1)</translation></message>
-    <message><source>Unexpected error while enumerating overlay files.</source><translation>Yer paylaşımı dosyalarını listeleme: Bilinmeyen hata.</translation></message>
+    <message><source>Unexpected error while enumerating overlay files.</source><translation>Kaplama dosyalarını listeleme: Bilinmeyen hata.</translation></message>
     <message><source>✘ Failed to %1 filter</source><translation>✘ Başarısız: Filtre işlemi: %1</translation></message>
     <message><source>✘ Failed to read filter state</source><translation>✘ Başarısız: Filtre durumunu okuma</translation></message>
     <message><source>✘ Failed to set warning threshold</source><translation>✘ Başarısız: Uyarı eşiğini ayarlama</translation></message>
     <message><source>✘ Failed to set critical threshold</source><translation>✘ Başarısız: Kritik eşiği ayarlama</translation></message>
-    <message><source>✘ Failed to read overlay state</source><translation>✘ Başarısız: Yer paylaşımı durumunu okuma</translation></message>
-    <message><source>✘ Failed to set overlay type</source><translation>✘ Başarısız: Yer paylaşımı türünü ayarlama</translation></message>
-    <message><source>✘ Failed to set maximum size</source><translation>✘ Başarısız: En büyük boyutu ayarlama</translation></message>
-    <message><source>✘ Failed to read overlay configuration</source><translation>✘ Başarısız: Yer paylaşımı yapılandırmasını okuma</translation></message>
-    <message><source>✘ Volume %1: failed to register with UWF</source><translation>✘ Başarısız: %1 birimini UWF’ye kaydetme</translation></message>
+    <message><source>✘ Failed to read overlay state</source><translation>✘ Başarısız: Kaplama durumunu okuma</translation></message>
+    <message><source>✘ Failed to set overlay type</source><translation>✘ Başarısız: Kaplama türünü ayarlama</translation></message>
+    <message><source>✘ Failed to set maximum capacity</source><translation>✘ En yüksek kapasite ayarlanamadı</translation></message>
+    <message><source>✘ Failed to read overlay configuration</source><translation>✘ Başarısız: Kaplama yapılandırmasını okuma</translation></message>
     <message><source>✘ Failed to %1 protection on volume %2</source><translation>✘ Başarısız: %2 birim koruması: %1</translation></message>
     <message><source>✘ Failed to set binding for volume %1</source><translation>✘ Başarısız: %1 biriminin bağlamasını ayarlama</translation></message>
     <message><source>✘ Volume %1 failed to add file exclusion %2</source><translation>✘ Birim %1 · Başarısız: Dosya dışlaması ekleme %2</translation></message>
-    <message><source>✓ Volume %1 file exclusion already absent: %2</source><translation>✓ %1 biriminde dosya dışlaması zaten yok: %2</translation></message>
     <message><source>✘ Volume %1 failed to remove file exclusion %2</source><translation>✘ Birim %1 · Başarısız: Dosya dışlamasını kaldırma %2</translation></message>
     <message><source>✘ Failed to read volume configuration</source><translation>✘ Başarısız: Birim yapılandırmasını okuma</translation></message>
     <message><source>✘ Failed to add registry exclusion %1</source><translation>✘ Başarısız: Kayıt defteri dışlaması ekleme %1</translation></message>
@@ -517,10 +483,9 @@ Atıp devam edilsin mi?</translation></message>
     <message><source>✘ Failed to read registry filter</source><translation>✘ Başarısız: Kayıt defteri filtresini okuma</translation></message>
     <message><source>UWF is not available</source><translation>UWF: Desteklenmiyor</translation></message>
     <message><source>Unknown error while reading the target state.</source><translation>Hedef durumunu okuma: Bilinmeyen hata.</translation></message>
-    <message><source>The target no longer exists, so there is nothing to delete.</source><translation>Yol yok; silinecek bir şey yok.</translation></message>
     <message><source>The operation failed with an unknown error.</source><translation>Bilinmeyen hata.</translation></message>
-    <message><source>The operation result could not be confirmed because the target state reread failed: %1</source><translation>Hedef durumu yeniden okunamadığından sonuç doğrulanamadı: %1</translation></message>
-    <message><source>The provider accepted the deletion, but the target still exists after the authoritative reread.</source><translation>Sağlayıcı silmeyi kabul etti ancak yetkili kaynaktan yeniden okumada hedef hâlâ mevcut.</translation></message>
+    <message><source>The target state could not be verified, so the operation result is unknown: %1</source><translation>Hedefin durumu doğrulanamadığından işlemin sonucu bilinmiyor: %1</translation></message>
+    <message><source>The system accepted the deletion request, but the target still exists after verification.</source><translation>Sistem silme isteğini kabul etti, ancak doğrulama sonrasında hedef hâlâ mevcut.</translation></message>
     <message><source>Unknown</source><translation>Bilinmiyor</translation></message>
     <message><source>Failed to load logs: %1</source><translation>Başarısız: Günlüğü yükleme (%1)</translation></message>
     <message><source>Failed to load logs: unexpected error.</source><translation>Başarısız: Günlüğü yükleme (Bilinmeyen hata).</translation></message>
@@ -567,8 +532,8 @@ Saving will replace its contents.</source><translation>Bu konumda bir dosya zate
 Kaydetmek dosyanın içeriğini değiştirecek.</translation></message>
     <message><source>A graphical manager for Windows Unified Write Filter.
 Manage volume protection, overlay, exclusions, and staged files.</source><translation>Windows Unified Write Filter için grafik yönetim aracı.
-Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyaları yönetin.</translation></message>
-    <message><source>About this snapshot</source><translation>Bu anlık görüntü hakkında</translation></message>
+Birim korumasını, kaplamayı, dışlamaları ve listedeki dosyaları yönetin.</translation></message>
+    <message><source>Snapshot details</source><translation>Anlık görüntü ayrıntıları</translation></message>
     <message><source>Account</source><translation>Hesap</translation></message>
     <message><source>Add UWF configuration from a script or text.</source><translation>Bir betik veya metinden UWF yapılandırması ekleyin.</translation></message>
     <message><source>Add exclusion</source><translation>Dışlama ekle</translation></message>
@@ -576,19 +541,19 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Add selected items</source><translation>Seçili öğeleri ekle</translation></message>
     <message><source>Added</source><translation>Eklendi</translation></message>
     <message><source>Administrator</source><translation>Yönetici</translation></message>
-    <message><source>All changes have been saved to disk and will persist without a restart.</source><translation>Tüm değişiklikler diske kaydedildi ve yeniden başlatmadan korunacak.</translation></message>
+    <message><source>The selected operations completed. UWF may skip excluded targets.</source><translation>Seçilen işlemler tamamlandı. UWF, dışlanan hedefleri atlayabilir.</translation></message>
     <message><source>All files (*)</source><translation>Tüm dosyalar (*)</translation></message>
     <message><source>All levels</source><translation>Tüm düzeyler</translation></message>
 
-    <message><source>An empty diagnostic snapshot does not mean that the overlay contains no changes.</source><translation>Tanılama anlık görüntüsünün boş olması, yer paylaşımında değişiklik olmadığı anlamına gelmez.</translation></message>
+    <message><source>An empty diagnostic snapshot does not mean that the overlay contains no changes.</source><translation>Tanılama anlık görüntüsünün boş olması, kaplamada değişiklik olmadığı anlamına gelmez.</translation></message>
     <message><source>Application path</source><translation>Uygulama yolu</translation></message>
     <message><source>Application result</source><translation>Uygulama sonucu</translation></message>
     <message><source>Apply changes</source><translation>Değişiklikleri uygula</translation></message>
     <message><source>Architecture</source><translation>Mimari</translation></message>
     <message><source>Automatic</source><translation>Otomatik</translation></message>
-    <message><source>Automatic file staging</source><translation>Hazırlanmış dosyaları otomatik kaydetme</translation></message>
-    <message><source>Automatic saving incomplete</source><translation>Otomatik kaydetme tamamlanmadı</translation></message>
-    <message><source>Automatically save eligible staged files during normal shutdown and restart.</source><translation>Normal kapatma ve yeniden başlatma sırasında uygun hazırlanmış dosyaları otomatik kaydet.</translation></message>
+    <message><source>Automatic staged file commits</source><translation>Listedeki dosyaların otomatik kalıcı kaydı</translation></message>
+    <message><source>Automatic file commits incomplete</source><translation>Otomatik dosya kalıcı kaydı tamamlanmadı</translation></message>
+    <message><source>Automatically commit eligible staged files during Windows shutdown and restart.</source><translation>Listedeki uygun dosyaları Windows kapatılırken ve yeniden başlatılırken otomatik olarak kalıcı kaydet.</translation></message>
     <message><source>Available</source><translation>Kullanılabilir</translation></message>
     <message><source>Back</source><translation>Geri</translation></message>
     <message><source>Background service</source><translation>Arka plan hizmeti</translation></message>
@@ -596,7 +561,7 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>By drive letter</source><translation>Sürücü harfine göre</translation></message>
     <message><source>By volume ID</source><translation>Birim kimliğine göre</translation></message>
     <message><source>Cancel reading</source><translation>Okumayı iptal et</translation></message>
-    <message><source>Changes already committed are retained.</source><translation>Önceden kalıcılaştırılan değişiklikler korunur.</translation></message>
+    <message><source>Completed operations cannot be undone.</source><translation>Tamamlanan işlemler geri alınamaz.</translation></message>
     <message><source>Select the registry key to exclude from UWF protection, including its subkeys and values.</source><translation>Alt anahtarları ve değerleriyle birlikte UWF korumasından hariç tutulacak kayıt defteri anahtarını seçin.</translation></message>
     <message><source>Choose a location to save the file.</source><translation>Dosyanın kaydedileceği konumu seçin.</translation></message>
     <message><source>Choose a location within the allowed drive or folder.</source><translation>İzin verilen sürücü veya klasör içinde bir konum seçin.</translation></message>
@@ -606,14 +571,12 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Clear logs</source><translation>Günlükleri temizle</translation></message>
     <message><source>Clear logs?</source><translation>Günlükler temizlensin mi?</translation></message>
     <message><source>Collapse</source><translation>Daralt</translation></message>
-    <message><source>Commit changes</source><translation>Değişiklikleri kalıcılaştır</translation></message>
-    <message><source>Commit changes…</source><translation>Değişiklikleri kalıcılaştır…</translation></message>
-    <message><source>Commit complete</source><translation>Kalıcılaştırma tamamlandı</translation></message>
-    <message><source>Commit file changes?</source><translation>Dosya değişiklikleri kalıcılaştırılsın mı?</translation></message>
-    <message><source>Commit folder changes?</source><translation>Klasör değişiklikleri kalıcılaştırılsın mı?</translation></message>
-    <message><source>Commit registry key changes?</source><translation>Kayıt defteri anahtarı değişiklikleri kalıcılaştırılsın mı?</translation></message>
-    <message><source>Commit registry value changes?</source><translation>Kayıt defteri değeri değişiklikleri kalıcılaştırılsın mı?</translation></message>
-    <message><source>Commits staged files before normal shutdown and restart</source><translation>Normal kapatma ve yeniden başlatmadan önce hazırlanmış dosyaları kalıcılaştırır</translation></message>
+    <message><source>Commit changes</source><translation>Değişiklikleri kalıcı kaydet</translation></message>
+    <message><source>Commit changes…</source><translation>Değişiklikleri kalıcı kaydet…</translation></message>
+    <message><source>Commit file changes?</source><translation>Dosya değişiklikleri kalıcı kaydedilsin mi?</translation></message>
+    <message><source>Commit folder changes?</source><translation>Klasör değişiklikleri kalıcı kaydedilsin mi?</translation></message>
+    <message><source>Commit registry key changes?</source><translation>Kayıt defteri anahtarı değişiklikleri kalıcı kaydedilsin mi?</translation></message>
+    <message><source>Commit registry value changes?</source><translation>Kayıt defteri değeri değişiklikleri kalıcı kaydedilsin mi?</translation></message>
     <message><source>Compatibility mode</source><translation>Uyumluluk modu</translation></message>
     <message><source>Configuration applied</source><translation>Yapılandırma uygulandı</translation></message>
     <message><source>Configuration error</source><translation>Yapılandırma hatası</translation></message>
@@ -623,8 +586,8 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Connecting…</source><translation>Bağlanıyor…</translation></message>
     <message><source>Contact author</source><translation>Geliştiriciyle iletişim</translation></message>
     <message><source>Continue editing</source><translation>Düzenlemeye devam et</translation></message>
-    <message><source>Continuing restart will discard changes in files that could not be saved.</source><translation>Yeniden başlatmaya devam etmek, kaydedilemeyen dosyalardaki değişiklikleri silecektir.</translation></message>
-    <message><source>Continuing shutdown will discard changes in files that could not be saved.</source><translation>Kapatmaya devam etmek, kaydedilemeyen dosyalardaki değişiklikleri silecektir.</translation></message>
+    <message><source>If you continue restart, uncommitted file changes may be lost.</source><translation>Yeniden başlatmaya devam ederseniz kalıcı kaydedilmemiş dosya değişiklikleri kaybolabilir.</translation></message>
+    <message><source>If you continue shutdown, uncommitted file changes may be lost.</source><translation>Kapatmaya devam ederseniz kalıcı kaydedilmemiş dosya değişiklikleri kaybolabilir.</translation></message>
     <message><source>Coordinate with Windows shutdown</source><translation>Windows kapatmasıyla eşgüdümle</translation></message>
     <message><source>Copy all logs</source><translation>Tüm günlükleri kopyala</translation></message>
     <message><source>Copy full report</source><translation>Raporun tamamını kopyala</translation></message>
@@ -632,7 +595,7 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Copy path</source><translation>Yolu kopyala</translation></message>
     <message><source>Copy selection</source><translation>Seçimi kopyala</translation></message>
     <message><source>Copy version</source><translation>Sürümü kopyala</translation></message>
-    <message><source>Counting staged files…</source><translation>Hazırlanmış dosyalar sayılıyor…</translation></message>
+    <message><source>Counting staged files…</source><translation>Listedeki dosyalar sayılıyor…</translation></message>
     <message><source>Create</source><translation>Oluştur</translation></message>
     <message><source>Critical %1 MB</source><translation>Kritik %1 MB</translation></message>
     <message><source>Current filter</source><translation>Geçerli filtre</translation></message>
@@ -641,10 +604,10 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Current usage</source><translation>Geçerli kullanım</translation></message>
     <message><source>Date modified</source><translation>Değiştirilme tarihi</translation></message>
     <message><source>Debug</source><translation>Hata ayıklama</translation></message>
-    <message><source>Delete and commit this file?</source><translation>Bu dosya silinsin ve silme işlemi kalıcılaştırılsın mı?</translation></message>
-    <message><source>Delete and commit this folder?</source><translation>Bu klasör silinsin ve silme işlemi kalıcılaştırılsın mı?</translation></message>
-    <message><source>Delete and commit this registry key?</source><translation>Bu kayıt defteri anahtarı silinsin ve silme işlemi kalıcılaştırılsın mı?</translation></message>
-    <message><source>Delete and commit this registry value?</source><translation>Bu kayıt defteri değeri silinsin ve silme işlemi kalıcılaştırılsın mı?</translation></message>
+    <message><source>Delete and commit this file?</source><translation>Bu dosya silinsin ve silme işlemi kalıcı kaydedilsin mi?</translation></message>
+    <message><source>Delete and commit this folder?</source><translation>Bu klasör silinsin ve silme işlemi kalıcı kaydedilsin mi?</translation></message>
+    <message><source>Delete and commit this registry key?</source><translation>Bu kayıt defteri anahtarı silinsin ve silme işlemi kalıcı kaydedilsin mi?</translation></message>
+    <message><source>Delete and commit this registry value?</source><translation>Bu kayıt defteri değeri silinsin ve silme işlemi kalıcı kaydedilsin mi?</translation></message>
 
     <message><source>Direct restart?</source><translation>Doğrudan yeniden başlatılsın mı?</translation></message>
     <message><source>Direct shutdown?</source><translation>Doğrudan kapatılsın mı?</translation></message>
@@ -656,7 +619,7 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Editable</source><translation>Düzenlenebilir</translation></message>
     <message><source>Enable the filter and restart to display live usage</source><translation>Canlı kullanımı görmek için filtreyi etkinleştirin ve yeniden başlatın</translation></message>
     <message><source>Enhanced mode adds a background service that starts with Windows. Remove the service before moving or deleting the application.</source><translation>Gelişmiş mod, Windows ile birlikte başlayan bir arka plan hizmeti ekler. Uygulamayı taşımadan veya silmeden önce hizmeti kaldırın.</translation></message>
-    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to save staged files.</source><translation>Gelişmiş mod kullanılamıyor. Hazırlanmış dosyaları kaydetmek için Güvenli kapat veya Güvenli yeniden başlat seçeneğini kullanın.</translation></message>
+    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to commit staged files.</source><translation>Gelişmiş mod kullanılamıyor. Listedeki dosyaları kalıcı kaydetmek için Güvenli kapatma veya Güvenli yeniden başlatma seçeneğini kullanın.</translation></message>
     <message><source>Enter HKLM\SOFTWARE\… and press Enter to navigate</source><translation>HKLM\SOFTWARE\… girin ve gitmek için Enter’a basın</translation></message>
     <message><source>Enter a file name</source><translation>Dosya adı girin</translation></message>
     <message><source>Enter a valid file name.</source><translation>Geçerli bir dosya adı girin.</translation></message>
@@ -671,34 +634,30 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Failed to clear logs: unexpected error.</source><translation>Günlükler temizlenemedi: beklenmeyen hata.</translation></message>
     <message><source>File name</source><translation>Dosya adı</translation></message>
     <message><source>File or folder</source><translation>Dosya veya klasör</translation></message>
-    <message><source>File saving has started and cannot be canceled.</source><translation>Dosyaları kaydetme başladı ve iptal edilemez.</translation></message>
-    <message><source>File saving incomplete</source><translation>Dosyaları kaydetme tamamlanmadı</translation></message>
-    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after restart.</source><translation>Hazırlanmış dosyaları kaydetme atlanacak. Korunan yollardaki kalıcılaştırılmamış değişiklikler yeniden başlatmadan sonra kaybolacak.</translation></message>
-    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after shutdown.</source><translation>Hazırlanmış dosyaları kaydetme atlanacak. Korunan yollardaki kalıcılaştırılmamış değişiklikler kapatmadan sonra kaybolacak.</translation></message>
+    <message><source>File commits have started and cannot be canceled.</source><translation>Dosyaları kalıcı kaydetme başladı ve iptal edilemez.</translation></message>
+    <message><source>File commits incomplete</source><translation>Dosyaları kalıcı kaydetme tamamlanmadı</translation></message>
     <message><source>File type</source><translation>Dosya türü</translation></message>
     <message><source>Files and folders</source><translation>Dosyalar ve klasörler</translation></message>
     <message><source>Files and folders can be selected together.</source><translation>Dosyalar ve klasörler birlikte seçilebilir.</translation></message>
-    <message><source>Files in File staging will not be saved.</source><translation>Hazırlanmış dosyalar kaydedilmeyecek.</translation></message>
     <message><source>Filter is disabled</source><translation>Filtre devre dışı</translation></message>
     <message><source>Fit columns to contents</source><translation>Sütunları içeriğe sığdır</translation></message>
     <message><source>Folder address</source><translation>Klasör adresi</translation></message>
     <message><source>Folder name</source><translation>Klasör adı</translation></message>
     <message><source>Folders</source><translation>Klasörler</translation></message>
-    <message><source>Full configuration</source><translation>Tam yapılandırma</translation></message>
-    <message><source>Future writes to this key will not be protected by UWF.</source><translation>Bu anahtara sonraki yazmalar UWF tarafından korunmayacak.</translation></message>
-    <message><source>Future writes to this path will not be protected by UWF.</source><translation>Bu yola sonraki yazmalar UWF tarafından korunmayacak.</translation></message>
+    <message><source>Add this key to the next-session exclusions.</source><translation>Bu anahtarı sonraki oturumun dışlamalarına ekleyin.</translation></message>
+    <message><source>Add this path to the next-session exclusions.</source><translation>Bu yolu sonraki oturumun dışlamalarına ekleyin.</translation></message>
     <message><source>Global registry exclusion · includes subkeys</source><translation>Genel kayıt defteri dışlaması · alt anahtarlar dahil</translation></message>
     <message><source>Go up one folder or choose another location.</source><translation>Bir üst klasöre gidin veya başka bir konum seçin.</translation></message>
     <message><source>Home</source><translation>Giriş klasörü</translation></message>
     <message><source>Import configuration</source><translation>Yapılandırmayı içe aktar</translation></message>
-    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>İçe aktarma yapılandırma taslağını günceller. Değişiklikleri sisteme yazmak için İncele ve uygula seçeneğini kullanın.</translation></message>
+    <message><source>Import updates the draft. Confirm the changes in Review and apply to write them to the system.</source><translation>İçe aktarma taslağı günceller. Değişiklikleri sisteme yazmak için İncele ve uygula bölümünde onaylayın.</translation></message>
     <message><source>Import results</source><translation>İçe aktarma sonuçları</translation></message>
     <message><source>Imported</source><translation>İçe aktarıldı</translation></message>
-    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>Rapor, yapılandırma taslağına yönelik komut sonuçlarını listeler. Komutun ve sonucun tamamını görmek için bir satır seçin.</translation></message>
+    <message><source>The list shows command results for the configuration draft. Select a row to view the complete command and details.</source><translation>Liste, yapılandırma taslağına yönelik komut sonuçlarını gösterir; komutun tamamını ve ayrıntıları görmek için bir satır seçin.</translation></message>
     <message><source>Imported: %1</source><translation>İçe aktarıldı: %1</translation></message>
     <message><source>Information</source><translation>Bilgi</translation></message>
     <message><source>Item details</source><translation>Öğe ayrıntıları</translation></message>
-    <message><source>Large staging lists may take longer to save.</source><translation>Büyük hazırlanmış dosya listelerini kaydetmek daha uzun sürebilir.</translation></message>
+    <message><source>Committing many staged files may take longer.</source><translation>Listedeki çok sayıda dosyayı kalıcı kaydetmek daha uzun sürebilir.</translation></message>
     <message><source>License and copyright</source><translation>Lisans ve telif hakkı</translation></message>
     <message><source>Line</source><translation>Satır</translation></message>
     <message><source>Local disk (%1)</source><translation>Yerel disk (%1)</translation></message>
@@ -710,7 +669,7 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Module</source><translation>Modül</translation></message>
     <message><source>More</source><translation>Diğer</translation></message>
     <message><source>Move</source><translation>Taşı</translation></message>
-    <message><source>If UWF protects the application drive, first make sure the application files will remain after a restart. Committing many staged files can make shutdown or restart take longer.</source><translation>Uygulamanın bulunduğu sürücü UWF ile korunuyorsa, önce uygulama dosyalarının yeniden başlatmadan sonra da kalacağından emin olun. Çok sayıda hazırlanmış dosyayı kalıcı olarak kaydetmek, kapatmayı veya yeniden başlatmayı uzatabilir.</translation></message>
+    <message><source>If UWF protects the application drive, first make sure the application files will remain after a restart. Committing many staged files can make shutdown or restart take longer.</source><translation>Uygulamanın sürücüsü UWF ile korunuyorsa önce uygulama dosyalarının yeniden başlatmadan sonra da kalacağından emin olun. Listedeki çok sayıda dosyayı kalıcı kaydetmek, kapatmayı veya yeniden başlatmayı uzatabilir.</translation></message>
     <message><source>Multiple files can be selected.</source><translation>Birden fazla dosya seçilebilir.</translation></message>
     <message><source>Name and location</source><translation>Ad ve konum</translation></message>
     <message><source>Named value: %1 · this value only</source><translation>Adlandırılmış değer: %1 · yalnızca bu değer</translation></message>
@@ -718,11 +677,11 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>New folder</source><translation>Yeni klasör</translation></message>
     <message><source>New records will appear after refreshing.</source><translation>Yeniledikten sonra yeni kayıtlar görünecek.</translation></message>
     <message><source>Next-session configuration</source><translation>Sonraki oturum yapılandırması</translation></message>
-    <message><source>No files to commit</source><translation>Kalıcılaştırılacak dosya yok</translation></message>
+    <message><source>No files to commit</source><translation>Kalıcı kaydedilecek dosya yok</translation></message>
     <message><source>No logs yet</source><translation>Henüz günlük yok</translation></message>
     <message><source>No matching items</source><translation>Eşleşen öğe yok</translation></message>
     <message><source>No matching logs</source><translation>Eşleşen günlük yok</translation></message>
-    <message><source>No overlay files found</source><translation>Yer paylaşımı dosyası bulunamadı</translation></message>
+    <message><source>No overlay files found</source><translation>Kaplama dosyası bulunamadı</translation></message>
     <message><source>No registry key selected</source><translation>Kayıt defteri anahtarı seçilmedi</translation></message>
     <message><source>None</source><translation>Yok</translation></message>
     <message><source>Not configured</source><translation>Yapılandırılmadı</translation></message>
@@ -733,18 +692,17 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>On</source><translation>Açık</translation></message>
     <message><source>One uwfmgr command per line</source><translation>Her satırda bir uwfmgr komutu</translation></message>
     <message><source>Keep the application in a fixed folder that standard users cannot modify. Suggested location:</source><translation>Uygulamayı standart kullanıcıların değiştiremeyeceği sabit bir klasörde tutun. Önerilen konum:</translation></message>
-    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after restart.</source><translation>Yalnızca hazırlanmış dosyalar otomatik kaydedilir. Korunan yollardaki diğer kalıcılaştırılmamış değişiklikler yeniden başlatmadan sonra kaybolacak.</translation></message>
-    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after shutdown.</source><translation>Yalnızca hazırlanmış dosyalar otomatik kaydedilir. Korunan yollardaki diğer kalıcılaştırılmamış değişiklikler kapatmadan sonra kaybolacak.</translation></message>
+    <message><source>Only staged files are committed automatically. Other uncommitted changes may be lost after restart.</source><translation>Yalnızca listedeki dosyalar otomatik olarak kalıcı kaydedilir. Kalıcı kaydedilmemiş diğer değişiklikler yeniden başlatma sonrasında kaybolabilir.</translation></message>
+    <message><source>Only staged files are committed automatically. Other uncommitted changes may be lost after shutdown.</source><translation>Yalnızca listedeki dosyalar otomatik olarak kalıcı kaydedilir. Kalıcı kaydedilmemiş diğer değişiklikler kapatma sonrasında kaybolabilir.</translation></message>
     <message><source>Open</source><translation>Aç</translation></message>
     <message><source>Open folder</source><translation>Klasörü aç</translation></message>
     <message><source>Operating system</source><translation>İşletim sistemi</translation></message>
     <message><source>Operation and security</source><translation>İşleyiş ve güvenlik</translation></message>
     <message><source>Original command</source><translation>Özgün komut</translation></message>
-    <message><source>Overlay critical threshold reached. Save changes and safely restart.</source><translation>Yer paylaşımı kritik eşiğine ulaşıldı. Değişiklikleri kaydedip güvenli yeniden başlatın.</translation></message>
-    <message><source>Overlay maximum size</source><translation>Yer paylaşımı en büyük boyutu</translation></message>
-    <message><source>Overlay type</source><translation>Yer paylaşımı türü</translation></message>
-    <message><source>Overlay usage</source><translation>Yer paylaşımı kullanımı</translation></message>
-    <message><source>Overlay warning threshold reached. Save changes and safely restart.</source><translation>Yer paylaşımı uyarı eşiğine ulaşıldı. Değişiklikleri kaydedip güvenli yeniden başlatın.</translation></message>
+    <message><source>Overlay critical threshold reached. Save changes and safely restart.</source><translation>Kaplama kritik eşiğine ulaşıldı. Değişiklikleri kaydedip güvenli yeniden başlatın.</translation></message>
+    <message><source>Maximum overlay capacity</source><translation>En yüksek kaplama kapasitesi</translation></message>
+    <message><source>Overlay type</source><translation>Kaplama türü</translation></message>
+    <message><source>Overlay warning threshold reached. Save changes and safely restart.</source><translation>Kaplama uyarı eşiğine ulaşıldı. Değişiklikleri kaydedip güvenli yeniden başlatın.</translation></message>
     <message><source>Overview</source><translation>Genel bakış</translation></message>
     <message><source>Paste commands, or load them from a file…</source><translation>Komutları yapıştırın veya dosyadan yükleyin…</translation></message>
     <message><source>Pending changes</source><translation>Bekleyen değişiklikler</translation></message>
@@ -755,26 +713,26 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Processing result</source><translation>İşleme sonucu</translation></message>
     <message><source>Protected</source><translation>Korunuyor</translation></message>
     <message><source>Protected volumes</source><translation>Korunan birimler</translation></message>
-    <message><source>Protection and overlay</source><translation>Koruma ve yer paylaşımı</translation></message>
+    <message><source>Protection and overlay</source><translation>Koruma ve kaplama</translation></message>
     <message><source>Quick access</source><translation>Hızlı erişim</translation></message>
     <message><source>Raw report</source><translation>Ham rapor</translation></message>
     <message><source>Read again</source><translation>Yeniden oku</translation></message>
     <message><source>Read again to retrieve a diagnostic snapshot.</source><translation>Tanılama anlık görüntüsü almak için yeniden okuyun.</translation></message>
     <message><source>Read the configuration to display live usage</source><translation>Canlı kullanımı görmek için yapılandırmayı okuyun</translation></message>
     <message><source>Read-only</source><translation>Salt okunur</translation></message>
-    <message><source>Reading a large overlay can take longer. You can cancel at any time.</source><translation>Büyük bir yer paylaşımını okumak daha uzun sürebilir. İstediğiniz zaman iptal edebilirsiniz.</translation></message>
+    <message><source>Reading a large overlay can take longer. You can cancel at any time.</source><translation>Büyük bir kaplamayı okumak daha uzun sürebilir. İstediğiniz zaman iptal edebilirsiniz.</translation></message>
     <message><source>Reading canceled</source><translation>Okuma iptal edildi</translation></message>
     <message><source>Reading files and subfolders in this location…</source><translation>Bu konumdaki dosya ve alt klasörler okunuyor…</translation></message>
     <message><source>Reading folder</source><translation>Klasör okunuyor</translation></message>
     <message><source>Reading logs</source><translation>Günlükler okunuyor</translation></message>
-    <message><source>Reading overlay</source><translation>Yer paylaşımı okunuyor</translation></message>
+    <message><source>Reading overlay</source><translation>Kaplama okunuyor</translation></message>
     <message><source>Ready</source><translation>Hazır</translation></message>
-    <message><source>Ready to save</source><translation>Kaydetmeye hazır</translation></message>
+    <message><source>Files to commit</source><translation>Kalıcı kaydedilecek dosyalar</translation></message>
     <message><source>Records from the current run will appear here when reading is complete.</source><translation>Okuma tamamlandığında geçerli çalıştırmanın kayıtları burada görünecek.</translation></message>
-    <message><source>Recursive staging</source><translation>Özyinelemeli hazırlama</translation></message>
+
     <message><source>Refresh folder</source><translation>Klasörü yenile</translation></message>
     <message><source>Registry key or persistence setting</source><translation>Kayıt defteri anahtarı veya kalıcılık ayarı</translation></message>
-    <message><source>Remaining tasks can be canceled after the current target finishes.</source><translation>Geçerli hedef bittikten sonra kalan görevler iptal edilebilir.</translation></message>
+    <message><source>Canceling stops remaining tasks after the current operation finishes.</source><translation>İptal istendiğinde, yürütülen işlem sona erince kalan görevler durdurulur.</translation></message>
     <message><source>Remove this key from the next-session exclusions.</source><translation>Bu anahtarı sonraki oturum dışlamalarından kaldır.</translation></message>
     <message><source>Remove this path from the next-session exclusions.</source><translation>Bu yolu sonraki oturum dışlamalarından kaldır.</translation></message>
     <message><source>Removed</source><translation>Kaldırıldı</translation></message>
@@ -785,28 +743,28 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Replace the existing file?</source><translation>Var olan dosya değiştirilsin mi?</translation></message>
     <message><source>Required configuration</source><translation>Gerekli yapılandırma</translation></message>
     <message><source>Restart anyway</source><translation>Yine de yeniden başlat</translation></message>
-    <message><source>Restart will continue after saving. Keep the application open.</source><translation>Kaydettikten sonra yeniden başlatma devam edecek. Uygulamayı açık tutun.</translation></message>
+    <message><source>Restart will continue after committing. Keep the application open.</source><translation>Kalıcı kaydetme sonrasında yeniden başlatma devam edecek. Uygulamayı açık tutun.</translation></message>
     <message><source>Restore</source><translation>Geri yükle</translation></message>
     <message><source>Retry</source><translation>Yeniden dene</translation></message>
     <message><source>Review the failure details before continuing shutdown.</source><translation>Kapatmaya devam etmeden önce hata ayrıntılarını inceleyin.</translation></message>
     <message><source>Review the failure details before restarting.</source><translation>Yeniden başlatmadan önce hata ayrıntılarını inceleyin.</translation></message>
-    <message><source>Review the operation details. Read the current system state before retrying changes that may have been written.</source><translation>İşlem ayrıntılarını inceleyin. Yazılmış olabilecek değişiklikleri yeniden denemeden önce geçerli sistem durumunu okuyun.</translation></message>
+    <message><source>Some changes may already have been written. Refresh the system state before retrying.</source><translation>Bazı değişiklikler zaten yazılmış olabilir. Yeniden denemeden önce sistem durumunu yenileyin.</translation></message>
     <message><source>Review the result for each target.</source><translation>Her hedefin sonucunu inceleyin.</translation></message>
     <message><source>Review these changes before writing them to the system.</source><translation>Bu değişiklikleri sisteme yazmadan önce inceleyin.</translation></message>
     <message><source>Running</source><translation>Çalışıyor</translation></message>
     <message><source>Save</source><translation>Kaydet</translation></message>
-    <message><source>Save staged files to disk, then restart.</source><translation>Hazırlanmış dosyaları diske kaydet ve yeniden başlat.</translation></message>
-    <message><source>Save staged files to disk, then shut down.</source><translation>Hazırlanmış dosyaları diske kaydet ve kapat.</translation></message>
-    <message><source>Saving staged files</source><translation>Hazırlanmış dosyalar kaydediliyor</translation></message>
-    <message><source>Saving to disk</source><translation>Diske kaydediliyor</translation></message>
-    <message><source>Saving…</source><translation>Kaydediliyor…</translation></message>
-    <message><source>Scanning staged paths</source><translation>Hazırlanmış yollar taranıyor</translation></message>
+    <message><source>Commit staged files to disk, then restart.</source><translation>Listedeki dosyaları diske kalıcı kaydet, ardından yeniden başlat.</translation></message>
+    <message><source>Commit staged files to disk, then shut down.</source><translation>Listedeki dosyaları diske kalıcı kaydet, ardından kapat.</translation></message>
+
+    <message><source>Committing to disk</source><translation>Diske kalıcı kaydediliyor</translation></message>
+    <message><source>Committing…</source><translation>Kalıcı kaydediliyor…</translation></message>
+    <message><source>Scanning staged paths</source><translation>Listedeki yollar taranıyor</translation></message>
     <message><source>Search logs</source><translation>Günlüklerde ara</translation></message>
     <message><source>Search messages or modules</source><translation>İleti veya modüllerde ara</translation></message>
     <message><source>Search paths</source><translation>Yollarda ara</translation></message>
     <message><source>Search this folder</source><translation>Bu klasörde ara</translation></message>
     <message><source>Select a file or enter its name</source><translation>Bir dosya seçin veya adını girin</translation></message>
-    <message><source>Select a file to open.</source><translation>Açılacak bir dosya seçin.</translation></message>
+    <message><source>Select a file to open.</source><translation>Açılacak dosyayı seçin.</translation></message>
     <message><source>Select a folder.</source><translation>Bir klasör seçin.</translation></message>
     <message><source>Select a key to operate on its subtree, or a named value to operate on that value only.</source><translation>Alt ağacının tamamında işlem yapmak için anahtar, yalnızca ilgili değerde işlem yapmak için adlandırılmış bir değer seçin.</translation></message>
     <message><source>Select an available subkey</source><translation>Kullanılabilir bir alt anahtar seç</translation></message>
@@ -830,14 +788,14 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Service status</source><translation>Hizmet durumu</translation></message>
     <message><source>Service stopped</source><translation>Hizmet durduruldu</translation></message>
     <message><source>Shut down anyway</source><translation>Yine de kapat</translation></message>
-    <message><source>Shutdown will continue after saving. Keep the application open.</source><translation>Kaydettikten sonra kapatma devam edecek. Uygulamayı açık tutun.</translation></message>
+    <message><source>Shutdown will continue after committing. Keep the application open.</source><translation>Kalıcı kaydetme sonrasında kapatma devam edecek. Uygulamayı açık tutun.</translation></message>
     <message><source>Size</source><translation>Boyut</translation></message>
     <message><source>Some changes could not be applied</source><translation>Bazı değişiklikler uygulanamadı</translation></message>
-    <message><source>Some files could not be saved</source><translation>Bazı dosyalar kaydedilemedi</translation></message>
+    <message><source>Some files could not be committed</source><translation>Bazı dosyalar kalıcı olarak kaydedilemedi</translation></message>
     <message><source>Some hardware information could not be read. Other diagnostic information remains available to view and copy.</source><translation>Bazı donanım bilgileri okunamadı. Diğer tanılama bilgileri hâlâ görüntülenip kopyalanabilir.</translation></message>
     <message><source>Source code</source><translation>Kaynak kodu</translation></message>
-    <message><source>Staged file</source><translation>Hazırlanmış dosya</translation></message>
-    <message><source>Staged path</source><translation>Hazırlanmış yol</translation></message>
+
+    <message><source>Staged path</source><translation>Listedeki yol</translation></message>
     <message><source>Standard user</source><translation>Standart kullanıcı</translation></message>
     <message><source>Starts automatically with Windows</source><translation>Windows ile otomatik başlar</translation></message>
     <message><source>Startup type</source><translation>Başlangıç türü</translation></message>
@@ -848,28 +806,30 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>System changes when UWF is first enabled</source><translation>UWF ilk etkinleştirildiğinde yapılan sistem değişiklikleri</translation></message>
     <message><source>System memory</source><translation>Sistem belleği</translation></message>
     <message><source>System metadata</source><translation>Sistem meta verileri</translation></message>
-    <message><source>System metadata is for diagnosis only and cannot be committed.</source><translation>Sistem meta verileri yalnızca tanılama içindir ve kalıcılaştırılamaz.</translation></message>
+    <message><source>System metadata is for diagnosis only and cannot be committed.</source><translation>Sistem meta verileri yalnızca tanılama içindir ve kalıcı kaydedilemez.</translation></message>
     <message><source>Takes effect after restart</source><translation>Yeniden başlattıktan sonra geçerli</translation></message>
+    <message><source>Takes effect when applied</source><translation>Uygulandığında etkinleşir</translation></message>
+    <message><source>Used when UWF starts</source><translation>UWF başlatıldığında kullanılır</translation></message>
+    <message><source>Mixed activation times</source><translation>Farklı etkinleşme zamanları</translation></message>
     <message><source>Target</source><translation>Hedef</translation></message>
     <message><source>Terminal Services license persistence</source><translation>Terminal Services lisanslarını kalıcı tutma</translation></message>
-    <message><source>The UWF provider could not complete enumeration. This can occur with a large overlay or insufficient system resources.</source><translation>UWF sağlayıcısı listelemeyi tamamlayamadı. Büyük bir yer paylaşımında veya yetersiz sistem kaynaklarında bu durum oluşabilir.</translation></message>
-    <message><source>The configuration has been written to the system. Most changes take effect after restart.</source><translation>Yapılandırma sisteme yazıldı. Çoğu değişiklik yeniden başlattıktan sonra geçerli olur.</translation></message>
-    <message><source>The configuration matches the next-session target. View or export commands in Full configuration.</source><translation>Yapılandırma sonraki oturum hedefiyle eşleşiyor. Tam yapılandırma bölümünde komutları görüntüleyin veya dışa aktarın.</translation></message>
+    <message><source>The UWF provider could not complete enumeration. This can occur with a large overlay or insufficient system resources.</source><translation>UWF sağlayıcısı listelemeyi tamamlayamadı. Büyük bir kaplamada veya yetersiz sistem kaynaklarında bu durum oluşabilir.</translation></message>
+    <message><source>The configuration has been written to the system.</source><translation>Yapılandırma sisteme yazıldı.</translation></message>
     <message><source>The current log records will be cleared and cannot be restored.</source><translation>Geçerli günlük kayıtları silinecek ve geri getirilemeyecek.</translation></message>
     <message><source>The destination folder does not exist.</source><translation>Hedef klasör yok.</translation></message>
     <message><source>The enhanced mode service status could not be read. Check service permissions and retry.</source><translation>Gelişmiş mod hizmet durumu okunamadı. Hizmet izinlerini denetleyip yeniden deneyin.</translation></message>
-    <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>Liste bazı dosyaları atlayabilir veya önceden kalıcılaştırılan dosyaları içerebilir. Kalıcılaştırma listesi olarak kullanmayın.</translation></message>
+    <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>Liste bazı dosyaları atlayabilir veya önceden kalıcı kaydedilen dosyaları içerebilir. Kalıcı kaydetme listesi olarak kullanmayın.</translation></message>
 
     <message><source>The selected item no longer exists: %1</source><translation>Seçili öğe artık yok: %1</translation></message>
-    <message><source>The service is installed but stopped. Start it to restore automatic saving.</source><translation>Hizmet yüklü ancak durdurulmuş. Otomatik kaydetmeyi geri getirmek için başlatın.</translation></message>
+    <message><source>The service is installed but stopped. Start it to resume automatic file commits.</source><translation>Hizmet kurulu ancak durmuş. Otomatik dosya kalıcı kaydını sürdürmek için başlatın.</translation></message>
     <message><source>This PC</source><translation>Bu bilgisayar</translation></message>
     <message><source>This folder is empty</source><translation>Bu klasör boş</translation></message>
 
     <message><source>This report may contain account names, device identifiers, and file paths. Review it before sharing.</source><translation>Bu rapor hesap adları, cihaz tanımlayıcıları ve dosya yolları içerebilir. Paylaşmadan önce inceleyin.</translation></message>
-    <message><source>Save this UTF-8 CMD script as a .cmd file and run it in Command Prompt. Export uses the same script.</source><translation>Bu UTF-8 CMD betiğini .cmd dosyası olarak kaydedin ve Komut İstemi’nde çalıştırın. Dışa aktarma aynı betiği kullanır.</translation></message>
+
     <message><source>Try another keyword or log level.</source><translation>Başka bir anahtar sözcük veya günlük düzeyi deneyin.</translation></message>
     <message><source>Try another search term.</source><translation>Başka bir arama terimi deneyin.</translation></message>
-    <message><source>Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>Filtre etkin olduğu sürece tür ve en büyük boyut değiştirilemez. Önce filtreyi devre dışı bırakıp yeniden başlatın.</translation></message>
+    <message><source>Disable UWF and restart before changing the overlay type or maximum capacity.</source><translation>Kaplama türünü veya en yüksek kapasitesini değiştirmeden önce UWF'yi devre dışı bırakıp yeniden başlatın.</translation></message>
     <message><source>UI agent</source><translation>Arayüz aracısı</translation></message>
     <message><source>UTF-8 · %1 lines</source><translation>UTF-8 · %1 satır</translation></message>
     <message><source>UWF configuration could not be read. Confirm that Unified Write Filter is installed in Windows, then read again.</source><translation>UWF yapılandırması okunamadı. Unified Write Filter’ın Windows’ta yüklü olduğunu doğrulayın ve yeniden okuyun.</translation></message>
@@ -882,13 +842,13 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Unable to access this registry key</source><translation>Bu kayıt defteri anahtarına erişilemiyor</translation></message>
     <message><source>Unable to read logs</source><translation>Günlükler okunamıyor</translation></message>
     <message><source>Unable to read service status</source><translation>Hizmet durumu okunamıyor</translation></message>
-    <message><source>Unable to read the overlay right now</source><translation>Yer paylaşımı şu anda okunamıyor</translation></message>
+    <message><source>Unable to read the overlay right now</source><translation>Kaplama şu anda okunamıyor</translation></message>
     <message><source>Unable to read this folder.</source><translation>Bu klasör okunamıyor.</translation></message>
     <message><source>Unable to select this item</source><translation>Bu öğe seçilemiyor</translation></message>
     <message><source>Unavailable</source><translation>Kullanılamıyor</translation></message>
     <message><source>Undo removal</source><translation>Kaldırmayı geri al</translation></message>
     <message><source>Unprotected</source><translation>Korunmuyor</translation></message>
-    <message><source>Unsuccessful items have not been saved. Select a row to view the full path and reason.</source><translation>Başarısız öğeler kaydedilmedi. Tam yolu ve nedeni görmek için bir satır seçin.</translation></message>
+    <message><source>Some items were not completed or could not be verified. Select an item to view its full path and details.</source><translation>Bazı öğeler tamamlanamadı veya doğrulanamadı. Tam yolunu ve ayrıntılarını görmek için bir öğe seçin.</translation></message>
     <message><source>Up one folder</source><translation>Bir üst klasöre git</translation></message>
     <message><source>Usage unavailable</source><translation>Kullanım kullanılamıyor</translation></message>
     <message><source>Use the whole key, including all subkeys</source><translation>Tüm alt anahtarlar dahil anahtarın tamamını kullan</translation></message>
@@ -896,7 +856,7 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>View application records and diagnostic information.</source><translation>Uygulama kayıtlarını ve tanılama bilgilerini görüntüleyin.</translation></message>
     <message><source>View commands for these changes</source><translation>Bu değişikliklerin komutlarını görüntüle</translation></message>
     <message><source>View failure details</source><translation>Hata ayrıntılarını görüntüle</translation></message>
-    <message><source>View overlay</source><translation>Yer paylaşımını görüntüle</translation></message>
+    <message><source>View overlay</source><translation>Kaplamayı görüntüle</translation></message>
     <message><source>View the file diagnostic snapshot for %1.</source><translation>%1 için dosya tanılama anlık görüntüsünü görüntüleyin.</translation></message>
     <message><source>Volume %1 binding</source><translation>%1 birimini bağlama</translation></message>
     <message><source>Volume %1 protection</source><translation>%1 birimini koruma</translation></message>
@@ -905,25 +865,25 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Warning %1 MB</source><translation>Uyarı %1 MB</translation></message>
     <message><source>Whole key and all subkeys · recursive</source><translation>Anahtarın tamamı ve tüm alt anahtarlar · özyinelemeli</translation></message>
     <message><source>Windows UWF provides write protection. This application configures and manages it.</source><translation>Yazma korumasını Windows UWF sağlar. Bu uygulama korumayı yapılandırır ve yönetir.</translation></message>
-    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to save staged files.</source><translation>Gelişmiş mod olmadan hazırlanmış dosyaları kaydetmek için bu uygulamadaki Güvenli kapat veya Güvenli yeniden başlat seçeneğini kullanın.</translation></message>
+    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to commit staged files.</source><translation>Gelişmiş mod olmadan, listedeki dosyaları kalıcı kaydetmek için bu uygulamadaki Güvenli kapatma veya Güvenli yeniden başlatma seçeneğini kullanın.</translation></message>
     <message><source>Write protection</source><translation>Yazma koruması</translation></message>
-    <message><source>Write these configuration changes to the system? Most changes take effect after restart.</source><translation>Bu yapılandırma değişiklikleri sisteme yazılsın mı? Çoğu değişiklik yeniden başlattıktan sonra geçerli olur.</translation></message>
-    <message><source>staged files</source><translation>hazırlanmış dosyalar</translation></message>
+    <message><source>Write these configuration changes to the system?</source><translation>Bu yapılandırma değişiklikleri sisteme yazılsın mı?</translation></message>
+    <message><source>staged files</source><translation>listedeki dosyalar</translation></message>
     <message><source>uwfmgr commands</source><translation>uwfmgr komutları</translation></message>
     <message><source>Mark selected paths for removal. Takes effect after Apply.</source><translation>Seçili yolları kaldırılmak üzere işaretleyin. Uygulandıktan sonra geçerli olur.</translation></message>
-    <message><source>Remove from automatic file staging after Apply.</source><translation>Uygulandıktan sonra otomatik dosya hazırlama listesinden kaldır.</translation></message>
-    <message><source>Add to automatic file staging after Apply.</source><translation>Uygulandıktan sonra otomatik dosya hazırlama listesine ekle.</translation></message>
-    <message><source>Applying this plan clears the saved staging list and removes its registry exclusion when no longer required.</source><translation>Bu plan uygulandığında kayıtlı dosya hazırlama listesi temizlenir ve artık gerekmiyorsa ilişkili kayıt defteri dışlaması kaldırılır.</translation></message>
-    <message><source>File staging changes must be applied in UWF Manager and cannot be exported as uwfmgr commands.</source><translation>Dosya hazırlama değişiklikleri UWF Manager içinde uygulanmalıdır ve uwfmgr komutları olarak dışa aktarılamaz.</translation></message>
-    <message><source>File staging is saved after Apply</source><translation>Dosya hazırlama listesi uygulandıktan sonra kaydedilir</translation></message>
-    <message><source>Overlay snapshot scope</source><translation>Yer paylaşımı anlık görüntüsünün kapsamı</translation></message>
-    <message><source>This list is for diagnostics only. It cannot determine which files must be committed.</source><translation>Bu liste yalnızca tanılama içindir. Hangi dosyaların kalıcılaştırılması gerektiğini belirlemek için kullanılamaz.</translation></message>
+    <message><source>Remove from automatic file staging after Apply.</source><translation>Uygulandıktan sonra otomatik kayıt listesinden kaldır.</translation></message>
+    <message><source>Add to automatic file staging after Apply.</source><translation>Uygulandıktan sonra otomatik kayıt listesine ekle.</translation></message>
+    <message><source>Applying this plan clears the saved staging list and removes its registry exclusion when no longer required.</source><translation>Bu plan uygulandığında kaydedilmiş otomatik kayıt listesi temizlenir ve artık gerekmiyorsa kayıt defteri dışlaması kaldırılır.</translation></message>
+    <message><source>File staging changes must be applied in UWF Manager and cannot be exported as uwfmgr commands.</source><translation>Otomatik kayıt listesi değişiklikleri UWF Manager içinde uygulanmalıdır ve uwfmgr komutları olarak dışa aktarılamaz.</translation></message>
+    <message><source>File staging is saved after Apply</source><translation>Otomatik kayıt listesi uygulandıktan sonra kaydedilir</translation></message>
+    <message><source>Overlay snapshot scope</source><translation>Kaplama anlık görüntüsünün kapsamı</translation></message>
+    <message><source>This list is for diagnostics only. It cannot determine which files must be committed.</source><translation>Bu liste yalnızca tanılama içindir. Hangi dosyaların kalıcı kaydedilmesi gerektiğini belirleyemez.</translation></message>
     <message><source>NTFS volumes only</source><translation>Yalnızca NTFS birimleri</translation></message>
-    <message><source>Large overlays may load slowly or fail because of insufficient resources.</source><translation>Büyük yer paylaşımlarının okunması yavaş olabilir veya yetersiz kaynak nedeniyle başarısız olabilir.</translation></message>
+    <message><source>Large overlays may load slowly or fail because of insufficient resources.</source><translation>Büyük kaplamaların okunması yavaş olabilir veya yetersiz kaynak nedeniyle başarısız olabilir.</translation></message>
     <message><source>Small files may be missing</source><translation>Küçük dosyalar eksik olabilir</translation></message>
     <message><source>Files smaller than the disk cluster size (typically 4 KB) may not appear in the list.</source><translation>Disk kümesi boyutundan (genellikle 4 KB) küçük dosyalar listede görünmeyebilir.</translation></message>
-    <message><source>Does not indicate pending commits</source><translation>Bekleyen kalıcılaştırmaları göstermez</translation></message>
-    <message><source>Files already committed, excluded paths, and items affected by other operations may also appear.</source><translation>Önceden kalıcılaştırılmış dosyalar, dışlanan yollar ve diğer işlemlerden etkilenen öğeler de görünebilir.</translation></message>
+    <message><source>Does not indicate pending commits</source><translation>Bekleyen kalıcı kaydetme işlemlerini göstermez</translation></message>
+    <message><source>Files already committed, excluded paths, and items affected by other operations may also appear.</source><translation>Önceden kalıcı kaydedilmiş dosyalar, dışlanan yollar ve diğer işlemlerden etkilenen öğeler de görünebilir.</translation></message>
 
     <message><source>Command processing result</source><translation>Komut işleme sonucu</translation></message>
     <message><source>Copy command</source><translation>Komutu kopyala</translation></message>
@@ -933,30 +893,30 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>%1 values · %2 keys</source><translation>%1 değer · %2 anahtar</translation></message>
     <message><source>Attempts</source><translation>Deneme sayısı</translation></message>
     <message><source>Cancel remaining tasks</source><translation>Kalan görevleri iptal et</translation></message>
-    <message><source>Commit only successfully traversed content. Unread branches remain unchanged.</source><translation>Yalnızca başarıyla taranan içeriği kalıcılaştır. Okunamayan dallar değişmeden kalır.</translation></message>
-    <message><source>Committing changes</source><translation>Değişiklikler kalıcılaştırılıyor</translation></message>
-    <message><source>Completed deletions and commits cannot be undone.</source><translation>Tamamlanan silme ve kalıcılaştırma işlemleri geri alınamaz.</translation></message>
+    <message><source>Commit only successfully traversed content. Unread branches remain unchanged.</source><translation>Yalnızca başarıyla taranan içeriği kalıcı kaydet. Okunamayan dallar değişmeden kalır.</translation></message>
+    <message><source>Committing changes</source><translation>Değişiklikler kalıcı kaydediliyor</translation></message>
+    <message><source>Completed deletions and commits cannot be undone.</source><translation>Tamamlanan silme ve kalıcı kaydetme işlemleri geri alınamaz.</translation></message>
     <message><source>Continue…</source><translation>Devam et…</translation></message>
-    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>Yalnızca bulunan hedefleri sil ve kalıcılaştır. Okunamayan dallar ve üst klasörleri veya anahtarları korunur.</translation></message>
-    <message><source>Deleting and committing</source><translation>Siliniyor ve kalıcılaştırılıyor</translation></message>
-    <message><source>Deletion and commit cannot be undone. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>Silme ve kalıcılaştırma geri alınamaz. Yalnızca seçili kapsam işlenir; bekleyen UWF yapılandırması uygulanmaz.</translation></message>
+    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>Yalnızca başarıyla taranan hedefleri silip silme işlemlerini kalıcı kaydet. Okunamayan dallar ve üst klasörleri veya anahtarları korunur.</translation></message>
+    <message><source>Deleting and committing</source><translation>Siliniyor ve kalıcı kaydediliyor</translation></message>
+    <message><source>Deletion and commit cannot be undone. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>Silme ve kalıcı kaydetme geri alınamaz. Yalnızca seçili kapsam işlenir; bekleyen UWF yapılandırması uygulanmaz.</translation></message>
     <message><source>Determining the scope. Unread branches are recorded while traversal continues elsewhere.</source><translation>Kapsam belirleniyor. Okunamayan dallar kaydedilirken diğer içerik taranmaya devam eder.</translation></message>
     <message><source>Export traversal records</source><translation>Tarama kayıtlarını dışa aktar</translation></message>
     <message><source>No actionable content</source><translation>İşlenebilir içerik yok</translation></message>
-    <message><source>No actionable targets were found. Nothing has been deleted or committed.</source><translation>İşlenebilir hedef bulunamadı. Hiçbir şey silinmedi veya kalıcılaştırılmadı.</translation></message>
-    <message><source>No changes have been committed.</source><translation>Henüz hiçbir değişiklik kalıcılaştırılmadı</translation></message>
-    <message><source>Nothing has been deleted or committed.</source><translation>Hiçbir şey silinmedi veya kalıcılaştırılmadı</translation></message>
+    <message><source>No actionable targets were found. Nothing has been deleted or committed.</source><translation>İşlenebilir hedef bulunamadı. Hiçbir şey silinmedi veya kalıcı kaydedilmedi.</translation></message>
+    <message><source>No changes have been committed.</source><translation>Hiçbir değişiklik kalıcı kaydedilmedi.</translation></message>
+    <message><source>Nothing has been deleted or committed.</source><translation>Hiçbir şey silinmedi veya kalıcı kaydedilmedi.</translation></message>
     <message><source>Path</source><translation>Yol</translation></message>
-    <message><source>Permanently delete the selected scope and save the deletions to the protected volume.</source><translation>Seçili kapsamı kalıcı olarak sil ve silme işlemlerini korunan birime kaydet.</translation></message>
+    <message><source>Permanently delete the selected content and commit the deletions.</source><translation>Seçilen içeriği kalıcı olarak sil ve silme işlemlerini kalıcı kaydet.</translation></message>
     <message><source>Preparation complete</source><translation>Hazırlık tamamlandı</translation></message>
-    <message><source>Preparing commit</source><translation>Kalıcılaştırma hazırlanıyor</translation></message>
-    <message><source>Preparing deletion and commit</source><translation>Silme ve kalıcılaştırma hazırlanıyor</translation></message>
+    <message><source>Preparing commit</source><translation>Kalıcı kaydetmeye hazırlanıyor</translation></message>
+    <message><source>Preparing deletion and commit</source><translation>Silme ve kalıcı kaydetme hazırlanıyor</translation></message>
     <message><source>Process only successfully traversed content</source><translation>Yalnızca başarıyla taranan içeriği işle</translation></message>
 
     <message><source>Reparse points are skipped to keep traversal within the selected scope.</source><translation>Taramanın seçili kapsam içinde kalması için yeniden ayrıştırma noktaları atlanır.</translation></message>
-    <message><source>Restarting cannot undo a commit. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>Yeniden başlatma, kalıcılaştırmayı geri almaz. Yalnızca seçili kapsam işlenir; bekleyen UWF yapılandırması uygulanmaz.</translation></message>
+    <message><source>Restarting cannot undo a commit. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>Yeniden başlatma, kalıcı kaydetmeyi geri almaz. Yalnızca seçili kapsam işlenir; bekleyen UWF yapılandırması uygulanmaz.</translation></message>
     <message><source>Retry failed items</source><translation>Başarısız öğeleri yeniden dene</translation></message>
-    <message><source>Save changes in the selected scope to the protected volume.</source><translation>Seçili kapsamdaki değişiklikleri korunan birime kaydet.</translation></message>
+    <message><source>Commit changes in the selected scope.</source><translation>Seçili kapsamdaki değişiklikleri kalıcı kaydet.</translation></message>
     <message><source>Stopping the operation</source><translation>İşlem durduruluyor</translation></message>
     <message><source>Successful and failed records are retained</source><translation>Başarılı ve başarısız tarama kayıtları korundu</translation></message>
     <message><source>The folder is not empty; unprocessed content has been retained.</source><translation>Klasör boş değil; işlenmemiş içerik korundu.</translation></message>
@@ -974,11 +934,11 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Unable to prepare the operation</source><translation>İşlem hazırlanamadı</translation></message>
     <message><source>View results</source><translation>Sonuçları görüntüle</translation></message>
 
-    <message><source>All changes committed</source><translation>Tüm değişiklikler kaydedildi</translation></message>
-    <message><source>Some changes committed</source><translation>Bazı değişiklikler kaydedildi</translation></message>
-    <message><source>No changes could be committed</source><translation>Hiçbir değişiklik kaydedilemedi</translation></message>
-    <message><source>No changes to commit</source><translation>Kaydedilecek değişiklik yok</translation></message>
-    <message><source>Commit interrupted</source><translation>Kaydetme kesintiye uğradı</translation></message>
+    <message><source>All operations succeeded</source><translation>Tüm işlemler başarılı</translation></message>
+    <message><source>Some operations succeeded</source><translation>Bazı işlemler başarılı</translation></message>
+    <message><source>No operations succeeded</source><translation>Hiçbir işlem başarılı olmadı</translation></message>
+    <message><source>No targets to process</source><translation>İşlenecek hedef yok</translation></message>
+    <message><source>Commit interrupted</source><translation>Kalıcı kaydetme kesintiye uğradı</translation></message>
     <message><source>%1 items were not processed.</source><translation>%1 öğe işlenmedi.</translation></message>
     <message><source>%1 registry operation(s) failed.</source><translation>%1 kayıt defteri işlemi başarısız oldu.</translation></message>
     <message><source>The folder does not exist.</source><translation>Klasör mevcut değil.</translation></message>
@@ -987,12 +947,12 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>The folder could not be created. Check the name and permissions.</source><translation>Klasör oluşturulamadı. Adı ve izinleri kontrol edin.</translation></message>
     <message><source>The item could not be renamed. Check the name and permissions.</source><translation>Öğe yeniden adlandırılamadı. Adı ve izinleri kontrol edin.</translation></message>
     <message><source>Renaming is not supported by this browser.</source><translation>Bu tarayıcı yeniden adlandırmayı desteklemiyor.</translation></message>
-    <message><source>The file staging draft changed after this plan was opened. Review a new plan.</source><translation>Bu plan açıldıktan sonra dosya hazırlama taslağı değişti. Yeni bir planı gözden geçirin.</translation></message>
-    <message><source>The saved file staging list changed after this plan was opened. Refresh and review the changes.</source><translation>Bu plan açıldıktan sonra kaydedilmiş dosya hazırlama listesi değişti. Yenileyip değişiklikleri gözden geçirin.</translation></message>
-    <message><source>The saved file staging list does not match the accepted plan.</source><translation>Kaydedilmiş dosya hazırlama listesi onaylanan planla eşleşmiyor.</translation></message>
-    <message><source>Export configuration</source><translation>Yapılandırmayı dışa aktar</translation></message>
-    <message><source>Save the current theme, language, and HUB visibility to UWF.ini next to this application.</source><translation>Geçerli temayı, dili ve HUB görünürlüğünü bu uygulamanın yanındaki UWF.ini dosyasına kaydedin.</translation></message>
-    <message><source>Configuration saved</source><translation>Yapılandırma kaydedildi</translation></message>
+    <message><source>The file staging draft changed after this plan was opened. Review a new plan.</source><translation>Bu plan açıldıktan sonra otomatik kayıt listesi taslağı değişti. Yeni bir planı gözden geçirin.</translation></message>
+    <message><source>The saved file staging list changed after this plan was opened. Refresh and review the changes.</source><translation>Bu plan açıldıktan sonra kaydedilmiş otomatik kayıt listesi değişti. Yenileyip değişiklikleri gözden geçirin.</translation></message>
+    <message><source>The saved file staging list does not match the accepted plan.</source><translation>Kaydedilmiş otomatik kayıt listesi onaylanan planla eşleşmiyor.</translation></message>
+    <message><source>Export interface settings</source><translation>Arayüz ayarlarını dışa aktar</translation></message>
+    <message><source>Save the current theme, language, and overlay widget visibility to UWF.ini beside this application.</source><translation>Geçerli temayı, dili ve kaplama göstergesi görünürlüğünü uygulamanın yanındaki UWF.ini dosyasına kaydet.</translation></message>
+    <message><source>Interface settings saved</source><translation>Arayüz ayarları kaydedildi</translation></message>
     <message><source>Saved the current interface settings to:
 %1</source><translation>Geçerli arayüz ayarları şu konuma kaydedildi:
 %1</translation></message>
@@ -1007,7 +967,7 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Desktop</source><translation>Masaüstü</translation></message>
     <message><source>Downloads</source><translation>İndirilenler</translation></message>
     <message><source>Documents</source><translation>Belgeler</translation></message>
-    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Otomatik dosya kaydı durduruldu. Yeniden denemeden önce hatayı giderin.</translation></message>
+    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Otomatik kayıt listesi işlemi durduruldu. Yeniden denemeden önce hatayı giderin.</translation></message>
     <message><source>No net change for this setting</source><translation>Bu ayarın son değeri içe aktarma sonrasında değişmedi</translation></message>
     <message><source>Final draft %1 → %2</source><translation>Taslaktaki son değer: %1 → %2</translation></message>
     <message><source>Final draft %1 → %2 (requested %3)</source><translation>Taslaktaki son değer: %1 → %2 (istenen: %3)</translation></message>
@@ -1016,5 +976,586 @@ Birim korumasını, yer paylaşımını, dışlamaları ve hazırlanmış dosyal
     <message><source>Updated volume %1 protection draft → %2</source><translation>%1 biriminin koruma ayarı taslağı güncellendi → %2</translation></message>
     <message><source>Select entries to remove.</source><translation>Kaldırılacak girdileri seçin.</translation></message>
     <message><source>Selected entries cannot currently be restored.</source><translation>Seçili girdiler şu anda geri yüklenemiyor.</translation></message>
+    <message>
+        <source>Freespace Passthrough</source>
+        <translation>Boş alan üzerinden doğrudan yazma</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay</source>
+        <translation>Kalıcı kaplama</translation>
+    </message>
+    <message>
+        <source>Clear persistent data on next startup</source>
+        <translation>Sonraki başlangıçta kalıcı verileri temizle</translation>
+    </message>
+    <message>
+        <source>Read-Only Media mode</source>
+        <translation>Salt okunur medya modu</translation>
+    </message>
+    <message>
+        <source>Uses free disk space for writes, reducing reserved overlay usage; supports RAM (not recommended) and Disk (recommended).</source>
+        <translation>Yazmalar için boş disk alanını kullanarak ayrılmış kaplama kullanımını azaltır; RAM (önerilmez) ve Disk (önerilir) desteklenir.</translation>
+    </message>
+    <message>
+        <source>Preserves writes in the Disk overlay across restarts; not available for RAM overlays.</source>
+        <translation>Disk kaplamasındaki yazmaları yeniden başlatmalar arasında korur; RAM kaplamalarında kullanılamaz.</translation>
+    </message>
+    <message>
+        <source>Resets the persistent overlay: clears its writes at the next startup, restoring the state when the overlay was enabled</source>
+        <translation>Kalıcı kaplamayı sıfırlar: sonraki başlangıçta yazmaları temizler ve kaplama etkinleştirildiğindeki durumu geri yükler</translation>
+    </message>
+
+
+    <message>
+        <source>Administrator privileges are required; the overlay configuration is read-only.</source>
+        <translation>Yönetici ayrıcalıkları gereklidir; kaplama yapılandırması salt okunurdur.</translation>
+    </message>
+    <message>
+        <source>Configuration editing is temporarily unavailable. Wait for the current operation to finish.</source>
+        <translation>Yapılandırma düzenleme geçici olarak kullanılamıyor. Geçerli işlemin bitmesini bekleyin.</translation>
+    </message>
+    <message>
+        <source>The overlay configuration could not be read. Refresh before editing.</source>
+        <translation>Kaplama yapılandırması okunamadı. Düzenlemeden önce yenileyin.</translation>
+    </message>
+    <message>
+        <source>This system does not support clearing persistent data at the next startup.</source>
+        <translation>Bu sistem sonraki başlangıçta kalıcı verileri temizlemeyi desteklemiyor.</translation>
+    </message>
+    <message>
+        <source>The current clear request is unknown. Refresh the configuration before editing.</source>
+        <translation>Geçerli temizleme isteği bilinmiyor. Düzenlemeden önce yapılandırmayı yenileyin.</translation>
+    </message>
+    <message>
+        <source>Changing this request requires UWF and Disk Persistent Overlay to be active in the current session.</source>
+        <translation>Bu isteği değiştirmek için geçerli oturumda UWF ve Disk Kalıcı Yer Paylaşımı etkin olmalıdır.</translation>
+    </message>
+    <message>
+        <source>Clearing persistent data at the next startup requires Disk Persistent Overlay. Cancel the clear request or retain Persistent Overlay.</source>
+        <translation>Sonraki başlangıçta temizleme, Disk kalıcı kaplamanın korunmasını gerektirir. Temizleme isteğini iptal edin veya kalıcı kaplamayı koruyun.</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay requires Disk. Disable Persistent Overlay or select Disk.</source>
+        <translation>Kalıcı kaplama Disk gerektirir. Kalıcı kaplamayı kapatın veya Disk seçin.</translation>
+    </message>
+    <message>
+        <source>Read-Only Media mode requires RAM. Disable Read-Only Media mode or select RAM.</source>
+        <translation>Salt okunur medya modu RAM gerektirir. Bu modu kapatın veya RAM seçin.</translation>
+    </message>
+    <message>
+        <source>UWF is enabled in the current session. Disable UWF and restart before changing this setting.</source>
+        <translation>UWF geçerli oturumda etkin. Bu ayarı değiştirmeden önce UWF’yi devre dışı bırakıp yeniden başlatın.</translation>
+    </message>
+    <message>
+        <source>The configuration has changed. Close and reopen this dialog before editing.</source>
+        <translation>Yapılandırma değişti. Düzenlemeden önce bu iletişim kutusunu kapatıp yeniden açın.</translation>
+    </message>
+    <message>
+        <source>Overlay advanced settings</source>
+        <translation>Gelişmiş kaplama ayarları</translation>
+    </message>
+
+    <message>
+        <source>Current overlay</source>
+        <translation>Geçerli kaplama</translation>
+    </message>
+    <message>
+        <source>Next overlay</source>
+        <translation>Sonraki kaplama</translation>
+    </message>
+
+
+
+
+
+    <message>
+        <source>The draft contains incompatible or unavailable overlay settings. Return to editing and correct the overlay configuration.</source>
+        <translation>Taslakta uyumsuz veya kullanılamayan kaplama ayarları var. Düzenlemeye dönüp kaplama yapılandırmasını düzeltin.</translation>
+    </message>
+    <message>
+        <source>A clear is scheduled for the next startup. Cancel the clear request before disabling Persistent Overlay.</source>
+        <translation>Sonraki açılış için temizleme planlandı. Kalıcı kaplamayı devre dışı bırakmadan önce temizleme isteğini iptal edin.</translation>
+    </message>
+    <message>
+        <source>The next session does not retain Disk Persistent Overlay. Retain it before requesting a clear.</source>
+        <translation>Sonraki oturum Disk kalıcı kaplamasını korumuyor. Temizleme istemeden önce kaplamayı korumayı seçin.</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay is only available for Disk; the next overlay is RAM.</source>
+        <translation>Kalıcı kaplama yalnızca Disk için kullanılabilir; sonraki oturumun kaplaması RAM.</translation>
+    </message>
+    <message>
+        <source>Enabling Read-Only Media mode requires RAM; the next overlay is Disk.</source>
+        <translation>Salt Okunur Medya modunu etkinleştirmek RAM gerektirir; sonraki oturumun kaplaması Disk.</translation>
+    </message>
+    <message>
+        <source>The current Persistent Overlay state could not be confirmed. Read the configuration again.</source>
+        <translation>Geçerli kalıcı kaplama durumu doğrulanamadı. Yapılandırmayı yeniden okuyun.</translation>
+    </message>
+    <message>
+        <source>Will take effect at the next startup after applying.</source>
+        <translation>Uygulandıktan sonraki ilk açılışta geçerli olacak.</translation>
+    </message>
+    <message>
+        <source>Scheduled to clear</source>
+        <translation>Temizleme zamanlandı</translation>
+    </message>
+    <message>
+        <source>Not scheduled to clear</source>
+        <translation>Temizleme zamanlanmadı</translation>
+    </message>
+    <message>
+        <source>Clears once at the next startup, then preserves data. The current session is not cleared immediately.</source>
+        <translation>Sonraki başlangıçta bir kez temizler, ardından verileri korumaya devam eder. Geçerli oturum hemen temizlenmez.</translation>
+    </message>
+    <message>
+        <source>Cancels the scheduled clear at the next startup, preserving persistent overlay data.</source>
+        <translation>Sonraki başlangıç için zamanlanan temizlemeyi iptal eder ve kalıcı kaplama verilerini korur.</translation>
+    </message>
+    <message>
+        <source>Reset persistent overlay · One-time request</source>
+        <translation>Kalıcı kaplamayı sıfırla · Tek seferlik istek</translation>
+    </message>
+    <message>
+        <source>Working…</source>
+        <translation>İşleniyor…</translation>
+    </message>
+    <message>
+        <source>Please wait for the operation to finish.</source>
+        <translation>Lütfen işlemin tamamlanmasını bekleyin.</translation>
+    </message>
+    <message>
+        <source>%1 · Next session</source>
+        <translation>%1 · Sonraki oturum</translation>
+    </message>
+    <message>
+        <source>Back to settings</source>
+        <translation>Ayarlara dön</translation>
+    </message>
+    <message>
+        <source>Change requirements</source>
+        <translation>Değiştirme koşulları</translation>
+    </message>
+    <message>
+        <source>Changed</source>
+        <translation>Değiştirildi</translation>
+    </message>
+    <message>
+        <source>Check configuration conflicts</source>
+        <translation>Yapılandırma çakışmalarını denetle</translation>
+    </message>
+    <message>
+        <source>Configuration conflict</source>
+        <translation>Yapılandırma çakışması</translation>
+    </message>
+    <message>
+        <source>Disable requirements</source>
+        <translation>Devre dışı bırakma koşulları</translation>
+    </message>
+    <message>
+        <source>UWF and Disk Persistent Overlay must be active in the current session. Clearing data also requires retaining Disk Persistent Overlay for the next session.</source>
+        <translation>Geçerli oturumda UWF ve Disk Kalıcı Yer Paylaşımı etkin olmalıdır. Verileri temizlemek için Disk Kalıcı Yer Paylaşımı sonraki oturumda da korunmalıdır.</translation>
+    </message>
+    <message>
+        <source>Enable requirements</source>
+        <translation>Etkinleştirme koşulları</translation>
+    </message>
+    <message>
+        <source>Feature</source>
+        <translation>Özellik</translation>
+    </message>
+    <message>
+        <source>Feature details</source>
+        <translation>Özellik açıklaması</translation>
+    </message>
+    <message>
+        <source>Learn about %1</source>
+        <translation>%1 hakkında bilgi</translation>
+    </message>
+    <message>
+        <source>Resolve these configuration conflicts before keeping the draft.</source>
+        <translation>Taslağı korumadan önce bu yapılandırma çakışmalarını giderin.</translation>
+    </message>
+    <message>
+        <source>Revert</source>
+        <translation>Geri al</translation>
+    </message>
+    <message>
+        <source>Takes effect</source>
+        <translation>Yürürlüğe girme zamanı</translation>
+    </message>
+    <message>
+        <source>This setting cannot be changed right now</source>
+        <translation>Bu ayar şu anda değiştirilemez</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session, and the next-session overlay must use Disk.</source>
+        <translation>UWF geçerli oturumda devre dışı olmalı ve sonraki oturumun kaplaması Disk kullanmalıdır.</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session, and the next-session overlay must use RAM.</source>
+        <translation>UWF geçerli oturumda devre dışı olmalı ve sonraki oturumun kaplaması RAM kullanmalıdır.</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session. Cancel any scheduled persistent-data clear before disabling Persistent Overlay.</source>
+        <translation>UWF geçerli oturumda devre dışı olmalıdır. Kalıcı kaplamayı devre dışı bırakmadan önce zamanlanmış kalıcı veri temizleme isteğini iptal edin.</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session. Setting only the next session to disabled still requires a restart before editing.</source>
+        <translation>UWF geçerli oturumda devre dışı olmalıdır. Yalnızca sonraki oturum için devre dışı bırakılırsa düzenlemeden önce yine de yeniden başlatmak gerekir.</translation>
+    </message>
+    <message>
+        <source>Usage requirements</source>
+        <translation>Kullanım koşulları</translation>
+    </message>
+    <message>
+        <source>View details</source>
+        <translation>Ayrıntıları görüntüle</translation>
+    </message>
+    <message>
+        <source>View only</source>
+        <translation>Yalnızca görüntüleme</translation>
+    </message>
+    <message>
+        <source>Why %1 cannot be changed</source>
+        <translation>%1 neden değiştirilemiyor</translation>
+    </message>
+    <message>
+        <source>UWF is enabled in the current session, so these overlay settings cannot be changed. Revert the changes, or disable UWF and restart.</source>
+        <translation>UWF geçerli oturumda etkin olduğundan bu katman ayarları değiştirilemez. Değişiklikleri geri alın veya UWF’yi devre dışı bırakıp yeniden başlatın.</translation>
+    </message>
+    <message>
+        <source>View change requirements</source>
+        <translation>Değiştirme koşullarını görüntüle</translation>
+    </message>
+    <message>
+        <source>No configuration changes were written. You can retry.</source>
+        <translation>Hiçbir yapılandırma değişikliği yazılmadı. Yeniden deneyebilirsiniz.</translation>
+    </message>
+    <message>
+        <source>No configuration changes were needed.</source>
+        <translation>Yapılandırma değişikliği gerekmiyordu.</translation>
+    </message>
+    <message>
+        <source>Use Domain Secret Key persistence for the domain machine account secret ($MACHINE.ACC).</source>
+        <translation>Etki alanı bilgisayar hesabı sırrı ($MACHINE.ACC) için “Etki alanı gizli anahtarını kalıcı tutma” ayarını kullanın.</translation>
+    </message>
+    <message>
+        <source>This key cannot be excluded itself. Select one of its subkeys.</source>
+        <translation>Bu anahtarın kendisi dışlanamaz. Alt anahtarlarından birini seçin.</translation>
+    </message>
+    <message>
+        <source>Registry exclusions must specify a nonempty subkey under HKEY_LOCAL_MACHINE (HKLM).</source>
+        <translation>Kayıt defteri dışlamaları, HKEY_LOCAL_MACHINE (HKLM) altında boş olmayan bir alt anahtar belirtmelidir.</translation>
+    </message>
+    <message>
+        <source>This script contains only settings supported by uwfmgr commands. Not included:</source>
+        <translation>Bu betik yalnızca uwfmgr komutlarıyla ifade edilebilen ayarları içerir. Dahil edilmeyenler:</translation>
+    </message>
+    <message>
+        <source>Volume binding</source>
+        <translation>Birim bağlama</translation>
+    </message>
+    <message>
+        <source>Settings without a reliable drive-letter address</source>
+        <translation>Güvenilir bir sürücü harfi adresi olmayan ayarlar</translation>
+    </message>
+    <message>
+        <source>Command script</source>
+        <translation>Komut betiği</translation>
+    </message>
+    <message>
+        <source>The configuration matches the next-session target. View or export the supported settings in Command script.</source>
+        <translation>Yapılandırma, sonraki oturum hedefiyle eşleşiyor. Desteklenen ayarları “Komut betiği” bölümünde görüntüleyebilir veya dışa aktarabilirsiniz.</translation>
+    </message>
+    <message>
+        <source>Settings with control characters in paths or names</source>
+        <translation>Yollarda veya adlarda denetim karakterleri içeren ayarlar</translation>
+    </message>
+    <message>
+        <source>Commands that depend on omitted settings</source>
+        <translation>Atlanan ayarlara bağlı komutlar</translation>
+    </message>
+    <message>
+        <source>UWF exclusion settings prevent a reliable commit of this target. Remove the conflicting exclusion and restart before committing it.</source>
+        <translation>UWF dışlamaları, bu hedefin güvenilir biçimde kalıcı kaydedilmesini engelliyor. Kalıcı kaydetmeden önce çakışan dışlamayı kaldırıp yeniden başlatın.</translation>
+    </message>
+    <message>
+        <source>UWF exclusion settings prevent a reliable commit of the file staging list. Remove the conflicting exclusion and restart before applying this change.</source>
+        <translation>UWF dışlamaları, otomatik kayıt listesinin güvenilir biçimde kalıcı kaydedilmesini engelliyor. Bu değişikliği uygulamadan önce çakışan dışlamayı kaldırıp yeniden başlatın.</translation>
+    </message>
+    <message>
+        <source>UWF cannot preserve the exact registry target for this key.</source>
+        <translation>UWF, işlemin tam olarak bu kayıt defteri anahtarını hedefleyeceğini garanti edemiyor.</translation>
+    </message>
+    <message>
+        <source>Confirm that the saved staging list is empty before removing its registry exclusion.</source>
+        <translation>Kayıt defteri dışlamasını kaldırmadan önce kaydedilmiş otomatik kayıt listesinin boş olduğunu doğrulayın.</translation>
+    </message>
+    <message>
+        <source>Pending confirmation</source>
+        <translation>Onay bekleniyor</translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <translation>Boş</translation>
+    </message>
+    <message>
+        <source>The system volume is not currently protected by UWF; there are no registry changes to commit.</source>
+        <translation>Sistem birimi şu anda UWF tarafından korunmuyor; kalıcı kaydedilecek kayıt defteri değişikliği yok.</translation>
+    </message>
+    <message>
+        <source>Registry changes are already persistent; no UWF commit is required.</source>
+        <translation>Kayıt defteri değişiklikleri zaten kalıcıdır; UWF ile kalıcı kayıt gerekmez.</translation>
+    </message>
+    <message>
+        <source>Registry changes are already persistent; UWF cannot perform this deletion.</source>
+        <translation>Kayıt defteri değişiklikleri zaten kalıcıdır; UWF bu silme işlemini gerçekleştiremez.</translation>
+    </message>
+    <message><source>UWF exclusion paths must use backslashes.</source><translation>UWF dışlama yollarında ters eğik çizgi kullanılmalıdır.</translation></message>
+    <message><source>File paths cannot contain null characters.</source><translation>Dosya yolları boş karakter içeremez.</translation></message>
+    <message><source>Enable volume protection in this draft before adding file exclusions.</source><translation>Dosya dışlamaları eklemeden önce bu taslakta birim korumasını etkinleştirin.</translation></message>
+    <message><source>The exclusion path contains characters that UWF does not support.</source><translation>Dışlama yolu, UWF tarafından desteklenmeyen karakterler içeriyor.</translation></message>
+    <message><source>The exclusion path exceeds UWF's length limit.</source><translation>Dışlama yolu UWF uzunluk sınırını aşıyor.</translation></message>
+    <message><source>File and registry commits are unavailable while HORM is active.</source><translation>HORM etkinken dosya ve kayıt defteri değişiklikleri kalıcı olarak kaydedilemez.</translation></message>
+    <message><source>Registry writes are unavailable while HORM is active.</source><translation>HORM etkinken kayıt defterine yazılamaz.</translation></message>
+    <message><source>Registry writes cannot be persisted while Read-Only Media mode is active.</source><translation>Salt okunur medya modu etkinken kayıt defterine yapılan yazmalar kalıcı olarak kaydedilemez.</translation></message>
+    <message><source>File and registry commits are unavailable while Read-Only Media mode is active.</source><translation>Salt okunur medya modu etkinken dosya ve kayıt defteri değişiklikleri kalıcı olarak kaydedilemez.</translation></message>
+    <message><source>Intercepts physical media writes, including metadata. Exclusions do not bypass protection. Individual file and registry commits are unavailable; Full Commit is a separate global operation.</source><translation>Meta veriler dahil fiziksel medya yazmalarını yakalar. Dışlamalar korumayı atlamaz. Dosya ve kayıt defteri değişiklikleri tek tek kalıcı olarak kaydedilemez; Full Commit ayrı bir genel işlemdir.</translation></message>
+    <message><source>UWF settings cannot be changed while HORM is active.</source><translation>HORM etkinken UWF ayarları değiştirilemez.</translation></message>
+    <message><source>Default value · this value only</source><translation>Varsayılan değer · yalnızca bu değer</translation></message>
+    <message><source>File changes are already persistent; no UWF commit is required.</source><translation>Dosya değişiklikleri zaten kalıcıdır; UWF ile kaydetme gerekmez.</translation></message>
+    <message><source>Last successful overlay usage observation: %1</source><translation>Kaplama kullanımının son başarılı gözlem zamanı: %1</translation></message>
+    <message><source>Observed overlay storage outside the writable size/type range</source><translation>Gözlemlenen kaplama depolaması yazılabilir boyut veya tür aralığının dışında</translation></message>
+    <message><source>Overlay (last observed)</source><translation>Kaplama (son gözlem)</translation></message>
+    <message><source>Overlay usage refresh failed.
+%1</source><translation>Kaplama kullanımı yenilenemedi.
+%1</translation></message>
+    <message><source>Overlay usage refresh failed. Showing the last successful observation from %1.
+%2</source><translation>Kaplama kullanımı yenilenemedi. %1 tarihindeki son başarılı gözlem gösteriliyor.
+%2</translation></message>
+    <message><source>The path could not be resolved to a local volume.</source><translation>Yol bir yerel birimle eşleştirilemedi.</translation></message>
+    <message><source>UWF: Enabled (last observed)</source><translation>UWF: etkin (son gözlem)</translation></message>
+    <message><source>File changes are already persistent; UWF cannot perform this deletion.</source><translation>Dosya değişiklikleri zaten kalıcıdır; UWF bu silme işlemini gerçekleştiremez.</translation></message>
+    <message><source>%1 (%2)</source><translation>%1 (%2)</translation></message>
+    <message><source>%1 GB available</source><translation>%1 GB kullanılabilir</translation></message>
+    <message><source>%1 MB</source><translation>%1 MB</translation></message>
+    <message><source>%1 · %2</source><translation>%1 · %2</translation></message>
+
+    <message><source>Administrator privileges are required.</source><translation>Yönetici yetkileri gerekiyor.</translation></message>
+
+
+    <message><source>An operation is in progress. Please wait.</source><translation>Bir işlem devam ediyor. Lütfen bekleyin.</translation></message>
+    <message><source>Attempts to save all additions, changes and deletions made on every protected volume since this startup. This includes files and system settings; you cannot select only some changes.</source><translation>Bu başlangıçtan beri korunan tüm birimlerde yapılan ekleme, değişiklik ve silmelerin tamamını kaydetmeyi dener. Dosyalar ve sistem ayarları da kapsama girer; değişikliklerin yalnızca bir bölümünü seçemezsiniz.</translation></message>
+
+    <message><source>Automatic saving is unavailable in the current mode</source><translation>Geçerli modda otomatik kaydetme kullanılamıyor</translation></message>
+    <message><source>Cannot be undone once started</source><translation>Başlatıldıktan sonra geri alınamaz</translation></message>
+    <message><source>Choose where to store the disk overlay</source><translation>Diskteki kaplamanın saklanacağı yeri seçin</translation></message>
+    <message><source>Choose where to store the disk overlay.</source><translation>Diskteki kaplamanın saklanacağı yeri seçin.</translation></message>
+    <message><source>Configuration changes are temporarily unavailable.</source><translation>Yapılandırma değişiklikleri geçici olarak kullanılamıyor.</translation></message>
+    <message><source>Configured, inactive this session</source><translation>Yapılandırıldı, bu oturumda etkin değil</translation></message>
+    <message><source>Configured; takes effect after restarting</source><translation>Yapılandırıldı; yeniden başlatılınca geçerli olur</translation></message>
+    <message><source>Configured; takes effect after restarting. The overlay from this startup will not be moved to the new location.</source><translation>Yapılandırıldı; yeniden başlatılınca geçerli olur. Bu başlangıçta kullanılan kaplama yeni konuma taşınmaz.</translation></message>
+    <message><source>Configure…</source><translation>Yapılandır…</translation></message>
+    <message><source>Current UWF</source><translation>Geçerli UWF</translation></message>
+    <message><source>Currently configured storage volume</source><translation>Şu anda yapılandırılmış depolama birimi</translation></message>
+    <message><source>Default behavior</source><translation>Varsayılan davranış</translation></message>
+    <message><source>Disable HORM and restart before using full volume commit.</source><translation>Tüm birimi kalıcı kaydetmeden önce HORM'u devre dışı bırakıp yeniden başlatın.</translation></message>
+    <message><source>Disabled · restart required</source><translation>Devre dışı · yeniden başlatma gerekli</translation></message>
+    <message><source>Disabling HORM does not turn off UWF or Read-Only Media mode and does not save changes on protected disks. Restart before checking the available actions.</source><translation>HORM'u devre dışı bırakmak UWF'yi veya Salt Okunur Medya modunu kapatmaz ve korunan disklerdeki değişiklikleri kaydetmez. Kullanılabilir işlemleri denetlemeden önce yeniden başlatın.</translation></message>
+
+    <message><source>Enable UWF and restart before enabling HORM.</source><translation>HORM'u etkinleştirmeden önce UWF'yi etkinleştirip yeniden başlatın.</translation></message>
+
+    <message><source>Full volume commit</source><translation>Tüm birimi kalıcı kaydet</translation></message>
+    <message><source>Full volume commit mode (enabled until restart)</source><translation>Tüm birimi kalıcı kaydetme modu (yeniden başlatılana kadar etkin)</translation></message>
+    <message><source>Full volume commit mode is already enabled. Restart before using it again.</source><translation>Tüm birimi kalıcı kaydetme modu zaten etkin. Yeniden kullanmadan önce bilgisayarı yeniden başlatın.</translation></message>
+    <message><source>Full volume commit has started. Restart before enabling HORM.</source><translation>Tüm birimin kalıcı kaydı başladı. HORM'u etkinleştirmeden önce yeniden başlatın.</translation></message>
+    <message><source>Full volume commit is available only while Read-Only Media mode is active.</source><translation>Tüm birimi kalıcı kaydetme yalnızca Salt Okunur Medya modu etkinken kullanılabilir.</translation></message>
+    <message><source>Full volume commit mode remains enabled until restart. New changes are saved directly. Individual commits remain unavailable.</source><translation>Tüm birimi kalıcı kaydetme modu yeniden başlatılana kadar etkin kalır. Yeni değişiklikler doğrudan kaydedilir. Tek tek kalıcı kaydetme işlemleri kullanılamamaya devam eder.</translation></message>
+    <message><source>Full volume commit is not available on this system.</source><translation>Bu sistemde tüm birimi kalıcı kaydetme kullanılamıyor.</translation></message>
+
+    <message><source>HORM is active. UWF settings and individual commits are unavailable. Disable HORM and restart before changing them.</source><translation>HORM etkin. UWF ayarları ve tek tek kalıcı kaydetme işlemleri kullanılamıyor. Bunları değiştirmeden önce HORM'u devre dışı bırakıp yeniden başlatın.</translation></message>
+    <message><source>HORM is disabled. Restart the computer before changing UWF settings.</source><translation>HORM devre dışı. UWF ayarlarını değiştirmeden önce bilgisayarı yeniden başlatın.</translation></message>
+    <message><source>HORM is not available on this system.</source><translation>Bu sistemde HORM kullanılamıyor.</translation></message>
+    <message><source>HORM requires the current RAM Read-Only Media configuration.</source><translation>HORM için geçerli RAM kaplamasının Salt Okunur Medya yapılandırmasını kullanması gerekir.</translation></message>
+    <message><source>HORM requires the current RAM overlay.</source><translation>HORM için geçerli kaplamanın RAM olması gerekir.</translation></message>
+
+    <message><source>In Disk mode, the system implementation may enable this option by default; check the current state shown in settings.</source><translation>Disk modunda sistemin uygulaması bu seçeneği varsayılan olarak etkinleştirebilir; ayarlarda gösterilen geçerli durumu denetleyin.</translation></message>
+    <message><source>Inactive this session</source><translation>Bu oturumda etkin değil</translation></message>
+    <message><source>Later changes will also be saved until you restart</source><translation>Yeniden başlatana kadar sonraki değişiklikler de kaydedilir</translation></message>
+
+    <message><source>Maintenance and recovery</source><translation>Bakım ve kurtarma</translation></message>
+    <message><source>Make sure this is the state you want to keep before continuing.</source><translation>Devam etmeden önce bunun korumak istediğiniz durum olduğundan emin olun.</translation></message>
+
+    <message><source>Next startup: %1</source><translation>Sonraki başlangıç: %1</translation></message>
+    <message><source>No suitable storage volume is available. Refresh the volume list.</source><translation>Uygun bir depolama birimi yok. Birim listesini yenileyin.</translation></message>
+    <message><source>Not enabled</source><translation>Etkinleştirilmedi</translation></message>
+    <message><source>Not selected</source><translation>Seçilmedi</translation></message>
+    <message><source>Not supported</source><translation>Desteklenmiyor</translation></message>
+    <message><source>Once started, new changes are written directly to disk until you restart the computer.</source><translation>Başladıktan sonra yeni değişiklikler, bilgisayarı yeniden başlatana kadar doğrudan diske yazılır.</translation></message>
+    <message><source>Only one storage volume can be used at a time. Choosing a new volume replaces the previous location and sets the next overlay to Disk.</source><translation>Aynı anda yalnızca bir depolama birimi kullanılabilir. Yeni bir birim seçmek önceki konumu değiştirir ve sonraki kaplamayı Disk olarak ayarlar.</translation></message>
+    <message><source>Overlay capacity (keep current setting)</source><translation>Kaplama kapasitesi (geçerli ayarı koru)</translation></message>
+    <message><source>Overlay configuration</source><translation>Kaplama yapılandırması</translation></message>
+
+    <message><source>Processing…</source><translation>İşleniyor…</translation></message>
+    <message><source>Read state again</source><translation>Durumu yeniden oku</translation></message>
+    <message><source>Read the current UWF state first.</source><translation>Önce geçerli UWF durumunu okuyun.</translation></message>
+
+    <message><source>Read-only media mode does not support individual commits or automatic saving of staged files.</source><translation>Salt okunur medya modu tek tek kalıcı kaydetmeyi veya hazırlanan dosyaların otomatik kaydedilmesini desteklemez.</translation></message>
+    <message><source>Reading state…</source><translation>Durum okunuyor…</translation></message>
+    <message><source>Restart and read the current state before enabling HORM again.</source><translation>HORM'u yeniden etkinleştirmeden önce yeniden başlatıp geçerli durumu okuyun.</translation></message>
+    <message><source>Restore the same desktop and running programs at every startup.</source><translation>Her başlangıçta aynı masaüstünü ve çalışan programları geri yükleyin.</translation></message>
+    <message><source>Review available commit operations and their requirements.</source><translation>Kullanılabilir kalıcı kaydetme işlemlerini ve gereksinimlerini gözden geçirin.</translation></message>
+    <message><source>Save changes on all protected volumes</source><translation>Korunan tüm birimlerdeki değişiklikleri kaydet</translation></message>
+    <message><source>Save changes on all protected volumes. Review the effects before continuing.</source><translation>Korunan tüm birimlerdeki değişiklikleri kaydedin. Devam etmeden önce etkilerini gözden geçirin.</translation></message>
+
+
+    <message><source>State unknown</source><translation>Durum bilinmiyor</translation></message>
+
+    <message><source>Successfully saved changes can no longer be undone by restarting.</source><translation>Başarıyla kaydedilen değişiklikler artık yeniden başlatılarak geri alınamaz.</translation></message>
+    <message><source>Successfully saved changes will remain</source><translation>Başarıyla kaydedilen değişiklikler korunur</translation></message>
+    <message><source>The HORM state is unknown. Read the state again before continuing.</source><translation>HORM durumu bilinmiyor. Devam etmeden önce durumu yeniden okuyun.</translation></message>
+    <message><source>The HORM state is unknown. Refresh before continuing.</source><translation>HORM durumu bilinmiyor. Devam etmeden önce yenileyin.</translation></message>
+    <message><source>The commit or HORM state is unknown. Refresh before continuing.</source><translation>Kalıcı kayıt veya HORM durumu bilinmiyor. Devam etmeden önce yenileyin.</translation></message>
+    <message><source>The current UWF state could not be read. Refresh before continuing.</source><translation>Geçerli UWF durumu okunamadı. Devam etmeden önce yenileyin.</translation></message>
+    <message><source>The current overlay uses RAM Read-Only Media mode</source><translation>Geçerli kaplama RAM Salt Okunur Medya modunu kullanıyor</translation></message>
+    <message><source>The current protection mode could not be read. Refresh the state.</source><translation>Geçerli koruma modu okunamadı. Durumu yenileyin.</translation></message>
+    <message><source>The result could not be confirmed</source><translation>Sonuç doğrulanamadı</translation></message>
+    <message><source>This exclusion is configured but does not bypass protection in the current session.</source><translation>Bu dışlama yapılandırılmıştır ancak geçerli oturumda korumayı aşmaz.</translation></message>
+    <message><source>This may also change Freespace Passthrough and Persistent Overlay. Review advanced settings before restarting.</source><translation>Bu işlem boş alan geçişini ve kalıcı kaplamayı da değiştirebilir. Yeniden başlatmadan önce gelişmiş ayarları gözden geçirin.</translation></message>
+    <message><source>UWF protection is active in the current session</source><translation>Geçerli oturumda UWF koruması etkin</translation></message>
+    <message><source>%1 (will be replaced)</source><translation>%1 (değiştirilecek)</translation></message>
+    <message><source>Add full volume commit to the draft?</source><translation>Tüm birimi kalıcı kaydetme taslağa eklensin mi?</translation></message>
+    <message><source>Add to draft</source><translation>Taslağa ekle</translation></message>
+    <message><source>Applies to every protected volume; starts only when this draft is applied.</source><translation>Korunan tüm birimlere uygulanır; yalnızca bu taslak uygulandığında başlar.</translation></message>
+    <message><source>Applying this draft starts full volume commit. Saved changes cannot be undone by restarting, and new changes are saved until restart.</source><translation>Bu taslağı uygulamak tüm birimi kalıcı kaydetmeyi başlatır. Kaydedilen değişiklikler yeniden başlatılarak geri alınamaz ve yeniden başlatılana kadar yeni değişiklikler de kaydedilir.</translation></message>
+    <message><source>Configure storage location</source><translation>Depolama konumunu yapılandır</translation></message>
+    <message><source>Configuring the storage location is not available on this system.</source><translation>Bu sistemde depolama konumu yapılandırılamıyor.</translation></message>
+    <message><source>Current: %1</source><translation>Geçerli: %1</translation></message>
+    <message><source>Disable HORM and restart before configuring the storage location.</source><translation>Depolama konumunu yapılandırmadan önce HORM'u devre dışı bırakıp yeniden başlatın.</translation></message>
+    <message><source>Disable saved-state startup?</source><translation>Kayıtlı durumdan başlatma devre dışı bırakılsın mı?</translation></message>
+    <message><source>Draft: %1 · apply required</source><translation>Taslak: %1 · uygulanması gerekiyor</translation></message>
+    <message><source>Enable saved-state startup?</source><translation>Kayıtlı durumdan başlatma etkinleştirilsin mi?</translation></message>
+    <message><source>Full volume commit (pending apply)</source><translation>Tüm birimi kalıcı kaydet (uygulanmayı bekliyor)</translation></message>
+    <message><source>Full volume commit is pending. It will start only after you confirm Review and apply.</source><translation>Tüm birimi kalıcı kaydetme taslakta bekliyor. Yalnızca İncele ve uygula bölümünde onayladıktan sonra başlar.</translation></message>
+    <message><source>Hibernate once / resume many</source><translation>Bir kez hazırda beklet / birçok kez sürdür</translation></message>
+    <message><source>Not started</source><translation>Başlatılmadı</translation></message>
+    <message><source>Remove full volume commit from pending changes.</source><translation>Tüm birimi kalıcı kaydetmeyi bekleyen değişikliklerden kaldırın.</translation></message>
+    <message><source>Save draft</source><translation>Taslağı kaydet</translation></message>
+
+    <message><source>Will start when applied</source><translation>Uygulandığında başlayacak</translation></message>
+    <message><source>A mounted fixed disk failed the protection check. Review the listed disks before enabling HORM.</source><translation>Bağlı bir sabit disk koruma denetiminden geçemedi. HORM özelliğini etkinleştirmeden önce listelenen diskleri gözden geçirin.</translation></message>
+    <message><source>Checks UWF-eligible fixed disks that remain mounted. Unmounted partitions may be skipped.</source><translation>Bağlı kalmaya devam eden, UWF için uygun sabit diskleri denetler. Bağlı olmayan bölümler atlanabilir.</translation></message>
+    <message><source>HORM prerequisites could not be verified. Read the state again before continuing.</source><translation>HORM ön koşulları doğrulanamadı. Devam etmeden önce durumu yeniden okuyun.</translation></message>
+    <message><source>Mounted fixed-disk protection check</source><translation>Bağlı sabit disk koruma denetimi</translation></message>
+    <message><source>Not using a Disk overlay</source><translation>Disk katmanı kullanılmıyor</translation></message>
+    <message><source>Selected storage volume</source><translation>Seçilen depolama birimi</translation></message>
+    <message><source>System drive default (%1)</source><translation>Sistem sürücüsü varsayılanı (%1)</translation></message>
+
+    <message><source>The protection state changed during this startup. Restart before enabling HORM.</source><translation>Bu başlatma sırasında koruma durumu değişti. HORM özelliğini etkinleştirmeden önce yeniden başlatın.</translation></message>
+    <message><source>Unable to read</source><translation>Okunamıyor</translation></message>
+
+    <message><source>Choose the disk used to store temporary changes. Takes effect at the next startup.</source><translation>Geçici değişiklikleri saklamak için kullanılacak diski seçin. Sonraki başlatmada geçerli olur.</translation></message>
+    <message><source>Disable UWF and restart before configuring the storage location.</source><translation>Depolama konumunu yapılandırmadan önce UWF özelliğini devre dışı bırakın ve yeniden başlatın.</translation></message>
+    <message><source>Met</source><translation>Sağlandı</translation></message>
+    <message><source>Not met</source><translation>Sağlanmadı</translation></message>
+    <message><source>Partition</source><translation>Bölüm</translation></message>
+
+
+    <message><source>Protect all</source><translation>Tümünü koru</translation></message>
+    <message><source>Hibernation is not supported</source><translation>Hazırda bekletme desteklenmiyor</translation></message>
+    <message><source>Hibernation is not enabled</source><translation>Hazırda bekletme etkin değil</translation></message>
+    <message><source>Fast startup only</source><translation>Yalnızca hızlı başlatma</translation></message>
+    <message><source>Bulk volume protection is not available on this system.</source><translation>Bu sistemde toplu birim koruması kullanılamıyor.</translation></message>
+    <message><source>Disable HORM and restart before changing volume protection.</source><translation>Birim korumasını değiştirmeden önce HORM'u devre dışı bırakıp yeniden başlatın.</translation></message>
+    <message><source>Setup and operation</source><translation>Kurulum ve kullanım</translation></message>
+
+    <message><source>1. Prepare the configuration</source><translation>1. Yapılandırmayı hazırlayın</translation></message>
+    <message><source>With UWF currently disabled, configure RAM overlay, read-only media mode, volume protection, and UWF enablement for the next startup. Apply the draft. Prepare S4 hibernation with a present, full hibernation file.</source><translation>UWF geçerli oturumda devre dışıyken sonraki başlatma için RAM kaplamasını, salt okunur ortam modunu, birim korumasını ve UWF'nin etkinleştirilmesini yapılandırın. Taslağı uygulayın. S4 hazırda bekletme desteğini ve mevcut, tam türde bir hazırda bekletme dosyasını hazırlayın.</translation></message>
+    <message><source>Restart, then confirm that Current shows UWF enabled, RAM overlay, read-only media mode, and protection for all UWF-eligible mounted fixed volumes. Confirm that system hibernation is available.</source><translation>Yeniden başlatın; ardından geçerli oturumda UWF'nin etkin, kaplamanın RAM ve ortam modunun salt okunur olduğunu, ayrıca UWF'nin koruyabildiği bağlı tüm sabit disk birimlerinin korunduğunu doğrulayın. Sistem hazırda bekletme özelliğinin kullanılabildiğini de doğrulayın.</translation></message>
+    <message><source>2. Restart and verify</source><translation>2. Yeniden başlatın ve doğrulayın</translation></message>
+    <message><source>3. Enable HORM and hibernate</source><translation>3. HORM'u etkinleştirin ve hazırda bekletin</translation></message>
+    <message><source>Add Enable HORM to the draft, then use Review and apply. Applying the draft performs the HORM enable operation, equivalent to:</source><translation>HORM'u etkinleştirmeyi taslağa ekleyin, ardından İncele ve uygula'yı kullanın. Taslak uygulandığında şu komuta eşdeğer HORM etkinleştirme işlemi gerçekleştirilir:</translation></message>
+    <message><source>After enablement succeeds, prepare the desktop and applications, then hibernate once to save the baseline state:</source><translation>Etkinleştirme başarılı olduktan sonra masaüstünü ve uygulamaları hazırlayın, ardından temel durumu kaydetmek için bir kez hazırda bekletin:</translation></message>
+    <message><source>HORM usage</source><translation>HORM kullanımı</translation></message>
+    <message><source>Volume protection</source><translation>Birim koruması</translation></message>
+    <message><source>Configure protection for all volumes in the next session.</source><translation>Sonraki oturum için tüm birimlerin korumasını yapılandırın.</translation></message>
+    <message><source>Unprotect all</source><translation>Tümünün korumasını kaldır</translation></message>
+    <message><source>Next startup: all volumes protected</source><translation>Sonraki başlatma: tüm birimler korunacak</translation></message>
+    <message><source>Next startup: all volumes unprotected</source><translation>Sonraki başlatma: tüm birimlerin koruması kaldırılacak</translation></message>
+    <message><source>Next startup: individual volume settings</source><translation>Sonraki başlatma: birime özel ayarlar</translation></message>
+    <message><source>System hibernation is available</source><translation>Sistem hazırda bekletme özelliği kullanılabilir</translation></message>
+    <message><source>Usage guide</source><translation>Kullanım kılavuzu</translation></message>
+
+    <message><source>Protection for all volumes is pending apply</source><translation>Tüm birimlerin koruma ayarları uygulanmayı bekliyor</translation></message>
+    <message><source>Volume protection takes effect after restarting</source><translation>Birim koruması yeniden başlatıldıktan sonra etkinleşir</translation></message>
+
+    <message><source>Unprotect all and enabling HORM cannot be applied together.</source><translation>Tüm korumayı kaldırma ve HORM'u etkinleştirme birlikte uygulanamaz.</translation></message>
+    <message><source>Batch volume protection is not supported.</source><translation>Toplu birim koruması desteklenmiyor.</translation></message>
+    <message><source>Applied</source><translation>Uygulandı</translation></message>
+    <message><source>Not applied</source><translation>Uygulanmadı</translation></message>
+    <message><source>Could not confirm</source><translation>Doğrulanamadı</translation></message>
+
+
+
+    <message><source>Storage volume:</source><translation>Depolama birimi:</translation></message>
+    <message><source>Exclusions do not bypass protection during this startup. Individual commits and automatic file staging commits are unavailable. Full volume commit affects all protected volumes; review its description before continuing.</source><translation>Bu başlatma oturumunda dışlamalar korumayı aşmaz. Tek tek kaydetme ve hazırlanan dosyaların otomatik kaydı kullanılamaz. Tam birim kaydı, korunan tüm birimleri etkiler; devam etmeden önce açıklamasını inceleyin.</translation></message>
+    <message><source>Resume the same hibernation state repeatedly</source><translation>Aynı hazırda bekletme durumundan tekrar tekrar devam et</translation></message>
+    <message><source>Remove full volume commit draft</source><translation>Tüm birimi kalıcı kaydetme taslağını kaldır</translation></message>
+    <message><source>Read-Only Media mode is active</source><translation>Salt okunur medya modu etkin</translation></message>
+    <message><source>%1 → %2</source><translation>%1 → %2</translation></message>
+    <message><source>A configured storage marker could not be read.</source><translation>Yapılandırılmış bir depolama işaretçisi okunamadı.</translation></message>
+    <message><source>File staging conflicts with a file exclusion:
+%1
+%2</source><translation>Otomatik kayıt listesi bir dosya dışlamasıyla çakışıyor:
+%1
+%2</translation></message>
+    <message><source>Full hibernation is not available on this computer</source><translation>Bu bilgisayarda tam hazırda bekletme kullanılamıyor</translation></message>
+    <message><source>More than one storage volume has a nonzero marker.</source><translation>Birden fazla depolama biriminde sıfır olmayan bir işaretçi var.</translation></message>
+    <message><source>The Disk overlay type could not be established.</source><translation>Katmanın Disk türünde olduğu doğrulanamadı.</translation></message>
+    <message><source>The configured storage location could not be read.</source><translation>Yapılandırılmış depolama konumu okunamadı.</translation></message>
+    <message><source>The system drive could not be identified.</source><translation>Sistem sürücüsü belirlenemedi.</translation></message>
+    <message><source>Direct restart skips staged file commits.</source><translation>Doğrudan yeniden başlatma, listedeki dosyaları kalıcı kaydetmeyi atlar.</translation></message>
+    <message><source>Direct shutdown skips staged file commits.</source><translation>Doğrudan kapatma, listedeki dosyaları kalıcı kaydetmeyi atlar.</translation></message>
+    <message><source>Staged files will not be committed. Uncommitted changes may be lost after restart.</source><translation>Listedeki dosyalar kalıcı olarak kaydedilmeyecek. Kalıcı kaydedilmemiş değişiklikler yeniden başlatma sonrasında kaybolabilir.</translation></message>
+    <message><source>Staged files will not be committed. Uncommitted changes may be lost after shutdown.</source><translation>Listedeki dosyalar kalıcı olarak kaydedilmeyecek. Kalıcı kaydedilmemiş değişiklikler kapatma sonrasında kaybolabilir.</translation></message>
+    <message><source>Commits staged files before normal shutdown or restart.</source><translation>Normal kapatma veya yeniden başlatma öncesinde listedeki dosyaları kalıcı kaydeder.</translation></message>
+    <message><source>Full volume commit and enabling HORM cannot be applied together.</source><translation>Tüm birimi kalıcı kaydetme ve HORM’u etkinleştirme birlikte uygulanamaz.</translation></message>
+    <message><source>Configuring the storage location and enabling HORM cannot be applied together.</source><translation>Depolama konumunu yapılandırma ve HORM’u etkinleştirme birlikte uygulanamaz.</translation></message>
+    <message><source>Configuring the storage location and full volume commit require different current UWF modes.</source><translation>Depolama konumunu yapılandırma ve tüm birimi kalıcı kaydetme, farklı geçerli UWF modları gerektirir.</translation></message>
+    <message><source>Choose a storage volume before applying.</source><translation>Değişiklikleri uygulamadan önce bir depolama birimi seçin.</translation></message>
+    <message><source>Configuring a disk storage location conflicts with a requested RAM overlay.</source><translation>Disk depolama konumunu yapılandırma, istenen RAM katmanıyla çakışıyor.</translation></message>
+    <message><source>Apply the filter change and restart before requesting full volume commit.</source><translation>Tüm birimi kalıcı kaydetmeyi istemeden önce filtre değişikliğini uygulayın ve yeniden başlatın.</translation></message>
+    <message><source>Canceled</source><translation>İptal edildi</translation></message>
+    <message><source>The reviewed storage volume is no longer available. Return to editing and choose another volume.</source><translation>İncelenen depolama birimi artık kullanılamıyor. Düzenlemeye dönüp başka bir birim seçin.</translation></message>
+    <message><source>This volume cannot be registered with UWF because its storage bus is not supported.</source><translation>Depolama veri yolu desteklenmediğinden bu birim UWF’ye kaydedilemiyor.</translation></message>
+    <message><source>Physical volume support could not be confirmed. Refresh before enabling protection.</source><translation>Fiziksel birim desteği doğrulanamadı. Korumayı etkinleştirmeden önce durumu yenileyin.</translation></message>
+    <message><source>Paused</source><translation>Duraklatıldı</translation></message>
+    <message><source>Partially paused</source><translation>Kısmen duraklatıldı</translation></message>
+    <message><source>Persistent overlay data will be retained at the next startup. Automatic commits are paused.</source><translation>Kalıcı katman verileri bir sonraki başlangıçta korunacak. Otomatik kaydetme duraklatıldı.</translation></message>
+
+    <message><source>Paused entries: %1 · Paused files: %2</source><translation>Duraklatılan öğeler: %1 · Duraklatılan dosyalar: %2</translation></message>
+    <message><source>Read-only ROM</source><translation>Salt okunur ROM</translation></message>
+    <message><source>%1 changes · %2 commands</source><translation>%1 değişiklik · %2 komut</translation></message>
+    <message><source>%1 file system: file exclusions and per-file commit are not supported.</source><translation>%1 dosya sistemi: dosya dışlamaları ve dosya başına kaydetme desteklenmez.</translation></message>
+    <message><source>Applying changes</source><translation>Değişiklikler uygulanıyor</translation></message>
+    <message><source>Automatic commits paused</source><translation>Otomatik kaydetme duraklatıldı</translation></message>
+    <message><source>Automatic file commits are paused until restart after a HORM mode change.</source><translation>HORM modu değiştirildikten sonra otomatik dosya kaydetme yeniden başlatmaya kadar duraklatılır.</translation></message>
+    <message><source>Automatic file commits are unavailable after FullCommit.</source><translation>FullCommit sonrasında otomatik dosya kaydetme kullanılamaz.</translation></message>
+    <message><source>Automatic file commits are unavailable while HORM is active.</source><translation>HORM etkinken otomatik dosya kaydetme kullanılamaz.</translation></message>
+    <message><source>Automatic staged-file commits are paused for this restart.</source><translation>Hazırlanan dosyaların otomatik kaydedilmesi bu yeniden başlatma için duraklatıldı.</translation></message>
+    <message><source>Automatic staged-file commits are paused for this shutdown.</source><translation>Hazırlanan dosyaların otomatik kaydedilmesi bu kapatma için duraklatıldı.</translation></message>
+    <message><source>Configuration persistence could not be confirmed. Refresh the system state before changing this setting.</source><translation>Yapılandırmanın kalıcılığı doğrulanamadı. Bu ayarı değiştirmeden önce sistem durumunu yenileyin.</translation></message>
+    <message><source>Elapsed: %1 s</source><translation>Geçen süre: %1 sn</translation></message>
+    <message><source>Only eligible staged files will be committed.</source><translation>Yalnızca uygun hazırlanan dosyalar kaydedilecektir.</translation></message>
+    <message><source>Read-only ROM cannot persist ordinary UWF settings on the protected system volume. Disable UWF and restart before changing them.</source><translation>Salt okunur ROM, korunan sistem birimindeki normal UWF ayarlarını kalıcı olarak saklayamaz. Bunları değiştirmeden önce UWF özelliğini devre dışı bırakıp yeniden başlatın.</translation></message>
+    <message><source>Skipped staged files are not committed by this operation.</source><translation>Atlanan hazırlanan dosyalar bu işlem tarafından kaydedilmez.</translation></message>
+    <message><source>Staged files are already on unprotected storage. No automatic commit is needed.</source><translation>Hazırlanan dosyalar zaten korunmayan depolamadadır. Otomatik kaydetme gerekmez.</translation></message>
+    <message><source>Threshold changes require a registry commit, which is unavailable in read-only ROM.</source><translation>Eşik değişiklikleri, salt okunur ROM içinde kullanılamayan kayıt defteri kaydetme işlemini gerektirir.</translation></message>
+    <message><source>Waiting for Windows to finish. This may take a while.</source><translation>Windows işleminin tamamlanması bekleniyor. Bu biraz zaman alabilir.</translation></message>
+    <message><source>HORM is disabled. Automatic staged-file commits are paused until restart. Manual operations follow the current UWF capabilities.</source><translation>HORM devre dışı. Hazırlanan dosyaların otomatik kaydedilmesi yeniden başlatmaya kadar duraklatılır. El ile işlemler geçerli UWF özelliklerine göre yürütülür.</translation></message>
+    <message><source>This configuration snapshot includes settings that require UWF disabled in the current session. Disable UWF and restart before running it.</source><translation>Bu yapılandırma anlık görüntüsü, geçerli oturumda UWF’nin devre dışı olmasını gerektiren ayarlar içerir. Çalıştırmadan önce UWF’yi devre dışı bırakıp yeniden başlatın.</translation></message>
+    <message><source>Current-session actions (HORM, FullCommit, and persistent overlay reset; export them from Pending changes)</source><translation>Geçerli oturum işlemleri (HORM, FullCommit ve kalıcı katman sıfırlama; Bekleyen değişiklikler bölümünden dışa aktarın)</translation></message>
+    <message><source>Bulk unprotection requires a confirmed complete next-session volume scope.</source><translation>Toplu koruma kaldırma, sonraki oturumun tam birim kapsamının doğrulanmasını gerektirir.</translation></message>
 </context>
 </TS>

@@ -2,7 +2,7 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
 
-#include "ui/dialogs/Dialogs.h"
+#include "presentation/dialogs/Dialogs.h"
 
 namespace uwf::test {
 class FileDialogStub final : public ui::dialogs::FileDialogProvider {

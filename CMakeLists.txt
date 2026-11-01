@@ -8,9 +8,11 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(UWF_SANITIZE "Build with AddressSanitizer + UBSan (Clang/GCC only)" ON)
 option(UWF_BUILD_TESTS "Build UWF test suites" ON)
+option(UWF_ENABLE_FAILURE_SOLVER "Enable optional abstract-interface failure inference" ON)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
+include(CheckLayerBoundaries)
 include(UwfDependencies)
 include(UwfComponents)
 include(UwfExecutable)

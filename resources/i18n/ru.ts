@@ -10,6 +10,7 @@
     <message><source>disable</source><translation>отключить</translation></message>
     <message><source>Enabled</source><translation>Включено</translation></message>
     <message><source>Disabled</source><translation>Отключено</translation></message>
+    <message><source>Disabled</source><comment>service startup type</comment><translation>Отключено</translation></message>
     <message><source>OK</source><translation>ОК</translation></message>
     <message><source>Cancel</source><translation>Отмена</translation></message>
     <message><source>Close</source><translation>Закрыть</translation></message>
@@ -27,26 +28,26 @@
     <message><source>Drive letter</source><translation>Буква диска</translation></message>
     <message><source>Volume ID</source><translation>Идентификатор тома</translation></message>
     <message><source>Protection state of this volume in the current session (read-only).</source><translation>Состояние защиты тома в текущем сеансе (только чтение).</translation></message>
-    <message><source>Protect this volume in the next session. Writes to this volume are redirected to the overlay and discarded on reboot.</source><translation>Защищать том в следующем сеансе. Запись перенаправляется в оверлей и отбрасывается при перезагрузке.</translation></message>
+    <message><source>Protect this volume in the next session. Writes to protected paths are redirected to the overlay; retention across restarts depends on the overlay settings.</source><translation>Защитить этот том в следующем сеансе. Запись по защищённым путям перенаправляется в оверлей; сохранение данных после перезапуска зависит от настроек оверлея.</translation></message>
     <message><source>Current session</source><translation>Текущий сеанс</translation></message>
     <message><source>Next session</source><translation>Следующий сеанс</translation></message>
     <message><source>How UWF identifies this volume. Drive letter is simpler, but the binding breaks if the letter is reassigned (e.g. after adding or removing other disks). Volume ID stays stable across drive letter changes.</source><translation>Способ распознавания тома. Буква диска проще, но привязка теряется при её смене, например после добавления или удаления дисков. Идентификатор тома остаётся постоянным.</translation></message>
     <message><source>This volume is not supported by UWF: </source><translation>Том не поддерживается UWF: </translation></message>
     <message><source>Global settings</source><translation>Общие настройки</translation></message>
     <message><source>UWF filter state in the current session (read-only).</source><translation>Состояние фильтра UWF в текущем сеансе (только чтение).</translation></message>
-    <message><source>Enable the UWF filter in the next session. Writes to protected volumes are redirected to the overlay and discarded on reboot.</source><translation>Включить UWF в следующем сеансе. Запись на защищённые тома идёт в оверлей и отбрасывается при перезагрузке.</translation></message>
-    <message><source>Overlay type and maximum size can only be changed while the filter is disabled:
-1. Disable the filter using the switch above.
-2. Reboot (the filter will be off after reboot).
-3. Change this setting.</source><translation>Для изменения типа и максимального размера:
-1. Отключите фильтр выше.
-2. Перезагрузите систему, чтобы отключение вступило в силу.
-3. Измените настройку.</translation></message>
-    <message><source>Overlay storage location. RAM is faster but consumes memory; Disk uses the system drive and offers more capacity. Both are discarded on reboot.</source><translation>Хранилище оверлея: RAM быстрее, но занимает память; Disk использует системный диск и даёт больше места. Оба очищаются при перезагрузке.</translation></message>
+    <message><source>Enable UWF in the next session. Writes to protected paths are redirected to the overlay; retention across restarts depends on the overlay settings.</source><translation>Включить UWF в следующем сеансе. Запись по защищённым путям перенаправляется в оверлей; сохранение данных после перезапуска зависит от настроек оверлея.</translation></message>
+    <message><source>To change the overlay type or maximum capacity:
+1. Disable UWF.
+2. Restart the device.
+3. Change this setting.</source><translation>Чтобы изменить тип или максимальную ёмкость оверлея:
+1. Отключите UWF.
+2. Перезапустите устройство.
+3. Измените этот параметр.</translation></message>
+    <message><source>RAM uses system memory. Disk uses the system drive and supports larger overlays. Persistent Overlay can retain Disk overlay data across restarts.</source><translation>RAM использует системную память. Disk использует системный диск и поддерживает оверлеи большего размера. Постоянный оверлей позволяет сохранять данные оверлея Disk после перезапуска.</translation></message>
     <message><source>Type</source><translation>Тип</translation></message>
-    <message><source>Maximum overlay capacity. In RAM mode, capped by total system memory. Disk mode requires at least 1024 MB and enough free space on the system volume.</source><translation>Максимальная ёмкость оверлея. RAM ограничена объёмом памяти. Для Disk нужно минимум 1024 MB и достаточно свободного места на системном томе.</translation></message>
-    <message><source>Maximum size</source><translation>Максимальный размер</translation></message>
-    <message><source>Maximum size · RAM %1</source><translation>Максимальный размер · RAM %1</translation></message>
+    <message><source>RAM overlay capacity is limited by system memory. A Disk overlay requires at least 1024 MB and sufficient free space on the system drive.</source><translation>Ёмкость оверлея RAM ограничена системной памятью. Оверлею Disk требуется не менее 1024 МБ и достаточно свободного места на системном диске.</translation></message>
+    <message><source>Maximum capacity</source><translation>Максимальная ёмкость</translation></message>
+    <message><source>Maximum capacity · RAM %1</source><translation>Максимальная ёмкость · RAM %1</translation></message>
     <message><source>Warning threshold</source><translation>Порог предупреждения</translation></message>
     <message><source>Triggers a warning-level event-log notification when overlay usage reaches this value. When both events are enabled, this value must be lower than the critical threshold. Set to 0 to disable only the warning event.</source><translation>Записывает предупреждение в журнал событий, когда объём занятого места в оверлее достигает этого значения. Если оба события включены, это значение должно быть ниже критического порога. Значение 0 отключает только событие предупреждения.</translation></message>
     <message><source>Critical threshold</source><translation>Критический порог</translation></message>
@@ -54,42 +55,41 @@
     <message><source>Overlay</source><translation>Оверлей</translation></message>
     <message><source>Unsupported drive type (only fixed local disks are supported).</source><translation>Неподдерживаемый тип диска (только локальные фиксированные диски).</translation></message>
     <message><source>Volume capacity exceeds the UWF limit of 16 TiB for a single protected volume.</source><translation>Том превышает лимит UWF: 16 TiB на защищённый том.</translation></message>
-    <message><source>%1 file system: this volume can be protected, but file exclusions and per-file commit are not supported.</source><translation>%1: защита тома возможна, но исключения файлов и пофайловая фиксация не поддерживаются.</translation></message>
-    <message><source>Failed to read volume information.</source><translation>Ошибка: Чтение сведений о томе.</translation></message>
+
     <message><source>%1 free / %2</source><translation>Свободно %1 / %2</translation></message>
     <message><source>Commit</source><translation>Зафиксировать</translation></message>
-    <message><source>Commit overlay changes to disk / registry. This action cannot be undone.</source><translation>Зафиксировать изменения файла из оверлея на диске / Зафиксировать изменения реестра. Это действие нельзя отменить.</translation></message>
+    <message><source>Commit changes from the overlay to disk or the registry. This cannot be undone.</source><translation>Зафиксировать изменения из оверлея на диске или в реестре. Это действие нельзя отменить.</translation></message>
     <message><source>Commit file changes…</source><translation>Зафиксировать изменения файла…</translation></message>
-    <message><source>Pick a file and commit its overlay changes to disk.</source><translation>Выбрать файл для фиксации на диске. Зафиксировать изменения файла из оверлея на диске.</translation></message>
+    <message><source>Pick a file and commit its overlay changes to disk.</source><translation>Выберите файл и зафиксируйте его изменения из оверлея на диске.</translation></message>
     <message><source>Commit folder changes…</source><translation>Зафиксировать изменения папки…</translation></message>
-    <message><source>Pick a folder and commit overlay changes for every file inside it to disk.</source><translation>Выбрать папку для фиксации на диске. Зафиксировать изменения папки из оверлея на диске. Включая все вложенные папки.</translation></message>
+    <message><source>Pick a folder and commit overlay changes for every file inside it to disk.</source><translation>Выберите папку и зафиксируйте на диске изменения из оверлея для каждого файла в ней.</translation></message>
     <message><source>Delete and commit file…</source><translation>Удалить файл и зафиксировать удаление на диске…</translation></message>
-    <message><source>Pick a file to delete, and commit the deletion to disk.</source><translation>Выбрать файл для фиксации удаления. Удалить файл и зафиксировать удаление на диске.</translation></message>
+    <message><source>Pick a file to delete, and commit the deletion to disk.</source><translation>Выберите файл для удаления и зафиксируйте удаление на диске.</translation></message>
     <message><source>Delete and commit folder…</source><translation>Удалить папку со всем содержимым и зафиксировать удаление на диске…</translation></message>
-    <message><source>Pick a folder to delete (recursively, with everything inside it) and commit the deletions to disk.</source><translation>Выбрать папку для фиксации удаления. Удалить папку со всем содержимым и зафиксировать удаление на диске. Включая все вложенные папки.</translation></message>
+    <message><source>Select a folder, recursively delete it and all its contents, and commit the deletions to disk.</source><translation>Выберите папку для удаления со всем содержимым и вложенными папками, затем зафиксируйте удаления на диске.</translation></message>
     <message><source>Commit registry changes…</source><translation>Зафиксировать изменения реестра…</translation></message>
-    <message><source>Enter a registry key (and optional value name) and commit changes to the registry. Leaving the value name empty commits every value under the key and all its subkeys (recursively).</source><translation>Введите путь ключа и необязательное имя значения. Если имя пустое, фиксируются все значения ключа и всех подразделов.</translation></message>
+    <message><source>Enter a registry key (and optional value name) and commit changes to the registry. Leaving the value name empty commits every value under the key and all its subkeys (recursively).</source><translation>Введите ключ реестра и необязательное имя значения, затем зафиксируйте изменения в реестре. Если имя пустое, фиксируются все значения ключа и его подключей.</translation></message>
     <message><source>Delete and commit registry…</source><translation>Зафиксировать удаление из реестра…</translation></message>
-    <message><source>Enter a registry key (and optional value name) to delete, and commit the deletion to the registry. Leaving the value name empty deletes the whole subtree (the key plus all its values and subkeys, recursively).</source><translation>Введите ключ для удаления и необязательное имя значения. Пустое имя означает удаление и фиксацию всего дерева: ключа, значений и подразделов.</translation></message>
+    <message><source>Enter a registry key and an optional value name. Leave the value name empty to delete the key and all its subkeys and values, then commit the deletions.</source><translation>Введите ключ реестра и необязательное имя значения. Оставьте имя значения пустым, чтобы удалить ключ со всеми подключами и значениями, а затем зафиксировать удаления.</translation></message>
     <message><source>File exclusions</source><translation>Исключения файлов</translation></message>
     <message><source>Files and folders on this volume excluded from UWF protection. Double-click an entry to copy its path.</source><translation>Файлы и папки тома вне защиты UWF. Дважды щёлкните запись для копирования пути.</translation></message>
     <message><source>Registry exclusions</source><translation>Исключения реестра</translation></message>
-    <message><source>Registry exclusions are global: they are governed by the global UWF filter switch, not by this volume's protection state. The list is shared across all volumes and shown only once in the disk tabs. Double-click an entry to copy its path.</source><translation>Исключения реестра общие и зависят от глобального фильтра UWF, а не защиты тома. Список общий для всех томов и показан только на одной вкладке. Двойной щелчок копирует путь.</translation></message>
-    <message><source>File staging</source><translation>Автофиксация файлов</translation></message>
-    <message><source>Files and folders in this list are committed automatically before safe shutdown or restart. Folders are processed recursively. While the list contains data, UWF Manager excludes HKLM\SOFTWARE\HsingYun\UWF Manager so the list persists across protected sessions.</source><translation>файлы / папки: Автоматически фиксируются перед безопасным выключением или перезагрузкой. Включая все вложенные папки. Пока список не пуст, следующее исключение реестра сохраняет его между защищёнными сеансами: HKLM\SOFTWARE\HsingYun\UWF Manager</translation></message>
+    <message><source>Registry exclusions are global and are shown only on the system drive.</source><translation>Исключения реестра — глобальные настройки; они отображаются только для тома с Windows.</translation></message>
+    <message><source>File staging</source><translation>Список автофиксации</translation></message>
+
     <message><source>Add files or a folder to the automatic commit list.</source><translation>Добавить файлы или папку в список автофиксации.</translation></message>
-    <message><source>Select one or more files to commit automatically before safe shutdown or restart.</source><translation>Выбрать файл для фиксации на диске. Автоматически фиксируются перед безопасным выключением или перезагрузкой.</translation></message>
-    <message><source>Select a folder whose files will be committed recursively before safe shutdown or restart.</source><translation>Выбрать папку для фиксации на диске. Автоматически фиксируются перед безопасным выключением или перезагрузкой. Включая все вложенные папки.</translation></message>
-    <message><source>Select files for automatic commit</source><translation>Выбрать файл для фиксации на диске · Автофиксация файлов</translation></message>
-    <message><source>Select a folder for automatic recursive commit</source><translation>Выбрать папку для фиксации на диске · Автофиксация файлов · Включая все вложенные папки.</translation></message>
+    <message><source>Select one or more files to commit automatically before safe shutdown or restart.</source><translation>Выберите один или несколько файлов для автоматической фиксации перед безопасным выключением или перезапуском.</translation></message>
+    <message><source>Select a folder whose files will be committed recursively before safe shutdown or restart.</source><translation>Выберите папку, файлы которой вместе с файлами вложенных папок будут фиксироваться перед безопасным выключением или перезапуском.</translation></message>
+    <message><source>Select files for automatic commit</source><translation>Выбрать файлы для автоматической фиксации</translation></message>
+    <message><source>Select a folder for automatic recursive commit</source><translation>Выбрать папку для автоматической рекурсивной фиксации</translation></message>
     <message><source>Cannot stage this path</source><translation>Невозможно добавить путь в автофиксацию</translation></message>
     <message><source>This path overlaps a UWF file exclusion. Remove the exclusion before adding the staged path:
-%1</source><translation>Путь пересекается с исключением UWF. Сначала удалите исключение:
+%1</source><translation>Этот путь пересекается с файловым исключением UWF. Удалите исключение перед добавлением пути в список:
 %1</translation></message>
     <message><source>This path overlaps a file staging entry. Remove the staged path before adding the exclusion:
-%1</source><translation>Путь пересекается с автофиксацией. Сначала уберите путь из списка:
+%1</source><translation>Этот путь пересекается с записью списка автофиксации. Удалите путь из списка перед добавлением исключения:
 %1</translation></message>
-    <message><source>The path overlaps an existing file staging entry</source><translation>Путь пересекается с записью автофиксации</translation></message>
+    <message><source>The path overlaps an existing file staging entry</source><translation>Путь пересекается с существующей записью списка автофиксации</translation></message>
     <message><source>The registry exclusion is required while File staging contains saved entries</source><translation>Исключение реестра необходимо, пока список автофиксации не пуст</translation></message>
     <message><source>The selected path does not exist or is not the expected file type:
 %1</source><translation>Путь не существует или имеет неожиданный тип:
@@ -98,29 +98,27 @@
 %1</source><translation>Не удалось проверить путь:
 %1</translation></message>
     <message><source>Reparse points cannot be added to automatic file staging:
-%1</source><translation>Точки повторной обработки нельзя добавлять в автофиксацию:
+%1</source><translation>Точки повторной обработки нельзя добавлять в список автофиксации:
 %1</translation></message>
-    <message><source>The path has no drive letter and cannot be committed by UWF:
-%1</source><translation>Нет буквы диска, фиксация UWF невозможна:
+    <message><source>The path has no drive letter and cannot be added to file staging:
+%1</source><translation>У пути нет буквы диска, поэтому его нельзя добавить в список автофиксации:
 %1</translation></message>
-    <message><source>The selected path is on volume %1. Add it from that volume's File staging tab.</source><translation>Путь находится на томе %1. Добавьте его на вкладке автофиксации этого тома.</translation></message>
+    <message><source>The selected path is on volume %1. Add it from that volume's File staging tab.</source><translation>Выбранный путь находится на томе %1. Добавьте его на вкладке «Список автофиксации» этого тома.</translation></message>
     <message><source>A volume root cannot be staged because it would recursively commit the entire volume.</source><translation>Корень тома нельзя добавлять: это привело бы к рекурсивной фиксации всего тома.</translation></message>
-    <message><source>File staging could not be saved</source><translation>Ошибка: Сохранение списка автофиксации</translation></message>
+    <message><source>File staging could not be saved</source><translation>Не удалось сохранить список автофиксации</translation></message>
     <message><source>The file staging state was reloaded after the update could not be completed:
 %1</source><translation>Список автофиксации перезагружен из-за сбоя обновления:
 %1</translation></message>
-    <message><source>File staging is unavailable: %1</source><translation>Автофиксация файлов: %1</translation></message>
-    <message><source>Committed automatically before safe shutdown or restart.</source><translation>Автоматически фиксируются перед безопасным выключением или перезагрузкой.</translation></message>
-    <message><source>%1 staged entries · %2 files · %3 folders</source><translation>Автофиксация файлов: %1 · файлы: %2 · папки: %3</translation></message>
-    <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>Автофиксация файлов использует это исключение реестра, чтобы сохранять свой список после перезагрузок.</translation></message>
+    <message><source>File staging is unavailable: %1</source><translation>Список автофиксации недоступен: %1</translation></message>
+
+    <message><source>%1 staged entries · %2 files · %3 folders</source><translation>Записей в списке: %1 · файлов: %2 · папок: %3</translation></message>
+    <message><source>File staging relies on this registry exclusion to preserve its list across restarts.</source><translation>Список автофиксации использует это исключение реестра, чтобы сохраняться после перезапуска.</translation></message>
     <message><source>Built-in</source><translation>Встроенный</translation></message>
     <message><source>The UWF filter is currently disabled; no overlay changes have been accumulated, so there is nothing to commit.</source><translation>Фильтр UWF отключён. Изменения в оверлее не накапливались; фиксировать нечего.</translation></message>
     <message><source>Per-file commit is not supported on the %1 file system.</source><translation>Файловая система %1 не поддерживает пофайловую фиксацию.</translation></message>
     <message><source>This volume is not supported by UWF.</source><translation>Этот том не поддерживается UWF.</translation></message>
-    <message><source>This volume does not support file commit. Only registry commit is available (registry exclusions are global).</source><translation>Том не поддерживает фиксацию файлов. Доступна только фиксация реестра (его исключения глобальны).</translation></message>
     <message><source>Per-file commit is not supported on the %1 file system. Only registry commit is available (registry exclusions are global).</source><translation>Файловая система %1 не поддерживает пофайловую фиксацию. Доступна только фиксация реестра (его исключения глобальны).</translation></message>
     <message><source>This volume is not currently protected by UWF; there are no file changes to commit.</source><translation>Том сейчас не защищён UWF; нет изменений файлов для фиксации.</translation></message>
-    <message><source>This volume is not currently protected by UWF. Only registry commit is available (registry exclusions are global).</source><translation>Том сейчас не защищён UWF; нет изменений файлов для фиксации. Доступна только фиксация реестра (его исключения глобальны).</translation></message>
     <message><source>Select a file to commit to disk</source><translation>Выбрать файл для фиксации на диске</translation></message>
     <message><source>Select a folder to commit to disk</source><translation>Выбрать папку для фиксации на диске</translation></message>
     <message><source>Select a file whose deletion you want to commit</source><translation>Выбрать файл для фиксации удаления</translation></message>
@@ -130,16 +128,16 @@
     <message><source>(Default)</source><translation>(По умолчанию)</translation></message>
     <message><source>(value not set)</source><translation>(значение не задано)</translation></message>
     <message><source>(empty)</source><translation>(пусто)</translation></message>
-    <message><source>Preview unavailable (value is too large)</source><translation>Неизвестно (Значение: Файл слишком большой)</translation></message>
-    <message><source>Open a diagnostic view of files currently cached in the overlay for this volume.</source><translation>Просмотр файлов оверлея. &lt;b&gt;Только диагностический снимок.&lt;/b&gt; Не выбирайте по нему данные для фиксации.</translation></message>
+    <message><source>Preview unavailable (value is too large)</source><translation>Предпросмотр недоступен (значение слишком велико)</translation></message>
+    <message><source>Open a diagnostic view of files currently cached in the overlay for this volume.</source><translation>Открыть диагностическое представление файлов, находящихся в оверлее этого тома.</translation></message>
     <message><source>Overlay file listing is only supported on NTFS volumes.</source><translation>Список файлов оверлея доступен только на томах NTFS.</translation></message>
-    <message><source>The UWF filter is currently disabled, so no volume has an overlay to inspect.</source><translation>UWF отключён; ни на одном томе нет оверлея для просмотра.</translation></message>
+    <message><source>The UWF filter is disabled; no volume has an overlay to inspect.</source><translation>Фильтр UWF сейчас отключён; ни на одном томе нет оверлея для просмотра.</translation></message>
     <message><source>This volume is not currently protected by UWF, so it has no overlay to inspect.</source><translation>Том не защищён UWF и не имеет оверлея для просмотра.</translation></message>
     <message><source>Failed: %1</source><translation>Ошибка: %1</translation></message>
-    <message><source>The WMI provider crashed while enumerating overlay files. This is a known instability of UWF_Overlay.GetOverlayFiles when the overlay is large or under I/O pressure.</source><translation>Поставщик WMI аварийно завершился. Это известная нестабильность UWF_Overlay.GetOverlayFiles при большом оверлее или высокой нагрузке ввода-вывода.</translation></message>
-    <message><source>Out of memory or operation not supported by the provider. Overlay file enumeration only works on NTFS volumes and requires headroom; try again with a smaller overlay or after closing memory-heavy applications.</source><translation>Недостаточно памяти либо операция не поддерживается. Нужны NTFS и запас памяти. Уменьшите оверлей или закройте программы с высоким потреблением памяти и повторите.</translation></message>
+    <message><source>The previous enumeration may still be running. Another read cannot start yet.</source><translation>Предыдущее перечисление, возможно, ещё выполняется. Пока нельзя начать новое чтение.</translation></message><message><source>The UWF service is unavailable while enumerating overlay files.</source><translation>Служба UWF недоступна при перечислении файлов оверлея.</translation></message>
+    <message><source>Out of memory, or this operation is not supported. This feature requires an NTFS volume; close memory-intensive applications and try again.</source><translation>Недостаточно памяти или система не поддерживает эту операцию. Функция доступна только для томов NTFS; закройте приложения с высоким потреблением памяти и повторите попытку.</translation></message>
     <message><source>Raw error: %1</source><translation>Код ошибки: %1</translation></message>
-    <message><source>Export overlay file list</source><translation>Экспорт в файл… · Оверлей · файлы</translation></message>
+    <message><source>Export overlay file list</source><translation>Экспорт списка файлов оверлея</translation></message>
     <message><source>Text files (*.txt);;All files (*)</source><translation>Текстовые файлы (*.txt);;Все файлы (*)</translation></message>
     <message><source>Command files (*.cmd);;All files (*)</source><translation>Командные файлы (*.cmd);;Все файлы (*)</translation></message>
     <message><source>Export failed</source><translation>Ошибка экспорта</translation></message>
@@ -147,10 +145,10 @@
     <message><source>Could not open file for writing: %1</source><translation>Ошибка: Открытие файла (%1).</translation></message>
     <message><source>Could not write file: %1</source><translation>Ошибка: Запись файла (%1).</translation></message>
     <message><source>Saved %1 entries to:
-%2</source><translation>Конфигурация: Запись файла · записи: %1
+%2</source><translation>Сохранено записей: %1. Путь:
 %2</translation></message>
     <message><source>Cannot add an entire volume (%1) to the exclusion list.</source><translation>Нельзя исключить том целиком (%1).</translation></message>
-    <message><source>The pagefile, swapfile and hibernation file cannot be excluded; UWF itself depends on these system files.</source><translation>Файлы подкачки, swap и гибернации нельзя исключать: от них зависит сам UWF.</translation></message>
+    <message><source>The pagefile, swapfile and hibernation file cannot be added as exclusions.</source><translation>Файлы подкачки, swap и гибернации нельзя добавлять в исключения.</translation></message>
     <message><source>The entire \Windows directory cannot be excluded.</source><translation>Нельзя исключить каталог целиком: \Windows.</translation></message>
     <message><source>The entire \Windows\System32 directory cannot be excluded.</source><translation>Нельзя исключить каталог целиком: \Windows\System32.</translation></message>
     <message><source>The entire \Windows\System32\Drivers directory cannot be excluded.</source><translation>Нельзя исключить каталог целиком: \Windows\System32\Drivers.</translation></message>
@@ -158,24 +156,10 @@
     <message><source>The per-user registry file NTUSER.DAT cannot be excluded.</source><translation>Файл реестра пользователя NTUSER.DAT нельзя исключать.</translation></message>
     <message><source>Registry key cannot be empty.</source><translation>Ключ реестра не может быть пустым.</translation></message>
     <message><source>Registry key cannot start with a backslash.</source><translation>Ключ реестра не может начинаться с обратной косой черты.</translation></message>
-    <message><source>The path contains consecutive backslashes; this is not valid.</source><translation>Путь содержит повторяющиеся обратные косые черты и недопустим.</translation></message>
-    <message><source>Registry paths use backslash `\` as the separator; do not use forward slash `/`.</source><translation>Разделитель пути реестра — `\`, а не `/`.</translation></message>
-    <message><source>The path contains invisible control characters; this is not valid.</source><translation>Путь содержит невидимые управляющие символы и недопустим.</translation></message>
-    <message><source>HKLM\SECURITY\Policy\Secrets\$MACHINE.ACC cannot be excluded; this is the domain machine account secret, which UWF documentation explicitly forbids excluding.</source><translation>Документация UWF запрещает исключать секрет учётной записи компьютера домена: HKLM\SECURITY\Policy\Secrets\$MACHINE.ACC</translation></message>
-    <message><source>UWF only allows exclusions under the following top-level registry keys. Please pick a specific subkey under one of them:
-  HKLM\BCD00000000
-  HKLM\SYSTEM
-  HKLM\SOFTWARE
-  HKLM\SAM
-  HKLM\SECURITY
-  HKLM\COMPONENTS</source><translation>Допустимы только конкретные подразделы следующих корневых ключей:
-  HKLM\BCD00000000
-  HKLM\SYSTEM
-  HKLM\SOFTWARE
-  HKLM\SAM
-  HKLM\SECURITY
-  HKLM\COMPONENTS</translation></message>
-    <message><source>Add a file or folder to the exclusion list. Excluded entries are not protected by UWF.</source><translation>Добавить файлы или папки в исключения. Они не будут защищены UWF.</translation></message>
+    <message><source>Registry paths cannot contain null characters.</source><translation>Пути реестра не могут содержать нулевые символы.</translation></message>
+    <message><source>A registry key component is too long.</source><translation>Один из компонентов ключа реестра слишком длинный.</translation></message>
+    <message><source>The registry path exceeds UWF's nesting limit.</source><translation>Путь реестра превышает допустимую глубину вложенности UWF.</translation></message>
+    <message><source>Add a file or folder to the exclusion list.</source><translation>Добавить файл или папку в список исключений.</translation></message>
     <message><source>Pick a file to add to the exclusion list.</source><translation>Выбрать файл для добавления · Исключения файлов.</translation></message>
     <message><source>Pick a folder (and all of its contents) to add to the exclusion list.</source><translation>Выбрать папку для добавления · Исключения файлов. Включая все вложенные папки.</translation></message>
     <message><source>Enter a registry key path to add to the exclusion list.</source><translation>Введите путь ключа реестра для исключения.</translation></message>
@@ -210,11 +194,11 @@ Next session: %2</source><translation>Текущий сеанс: %1
     <message><source>Pending change: %1</source><translation>Ожидающие изменения: %1</translation></message>
     <message><source>Unified Write Filter (UWF) Manager</source><translation>Диспетчер единого фильтра записи (UWF)</translation></message>
     <message><source>Re-read the current session state and next-session configuration of UWF.</source><translation>Перечитать состояние текущего и конфигурацию следующего сеанса UWF.</translation></message>
-    <message><source>Review and apply</source><translation>Проверить и применить</translation></message>
-    <message><source>Review all pending changes and apply them in one batch. Most changes take effect after the next reboot.</source><translation>Проверить все ожидающие изменения и применить одним пакетом. Большинство изменений вступит в силу после следующей перезагрузки.</translation></message>
+    <message><source>Review and apply</source><translation>Проверка и применение</translation></message>
+    <message><source>Review all pending changes and apply them in one batch.</source><translation>Проверить все ожидающие изменения и применить одним пакетом.</translation></message>
     <message><source>Safe shutdown</source><translation>Безопасное выключение</translation></message>
     <message><source>Shut down safely, even when the UWF overlay is full.</source><translation>Система безопасно выключится через UWF. Доступно даже при заполненном оверлее UWF.</translation></message>
-    <message><source>Safe restart</source><translation>Безопасная перезагрузка</translation></message>
+    <message><source>Safe restart</source><translation>Безопасный перезапуск</translation></message>
     <message><source>Direct restart</source><translation>Перезагрузить напрямую</translation></message>
     <message><source>Direct shutdown</source><translation>Выключить напрямую</translation></message>
     <message><source>Restart safely, even when the UWF overlay is full.</source><translation>Система безопасно перезагрузится через UWF. Доступно даже при заполненном оверлее UWF.</translation></message>
@@ -228,8 +212,7 @@ Next session: %2</source><translation>Текущий сеанс: %1
     <message><source>System information</source><translation>Сведения о системе</translation></message>
     <message><source>Diagnostic snapshot</source><translation>Диагностический снимок</translation></message>
     <message><source>Read only</source><translation>Только чтение</translation></message>
-    <message><source>The target was not found; there is nothing in the overlay to commit.</source><translation>Объект не найден; в оверлее нечего фиксировать.</translation></message>
-    <message><source>Target is not on the physical volume / persistent registry — it exists only in the overlay (created under UWF protection, never committed). It will disappear on reboot; commit-delete is neither needed nor possible.</source><translation>Объект есть только в оверлее: создан под защитой UWF и никогда не фиксировался на диске или в постоянном реестре. Исчезнет при перезагрузке; фиксация удаления не нужна и невозможна.</translation></message>
+    <message><source>The system did not find the target.</source><translation>Система не нашла целевой объект.</translation></message>
     <message><source>A parameter was rejected by the system (invalid path or argument).</source><translation>Система отклонила параметр: неверный путь или аргумент.</translation></message>
     <message><source>The operation failed. The target may be in use by another process (e.g. an Explorer window browsing the folder, or the file is open). Close any program holding it and try again.</source><translation>Ошибка операции. Объект может использоваться другой программой, например Проводником или открытым файлом. Закройте использующие его программы и повторите.</translation></message>
     <message><source>The operation failed (see log for details).</source><translation>Операция не выполнена; подробности в журнале.</translation></message>
@@ -240,10 +223,10 @@ Next session: %2</source><translation>Текущий сеанс: %1
     <message><source>Succeeded</source><translation>Успешно</translation></message>
     <message><source>Skipped</source><translation>Пропущено</translation></message>
     <message><source>Failed</source><translation>Ошибка</translation></message>
-    <message><source>%1 succeeded; %2 skipped; %3 failed.</source><translation>Успешно: %1; Пропущено: %2; Ошибка: %3.</translation></message>
+    <message><source>%1 succeeded; %2 failed.</source><translation>Успешно: %1; неудачно: %2.</translation></message>
 
-    <message><source>Existed before</source><translation>Существовал до</translation></message>
-    <message><source>Exists after</source><translation>Существует после</translation></message>
+    <message><source>Existed before</source><translation>Существовал до удаления</translation></message>
+    <message><source>Exists after</source><translation>Существует после удаления</translation></message>
     <message><source>Error code</source><translation>Код ошибки</translation></message>
     <message><source>Reason</source><translation>Причина</translation></message>
     <message><source>Previous page</source><translation>Предыдущая страница</translation></message>
@@ -252,25 +235,21 @@ Next session: %2</source><translation>Текущий сеанс: %1
     <message><source>Next page</source><translation>Следующая страница</translation></message>
     <message><source>Copy selected rows</source><translation>Копировать выбранные строки</translation></message>
     <message><source>Copy all</source><translation>Копировать всё</translation></message>
-    <message><source>This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it.</source><translation>Исключение реестра необходимо, пока список автофиксации не пуст. Автофиксация файлов: Очистить → Удаление исключения реестра.</translation></message>
+    <message><source>This registry exclusion is required while File staging contains saved entries. Clear the File staging list before removing it.</source><translation>Это исключение реестра необходимо, пока список автофиксации содержит сохранённые записи. Очистите список перед удалением исключения.</translation></message>
     <message><source>Copy current page</source><translation>Копировать текущую страницу</translation></message>
     <message><source>No pending changes</source><translation>Нет ожидающих изменений</translation></message>
     <message><source> (Also manages global registry exclusions.)</source><translation> (Исключения реестра · Общие настройки.)</translation></message>
-    <message><source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source><translation>Том %1: Защита UWF / Исключения файлов / Автофиксация файлов.%2</translation></message>
+    <message><source>Switch to protection settings, file exclusions, and file staging for volume %1.%2</source><translation>Перейти к настройкам защиты, исключениям файлов и списку автофиксации тома %1.%2</translation></message>
     <message><source>UWF namespace is not available</source><translation>UWF: Не поддерживается</translation></message>
-    <message><source>Review and apply changes</source><translation>Проверить и применить изменения</translation></message>
+    <message><source>Review and apply changes</source><translation>Проверка и применение изменений</translation></message>
     <message><source>Confirm apply</source><translation>Подтвердить применение</translation></message>
     <message><source>Result</source><translation>Результат</translation></message>
     <message><source>✓ Filter: %1</source><translation>✓ Фильтр: %1</translation></message>
     <message><source>✓ Overlay warning threshold set to %1 MB</source><translation>✓ Задание порога предупреждения: %1 MB</translation></message>
     <message><source>✓ Overlay critical threshold set to %1 MB</source><translation>✓ Задание критического порога: %1 MB</translation></message>
-    <message><source>✘ Type / maximum size not applied: the filter is currently enabled. Disable the filter and reboot first.</source><translation>✘ Задание типа оверлея / Задание максимального размера: Для изменения типа и максимального размера:
-1. Отключите фильтр выше.
-2. Перезагрузите систему, чтобы отключение вступило в силу.
-3. Измените настройку.</translation></message>
+    <message><source>✘ Type / maximum capacity not applied: UWF is enabled. Disable UWF and restart first.</source><translation>✘ Тип / максимальная ёмкость не применены: UWF включён. Сначала отключите UWF и перезапустите устройство.</translation></message>
     <message><source>✓ Overlay type set to %1</source><translation>✓ Задание типа оверлея: %1</translation></message>
-    <message><source>✓ Overlay maximum size set to %1 MB</source><translation>✓ Задание максимального размера: %1 MB</translation></message>
-    <message><source>✘ Maximum size not applied: a disk-based overlay requires at least %1 MB.</source><translation>✘ Задание максимального размера: Disk ≥ %1 MB.</translation></message>
+    <message><source>✓ Maximum overlay capacity set to %1 MB</source><translation>✓ Максимальная ёмкость оверлея установлена: %1 МБ</translation></message>
     <message><source>✓ Volume %1 protection: %2</source><translation>✓ Том %1 · Защита UWF: %2</translation></message>
     <message><source>✓ Volume %1 bind by: %2</source><translation>✓ Том %1 · Привязка по: %2</translation></message>
     <message><source>✓ Volume %1 added file exclusion: %2</source><translation>✓ Том %1 · Добавление исключения файла: %2</translation></message>
@@ -279,20 +258,14 @@ Next session: %2</source><translation>Текущий сеанс: %1
     <message><source>✓ Removed registry exclusion: %1</source><translation>✓ Удаление исключения реестра: %1</translation></message>
     <message><source>Time</source><translation>Время</translation></message>
     <message><source>Level</source><translation>Уровень</translation></message>
-    <message><source>Tag</source><translation>Метка</translation></message>
+
     <message><source>Message</source><translation>Сообщение</translation></message>
-    <message><source>Calculating files for automatic commit…</source><translation>Подсчёт файлов для автофиксации…</translation></message>
-    <message><source>Committing staged files</source><translation>Автофиксация файлов</translation></message>
-    <message><source>Processed %1 of %2 file(s).</source><translation>Обработано файлов: %1 из %2.</translation></message>
+    <message><source>Committing staged files</source><translation>Фиксация файлов из списка</translation></message>
     <message><source>No additional error details were provided.</source><translation>Дополнительные сведения об ошибке отсутствуют.</translation></message>
     <message><source>Automatic file staging stopped unexpectedly:
-%1</source><translation>Автофиксация неожиданно остановлена:
+%1</source><translation>Автоматическая фиксация файлов неожиданно остановлена:
 %1</translation></message>
-    <message><source>Automatic file staging stopped because of an unknown error.</source><translation>Автофиксация файлов не завершена: Неизвестная ошибка.</translation></message>
-    <message><source>File staging will be skipped</source><translation>Автофиксация файлов будет пропущена</translation></message>
-    <message><source>Direct restart skips File staging commits.</source><translation>Перезагрузить напрямую: Автофиксация файлов будет пропущена.</translation></message>
-    <message><source>Direct shutdown skips File staging commits.</source><translation>Выключить напрямую: Автофиксация файлов будет пропущена.</translation></message>
-    <message><source>File staging was skipped because a direct power action was selected.</source><translation>Автофиксация пропущена из-за выбора прямого действия питания.</translation></message>
+    <message><source>Automatic file staging stopped because of an unknown error.</source><translation>Автоматическая фиксация файлов остановлена из-за неизвестной ошибки.</translation></message>
     <message><source>Safe shutdown failed</source><translation>Безопасное выключение: Ошибка</translation></message>
     <message><source>Shutdown failed: %1</source><translation>Выключить: Ошибка (%1)</translation></message>
     <message><source>Safe restart failed</source><translation>Безопасная перезагрузка: Ошибка</translation></message>
@@ -303,24 +276,24 @@ Next session: %2</source><translation>Текущий сеанс: %1
 %1</source><translation>Не удалось прочитать список автофиксации:
 %1</translation></message>
     <message><source>The file staging list could not be read because of an unknown error.</source><translation>Не удалось прочитать список автофиксации: Неизвестная ошибка.</translation></message>
-    <message><source>Discovered files: %1 · Committed: %2 · Skipped files: %3 · Skipped entries: %4 · Failed: %5</source><translation>файлы: %1 · Успешно: %2 · Пропущено (файлы): %3 · Пропущено (записи): %4 · Ошибка: %5</translation></message>
-    <message><source>File staging preparation</source><translation>Автофиксация файлов: Подробности операции</translation></message>
+    <message><source>Discovered files: %1 · Committed: %2 · Skipped files: %3 · Skipped entries: %4 · Failed: %5</source><translation>Найдено файлов: %1 · Зафиксировано: %2 · Пропущено файлов: %3 · Пропущено записей: %4 · Ошибок: %5</translation></message>
+    <message><source>File staging preparation</source><translation>Подготовка к фиксации файлов из списка</translation></message>
     <message><source>Reparse points are not supported.</source><translation>Точки повторной обработки не поддерживаются.</translation></message>
     <message><source>Only absolute paths on local volumes can be staged.</source><translation>Можно добавлять только абсолютные пути на локальных томах.</translation></message>
     <message><source>Only absolute paths on local volumes can be added to automatic file staging:
 %1</source><translation>Можно добавлять только абсолютные пути на локальных томах.
 %1</translation></message>
-    <message><source>The staged path could not be inspected.</source><translation>Не удалось проверить путь автофиксации.</translation></message>
-    <message><source>The staged file now refers to a different path type.</source><translation>Путь добавленного файла теперь указывает на объект другого типа.</translation></message>
-    <message><source>The staged folder now refers to a different path type.</source><translation>Путь добавленной папки теперь указывает на объект другого типа.</translation></message>
-    <message><source>The staged folder could not be enumerated completely.</source><translation>Не удалось полностью перечислить содержимое папки.</translation></message>
-    <message><source>The path has no drive letter.</source><translation>У пути нет буквы диска.</translation></message>
+    <message><source>The staged path could not be inspected.</source><translation>Не удалось проверить путь из списка.</translation></message>
+    <message><source>The staged file now refers to a different path type.</source><translation>Файл из списка теперь указывает на путь другого типа.</translation></message>
+    <message><source>The staged folder now refers to a different path type.</source><translation>Папка из списка теперь указывает на путь другого типа.</translation></message>
+    <message><source>The staged folder could not be enumerated completely.</source><translation>Не удалось полностью перечислить содержимое папки из списка.</translation></message>
+
     <message><source>A volume root cannot be processed recursively.</source><translation>Нельзя рекурсивно обрабатывать корень тома.</translation></message>
     <message><source>The UWF provider rejected the commit.</source><translation>Поставщик UWF отклонил фиксацию.</translation></message>
     <message><source>The commit failed with an unknown error.</source><translation>Ошибка фиксации: Неизвестная ошибка.</translation></message>
     <message><source>%1 additional failure(s) were written to the log.</source><translation>Дополнительных ошибок в журнале: %1.</translation></message>
 
-    <message><source>The path has no drive letter; cannot identify the target volume.</source><translation>У пути нет буквы диска. Определение целевого тома: Ошибка.</translation></message>
+
 
     <message><source>No current-session record found for volume %1.</source><translation>Нет записи текущего сеанса для тома %1.</translation></message>
     <message><source>This path is in the file exclusion list.
@@ -341,14 +314,14 @@ Exclusion: %1</source><translation>Ключ находится в исключе
 %2</source><translation>Экспорт в файл… · Команда: %1
 %2</translation></message>
     <message><source>Import</source><translation>Импорт</translation></message>
-    <message><source>Paste, type, or load a script of uwfmgr commands and turn each line into a pending UI change. Nothing is written to the system until you click "Review and apply".</source><translation>uwfmgr: Введите или вставьте команды, по одной в строке. Загрузите текст, журнал или скрипт (.txt, .bat, .ps1); строки с этой командой будут добавлены. Импорт ставит изменения в очередь. Запись в систему выполняется через «Проверить и применить» на панели инструментов.</translation></message>
+    <message><source>Import uwfmgr commands into the draft. Changes are written only after confirmation in Review and apply.</source><translation>Импортировать команды uwfmgr в черновик. Изменения записываются только после подтверждения в разделе «Проверка и применение».</translation></message>
     <message><source>Load from file…</source><translation>Загрузить из файла…</translation></message>
     <message><source>Load recommended configuration</source><translation>Загрузить рекомендуемую конфигурацию</translation></message>
     <message><source>Choose recommended configuration</source><translation>Выбрать рекомендуемую конфигурацию</translation></message>
     <message><source>Select the recommended configuration groups to append. You can review or delete individual commands before importing.</source><translation>Выберите группы рекомендуемой конфигурации. Перед импортом можно проверить и удалить отдельные команды.</translation></message>
     <message><source>From Microsoft official documentation.</source><translation>Из официальной документации Microsoft.</translation></message>
     <message><source>Microsoft recommended UWF exclusions</source><translation>Исключения UWF, рекомендуемые Microsoft</translation></message>
-    <message><source>Review these recommendations before importing; folders should exist before UWF accepts file exclusions.</source><translation>Проверьте перед импортом: папки должны существовать, чтобы UWF принял исключения файлов.</translation></message>
+    <message><source>Review these recommendations before importing.</source><translation>Проверьте эти рекомендации перед импортом.</translation></message>
     <message><source>Source: Microsoft official UWF documentation, including common write filter exclusions and antimalware support.</source><translation>Источник: официальная документация Microsoft UWF об исключениях фильтра и поддержке антивирусов.</translation></message>
     <message><source>Customer Experience Improvement Program (CEIP)</source><translation>Программа улучшения качества ПО (CEIP)</translation></message>
     <message><source>CEIP: persist policy opt-in state</source><translation>CEIP: Сохранять между сеансами: Согласие на участие в политике</translation></message>
@@ -392,7 +365,7 @@ Exclusion: %1</source><translation>Ключ находится в исключе
     <message><source>Text files (*.txt *.cmd);;All files (*)</source><translation>Текстовые файлы (*.txt *.cmd);;Все файлы (*)</translation></message>
     <message><source>Status</source><translation>Состояние</translation></message>
     <message><source>Import failed</source><translation>Ошибка импорта</translation></message>
-    <message><source>Internal error: no applier registered.</source><translation>Внутренняя ошибка: обработчик применения не зарегистрирован.</translation></message>
+    <message><source>Command import is not ready.</source><translation>Импорт команд не готов.</translation></message>
     <message><source>Nothing to import</source><translation>Нет команд для импорта</translation></message>
     <message><source>No uwfmgr commands found in the input.</source><translation>Во вводе не найдены команды uwfmgr.</translation></message>
     <message><source>Duplicates: %1</source><translation>Дубликат: %1</translation></message>
@@ -405,14 +378,14 @@ Exclusion: %1</source><translation>Ключ находится в исключе
     <message><source>Cannot read file</source><translation>Не удалось прочитать файл</translation></message>
     <message><source>Could not open file %1: %2</source><translation>Ошибка: Открытие файла (%1): %2</translation></message>
     <message><source>Discard pending changes?</source><translation>Отбросить ожидающие изменения?</translation></message>
-    <message><source>There are %1 pending change(s) that have not been applied.
+    <message><source>%1 change(s) have not been applied.
 
-Continue and discard them?</source><translation>Неприменённых изменений: %1.
+Discard them and continue?</source><translation>Изменений не применено: %1.
 
-Отбросить и продолжить?</translation></message>
+Отбросить их и продолжить?</translation></message>
     <message><source>Incomplete uwfmgr command</source><translation>Неполная команда uwfmgr</translation></message>
     <message><source>Missing size argument (MB)</source><translation>Отсутствует аргумент: Размер (MB)</translation></message>
-    <message><source>Size must be a non-negative integer in MB</source><translation>Размер должен быть целым неотрицательным числом в MB</translation></message>
+    <message><source>Size must be a non-negative integer (MB)</source><translation>Размер должен быть неотрицательным целым числом (МБ)</translation></message>
     <message><source>Missing overlay type argument (RAM or Disk)</source><translation>Отсутствует аргумент: Оверлей · Тип (RAM / Disk)</translation></message>
     <message><source>Unknown overlay type %1 (expected RAM or Disk)</source><translation>Недопустимое значение: Оверлей · Тип: %1 (RAM / Disk)</translation></message>
     <message><source>Missing volume argument (e.g. C:)</source><translation>Отсутствует аргумент: Том (C:)</translation></message>
@@ -421,30 +394,30 @@ Continue and discard them?</source><translation>Неприменённых из�
     <message><source>Missing registry key argument</source><translation>Отсутствует аргумент: Реестр · Ключ</translation></message>
     <message><source>Unclosed double quote in command</source><translation>Незакрытая двойная кавычка в команде</translation></message>
     <message><source>Unexpected extra argument: %1</source><translation>Неожиданный лишний аргумент: %1</translation></message>
-    <message><source>Unsupported uwfmgr command (cannot be mapped to a UI action)</source><translation>Неподдерживаемая команда uwfmgr: нет соответствующего действия интерфейса</translation></message>
+    <message><source>This uwfmgr command cannot be imported.</source><translation>Эту команду uwfmgr нельзя импортировать.</translation></message>
     <message><source>Already in the target state — no-op</source><translation>Нужное состояние уже установлено; действие не требуется</translation></message>
     <message><source>Path is not on this volume, or this volume does not support file exclusions (e.g. exFAT / ReFS)</source><translation>Путь не на этом томе либо том не поддерживает исключения файлов (например, exFAT / ReFS)</translation></message>
-    <message><source>Rejected by UWF's blacklist (system file / Windows / pagefile / etc.)</source><translation>Отклонено списком запретов UWF (системные файлы, Windows, подкачка и т. п.)</translation></message>
+    <message><source>This path cannot be added as an exclusion.</source><translation>Этот путь нельзя добавить в исключения.</translation></message>
     <message><source>Invalid size value: %1</source><translation>Недопустимое значение: Размер: %1</translation></message>
-    <message><source>maximum size</source><translation>Максимальный размер</translation></message>
+    <message><source>maximum capacity</source><translation>максимальная ёмкость</translation></message>
     <message><source>warning threshold</source><translation>Порог предупреждения</translation></message>
     <message><source>critical threshold</source><translation>Критический порог</translation></message>
     <message><source>Global configuration is unavailable; the command was not queued.</source><translation>Глобальная конфигурация недоступна; команда не добавлена в ожидающие изменения.</translation></message>
-    <message><source>Unknown volume %1 (no UWF-eligible disk with that drive letter)</source><translation>Неизвестный том %1: нет подходящего для UWF диска с этой буквой</translation></message>
+    <message><source>Unknown volume %1 (no matching volume configuration)</source><translation>Неизвестный том %1 (нет соответствующей конфигурации тома)</translation></message>
     <message><source>Volume %1 is already in the target protection state</source><translation>Том %1: Нужное состояние уже установлено; действие не требуется</translation></message>
-    <message><source>Path %1 has no drive letter; cannot route to a volume tab</source><translation>%1: У пути нет буквы диска. Определение целевого тома: Ошибка.</translation></message>
+    <message><source>Path %1 has no drive letter; its volume tab cannot be identified.</source><translation>Путь %1 не содержит буквы диска; невозможно определить вкладку тома.</translation></message>
     <message><source>No UWF-eligible disk for drive letter %1</source><translation>Том %1: UWF Не поддерживается</translation></message>
     <message><source>file exclusion</source><translation>Исключения файлов</translation></message>
     <message><source>registry exclusion</source><translation>Исключения реестра</translation></message>
     <message><source>Registry exclusions are only available on the registry tab, which is not present</source><translation>Вкладка реестра отсутствует; исключения реестра недоступны</translation></message>
     <message><source>Unsupported command</source><translation>Команда: Не поддерживается</translation></message>
-    <message><source>Show or hide the overlay hub.</source><translation>HUB: Показать или скрыть.</translation></message>
+    <message><source>Show or hide the overlay widget.</source><translation>Показать или скрыть виджет оверлея.</translation></message>
     <message><source>UWF: Enabled</source><translation>UWF: Включено</translation></message>
-    <message><source>UWF: Disabled</source><translation>UWF: Отключено</translation></message>
+    <message><source>UWF: Disabled</source><translation>UWF: отключён</translation></message>
     <message><source>UWF status unavailable</source><translation>UWF: Неизвестно</translation></message>
     <message><source>Used %1 MB / Total %2 MB</source><translation>Занято %1 MB / %2 MB</translation></message>
     <message><source>Enhanced mode</source><translation>Расширенный режим</translation></message>
-    <message><source>Coordinate automatic file staging with Windows shutdown and restart.</source><translation>Согласовать автофиксацию с выключением и перезагрузкой Windows.</translation></message>
+    <message><source>Coordinate automatic file staging with Windows shutdown and restart.</source><translation>Согласовать автоматическую фиксацию файлов с выключением и перезапуском Windows.</translation></message>
     <message><source>The enhanced mode status read failed because of an unknown error.</source><translation>Ошибка: Чтение состояния расширенного режима (Неизвестная ошибка).</translation></message>
     <message><source>The current service state could not be read:
 %1</source><translation>Ошибка: Чтение состояния службы:
@@ -457,7 +430,7 @@ Continue and discard them?</source><translation>Неприменённых из�
     <message><source>The service executable path or startup arguments do not match this executable.</source><translation>Путь или аргументы запуска службы не соответствуют текущей программе.</translation></message>
     <message><source>The service preshutdown timeout is not configured correctly.</source><translation>Неверно настроено время ожидания предзавершения службы.</translation></message>
     <message><source>The service does not declare the privileges required to start the UI agent.</source><translation>Служба не объявляет права для запуска агента интерфейса.</translation></message>
-    <message><source>The service has not accepted Windows preshutdown notifications.</source><translation>Служба не принимает уведомления Windows о предзавершении.</translation></message>
+    <message><source>The service cannot receive Windows preshutdown notifications.</source><translation>Служба сейчас не может получать предварительные уведомления Windows о завершении работы.</translation></message>
     <message><source>Enable enhanced mode</source><translation>Включить расширенный режим</translation></message>
     <message><source>Disable enhanced mode</source><translation>Отключить расширенный режим</translation></message>
     <message><source>Start service</source><translation>Запустить службу</translation></message>
@@ -484,16 +457,11 @@ Continue and discard them?</source><translation>Неприменённых из�
 %1</source><translation>Расширенный режим: Удалить службу: Ошибка:
 %1</translation></message>
     <message><source>The enhanced mode service could not be deleted because of an unknown error.</source><translation>Расширенный режим: Удалить службу: Ошибка (Неизвестная ошибка).</translation></message>
-    <message><source>File staging completed</source><translation>Автофиксация файлов: Успешно</translation></message>
-    <message><source>File staging failed</source><translation>Автофиксация файлов: Ошибка</translation></message>
-    <message><source>All staged targets were processed.</source><translation>Все цели автофиксации обработаны.</translation></message>
-    <message><source>All staged targets were processed; one or more operations failed.</source><translation>Все объекты обработаны; одна или несколько операций завершились ошибкой.</translation></message>
     <message><source>Show main window</source><translation>Показать главное окно</translation></message>
     <message><source>Restore default position</source><translation>Восстановить положение</translation></message>
-    <message><source>Show overlay hub</source><translation>Показать HUB оверлея</translation></message>
-    <message><source>Hide overlay hub</source><translation>Скрыть HUB оверлея</translation></message>
+    <message><source>Show overlay widget</source><translation>Показать виджет оверлея</translation></message>
+    <message><source>Hide overlay widget</source><translation>Скрыть виджет оверлея</translation></message>
     <message><source>Exit application</source><translation>Выйти из приложения</translation></message>
-    <message><source>✘ Failed to connect to the system</source><translation>✘ Ошибка: Подключение к системе</translation></message>
     <message><source>Failed to read registry values: %1</source><translation>Ошибка: Чтение значений реестра (%1)</translation></message>
     <message><source>Unexpected error while enumerating overlay files.</source><translation>Перечисление файлов оверлея: Неизвестная ошибка.</translation></message>
     <message><source>✘ Failed to %1 filter</source><translation>✘ Ошибка: Действие с фильтром: %1</translation></message>
@@ -502,13 +470,11 @@ Continue and discard them?</source><translation>Неприменённых из�
     <message><source>✘ Failed to set critical threshold</source><translation>✘ Ошибка: Задание критического порога</translation></message>
     <message><source>✘ Failed to read overlay state</source><translation>✘ Ошибка: Чтение состояния оверлея</translation></message>
     <message><source>✘ Failed to set overlay type</source><translation>✘ Ошибка: Задание типа оверлея</translation></message>
-    <message><source>✘ Failed to set maximum size</source><translation>✘ Ошибка: Задание максимального размера</translation></message>
+    <message><source>✘ Failed to set maximum capacity</source><translation>✘ Не удалось задать максимальную ёмкость</translation></message>
     <message><source>✘ Failed to read overlay configuration</source><translation>✘ Ошибка: Чтение конфигурации оверлея</translation></message>
-    <message><source>✘ Volume %1: failed to register with UWF</source><translation>✘ Ошибка: Регистрация тома %1 в UWF</translation></message>
     <message><source>✘ Failed to %1 protection on volume %2</source><translation>✘ Ошибка: Защита тома %2: %1</translation></message>
     <message><source>✘ Failed to set binding for volume %1</source><translation>✘ Ошибка: Задание привязки тома %1</translation></message>
     <message><source>✘ Volume %1 failed to add file exclusion %2</source><translation>✘ Том %1 · Ошибка: Добавление исключения файла %2</translation></message>
-    <message><source>✓ Volume %1 file exclusion already absent: %2</source><translation>✓ Исключение файла на томе %1 уже отсутствует: %2</translation></message>
     <message><source>✘ Volume %1 failed to remove file exclusion %2</source><translation>✘ Том %1 · Ошибка: Удаление исключения файла %2</translation></message>
     <message><source>✘ Failed to read volume configuration</source><translation>✘ Ошибка: Чтение конфигурации тома</translation></message>
     <message><source>✘ Failed to add registry exclusion %1</source><translation>✘ Ошибка: Добавление исключения реестра %1</translation></message>
@@ -517,10 +483,9 @@ Continue and discard them?</source><translation>Неприменённых из�
     <message><source>✘ Failed to read registry filter</source><translation>✘ Ошибка: Чтение фильтра реестра</translation></message>
     <message><source>UWF is not available</source><translation>UWF: Не поддерживается</translation></message>
     <message><source>Unknown error while reading the target state.</source><translation>Чтение состояния объекта: Неизвестная ошибка.</translation></message>
-    <message><source>The target no longer exists, so there is nothing to delete.</source><translation>Путь не существует; удалять нечего.</translation></message>
     <message><source>The operation failed with an unknown error.</source><translation>Неизвестная ошибка.</translation></message>
-    <message><source>The operation result could not be confirmed because the target state reread failed: %1</source><translation>Результат не подтверждён: повторное чтение состояния объекта не удалось: %1</translation></message>
-    <message><source>The provider accepted the deletion, but the target still exists after the authoritative reread.</source><translation>Поставщик принял удаление, но повторная проверка по достоверному источнику показала, что объект ещё существует.</translation></message>
+    <message><source>The target state could not be verified, so the operation result is unknown: %1</source><translation>Не удалось проверить состояние объекта, поэтому результат операции неизвестен: %1</translation></message>
+    <message><source>The system accepted the deletion request, but the target still exists after verification.</source><translation>Система приняла запрос на удаление, но после проверки объект всё ещё существует.</translation></message>
     <message><source>Unknown</source><translation>Неизвестно</translation></message>
     <message><source>Failed to load logs: %1</source><translation>Ошибка: Загрузка журнала (%1)</translation></message>
     <message><source>Failed to load logs: unexpected error.</source><translation>Ошибка: Загрузка журнала (Неизвестная ошибка).</translation></message>
@@ -567,8 +532,8 @@ Saving will replace its contents.</source><translation>В этом распол�
 При сохранении его содержимое будет заменено.</translation></message>
     <message><source>A graphical manager for Windows Unified Write Filter.
 Manage volume protection, overlay, exclusions, and staged files.</source><translation>Графический диспетчер Windows Unified Write Filter.
-Управление защитой томов, оверлеем, исключениями и файлами для сохранения.</translation></message>
-    <message><source>About this snapshot</source><translation>Об этом снимке</translation></message>
+Управление защитой томов, оверлеем, исключениями и файлами из списка автофиксации.</translation></message>
+    <message><source>Snapshot details</source><translation>Сведения о снимке</translation></message>
     <message><source>Account</source><translation>Учётная запись</translation></message>
     <message><source>Add UWF configuration from a script or text.</source><translation>Добавьте конфигурацию UWF из сценария или текста.</translation></message>
     <message><source>Add exclusion</source><translation>Добавить исключение</translation></message>
@@ -576,7 +541,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Add selected items</source><translation>Добавить выбранные элементы</translation></message>
     <message><source>Added</source><translation>Добавлено</translation></message>
     <message><source>Administrator</source><translation>Администратор</translation></message>
-    <message><source>All changes have been saved to disk and will persist without a restart.</source><translation>Все изменения сохранены на диске и останутся без перезагрузки.</translation></message>
+    <message><source>The selected operations completed. UWF may skip excluded targets.</source><translation>Выбранные операции завершены. UWF может пропускать исключённые объекты.</translation></message>
     <message><source>All files (*)</source><translation>Все файлы (*)</translation></message>
     <message><source>All levels</source><translation>Все уровни</translation></message>
 
@@ -586,9 +551,9 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Apply changes</source><translation>Применить изменения</translation></message>
     <message><source>Architecture</source><translation>Архитектура</translation></message>
     <message><source>Automatic</source><translation>Автоматически</translation></message>
-    <message><source>Automatic file staging</source><translation>Автосохранение подготовленных файлов</translation></message>
-    <message><source>Automatic saving incomplete</source><translation>Автосохранение не завершено</translation></message>
-    <message><source>Automatically save eligible staged files during normal shutdown and restart.</source><translation>Автоматически сохранять подходящие подготовленные файлы при обычном выключении и перезагрузке.</translation></message>
+    <message><source>Automatic staged file commits</source><translation>Автоматическая фиксация файлов из списка</translation></message>
+    <message><source>Automatic file commits incomplete</source><translation>Автоматическая фиксация файлов не завершена</translation></message>
+    <message><source>Automatically commit eligible staged files during Windows shutdown and restart.</source><translation>Автоматически фиксировать подходящие файлы из списка при выключении и перезапуске Windows.</translation></message>
     <message><source>Available</source><translation>Доступно</translation></message>
     <message><source>Back</source><translation>Назад</translation></message>
     <message><source>Background service</source><translation>Фоновая служба</translation></message>
@@ -596,7 +561,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>By drive letter</source><translation>По букве диска</translation></message>
     <message><source>By volume ID</source><translation>По идентификатору тома</translation></message>
     <message><source>Cancel reading</source><translation>Отменить чтение</translation></message>
-    <message><source>Changes already committed are retained.</source><translation>Уже зафиксированные изменения сохранены.</translation></message>
+    <message><source>Completed operations cannot be undone.</source><translation>Завершённые операции нельзя отменить.</translation></message>
     <message><source>Select the registry key to exclude from UWF protection, including its subkeys and values.</source><translation>Выберите раздел реестра для исключения из защиты UWF, включая его подразделы и значения.</translation></message>
     <message><source>Choose a location to save the file.</source><translation>Выберите расположение для сохранения файла.</translation></message>
     <message><source>Choose a location within the allowed drive or folder.</source><translation>Выберите расположение в разрешённом диске или папке.</translation></message>
@@ -608,12 +573,10 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Collapse</source><translation>Свернуть</translation></message>
     <message><source>Commit changes</source><translation>Зафиксировать изменения</translation></message>
     <message><source>Commit changes…</source><translation>Зафиксировать изменения…</translation></message>
-    <message><source>Commit complete</source><translation>Фиксация завершена</translation></message>
     <message><source>Commit file changes?</source><translation>Зафиксировать изменения файла?</translation></message>
     <message><source>Commit folder changes?</source><translation>Зафиксировать изменения папки?</translation></message>
     <message><source>Commit registry key changes?</source><translation>Зафиксировать изменения ключа реестра?</translation></message>
     <message><source>Commit registry value changes?</source><translation>Зафиксировать изменения значения реестра?</translation></message>
-    <message><source>Commits staged files before normal shutdown and restart</source><translation>Фиксирует подготовленные файлы перед обычным выключением и перезагрузкой</translation></message>
     <message><source>Compatibility mode</source><translation>Режим совместимости</translation></message>
     <message><source>Configuration applied</source><translation>Конфигурация применена</translation></message>
     <message><source>Configuration error</source><translation>Ошибка конфигурации</translation></message>
@@ -623,8 +586,8 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Connecting…</source><translation>Подключение…</translation></message>
     <message><source>Contact author</source><translation>Связаться с автором</translation></message>
     <message><source>Continue editing</source><translation>Продолжить редактирование</translation></message>
-    <message><source>Continuing restart will discard changes in files that could not be saved.</source><translation>Продолжение перезагрузки приведёт к потере изменений в файлах, которые не удалось сохранить.</translation></message>
-    <message><source>Continuing shutdown will discard changes in files that could not be saved.</source><translation>Продолжение выключения приведёт к потере изменений в файлах, которые не удалось сохранить.</translation></message>
+    <message><source>If you continue restart, uncommitted file changes may be lost.</source><translation>Если продолжить перезапуск, незафиксированные изменения файлов могут быть потеряны.</translation></message>
+    <message><source>If you continue shutdown, uncommitted file changes may be lost.</source><translation>Если продолжить выключение, незафиксированные изменения файлов могут быть потеряны.</translation></message>
     <message><source>Coordinate with Windows shutdown</source><translation>Согласовать с выключением Windows</translation></message>
     <message><source>Copy all logs</source><translation>Копировать весь журнал</translation></message>
     <message><source>Copy full report</source><translation>Копировать полный отчёт</translation></message>
@@ -632,7 +595,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Copy path</source><translation>Копировать путь</translation></message>
     <message><source>Copy selection</source><translation>Копировать выделенное</translation></message>
     <message><source>Copy version</source><translation>Копировать версию</translation></message>
-    <message><source>Counting staged files…</source><translation>Подсчёт подготовленных файлов…</translation></message>
+    <message><source>Counting staged files…</source><translation>Подсчёт файлов из списка…</translation></message>
     <message><source>Create</source><translation>Создать</translation></message>
     <message><source>Critical %1 MB</source><translation>Критический порог %1 МБ</translation></message>
     <message><source>Current filter</source><translation>Текущий фильтр</translation></message>
@@ -656,7 +619,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Editable</source><translation>Можно редактировать</translation></message>
     <message><source>Enable the filter and restart to display live usage</source><translation>Включите фильтр и перезагрузите систему для показа текущего использования</translation></message>
     <message><source>Enhanced mode adds a background service that starts with Windows. Remove the service before moving or deleting the application.</source><translation>Расширенный режим добавляет фоновую службу, которая запускается вместе с Windows. Удалите службу перед перемещением или удалением приложения.</translation></message>
-    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to save staged files.</source><translation>Расширенный режим недоступен. Для сохранения подготовленных файлов используйте Безопасное выключение или Безопасную перезагрузку.</translation></message>
+    <message><source>Enhanced mode is unavailable. Use Safe shutdown or Safe restart to commit staged files.</source><translation>Расширенный режим недоступен. Используйте «Безопасное выключение» или «Безопасный перезапуск» для фиксации файлов из списка.</translation></message>
     <message><source>Enter HKLM\SOFTWARE\… and press Enter to navigate</source><translation>Введите HKLM\SOFTWARE\… и нажмите Enter для перехода</translation></message>
     <message><source>Enter a file name</source><translation>Введите имя файла</translation></message>
     <message><source>Enter a valid file name.</source><translation>Введите допустимое имя файла.</translation></message>
@@ -671,34 +634,30 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Failed to clear logs: unexpected error.</source><translation>Не удалось очистить журнал: непредвиденная ошибка.</translation></message>
     <message><source>File name</source><translation>Имя файла</translation></message>
     <message><source>File or folder</source><translation>Файл или папка</translation></message>
-    <message><source>File saving has started and cannot be canceled.</source><translation>Сохранение файлов началось и не может быть отменено.</translation></message>
-    <message><source>File saving incomplete</source><translation>Сохранение файлов не завершено</translation></message>
-    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after restart.</source><translation>Сохранение подготовленных файлов будет пропущено. Незафиксированные изменения в защищённых путях будут потеряны после перезагрузки.</translation></message>
-    <message><source>File staging will be skipped. Uncommitted changes on protected paths will be lost after shutdown.</source><translation>Сохранение подготовленных файлов будет пропущено. Незафиксированные изменения в защищённых путях будут потеряны после выключения.</translation></message>
+    <message><source>File commits have started and cannot be canceled.</source><translation>Фиксация файлов началась и не может быть отменена.</translation></message>
+    <message><source>File commits incomplete</source><translation>Фиксация файлов не завершена</translation></message>
     <message><source>File type</source><translation>Тип файла</translation></message>
     <message><source>Files and folders</source><translation>Файлы и папки</translation></message>
     <message><source>Files and folders can be selected together.</source><translation>Файлы и папки можно выбирать вместе.</translation></message>
-    <message><source>Files in File staging will not be saved.</source><translation>Подготовленные файлы не будут сохранены.</translation></message>
     <message><source>Filter is disabled</source><translation>Фильтр отключён</translation></message>
     <message><source>Fit columns to contents</source><translation>Подогнать столбцы по содержимому</translation></message>
     <message><source>Folder address</source><translation>Адрес папки</translation></message>
     <message><source>Folder name</source><translation>Имя папки</translation></message>
     <message><source>Folders</source><translation>Папки</translation></message>
-    <message><source>Full configuration</source><translation>Полная конфигурация</translation></message>
-    <message><source>Future writes to this key will not be protected by UWF.</source><translation>Последующие записи в этот ключ не будут защищены UWF.</translation></message>
-    <message><source>Future writes to this path will not be protected by UWF.</source><translation>Последующие записи в этот путь не будут защищены UWF.</translation></message>
+    <message><source>Add this key to the next-session exclusions.</source><translation>Добавить этот раздел в исключения следующего сеанса.</translation></message>
+    <message><source>Add this path to the next-session exclusions.</source><translation>Добавить этот путь в исключения следующего сеанса.</translation></message>
     <message><source>Global registry exclusion · includes subkeys</source><translation>Глобальное исключение реестра · включая подразделы</translation></message>
     <message><source>Go up one folder or choose another location.</source><translation>Перейдите в родительскую папку или выберите другое расположение.</translation></message>
     <message><source>Home</source><translation>Личная папка</translation></message>
     <message><source>Import configuration</source><translation>Импорт конфигурации</translation></message>
-    <message><source>Import updates the configuration draft. Use Review and apply to write changes to the system.</source><translation>Импорт обновляет черновик конфигурации. Используйте Проверить и применить, чтобы записать изменения в систему.</translation></message>
+    <message><source>Import updates the draft. Confirm the changes in Review and apply to write them to the system.</source><translation>Импорт обновляет черновик. Подтвердите изменения в разделе «Проверка и применение», чтобы записать их в систему.</translation></message>
     <message><source>Import results</source><translation>Результаты импорта</translation></message>
     <message><source>Imported</source><translation>Импортировано</translation></message>
-    <message><source>The report lists command results for the configuration draft. Select a row to view the complete command and result.</source><translation>В отчёте перечислены результаты команд для черновика конфигурации. Выберите строку, чтобы просмотреть полную команду и результат.</translation></message>
+    <message><source>The list shows command results for the configuration draft. Select a row to view the complete command and details.</source><translation>В списке показаны результаты команд для черновика конфигурации. Выберите строку, чтобы увидеть полную команду и подробности.</translation></message>
     <message><source>Imported: %1</source><translation>Импортировано: %1</translation></message>
     <message><source>Information</source><translation>Информация</translation></message>
     <message><source>Item details</source><translation>Подробности элемента</translation></message>
-    <message><source>Large staging lists may take longer to save.</source><translation>Сохранение большого списка подготовленных файлов может занять больше времени.</translation></message>
+    <message><source>Committing many staged files may take longer.</source><translation>Фиксация большого числа файлов из списка может занять больше времени.</translation></message>
     <message><source>License and copyright</source><translation>Лицензия и авторские права</translation></message>
     <message><source>Line</source><translation>Строка</translation></message>
     <message><source>Local disk (%1)</source><translation>Локальный диск (%1)</translation></message>
@@ -710,7 +669,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Module</source><translation>Модуль</translation></message>
     <message><source>More</source><translation>Ещё</translation></message>
     <message><source>Move</source><translation>Переместить</translation></message>
-    <message><source>If UWF protects the application drive, first make sure the application files will remain after a restart. Committing many staged files can make shutdown or restart take longer.</source><translation>Если диск с приложением защищён UWF, сначала убедитесь, что файлы приложения сохранятся после перезагрузки. Сохранение большого количества подготовленных файлов может увеличить время выключения или перезагрузки.</translation></message>
+    <message><source>If UWF protects the application drive, first make sure the application files will remain after a restart. Committing many staged files can make shutdown or restart take longer.</source><translation>Если UWF защищает диск приложения, сначала убедитесь, что его файлы сохранятся после перезапуска. Фиксация большого числа файлов из списка может увеличить время выключения или перезапуска.</translation></message>
     <message><source>Multiple files can be selected.</source><translation>Можно выбрать несколько файлов.</translation></message>
     <message><source>Name and location</source><translation>Имя и расположение</translation></message>
     <message><source>Named value: %1 · this value only</source><translation>Именованное значение: %1 · только это значение</translation></message>
@@ -733,17 +692,16 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>On</source><translation>Вкл.</translation></message>
     <message><source>One uwfmgr command per line</source><translation>Одна команда uwfmgr в строке</translation></message>
     <message><source>Keep the application in a fixed folder that standard users cannot modify. Suggested location:</source><translation>Храните приложение в постоянной папке, которую обычные пользователи не могут изменять. Рекомендуемое расположение:</translation></message>
-    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after restart.</source><translation>Автоматически сохраняются только подготовленные файлы. Другие незафиксированные изменения в защищённых путях будут потеряны после перезагрузки.</translation></message>
-    <message><source>Only staged files are saved automatically. Other uncommitted changes in protected paths will be lost after shutdown.</source><translation>Автоматически сохраняются только подготовленные файлы. Другие незафиксированные изменения в защищённых путях будут потеряны после выключения.</translation></message>
+    <message><source>Only staged files are committed automatically. Other uncommitted changes may be lost after restart.</source><translation>Автоматически фиксируются только файлы из списка. Другие незафиксированные изменения могут быть потеряны после перезапуска.</translation></message>
+    <message><source>Only staged files are committed automatically. Other uncommitted changes may be lost after shutdown.</source><translation>Автоматически фиксируются только файлы из списка. Другие незафиксированные изменения могут быть потеряны после выключения.</translation></message>
     <message><source>Open</source><translation>Открыть</translation></message>
     <message><source>Open folder</source><translation>Открыть папку</translation></message>
     <message><source>Operating system</source><translation>Операционная система</translation></message>
     <message><source>Operation and security</source><translation>Работа и безопасность</translation></message>
     <message><source>Original command</source><translation>Исходная команда</translation></message>
     <message><source>Overlay critical threshold reached. Save changes and safely restart.</source><translation>Достигнут критический порог оверлея. Сохраните изменения и безопасно перезагрузите систему.</translation></message>
-    <message><source>Overlay maximum size</source><translation>Максимальный размер оверлея</translation></message>
+    <message><source>Maximum overlay capacity</source><translation>Максимальная ёмкость оверлея</translation></message>
     <message><source>Overlay type</source><translation>Тип оверлея</translation></message>
-    <message><source>Overlay usage</source><translation>Использование оверлея</translation></message>
     <message><source>Overlay warning threshold reached. Save changes and safely restart.</source><translation>Достигнут порог предупреждения оверлея. Сохраните изменения и безопасно перезагрузите систему.</translation></message>
     <message><source>Overview</source><translation>Обзор</translation></message>
     <message><source>Paste commands, or load them from a file…</source><translation>Вставьте команды или загрузите их из файла…</translation></message>
@@ -769,12 +727,12 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Reading logs</source><translation>Чтение журнала</translation></message>
     <message><source>Reading overlay</source><translation>Чтение оверлея</translation></message>
     <message><source>Ready</source><translation>Готовность</translation></message>
-    <message><source>Ready to save</source><translation>Готово к сохранению</translation></message>
+    <message><source>Files to commit</source><translation>Файлы для фиксации</translation></message>
     <message><source>Records from the current run will appear here when reading is complete.</source><translation>Записи текущего запуска появятся здесь после завершения чтения.</translation></message>
-    <message><source>Recursive staging</source><translation>Подготовка с подпапками</translation></message>
+
     <message><source>Refresh folder</source><translation>Обновить папку</translation></message>
     <message><source>Registry key or persistence setting</source><translation>Ключ реестра или настройка постоянного хранения</translation></message>
-    <message><source>Remaining tasks can be canceled after the current target finishes.</source><translation>Оставшиеся задачи можно отменить после завершения текущего объекта.</translation></message>
+    <message><source>Canceling stops remaining tasks after the current operation finishes.</source><translation>После запроса отмены оставшиеся задачи будут остановлены по окончании текущей операции.</translation></message>
     <message><source>Remove this key from the next-session exclusions.</source><translation>Удалить этот ключ из исключений следующего сеанса.</translation></message>
     <message><source>Remove this path from the next-session exclusions.</source><translation>Удалить этот путь из исключений следующего сеанса.</translation></message>
     <message><source>Removed</source><translation>Удалено</translation></message>
@@ -785,22 +743,22 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Replace the existing file?</source><translation>Заменить существующий файл?</translation></message>
     <message><source>Required configuration</source><translation>Необходимая конфигурация</translation></message>
     <message><source>Restart anyway</source><translation>Всё равно перезагрузить</translation></message>
-    <message><source>Restart will continue after saving. Keep the application open.</source><translation>Перезагрузка продолжится после сохранения. Оставьте приложение открытым.</translation></message>
+    <message><source>Restart will continue after committing. Keep the application open.</source><translation>Перезапуск продолжится после фиксации. Не закрывайте приложение.</translation></message>
     <message><source>Restore</source><translation>Восстановить</translation></message>
     <message><source>Retry</source><translation>Повторить</translation></message>
     <message><source>Review the failure details before continuing shutdown.</source><translation>Просмотрите подробности ошибок перед продолжением выключения.</translation></message>
     <message><source>Review the failure details before restarting.</source><translation>Просмотрите подробности ошибок перед перезагрузкой.</translation></message>
-    <message><source>Review the operation details. Read the current system state before retrying changes that may have been written.</source><translation>Просмотрите подробности операции. Перед повторной попыткой изменений, которые уже могли быть записаны, прочитайте текущее состояние системы.</translation></message>
+    <message><source>Some changes may already have been written. Refresh the system state before retrying.</source><translation>Часть изменений, возможно, уже записана. Обновите состояние системы перед повторной попыткой.</translation></message>
     <message><source>Review the result for each target.</source><translation>Проверьте результат для каждого объекта.</translation></message>
     <message><source>Review these changes before writing them to the system.</source><translation>Проверьте эти изменения перед записью в систему.</translation></message>
     <message><source>Running</source><translation>Работает</translation></message>
     <message><source>Save</source><translation>Сохранить</translation></message>
-    <message><source>Save staged files to disk, then restart.</source><translation>Сохранить подготовленные файлы на диск и перезагрузить систему.</translation></message>
-    <message><source>Save staged files to disk, then shut down.</source><translation>Сохранить подготовленные файлы на диск и выключить систему.</translation></message>
-    <message><source>Saving staged files</source><translation>Сохранение подготовленных файлов</translation></message>
-    <message><source>Saving to disk</source><translation>Сохранение на диск</translation></message>
-    <message><source>Saving…</source><translation>Сохранение…</translation></message>
-    <message><source>Scanning staged paths</source><translation>Сканирование подготовленных путей</translation></message>
+    <message><source>Commit staged files to disk, then restart.</source><translation>Зафиксировать файлы из списка на диске, затем перезапустить устройство.</translation></message>
+    <message><source>Commit staged files to disk, then shut down.</source><translation>Зафиксировать файлы из списка на диске, затем выключить устройство.</translation></message>
+
+    <message><source>Committing to disk</source><translation>Фиксация на диске</translation></message>
+    <message><source>Committing…</source><translation>Фиксация…</translation></message>
+    <message><source>Scanning staged paths</source><translation>Сканирование путей из списка</translation></message>
     <message><source>Search logs</source><translation>Поиск в журнале</translation></message>
     <message><source>Search messages or modules</source><translation>Поиск сообщений или модулей</translation></message>
     <message><source>Search paths</source><translation>Поиск путей</translation></message>
@@ -830,14 +788,14 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Service status</source><translation>Состояние службы</translation></message>
     <message><source>Service stopped</source><translation>Служба остановлена</translation></message>
     <message><source>Shut down anyway</source><translation>Всё равно выключить</translation></message>
-    <message><source>Shutdown will continue after saving. Keep the application open.</source><translation>Выключение продолжится после сохранения. Оставьте приложение открытым.</translation></message>
+    <message><source>Shutdown will continue after committing. Keep the application open.</source><translation>Выключение продолжится после фиксации. Не закрывайте приложение.</translation></message>
     <message><source>Size</source><translation>Размер</translation></message>
     <message><source>Some changes could not be applied</source><translation>Не удалось применить некоторые изменения</translation></message>
-    <message><source>Some files could not be saved</source><translation>Не удалось сохранить некоторые файлы</translation></message>
+    <message><source>Some files could not be committed</source><translation>Не удалось зафиксировать некоторые файлы</translation></message>
     <message><source>Some hardware information could not be read. Other diagnostic information remains available to view and copy.</source><translation>Не удалось прочитать часть сведений об оборудовании. Другие диагностические сведения по-прежнему доступны для просмотра и копирования.</translation></message>
     <message><source>Source code</source><translation>Исходный код</translation></message>
-    <message><source>Staged file</source><translation>Файл для сохранения</translation></message>
-    <message><source>Staged path</source><translation>Путь для сохранения</translation></message>
+
+    <message><source>Staged path</source><translation>Путь из списка</translation></message>
     <message><source>Standard user</source><translation>Обычный пользователь</translation></message>
     <message><source>Starts automatically with Windows</source><translation>Автоматический запуск с Windows</translation></message>
     <message><source>Startup type</source><translation>Тип запуска</translation></message>
@@ -850,26 +808,28 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>System metadata</source><translation>Системные метаданные</translation></message>
     <message><source>System metadata is for diagnosis only and cannot be committed.</source><translation>Системные метаданные предназначены только для диагностики и не могут быть зафиксированы.</translation></message>
     <message><source>Takes effect after restart</source><translation>Вступает в силу после перезагрузки</translation></message>
+    <message><source>Takes effect when applied</source><translation>Вступает в силу при применении</translation></message>
+    <message><source>Used when UWF starts</source><translation>Используется при запуске UWF</translation></message>
+    <message><source>Mixed activation times</source><translation>Разное время вступления в силу</translation></message>
     <message><source>Target</source><translation>Объект</translation></message>
     <message><source>Terminal Services license persistence</source><translation>Постоянное хранение лицензий служб терминалов</translation></message>
     <message><source>The UWF provider could not complete enumeration. This can occur with a large overlay or insufficient system resources.</source><translation>Поставщик UWF не смог завершить перечисление. Это может произойти при большом оверлее или нехватке системных ресурсов.</translation></message>
-    <message><source>The configuration has been written to the system. Most changes take effect after restart.</source><translation>Конфигурация записана в систему. Большинство изменений вступит в силу после перезагрузки.</translation></message>
-    <message><source>The configuration matches the next-session target. View or export commands in Full configuration.</source><translation>Конфигурация соответствует целевой конфигурации следующего сеанса. Просмотрите или экспортируйте команды в разделе Полная конфигурация.</translation></message>
+    <message><source>The configuration has been written to the system.</source><translation>Конфигурация записана в систему.</translation></message>
     <message><source>The current log records will be cleared and cannot be restored.</source><translation>Текущие записи журнала будут удалены без возможности восстановления.</translation></message>
     <message><source>The destination folder does not exist.</source><translation>Папка назначения не существует.</translation></message>
     <message><source>The enhanced mode service status could not be read. Check service permissions and retry.</source><translation>Не удалось прочитать состояние службы расширенного режима. Проверьте разрешения службы и повторите попытку.</translation></message>
     <message><source>The list may omit files or include files already committed. Do not use it as a commit list.</source><translation>В списке могут отсутствовать файлы или присутствовать уже зафиксированные. Не используйте его как список для фиксации.</translation></message>
 
     <message><source>The selected item no longer exists: %1</source><translation>Выбранный элемент больше не существует: %1</translation></message>
-    <message><source>The service is installed but stopped. Start it to restore automatic saving.</source><translation>Служба установлена, но остановлена. Запустите её для восстановления автосохранения.</translation></message>
+    <message><source>The service is installed but stopped. Start it to resume automatic file commits.</source><translation>Служба установлена, но остановлена. Запустите её, чтобы возобновить автоматическую фиксацию файлов.</translation></message>
     <message><source>This PC</source><translation>Этот компьютер</translation></message>
     <message><source>This folder is empty</source><translation>Эта папка пуста</translation></message>
 
     <message><source>This report may contain account names, device identifiers, and file paths. Review it before sharing.</source><translation>Отчёт может содержать имена учётных записей, идентификаторы устройств и пути файлов. Проверьте его перед отправкой другим лицам.</translation></message>
-    <message><source>Save this UTF-8 CMD script as a .cmd file and run it in Command Prompt. Export uses the same script.</source><translation>Сохраните этот CMD-скрипт в UTF-8 в файл .cmd и запустите его в командной строке. При экспорте используется тот же скрипт.</translation></message>
+
     <message><source>Try another keyword or log level.</source><translation>Попробуйте другое ключевое слово или уровень журнала.</translation></message>
     <message><source>Try another search term.</source><translation>Попробуйте другой поисковый запрос.</translation></message>
-    <message><source>Type and maximum size cannot be changed while the filter is enabled. Disable the filter and reboot first.</source><translation>Тип и максимальный размер нельзя менять при включённом фильтре. Сначала отключите фильтр и перезагрузите систему.</translation></message>
+    <message><source>Disable UWF and restart before changing the overlay type or maximum capacity.</source><translation>Перед изменением типа или максимальной ёмкости оверлея отключите UWF и перезапустите устройство.</translation></message>
     <message><source>UI agent</source><translation>Агент интерфейса</translation></message>
     <message><source>UTF-8 · %1 lines</source><translation>UTF-8 · строк: %1</translation></message>
     <message><source>UWF configuration could not be read. Confirm that Unified Write Filter is installed in Windows, then read again.</source><translation>Не удалось прочитать конфигурацию UWF. Убедитесь, что Unified Write Filter установлен в Windows, и прочитайте снова.</translation></message>
@@ -888,7 +848,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Unavailable</source><translation>Недоступно</translation></message>
     <message><source>Undo removal</source><translation>Отменить удаление</translation></message>
     <message><source>Unprotected</source><translation>Не защищено</translation></message>
-    <message><source>Unsuccessful items have not been saved. Select a row to view the full path and reason.</source><translation>Неуспешные элементы не сохранены. Выберите строку, чтобы увидеть полный путь и причину.</translation></message>
+    <message><source>Some items were not completed or could not be verified. Select an item to view its full path and details.</source><translation>Обработка некоторых элементов не завершена или результат не удалось проверить. Выберите элемент, чтобы увидеть полный путь и подробности.</translation></message>
     <message><source>Up one folder</source><translation>На папку выше</translation></message>
     <message><source>Usage unavailable</source><translation>Использование недоступно</translation></message>
     <message><source>Use the whole key, including all subkeys</source><translation>Использовать весь ключ, включая все подразделы</translation></message>
@@ -905,21 +865,21 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Warning %1 MB</source><translation>Порог предупреждения %1 МБ</translation></message>
     <message><source>Whole key and all subkeys · recursive</source><translation>Весь ключ и все подразделы · рекурсивно</translation></message>
     <message><source>Windows UWF provides write protection. This application configures and manages it.</source><translation>Защиту от записи обеспечивает Windows UWF. Приложение настраивает и управляет ею.</translation></message>
-    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to save staged files.</source><translation>Без расширенного режима используйте Безопасное выключение или Безопасную перезагрузку в этом приложении для сохранения подготовленных файлов.</translation></message>
+    <message><source>Without enhanced mode, use Safe shutdown or Safe restart in this application to commit staged files.</source><translation>Без расширенного режима используйте «Безопасное выключение» или «Безопасный перезапуск» в этом приложении для фиксации файлов из списка.</translation></message>
     <message><source>Write protection</source><translation>Защита от записи</translation></message>
-    <message><source>Write these configuration changes to the system? Most changes take effect after restart.</source><translation>Записать эти изменения конфигурации в систему? Большинство вступит в силу после перезагрузки.</translation></message>
-    <message><source>staged files</source><translation>файлы для сохранения</translation></message>
+    <message><source>Write these configuration changes to the system?</source><translation>Записать эти изменения конфигурации в систему?</translation></message>
+    <message><source>staged files</source><translation>файлы из списка</translation></message>
     <message><source>uwfmgr commands</source><translation>команды uwfmgr</translation></message>
     <message><source>Mark selected paths for removal. Takes effect after Apply.</source><translation>Пометить выбранные пути для удаления. Изменение вступит в силу после применения.</translation></message>
-    <message><source>Remove from automatic file staging after Apply.</source><translation>Удалить из списка автоматического сохранения файлов после применения.</translation></message>
-    <message><source>Add to automatic file staging after Apply.</source><translation>Добавить в список автоматического сохранения файлов после применения.</translation></message>
-    <message><source>Applying this plan clears the saved staging list and removes its registry exclusion when no longer required.</source><translation>Применение этого плана очистит сохранённый список файлов и удалит связанное исключение реестра, если оно больше не требуется.</translation></message>
-    <message><source>File staging changes must be applied in UWF Manager and cannot be exported as uwfmgr commands.</source><translation>Изменения списка файлов нужно применить в UWF Manager; их нельзя экспортировать как команды uwfmgr.</translation></message>
-    <message><source>File staging is saved after Apply</source><translation>Список файлов сохраняется после применения</translation></message>
-    <message><source>Overlay snapshot scope</source><translation>Область снимка наложения</translation></message>
+    <message><source>Remove from automatic file staging after Apply.</source><translation>Удалить из списка автофиксации после применения.</translation></message>
+    <message><source>Add to automatic file staging after Apply.</source><translation>Добавить в список автофиксации после применения.</translation></message>
+    <message><source>Applying this plan clears the saved staging list and removes its registry exclusion when no longer required.</source><translation>Применение этого плана очистит сохранённый список автофиксации и удалит его исключение реестра, когда оно больше не требуется.</translation></message>
+    <message><source>File staging changes must be applied in UWF Manager and cannot be exported as uwfmgr commands.</source><translation>Изменения списка автофиксации нужно применить в UWF Manager; их нельзя экспортировать как команды uwfmgr.</translation></message>
+    <message><source>File staging is saved after Apply</source><translation>Список автофиксации сохраняется после применения</translation></message>
+    <message><source>Overlay snapshot scope</source><translation>Область снимка оверлея</translation></message>
     <message><source>This list is for diagnostics only. It cannot determine which files must be committed.</source><translation>Этот список предназначен только для диагностики. По нему нельзя определить, какие файлы нужно зафиксировать.</translation></message>
     <message><source>NTFS volumes only</source><translation>Только тома NTFS</translation></message>
-    <message><source>Large overlays may load slowly or fail because of insufficient resources.</source><translation>Чтение больших наложений может быть медленным или завершиться ошибкой из-за нехватки ресурсов.</translation></message>
+    <message><source>Large overlays may load slowly or fail because of insufficient resources.</source><translation>Чтение больших оверлеев может быть медленным или завершиться ошибкой из-за нехватки ресурсов.</translation></message>
     <message><source>Small files may be missing</source><translation>Небольшие файлы могут отсутствовать</translation></message>
     <message><source>Files smaller than the disk cluster size (typically 4 KB) may not appear in the list.</source><translation>Файлы меньше размера кластера диска (обычно 4 КБ) могут не отображаться в списке.</translation></message>
     <message><source>Does not indicate pending commits</source><translation>Не показывает ожидающие фиксации изменения</translation></message>
@@ -937,7 +897,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Committing changes</source><translation>Фиксация изменений</translation></message>
     <message><source>Completed deletions and commits cannot be undone.</source><translation>Завершённые удаления и фиксации нельзя отменить.</translation></message>
     <message><source>Continue…</source><translation>Продолжить…</translation></message>
-    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>Удалить и зафиксировать только найденные объекты. Непрочитанные ветви и их родительские папки или ключи будут сохранены.</translation></message>
+    <message><source>Delete and commit only discovered targets. Unread branches and their parent folders or keys are retained.</source><translation>Удалить и зафиксировать удаления только для объектов, обход которых завершён успешно. Непрочитанные ветви и их родительские папки или ключи будут сохранены.</translation></message>
     <message><source>Deleting and committing</source><translation>Удаление и фиксация</translation></message>
     <message><source>Deletion and commit cannot be undone. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>Удаление и фиксацию нельзя отменить. Обрабатывается только выбранная область; ожидающие настройки UWF не применяются.</translation></message>
     <message><source>Determining the scope. Unread branches are recorded while traversal continues elsewhere.</source><translation>Определение области. Непрочитанные ветви записываются в журнал, просмотр остального содержимого продолжается.</translation></message>
@@ -947,16 +907,16 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>No changes have been committed.</source><translation>Изменения ещё не зафиксированы</translation></message>
     <message><source>Nothing has been deleted or committed.</source><translation>Ничего не удалено и не зафиксировано</translation></message>
     <message><source>Path</source><translation>Путь</translation></message>
-    <message><source>Permanently delete the selected scope and save the deletions to the protected volume.</source><translation>Безвозвратно удалить выбранную область и сохранить удаления на защищённом томе.</translation></message>
+    <message><source>Permanently delete the selected content and commit the deletions.</source><translation>Безвозвратно удалить выбранное содержимое и зафиксировать удаления.</translation></message>
     <message><source>Preparation complete</source><translation>Подготовка завершена</translation></message>
-    <message><source>Preparing commit</source><translation>Подготовка фиксации</translation></message>
+    <message><source>Preparing commit</source><translation>Подготовка к фиксации</translation></message>
     <message><source>Preparing deletion and commit</source><translation>Подготовка удаления и фиксации</translation></message>
     <message><source>Process only successfully traversed content</source><translation>Обработать только успешно просмотренное содержимое</translation></message>
 
     <message><source>Reparse points are skipped to keep traversal within the selected scope.</source><translation>Точки повторной обработки пропускаются, чтобы обход не выходил за выбранную область.</translation></message>
     <message><source>Restarting cannot undo a commit. Only the selected scope is processed; pending UWF configuration is not applied.</source><translation>Перезапуск не отменяет фиксацию. Обрабатывается только выбранная область; ожидающие настройки UWF не применяются.</translation></message>
     <message><source>Retry failed items</source><translation>Повторить неудачные</translation></message>
-    <message><source>Save changes in the selected scope to the protected volume.</source><translation>Сохранить изменения выбранной области на защищённом томе.</translation></message>
+    <message><source>Commit changes in the selected scope.</source><translation>Зафиксировать изменения в выбранной области.</translation></message>
     <message><source>Stopping the operation</source><translation>Остановка операции</translation></message>
     <message><source>Successful and failed records are retained</source><translation>Записи об успешном и неудачном чтении сохранены</translation></message>
     <message><source>The folder is not empty; unprocessed content has been retained.</source><translation>Папка не пуста; необработанное содержимое сохранено.</translation></message>
@@ -974,11 +934,11 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Unable to prepare the operation</source><translation>Не удалось подготовить операцию</translation></message>
     <message><source>View results</source><translation>Показать результаты</translation></message>
 
-    <message><source>All changes committed</source><translation>Все изменения сохранены</translation></message>
-    <message><source>Some changes committed</source><translation>Изменения сохранены частично</translation></message>
-    <message><source>No changes could be committed</source><translation>Не удалось сохранить изменения</translation></message>
-    <message><source>No changes to commit</source><translation>Нет изменений для сохранения</translation></message>
-    <message><source>Commit interrupted</source><translation>Сохранение прервано</translation></message>
+    <message><source>All operations succeeded</source><translation>Все операции выполнены успешно</translation></message>
+    <message><source>Some operations succeeded</source><translation>Часть операций выполнена успешно</translation></message>
+    <message><source>No operations succeeded</source><translation>Ни одна операция не выполнена успешно</translation></message>
+    <message><source>No targets to process</source><translation>Нет объектов для обработки</translation></message>
+    <message><source>Commit interrupted</source><translation>Фиксация прервана</translation></message>
     <message><source>%1 items were not processed.</source><translation>Не обработано элементов: %1.</translation></message>
     <message><source>%1 registry operation(s) failed.</source><translation>Не удалось выполнить операций с реестром: %1.</translation></message>
     <message><source>The folder does not exist.</source><translation>Папка не существует.</translation></message>
@@ -987,12 +947,12 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>The folder could not be created. Check the name and permissions.</source><translation>Не удалось создать папку. Проверьте имя и права доступа.</translation></message>
     <message><source>The item could not be renamed. Check the name and permissions.</source><translation>Не удалось переименовать элемент. Проверьте имя и права доступа.</translation></message>
     <message><source>Renaming is not supported by this browser.</source><translation>Этот обозреватель не поддерживает переименование.</translation></message>
-    <message><source>The file staging draft changed after this plan was opened. Review a new plan.</source><translation>Черновик списка подготовленных файлов изменился после открытия этого плана. Проверьте новый план.</translation></message>
-    <message><source>The saved file staging list changed after this plan was opened. Refresh and review the changes.</source><translation>Сохранённый список подготовленных файлов изменился после открытия этого плана. Обновите данные и проверьте изменения.</translation></message>
-    <message><source>The saved file staging list does not match the accepted plan.</source><translation>Сохранённый список подготовленных файлов не соответствует принятому плану.</translation></message>
-    <message><source>Export configuration</source><translation>Экспортировать конфигурацию</translation></message>
-    <message><source>Save the current theme, language, and HUB visibility to UWF.ini next to this application.</source><translation>Сохранить текущую тему, язык и состояние отображения HUB в файл UWF.ini рядом с приложением.</translation></message>
-    <message><source>Configuration saved</source><translation>Конфигурация сохранена</translation></message>
+    <message><source>The file staging draft changed after this plan was opened. Review a new plan.</source><translation>Черновик списка автофиксации изменился после открытия этого плана. Проверьте новый план.</translation></message>
+    <message><source>The saved file staging list changed after this plan was opened. Refresh and review the changes.</source><translation>Сохранённый список автофиксации изменился после открытия этого плана. Обновите данные и проверьте изменения.</translation></message>
+    <message><source>The saved file staging list does not match the accepted plan.</source><translation>Сохранённый список автофиксации не соответствует принятому плану.</translation></message>
+    <message><source>Export interface settings</source><translation>Экспортировать настройки интерфейса</translation></message>
+    <message><source>Save the current theme, language, and overlay widget visibility to UWF.ini beside this application.</source><translation>Сохранить текущую тему, язык и видимость виджета оверлея в UWF.ini рядом с приложением.</translation></message>
+    <message><source>Interface settings saved</source><translation>Настройки интерфейса сохранены</translation></message>
     <message><source>Saved the current interface settings to:
 %1</source><translation>Текущие настройки интерфейса сохранены в:
 %1</translation></message>
@@ -1007,7 +967,7 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Desktop</source><translation>Рабочий стол</translation></message>
     <message><source>Downloads</source><translation>Загрузки</translation></message>
     <message><source>Documents</source><translation>Документы</translation></message>
-    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Автофиксация файлов остановлена. Устраните ошибку перед повторной попыткой.</translation></message>
+    <message><source>File staging stopped. Resolve the error before trying again.</source><translation>Обработка списка автофиксации остановлена. Устраните ошибку перед повторной попыткой.</translation></message>
     <message><source>No net change for this setting</source><translation>Итоговое значение этой настройки не изменилось после импорта</translation></message>
     <message><source>Final draft %1 → %2</source><translation>Итоговое значение черновика: %1 → %2</translation></message>
     <message><source>Final draft %1 → %2 (requested %3)</source><translation>Итоговое значение черновика: %1 → %2 (запрошено: %3)</translation></message>
@@ -1016,5 +976,586 @@ Manage volume protection, overlay, exclusions, and staged files.</source><transl
     <message><source>Updated volume %1 protection draft → %2</source><translation>Черновик настройки защиты тома %1 обновлён → %2</translation></message>
     <message><source>Select entries to remove.</source><translation>Выберите записи для удаления.</translation></message>
     <message><source>Selected entries cannot currently be restored.</source><translation>Сейчас невозможно восстановить выбранные записи.</translation></message>
+    <message>
+        <source>Freespace Passthrough</source>
+        <translation>Прямая запись в свободное пространство</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay</source>
+        <translation>Постоянный оверлей</translation>
+    </message>
+    <message>
+        <source>Clear persistent data on next startup</source>
+        <translation>Очистить постоянные данные при следующем запуске</translation>
+    </message>
+    <message>
+        <source>Read-Only Media mode</source>
+        <translation>Режим носителя только для чтения</translation>
+    </message>
+    <message>
+        <source>Uses free disk space for writes, reducing reserved overlay usage; supports RAM (not recommended) and Disk (recommended).</source>
+        <translation>Использует свободное место на диске для записи, уменьшая заполнение зарезервированного оверлея; поддерживает RAM (не рекомендуется) и Disk (рекомендуется).</translation>
+    </message>
+    <message>
+        <source>Preserves writes in the Disk overlay across restarts; not available for RAM overlays.</source>
+        <translation>Сохраняет записи в оверлее Disk после перезапуска; недоступно для оверлеев RAM.</translation>
+    </message>
+    <message>
+        <source>Resets the persistent overlay: clears its writes at the next startup, restoring the state when the overlay was enabled</source>
+        <translation>Сбрасывает постоянный оверлей: удаляет его записи при следующем запуске и восстанавливает состояние на момент включения оверлея</translation>
+    </message>
+
+
+    <message>
+        <source>Administrator privileges are required; the overlay configuration is read-only.</source>
+        <translation>Требуются права администратора; конфигурация оверлея доступна только для чтения.</translation>
+    </message>
+    <message>
+        <source>Configuration editing is temporarily unavailable. Wait for the current operation to finish.</source>
+        <translation>Редактирование временно недоступно. Дождитесь завершения текущей операции.</translation>
+    </message>
+    <message>
+        <source>The overlay configuration could not be read. Refresh before editing.</source>
+        <translation>Не удалось прочитать конфигурацию оверлея. Обновите её перед редактированием.</translation>
+    </message>
+    <message>
+        <source>This system does not support clearing persistent data at the next startup.</source>
+        <translation>Эта система не поддерживает очистку постоянных данных при следующем запуске.</translation>
+    </message>
+    <message>
+        <source>The current clear request is unknown. Refresh the configuration before editing.</source>
+        <translation>Текущий запрос очистки неизвестен. Обновите конфигурацию перед редактированием.</translation>
+    </message>
+    <message>
+        <source>Changing this request requires UWF and Disk Persistent Overlay to be active in the current session.</source>
+        <translation>Для изменения этого запроса UWF и постоянное наложение Disk должны быть активны в текущем сеансе.</translation>
+    </message>
+    <message>
+        <source>Clearing persistent data at the next startup requires Disk Persistent Overlay. Cancel the clear request or retain Persistent Overlay.</source>
+        <translation>Очистка постоянных данных при следующем запуске требует постоянного оверлея Disk. Отмените запрос очистки или сохраните постоянный оверлей.</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay requires Disk. Disable Persistent Overlay or select Disk.</source>
+        <translation>Постоянный оверлей требует Disk. Отключите его или выберите Disk.</translation>
+    </message>
+    <message>
+        <source>Read-Only Media mode requires RAM. Disable Read-Only Media mode or select RAM.</source>
+        <translation>Режим носителя только для чтения требует RAM. Отключите его или выберите RAM.</translation>
+    </message>
+    <message>
+        <source>UWF is enabled in the current session. Disable UWF and restart before changing this setting.</source>
+        <translation>UWF включён в текущем сеансе. Отключите UWF и перезагрузите систему перед изменением этого параметра.</translation>
+    </message>
+    <message>
+        <source>The configuration has changed. Close and reopen this dialog before editing.</source>
+        <translation>Конфигурация изменилась. Закройте и снова откройте это окно перед редактированием.</translation>
+    </message>
+    <message>
+        <source>Overlay advanced settings</source>
+        <translation>Дополнительные параметры оверлея</translation>
+    </message>
+
+    <message>
+        <source>Current overlay</source>
+        <translation>Текущий оверлей</translation>
+    </message>
+    <message>
+        <source>Next overlay</source>
+        <translation>Следующий оверлей</translation>
+    </message>
+
+
+
+
+
+    <message>
+        <source>The draft contains incompatible or unavailable overlay settings. Return to editing and correct the overlay configuration.</source>
+        <translation>Черновик содержит несовместимые или недоступные параметры оверлея. Вернитесь к редактированию и исправьте конфигурацию.</translation>
+    </message>
+    <message>
+        <source>A clear is scheduled for the next startup. Cancel the clear request before disabling Persistent Overlay.</source>
+        <translation>Очистка запланирована на следующий запуск. Отмените запрос очистки перед отключением постоянного оверлея.</translation>
+    </message>
+    <message>
+        <source>The next session does not retain Disk Persistent Overlay. Retain it before requesting a clear.</source>
+        <translation>В следующем сеансе постоянный оверлей Disk не сохраняется. Оставьте его включённым перед запросом очистки.</translation>
+    </message>
+    <message>
+        <source>Persistent Overlay is only available for Disk; the next overlay is RAM.</source>
+        <translation>Постоянный оверлей доступен только для Disk; для следующего сеанса выбран оверлей RAM.</translation>
+    </message>
+    <message>
+        <source>Enabling Read-Only Media mode requires RAM; the next overlay is Disk.</source>
+        <translation>Для включения режима носителя только для чтения требуется RAM; для следующего сеанса выбран оверлей Disk.</translation>
+    </message>
+    <message>
+        <source>The current Persistent Overlay state could not be confirmed. Read the configuration again.</source>
+        <translation>Не удалось подтвердить текущее состояние постоянного оверлея. Прочитайте конфигурацию снова.</translation>
+    </message>
+    <message>
+        <source>Will take effect at the next startup after applying.</source>
+        <translation>Вступит в силу при следующем запуске после применения.</translation>
+    </message>
+    <message>
+        <source>Scheduled to clear</source>
+        <translation>Очистка запланирована</translation>
+    </message>
+    <message>
+        <source>Not scheduled to clear</source>
+        <translation>Очистка не запланирована</translation>
+    </message>
+    <message>
+        <source>Clears once at the next startup, then preserves data. The current session is not cleared immediately.</source>
+        <translation>Очищает один раз при следующем запуске, затем продолжает сохранять данные. Текущий сеанс не очищается немедленно.</translation>
+    </message>
+    <message>
+        <source>Cancels the scheduled clear at the next startup, preserving persistent overlay data.</source>
+        <translation>Отменяет запланированную очистку при следующем запуске, сохраняя данные постоянного оверлея.</translation>
+    </message>
+    <message>
+        <source>Reset persistent overlay · One-time request</source>
+        <translation>Сброс постоянного оверлея · Одноразовый запрос</translation>
+    </message>
+    <message>
+        <source>Working…</source>
+        <translation>Обработка…</translation>
+    </message>
+    <message>
+        <source>Please wait for the operation to finish.</source>
+        <translation>Дождитесь завершения операции.</translation>
+    </message>
+    <message>
+        <source>%1 · Next session</source>
+        <translation>%1 · Следующий сеанс</translation>
+    </message>
+    <message>
+        <source>Back to settings</source>
+        <translation>Вернуться к настройкам</translation>
+    </message>
+    <message>
+        <source>Change requirements</source>
+        <translation>Условия изменения</translation>
+    </message>
+    <message>
+        <source>Changed</source>
+        <translation>Изменено</translation>
+    </message>
+    <message>
+        <source>Check configuration conflicts</source>
+        <translation>Проверка конфликтов конфигурации</translation>
+    </message>
+    <message>
+        <source>Configuration conflict</source>
+        <translation>Конфликт конфигурации</translation>
+    </message>
+    <message>
+        <source>Disable requirements</source>
+        <translation>Условия отключения</translation>
+    </message>
+    <message>
+        <source>UWF and Disk Persistent Overlay must be active in the current session. Clearing data also requires retaining Disk Persistent Overlay for the next session.</source>
+        <translation>UWF и постоянное наложение Disk должны быть активны в текущем сеансе. Для очистки данных также необходимо сохранить постоянное наложение Disk в следующем сеансе.</translation>
+    </message>
+    <message>
+        <source>Enable requirements</source>
+        <translation>Условия включения</translation>
+    </message>
+    <message>
+        <source>Feature</source>
+        <translation>Функция</translation>
+    </message>
+    <message>
+        <source>Feature details</source>
+        <translation>Описание функции</translation>
+    </message>
+    <message>
+        <source>Learn about %1</source>
+        <translation>Сведения о функции «%1»</translation>
+    </message>
+    <message>
+        <source>Resolve these configuration conflicts before keeping the draft.</source>
+        <translation>Устраните эти конфликты конфигурации перед сохранением черновика.</translation>
+    </message>
+    <message>
+        <source>Revert</source>
+        <translation>Отменить изменения</translation>
+    </message>
+    <message>
+        <source>Takes effect</source>
+        <translation>Вступление в силу</translation>
+    </message>
+    <message>
+        <source>This setting cannot be changed right now</source>
+        <translation>Сейчас этот параметр нельзя изменить</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session, and the next-session overlay must use Disk.</source>
+        <translation>UWF должен быть отключён в текущем сеансе, а оверлей следующего сеанса должен использовать Disk.</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session, and the next-session overlay must use RAM.</source>
+        <translation>UWF должен быть отключён в текущем сеансе, а оверлей следующего сеанса должен использовать RAM.</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session. Cancel any scheduled persistent-data clear before disabling Persistent Overlay.</source>
+        <translation>UWF должен быть отключён в текущем сеансе. Перед отключением постоянного оверлея отмените запланированную очистку постоянных данных.</translation>
+    </message>
+    <message>
+        <source>UWF must be disabled in the current session. Setting only the next session to disabled still requires a restart before editing.</source>
+        <translation>UWF должен быть отключён в текущем сеансе. Если отключение задано только для следующего сеанса, перед изменением всё равно требуется перезапуск.</translation>
+    </message>
+    <message>
+        <source>Usage requirements</source>
+        <translation>Условия использования</translation>
+    </message>
+    <message>
+        <source>View details</source>
+        <translation>Подробнее</translation>
+    </message>
+    <message>
+        <source>View only</source>
+        <translation>Только просмотр</translation>
+    </message>
+    <message>
+        <source>Why %1 cannot be changed</source>
+        <translation>Почему нельзя изменить «%1»</translation>
+    </message>
+    <message>
+        <source>UWF is enabled in the current session, so these overlay settings cannot be changed. Revert the changes, or disable UWF and restart.</source>
+        <translation>UWF включён в текущем сеансе, поэтому эти параметры наложения изменить нельзя. Отмените изменения или отключите UWF и перезагрузите систему.</translation>
+    </message>
+    <message>
+        <source>View change requirements</source>
+        <translation>Посмотреть условия изменения</translation>
+    </message>
+    <message>
+        <source>No configuration changes were written. You can retry.</source>
+        <translation>Изменения конфигурации не записаны. Можно повторить попытку.</translation>
+    </message>
+    <message>
+        <source>No configuration changes were needed.</source>
+        <translation>Изменения конфигурации не требовались.</translation>
+    </message>
+    <message>
+        <source>Use Domain Secret Key persistence for the domain machine account secret ($MACHINE.ACC).</source>
+        <translation>Для секрета учётной записи компьютера домена ($MACHINE.ACC) используйте настройку «Постоянное хранение секретного ключа домена».</translation>
+    </message>
+    <message>
+        <source>This key cannot be excluded itself. Select one of its subkeys.</source>
+        <translation>Сам этот раздел нельзя исключить. Выберите один из его подразделов.</translation>
+    </message>
+    <message>
+        <source>Registry exclusions must specify a nonempty subkey under HKEY_LOCAL_MACHINE (HKLM).</source>
+        <translation>Исключение реестра должно указывать непустой подраздел HKEY_LOCAL_MACHINE (HKLM).</translation>
+    </message>
+    <message>
+        <source>This script contains only settings supported by uwfmgr commands. Not included:</source>
+        <translation>Этот сценарий содержит только настройки, представимые командами uwfmgr. Не включены:</translation>
+    </message>
+    <message>
+        <source>Volume binding</source>
+        <translation>Привязка томов</translation>
+    </message>
+    <message>
+        <source>Settings without a reliable drive-letter address</source>
+        <translation>Настройки без надёжной адресации по букве диска</translation>
+    </message>
+    <message>
+        <source>Command script</source>
+        <translation>Сценарий команд</translation>
+    </message>
+    <message>
+        <source>The configuration matches the next-session target. View or export the supported settings in Command script.</source>
+        <translation>Конфигурация соответствует цели следующего сеанса. Просмотреть или экспортировать поддерживаемые настройки можно на вкладке «Сценарий команд».</translation>
+    </message>
+    <message>
+        <source>Settings with control characters in paths or names</source>
+        <translation>Настройки с управляющими символами в путях или именах</translation>
+    </message>
+    <message>
+        <source>Commands that depend on omitted settings</source>
+        <translation>Команды, зависящие от пропущенных настроек</translation>
+    </message>
+    <message>
+        <source>UWF exclusion settings prevent a reliable commit of this target. Remove the conflicting exclusion and restart before committing it.</source>
+        <translation>Исключения UWF не позволяют надёжно зафиксировать изменения этого объекта. Удалите конфликтующее исключение и перезагрузите систему перед фиксацией.</translation>
+    </message>
+    <message>
+        <source>UWF exclusion settings prevent a reliable commit of the file staging list. Remove the conflicting exclusion and restart before applying this change.</source>
+        <translation>Исключения UWF не позволяют надёжно зафиксировать список автофиксации. Удалите конфликтующее исключение и перезагрузите систему перед применением этого изменения.</translation>
+    </message>
+    <message>
+        <source>UWF cannot preserve the exact registry target for this key.</source>
+        <translation>UWF не может гарантировать, что операция сохранит именно этот раздел реестра в качестве цели.</translation>
+    </message>
+    <message>
+        <source>Confirm that the saved staging list is empty before removing its registry exclusion.</source>
+        <translation>Перед удалением исключения реестра подтвердите, что сохранённый список автофиксации пуст.</translation>
+    </message>
+    <message>
+        <source>Pending confirmation</source>
+        <translation>Ожидает подтверждения</translation>
+    </message>
+    <message>
+        <source>Empty</source>
+        <translation>Пусто</translation>
+    </message>
+    <message>
+        <source>The system volume is not currently protected by UWF; there are no registry changes to commit.</source>
+        <translation>Системный том сейчас не защищён UWF; изменений реестра для фиксации нет.</translation>
+    </message>
+    <message>
+        <source>Registry changes are already persistent; no UWF commit is required.</source>
+        <translation>Изменения реестра уже сохранены постоянно; фиксация UWF не требуется.</translation>
+    </message>
+    <message>
+        <source>Registry changes are already persistent; UWF cannot perform this deletion.</source>
+        <translation>Изменения реестра уже сохранены постоянно; UWF не может выполнить это удаление.</translation>
+    </message>
+    <message><source>UWF exclusion paths must use backslashes.</source><translation>В путях исключений UWF необходимо использовать обратную косую черту.</translation></message>
+    <message><source>File paths cannot contain null characters.</source><translation>Пути к файлам не могут содержать нулевые символы.</translation></message>
+    <message><source>Enable volume protection in this draft before adding file exclusions.</source><translation>Перед добавлением исключений файлов включите защиту тома в этом черновике.</translation></message>
+    <message><source>The exclusion path contains characters that UWF does not support.</source><translation>Путь исключения содержит символы, не поддерживаемые UWF.</translation></message>
+    <message><source>The exclusion path exceeds UWF's length limit.</source><translation>Путь исключения превышает допустимую длину UWF.</translation></message>
+    <message><source>File and registry commits are unavailable while HORM is active.</source><translation>При активном HORM фиксация изменений файлов и реестра недоступна.</translation></message>
+    <message><source>Registry writes are unavailable while HORM is active.</source><translation>При активном HORM запись в реестр недоступна.</translation></message>
+    <message><source>Registry writes cannot be persisted while Read-Only Media mode is active.</source><translation>В режиме носителя только для чтения изменения реестра невозможно сохранить постоянно.</translation></message>
+    <message><source>File and registry commits are unavailable while Read-Only Media mode is active.</source><translation>В режиме носителя только для чтения фиксация изменений файлов и реестра недоступна.</translation></message>
+    <message><source>Intercepts physical media writes, including metadata. Exclusions do not bypass protection. Individual file and registry commits are unavailable; Full Commit is a separate global operation.</source><translation>Перехватывает запись на физический носитель, включая метаданные. Исключения не обходят защиту. Фиксация отдельных изменений файлов и реестра недоступна; Full Commit — отдельная глобальная операция.</translation></message>
+    <message><source>UWF settings cannot be changed while HORM is active.</source><translation>При активном HORM изменение настроек UWF недоступно.</translation></message>
+    <message><source>Default value · this value only</source><translation>Значение по умолчанию · только это значение</translation></message>
+    <message><source>File changes are already persistent; no UWF commit is required.</source><translation>Изменения файлов уже сохранены постоянно; фиксация UWF не требуется.</translation></message>
+    <message><source>Last successful overlay usage observation: %1</source><translation>Последнее успешное получение данных об использовании оверлея: %1</translation></message>
+    <message><source>Observed overlay storage outside the writable size/type range</source><translation>Наблюдаемые размер или тип хранилища оверлея вне допустимого для записи диапазона</translation></message>
+    <message><source>Overlay (last observed)</source><translation>Оверлей (последние данные)</translation></message>
+    <message><source>Overlay usage refresh failed.
+%1</source><translation>Не удалось обновить использование оверлея.
+%1</translation></message>
+    <message><source>Overlay usage refresh failed. Showing the last successful observation from %1.
+%2</source><translation>Не удалось обновить использование оверлея. Показаны последние успешно полученные данные от %1.
+%2</translation></message>
+    <message><source>The path could not be resolved to a local volume.</source><translation>Не удалось сопоставить путь с локальным томом.</translation></message>
+    <message><source>UWF: Enabled (last observed)</source><translation>UWF: включён (последние данные)</translation></message>
+    <message><source>File changes are already persistent; UWF cannot perform this deletion.</source><translation>Изменения файлов уже сохранены постоянно; UWF не может выполнить это удаление.</translation></message>
+    <message><source>%1 (%2)</source><translation>%1 (%2)</translation></message>
+    <message><source>%1 GB available</source><translation>Свободно %1 GB</translation></message>
+    <message><source>%1 MB</source><translation>%1 MB</translation></message>
+    <message><source>%1 · %2</source><translation>%1 · %2</translation></message>
+
+    <message><source>Administrator privileges are required.</source><translation>Требуются права администратора.</translation></message>
+
+
+    <message><source>An operation is in progress. Please wait.</source><translation>Выполняется операция. Подождите.</translation></message>
+    <message><source>Attempts to save all additions, changes and deletions made on every protected volume since this startup. This includes files and system settings; you cannot select only some changes.</source><translation>Пытается сохранить на диск все добавления, изменения и удаления во всех защищённых томах с момента этого запуска. Это включает файлы и системные настройки; выбрать только часть изменений нельзя.</translation></message>
+
+    <message><source>Automatic saving is unavailable in the current mode</source><translation>Автоматическое сохранение недоступно в текущем режиме</translation></message>
+    <message><source>Cannot be undone once started</source><translation>Нельзя отменить после начала</translation></message>
+    <message><source>Choose where to store the disk overlay</source><translation>Выберите место хранения дискового оверлея</translation></message>
+    <message><source>Choose where to store the disk overlay.</source><translation>Выберите место хранения дискового оверлея.</translation></message>
+    <message><source>Configuration changes are temporarily unavailable.</source><translation>Изменение конфигурации временно недоступно.</translation></message>
+    <message><source>Configured, inactive this session</source><translation>Настроено, не действует в этом сеансе</translation></message>
+    <message><source>Configured; takes effect after restarting</source><translation>Настроено; вступит в силу после перезапуска</translation></message>
+    <message><source>Configured; takes effect after restarting. The overlay from this startup will not be moved to the new location.</source><translation>Настроено; вступит в силу после перезапуска. Оверлей текущего запуска не будет перенесён в новое место.</translation></message>
+    <message><source>Configure…</source><translation>Настроить…</translation></message>
+    <message><source>Current UWF</source><translation>Текущее состояние UWF</translation></message>
+    <message><source>Currently configured storage volume</source><translation>Том хранения в текущей конфигурации</translation></message>
+    <message><source>Default behavior</source><translation>Поведение по умолчанию</translation></message>
+    <message><source>Disable HORM and restart before using full volume commit.</source><translation>Отключите HORM и перезапустите компьютер перед полной фиксацией томов.</translation></message>
+    <message><source>Disabled · restart required</source><translation>Отключено · требуется перезапуск</translation></message>
+    <message><source>Disabling HORM does not turn off UWF or Read-Only Media mode and does not save changes on protected disks. Restart before checking the available actions.</source><translation>Отключение HORM не отключает UWF или режим носителя только для чтения и не сохраняет изменения на защищённых дисках. Перезапустите компьютер перед проверкой доступных действий.</translation></message>
+
+    <message><source>Enable UWF and restart before enabling HORM.</source><translation>Включите UWF и перезапустите компьютер перед включением HORM.</translation></message>
+
+    <message><source>Full volume commit</source><translation>Полная фиксация томов</translation></message>
+    <message><source>Full volume commit mode (enabled until restart)</source><translation>Режим полной фиксации томов (включён до перезапуска)</translation></message>
+    <message><source>Full volume commit mode is already enabled. Restart before using it again.</source><translation>Режим полной фиксации томов уже включён. Перезапустите компьютер перед повторным использованием.</translation></message>
+    <message><source>Full volume commit has started. Restart before enabling HORM.</source><translation>Полная фиксация томов уже запущена. Перезапустите компьютер перед включением HORM.</translation></message>
+    <message><source>Full volume commit is available only while Read-Only Media mode is active.</source><translation>Полная фиксация томов доступна только при активном режиме носителя только для чтения.</translation></message>
+    <message><source>Full volume commit mode remains enabled until restart. New changes are saved directly. Individual commits remain unavailable.</source><translation>Режим полной фиксации томов остаётся включённым до перезапуска. Новые изменения сохраняются напрямую. Отдельная фиксация остаётся недоступной.</translation></message>
+    <message><source>Full volume commit is not available on this system.</source><translation>Полная фиксация томов недоступна в этой системе.</translation></message>
+
+    <message><source>HORM is active. UWF settings and individual commits are unavailable. Disable HORM and restart before changing them.</source><translation>HORM включён. Настройки UWF и отдельная фиксация недоступны. Для их изменения отключите HORM и перезапустите компьютер.</translation></message>
+    <message><source>HORM is disabled. Restart the computer before changing UWF settings.</source><translation>HORM отключён. Перезапустите компьютер перед изменением настроек UWF.</translation></message>
+    <message><source>HORM is not available on this system.</source><translation>HORM недоступен в этой системе.</translation></message>
+    <message><source>HORM requires the current RAM Read-Only Media configuration.</source><translation>HORM требует текущей конфигурации RAM в режиме носителя только для чтения.</translation></message>
+    <message><source>HORM requires the current RAM overlay.</source><translation>HORM требует текущего оверлея RAM.</translation></message>
+
+    <message><source>In Disk mode, the system implementation may enable this option by default; check the current state shown in settings.</source><translation>В режиме Disk реализация системы может включать эту опцию по умолчанию; проверьте текущее состояние в настройках.</translation></message>
+    <message><source>Inactive this session</source><translation>Не действует в этом сеансе</translation></message>
+    <message><source>Later changes will also be saved until you restart</source><translation>Последующие изменения также будут сохраняться до перезапуска</translation></message>
+
+    <message><source>Maintenance and recovery</source><translation>Обслуживание и восстановление</translation></message>
+    <message><source>Make sure this is the state you want to keep before continuing.</source><translation>Перед продолжением убедитесь, что хотите сохранить именно это состояние.</translation></message>
+
+    <message><source>Next startup: %1</source><translation>При следующем запуске: %1</translation></message>
+    <message><source>No suitable storage volume is available. Refresh the volume list.</source><translation>Нет подходящего тома хранения. Обновите список томов.</translation></message>
+    <message><source>Not enabled</source><translation>Не включено</translation></message>
+    <message><source>Not selected</source><translation>Не выбрано</translation></message>
+    <message><source>Not supported</source><translation>Не поддерживается</translation></message>
+    <message><source>Once started, new changes are written directly to disk until you restart the computer.</source><translation>После начала новые изменения записываются прямо на диск до перезапуска компьютера.</translation></message>
+    <message><source>Only one storage volume can be used at a time. Choosing a new volume replaces the previous location and sets the next overlay to Disk.</source><translation>Одновременно можно использовать только один том хранения. Выбор нового тома заменяет прежнее место хранения и устанавливает Disk для следующего оверлея.</translation></message>
+    <message><source>Overlay capacity (keep current setting)</source><translation>Ёмкость оверлея (сохранить текущую настройку)</translation></message>
+    <message><source>Overlay configuration</source><translation>Конфигурация оверлея</translation></message>
+
+    <message><source>Processing…</source><translation>Обработка…</translation></message>
+    <message><source>Read state again</source><translation>Прочитать состояние снова</translation></message>
+    <message><source>Read the current UWF state first.</source><translation>Сначала прочитайте текущее состояние UWF.</translation></message>
+
+    <message><source>Read-only media mode does not support individual commits or automatic saving of staged files.</source><translation>Режим носителя только для чтения не поддерживает отдельную фиксацию или автоматическое сохранение подготовленных файлов.</translation></message>
+    <message><source>Reading state…</source><translation>Чтение состояния…</translation></message>
+    <message><source>Restart and read the current state before enabling HORM again.</source><translation>Перезапустите компьютер и прочитайте текущее состояние перед повторным включением HORM.</translation></message>
+    <message><source>Restore the same desktop and running programs at every startup.</source><translation>Восстанавливать один и тот же рабочий стол и запущенные программы при каждом запуске.</translation></message>
+    <message><source>Review available commit operations and their requirements.</source><translation>Просмотрите доступные операции фиксации и их требования.</translation></message>
+    <message><source>Save changes on all protected volumes</source><translation>Сохранить изменения во всех защищённых томах</translation></message>
+    <message><source>Save changes on all protected volumes. Review the effects before continuing.</source><translation>Сохранить изменения во всех защищённых томах. Ознакомьтесь с последствиями перед продолжением.</translation></message>
+
+
+    <message><source>State unknown</source><translation>Состояние неизвестно</translation></message>
+
+    <message><source>Successfully saved changes can no longer be undone by restarting.</source><translation>Успешно сохранённые изменения уже нельзя отменить перезапуском.</translation></message>
+    <message><source>Successfully saved changes will remain</source><translation>Успешно сохранённые изменения останутся</translation></message>
+    <message><source>The HORM state is unknown. Read the state again before continuing.</source><translation>Состояние HORM неизвестно. Прочитайте состояние снова перед продолжением.</translation></message>
+    <message><source>The HORM state is unknown. Refresh before continuing.</source><translation>Состояние HORM неизвестно. Обновите его перед продолжением.</translation></message>
+    <message><source>The commit or HORM state is unknown. Refresh before continuing.</source><translation>Состояние фиксации или HORM неизвестно. Обновите его перед продолжением.</translation></message>
+    <message><source>The current UWF state could not be read. Refresh before continuing.</source><translation>Не удалось прочитать текущее состояние UWF. Обновите его перед продолжением.</translation></message>
+    <message><source>The current overlay uses RAM Read-Only Media mode</source><translation>Текущий оверлей использует RAM в режиме носителя только для чтения</translation></message>
+    <message><source>The current protection mode could not be read. Refresh the state.</source><translation>Не удалось прочитать текущий режим защиты. Обновите состояние.</translation></message>
+    <message><source>The result could not be confirmed</source><translation>Не удалось подтвердить результат</translation></message>
+    <message><source>This exclusion is configured but does not bypass protection in the current session.</source><translation>Это исключение настроено, но не обходит защиту в текущем сеансе.</translation></message>
+    <message><source>This may also change Freespace Passthrough and Persistent Overlay. Review advanced settings before restarting.</source><translation>При этом также могут измениться прямая запись в свободное пространство и постоянный оверлей. Проверьте расширенные настройки перед перезапуском.</translation></message>
+    <message><source>UWF protection is active in the current session</source><translation>Защита UWF активна в текущем сеансе</translation></message>
+    <message><source>%1 (will be replaced)</source><translation>%1 (будет заменён)</translation></message>
+    <message><source>Add full volume commit to the draft?</source><translation>Добавить полную фиксацию томов в черновик?</translation></message>
+    <message><source>Add to draft</source><translation>Добавить в черновик</translation></message>
+    <message><source>Applies to every protected volume; starts only when this draft is applied.</source><translation>Действует во всех защищённых томах; начнётся только при применении этого черновика.</translation></message>
+    <message><source>Applying this draft starts full volume commit. Saved changes cannot be undone by restarting, and new changes are saved until restart.</source><translation>Применение этого черновика запускает полную фиксацию томов. Сохранённые изменения нельзя отменить перезапуском, а новые изменения сохраняются до перезапуска.</translation></message>
+    <message><source>Configure storage location</source><translation>Настроить место хранения</translation></message>
+    <message><source>Configuring the storage location is not available on this system.</source><translation>Настройка места хранения недоступна в этой системе.</translation></message>
+    <message><source>Current: %1</source><translation>Сейчас: %1</translation></message>
+    <message><source>Disable HORM and restart before configuring the storage location.</source><translation>Отключите HORM и перезапустите компьютер перед настройкой места хранения.</translation></message>
+    <message><source>Disable saved-state startup?</source><translation>Отключить запуск с сохранённым состоянием?</translation></message>
+    <message><source>Draft: %1 · apply required</source><translation>Черновик: %1 · требуется применение</translation></message>
+    <message><source>Enable saved-state startup?</source><translation>Включить запуск с сохранённым состоянием?</translation></message>
+    <message><source>Full volume commit (pending apply)</source><translation>Полная фиксация томов (ожидает применения)</translation></message>
+    <message><source>Full volume commit is pending. It will start only after you confirm Review and apply.</source><translation>Полная фиксация томов ожидает применения. Она начнётся только после подтверждения в окне просмотра и применения.</translation></message>
+    <message><source>Hibernate once / resume many</source><translation>Одна гибернация / много восстановлений</translation></message>
+    <message><source>Not started</source><translation>Не начато</translation></message>
+    <message><source>Remove full volume commit from pending changes.</source><translation>Удалить полную фиксацию томов из ожидающих изменений.</translation></message>
+    <message><source>Save draft</source><translation>Сохранить черновик</translation></message>
+
+    <message><source>Will start when applied</source><translation>Начнётся при применении</translation></message>
+    <message><source>A mounted fixed disk failed the protection check. Review the listed disks before enabling HORM.</source><translation>Смонтированный стационарный диск не прошёл проверку защиты. Перед включением HORM проверьте диски в списке.</translation></message>
+    <message><source>Checks UWF-eligible fixed disks that remain mounted. Unmounted partitions may be skipped.</source><translation>Проверяет подходящие для UWF стационарные диски, которые остаются смонтированными. Размонтированные разделы могут быть пропущены.</translation></message>
+    <message><source>HORM prerequisites could not be verified. Read the state again before continuing.</source><translation>Не удалось проверить условия включения HORM. Перед продолжением повторно считайте состояние.</translation></message>
+    <message><source>Mounted fixed-disk protection check</source><translation>Проверка защиты смонтированных стационарных дисков</translation></message>
+    <message><source>Not using a Disk overlay</source><translation>Оверлей Disk не используется</translation></message>
+    <message><source>Selected storage volume</source><translation>Выбранный том хранения</translation></message>
+    <message><source>System drive default (%1)</source><translation>По умолчанию на системном диске (%1)</translation></message>
+
+    <message><source>The protection state changed during this startup. Restart before enabling HORM.</source><translation>Состояние защиты изменилось во время текущего сеанса загрузки. Перед включением HORM перезагрузите компьютер.</translation></message>
+    <message><source>Unable to read</source><translation>Не удалось прочитать</translation></message>
+
+    <message><source>Choose the disk used to store temporary changes. Takes effect at the next startup.</source><translation>Выберите диск для хранения временных изменений. Настройка вступит в силу при следующем запуске.</translation></message>
+    <message><source>Disable UWF and restart before configuring the storage location.</source><translation>Отключите UWF и перезагрузите компьютер перед настройкой места хранения.</translation></message>
+    <message><source>Met</source><translation>Выполнено</translation></message>
+    <message><source>Not met</source><translation>Не выполнено</translation></message>
+    <message><source>Partition</source><translation>Раздел</translation></message>
+
+
+    <message><source>Protect all</source><translation>Защитить все</translation></message>
+    <message><source>Applied</source><translation>Применено</translation></message>
+    <message><source>Not applied</source><translation>Не применено</translation></message>
+    <message><source>Could not confirm</source><translation>Не удалось подтвердить</translation></message>
+    <message><source>Hibernation is not supported</source><translation>Гибернация не поддерживается</translation></message>
+    <message><source>Hibernation is not enabled</source><translation>Гибернация не включена</translation></message>
+    <message><source>Fast startup only</source><translation>Только быстрый запуск</translation></message>
+    <message><source>Bulk volume protection is not available on this system.</source><translation>Групповая защита томов недоступна в этой системе.</translation></message>
+    <message><source>Disable HORM and restart before changing volume protection.</source><translation>Перед изменением защиты томов отключите HORM и перезагрузите компьютер.</translation></message>
+    <message><source>Setup and operation</source><translation>Настройка и порядок работы</translation></message>
+
+    <message><source>1. Prepare the configuration</source><translation>1. Подготовьте конфигурацию</translation></message>
+    <message><source>With UWF currently disabled, configure RAM overlay, read-only media mode, volume protection, and UWF enablement for the next startup. Apply the draft. Prepare S4 hibernation with a present, full hibernation file.</source><translation>При отключённом UWF настройте для следующего запуска оверлей RAM, режим носителя только для чтения, защиту томов и включение UWF. Примените черновик. Обеспечьте поддержку гибернации S4 и наличие полного файла гибернации.</translation></message>
+    <message><source>Restart, then confirm that Current shows UWF enabled, RAM overlay, read-only media mode, and protection for all UWF-eligible mounted fixed volumes. Confirm that system hibernation is available.</source><translation>После перезагрузки убедитесь, что в текущем сеансе включены UWF, оверлей RAM и режим носителя только для чтения, а все подключённые тома фиксированных дисков, поддерживаемые UWF, защищены. Убедитесь, что гибернация системы доступна.</translation></message>
+    <message><source>2. Restart and verify</source><translation>2. Перезагрузите и проверьте</translation></message>
+    <message><source>3. Enable HORM and hibernate</source><translation>3. Включите HORM и выполните гибернацию</translation></message>
+    <message><source>Add Enable HORM to the draft, then use Review and apply. Applying the draft performs the HORM enable operation, equivalent to:</source><translation>Добавьте включение HORM в черновик и выполните проверку и применение изменений. Применение включает HORM и соответствует команде:</translation></message>
+    <message><source>After enablement succeeds, prepare the desktop and applications, then hibernate once to save the baseline state:</source><translation>После успешного включения подготовьте рабочий стол и приложения, затем один раз выполните гибернацию для сохранения исходного состояния:</translation></message>
+    <message><source>HORM usage</source><translation>Использование HORM</translation></message>
+    <message><source>Volume protection</source><translation>Защита томов</translation></message>
+    <message><source>Configure protection for all volumes in the next session.</source><translation>Настройте защиту всех томов для следующего сеанса.</translation></message>
+    <message><source>Unprotect all</source><translation>Снять защиту со всех</translation></message>
+    <message><source>Next startup: all volumes protected</source><translation>Следующий запуск: все тома защищены</translation></message>
+    <message><source>Next startup: all volumes unprotected</source><translation>Следующий запуск: все тома без защиты</translation></message>
+    <message><source>Next startup: individual volume settings</source><translation>Следующий запуск: индивидуальные настройки томов</translation></message>
+    <message><source>System hibernation is available</source><translation>Гибернация системы доступна</translation></message>
+    <message><source>Usage guide</source><translation>Инструкция</translation></message>
+
+    <message><source>Protection for all volumes is pending apply</source><translation>Защита всех томов ожидает применения</translation></message>
+    <message><source>Volume protection takes effect after restarting</source><translation>Защита томов вступит в силу после перезагрузки</translation></message>
+
+    <message><source>Unprotect all and enabling HORM cannot be applied together.</source><translation>Нельзя одновременно снять защиту со всех томов и включить HORM.</translation></message>
+    <message><source>Batch volume protection is not supported.</source><translation>Групповая защита томов не поддерживается.</translation></message>
+
+
+
+    <message><source>Storage volume:</source><translation>Том хранения:</translation></message>
+    <message><source>Exclusions do not bypass protection during this startup. Individual commits and automatic file staging commits are unavailable. Full volume commit affects all protected volumes; review its description before continuing.</source><translation>В текущем сеансе запуска исключения не обходят защиту. Поэлементное сохранение и автоматическое сохранение подготовленных файлов недоступны. Полное сохранение томов затрагивает все защищённые тома; перед продолжением прочитайте описание этой функции.</translation></message>
+    <message><source>Resume the same hibernation state repeatedly</source><translation>Повторное возобновление из одного и того же состояния гибернации</translation></message>
+    <message><source>Remove full volume commit draft</source><translation>Удалить черновик полной фиксации томов</translation></message>
+    <message><source>Read-Only Media mode is active</source><translation>Включён режим носителя только для чтения</translation></message>
+    <message><source>%1 → %2</source><translation>%1 → %2</translation></message>
+    <message><source>A configured storage marker could not be read.</source><translation>Не удалось прочитать настроенный маркер хранилища.</translation></message>
+    <message><source>File staging conflicts with a file exclusion:
+%1
+%2</source><translation>Список автофиксации конфликтует с исключением файла:
+%1
+%2</translation></message>
+    <message><source>Full hibernation is not available on this computer</source><translation>На этом компьютере недоступна полная гибернация</translation></message>
+    <message><source>More than one storage volume has a nonzero marker.</source><translation>Несколько томов хранилища имеют ненулевой маркер.</translation></message>
+    <message><source>The Disk overlay type could not be established.</source><translation>Не удалось подтвердить дисковый тип оверлея.</translation></message>
+    <message><source>The configured storage location could not be read.</source><translation>Не удалось прочитать настроенное расположение хранилища.</translation></message>
+    <message><source>The system drive could not be identified.</source><translation>Не удалось определить системный диск.</translation></message>
+    <message><source>Direct restart skips staged file commits.</source><translation>Прямой перезапуск пропускает фиксацию файлов из списка.</translation></message>
+    <message><source>Direct shutdown skips staged file commits.</source><translation>Прямое выключение пропускает фиксацию файлов из списка.</translation></message>
+    <message><source>Staged files will not be committed. Uncommitted changes may be lost after restart.</source><translation>Файлы из списка не будут зафиксированы. Незафиксированные изменения могут быть потеряны после перезапуска.</translation></message>
+    <message><source>Staged files will not be committed. Uncommitted changes may be lost after shutdown.</source><translation>Файлы из списка не будут зафиксированы. Незафиксированные изменения могут быть потеряны после выключения.</translation></message>
+    <message><source>Commits staged files before normal shutdown or restart.</source><translation>Фиксирует файлы из списка перед обычным выключением или перезапуском.</translation></message>
+    <message><source>Full volume commit and enabling HORM cannot be applied together.</source><translation>Полную фиксацию томов и включение HORM нельзя применить одновременно.</translation></message>
+    <message><source>Configuring the storage location and enabling HORM cannot be applied together.</source><translation>Настройку места хранения и включение HORM нельзя применить одновременно.</translation></message>
+    <message><source>Configuring the storage location and full volume commit require different current UWF modes.</source><translation>Для настройки места хранения и полной фиксации томов требуются разные текущие режимы UWF.</translation></message>
+    <message><source>Choose a storage volume before applying.</source><translation>Выберите том для хранения перед применением изменений.</translation></message>
+    <message><source>Configuring a disk storage location conflicts with a requested RAM overlay.</source><translation>Настройка места хранения на диске конфликтует с запрошенным наложением в RAM.</translation></message>
+    <message><source>Apply the filter change and restart before requesting full volume commit.</source><translation>Примените изменение фильтра и перезагрузите компьютер перед запросом полной фиксации томов.</translation></message>
+    <message><source>Canceled</source><translation>Отменено</translation></message>
+    <message><source>The reviewed storage volume is no longer available. Return to editing and choose another volume.</source><translation>Проверенный том для хранения больше недоступен. Вернитесь к редактированию и выберите другой том.</translation></message>
+    <message><source>This volume cannot be registered with UWF because its storage bus is not supported.</source><translation>Этот том нельзя зарегистрировать в UWF, поскольку его шина хранения не поддерживается.</translation></message>
+    <message><source>Physical volume support could not be confirmed. Refresh before enabling protection.</source><translation>Не удалось подтвердить поддержку физического тома. Обновите состояние перед включением защиты.</translation></message>
+    <message><source>Paused</source><translation>Приостановлено</translation></message>
+    <message><source>Partially paused</source><translation>Частично приостановлено</translation></message>
+    <message><source>Persistent overlay data will be retained at the next startup. Automatic commits are paused.</source><translation>Данные постоянного оверлея сохранятся при следующем запуске. Автоматическая фиксация приостановлена.</translation></message>
+
+    <message><source>Paused entries: %1 · Paused files: %2</source><translation>Приостановленные элементы: %1 · Приостановленные файлы: %2</translation></message>
+    <message><source>Read-only ROM</source><translation>ROM только для чтения</translation></message>
+    <message><source>%1 changes · %2 commands</source><translation>%1 изменений · %2 команд</translation></message>
+    <message><source>%1 file system: file exclusions and per-file commit are not supported.</source><translation>Файловая система %1: исключения файлов и пофайловая фиксация не поддерживаются.</translation></message>
+    <message><source>Applying changes</source><translation>Применение изменений</translation></message>
+    <message><source>Automatic commits paused</source><translation>Автоматическая фиксация приостановлена</translation></message>
+    <message><source>Automatic file commits are paused until restart after a HORM mode change.</source><translation>После изменения режима HORM автоматическая фиксация файлов приостанавливается до перезагрузки.</translation></message>
+    <message><source>Automatic file commits are unavailable after FullCommit.</source><translation>Автоматическая фиксация файлов недоступна после FullCommit.</translation></message>
+    <message><source>Automatic file commits are unavailable while HORM is active.</source><translation>Автоматическая фиксация файлов недоступна при активном HORM.</translation></message>
+    <message><source>Automatic staged-file commits are paused for this restart.</source><translation>Автоматическая фиксация подготовленных файлов приостановлена для этой перезагрузки.</translation></message>
+    <message><source>Automatic staged-file commits are paused for this shutdown.</source><translation>Автоматическая фиксация подготовленных файлов приостановлена для этого выключения.</translation></message>
+    <message><source>Configuration persistence could not be confirmed. Refresh the system state before changing this setting.</source><translation>Не удалось подтвердить постоянное сохранение конфигурации. Обновите состояние системы перед изменением этого параметра.</translation></message>
+    <message><source>Elapsed: %1 s</source><translation>Прошло: %1 с</translation></message>
+    <message><source>Only eligible staged files will be committed.</source><translation>Будут зафиксированы только подготовленные файлы, соответствующие условиям.</translation></message>
+    <message><source>Read-only ROM cannot persist ordinary UWF settings on the protected system volume. Disable UWF and restart before changing them.</source><translation>Режим ROM только для чтения не позволяет постоянно сохранять обычные настройки UWF на защищённом системном томе. Отключите UWF и перезагрузите систему перед их изменением.</translation></message>
+    <message><source>Skipped staged files are not committed by this operation.</source><translation>Пропущенные подготовленные файлы не фиксируются этой операцией.</translation></message>
+    <message><source>Staged files are already on unprotected storage. No automatic commit is needed.</source><translation>Подготовленные файлы уже находятся на незащищённом носителе. Автоматическая фиксация не требуется.</translation></message>
+    <message><source>Threshold changes require a registry commit, which is unavailable in read-only ROM.</source><translation>Изменение порогов требует фиксации реестра, недоступной в режиме ROM только для чтения.</translation></message>
+    <message><source>Waiting for Windows to finish. This may take a while.</source><translation>Ожидание завершения операции Windows. Это может занять некоторое время.</translation></message>
+    <message><source>HORM is disabled. Automatic staged-file commits are paused until restart. Manual operations follow the current UWF capabilities.</source><translation>HORM отключён. Автоматическая фиксация подготовленных файлов приостановлена до перезагрузки. Ручные операции зависят от текущих возможностей UWF.</translation></message>
+    <message><source>This configuration snapshot includes settings that require UWF disabled in the current session. Disable UWF and restart before running it.</source><translation>Этот снимок конфигурации содержит параметры, требующие отключения UWF в текущем сеансе. Отключите UWF и перезагрузите компьютер перед его выполнением.</translation></message>
+    <message><source>Current-session actions (HORM, FullCommit, and persistent overlay reset; export them from Pending changes)</source><translation>Действия текущего сеанса (HORM, FullCommit и сброс постоянного наложения; экспортируйте их из раздела «Ожидающие изменения»)</translation></message>
+    <message><source>Bulk unprotection requires a confirmed complete next-session volume scope.</source><translation>Массовое снятие защиты требует подтверждения полного списка томов следующего сеанса.</translation></message>
 </context>
 </TS>

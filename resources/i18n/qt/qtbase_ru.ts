@@ -75,7 +75,7 @@
         </message>
         <message>
             <source>RLE Start of right-to-left embedding</source>
-            <translation>LRE Начало встраивания написания справа налево</translation>
+            <translation>RLE Начало встраивания написания справа налево</translation>
         </message>
         <message>
             <source>LRO Start of left-to-right override</source>
@@ -99,11 +99,11 @@
         </message>
         <message>
             <source>FSI First strong isolate</source>
-            <translation>FSI Первая жёсткая изоляция</translation>
+            <translation>FSI Изоляция по направлению первого сильного символа</translation>
         </message>
         <message>
             <source>PDI Pop directional isolate</source>
-            <translation>PDI Восстановление изоляции направления</translation>
+            <translation>PDI Конец изоляции направления</translation>
         </message>
         <message>
             <source>Insert Unicode control character</source>

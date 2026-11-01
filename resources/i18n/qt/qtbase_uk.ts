@@ -63,7 +63,7 @@
         </message>
         <message>
             <source>ZWNJ Zero width non-joiner</source>
-            <translation>ZWNJ Необ’єднувач нульової довжини</translation>
+            <translation>ZWNJ Необ’єднувач нульової ширини</translation>
         </message>
         <message>
             <source>ZWSP Zero width space</source>
@@ -87,7 +87,7 @@
         </message>
         <message>
             <source>PDF Pop directional formatting</source>
-            <translation>PDF Забрати направлене форматування</translation>
+            <translation>PDF Завершити напрямлене форматування</translation>
         </message>
         <message>
             <source>LRI Left-to-right isolate</source>
@@ -99,11 +99,11 @@
         </message>
         <message>
             <source>FSI First strong isolate</source>
-            <translation>FSI Ізоляція першого жорсткого</translation>
+            <translation>FSI Ізоляція за напрямком першого сильного символу</translation>
         </message>
         <message>
             <source>PDI Pop directional isolate</source>
-            <translation>PDI Відновити направлену ізоляцію</translation>
+            <translation>PDI Завершити напрямлену ізоляцію</translation>
         </message>
         <message>
             <source>Insert Unicode control character</source>

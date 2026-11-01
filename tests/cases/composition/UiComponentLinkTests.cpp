@@ -5,12 +5,12 @@
 #include <QTableView>
 #include <QTest>
 
-#include "app/api/LogSource.h"
-#include "presentation/configuration/ExclusionListViewModel.h"
+#include "application/diagnostics/contracts/LogSource.h"
+#include "presentation/viewmodels/configuration/ExclusionListViewModel.h"
 #include "support/ui/FileDialogStub.h"
-#include "ui/configuration/ExclusionListWidget.h"
-#include "ui/diagnostics/LogViewerDialog.h"
-#include "ui/dialogs/Dialogs.h"
+#include "presentation/views/configuration/exclusions/ExclusionListWidget.h"
+#include "presentation/views/diagnostics/LogViewerDialog.h"
+#include "presentation/dialogs/Dialogs.h"
 
 namespace {
 class MemoryLogSource final : public uwf::app::LogSource {

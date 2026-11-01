@@ -107,7 +107,7 @@
         </message>
         <message>
             <source>Insert Unicode control character</source>
-            <translation>Unicode control character invoegen</translation>
+            <translation>Unicode-besturingsteken invoegen</translation>
         </message>
     </context>
     <context>

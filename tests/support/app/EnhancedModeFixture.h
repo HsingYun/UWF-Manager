@@ -2,12 +2,13 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
 
-#include <functional>
 #include <algorithm>
+#include <functional>
 #include <stdexcept>
+#include <vector>
 
-#include "app/ports/EnhancedModeAgentConnection.h"
-#include "app/ports/EnhancedModeServiceControl.h"
+#include "application/enhanced/contracts/EnhancedModeAgentConnection.h"
+#include "application/enhanced/contracts/EnhancedModeServiceControl.h"
 namespace uwf::test::application {
 app::EnhancedModeStatus completeEnhancedModeStatus();
 
@@ -16,7 +17,10 @@ class MemoryEnhancedModeServiceControl final : public app::EnhancedModeServiceCo
   class Barrier final : public DeletionBarrier {
    public:
     explicit Barrier(MemoryEnhancedModeServiceControl& owner) : m_owner(owner) { ++m_owner.activeDeletionBarriers; }
-    ~Barrier() override { --m_owner.activeDeletionBarriers; }
+    ~Barrier() override {
+      --m_owner.activeDeletionBarriers;
+      if (m_owner.afterDeletionBarrier) m_owner.afterDeletionBarrier();
+    }
 
    private:
     MemoryEnhancedModeServiceControl& m_owner;
@@ -26,6 +30,7 @@ class MemoryEnhancedModeServiceControl final : public app::EnhancedModeServiceCo
   QString queryFailure;
   int installs = 0;
   int starts = 0;
+  int disables = 0;
   int removals = 0;
   int activeDeletionBarriers = 0;
   mutable int queries = 0;
@@ -34,13 +39,17 @@ class MemoryEnhancedModeServiceControl final : public app::EnhancedModeServiceCo
   std::vector<uwf::app::RegistryCommitTarget> deletionPlan;
   QString installedDescription;
   std::function<void()> beforeInstall;
+  std::function<void()> beforeDisable;
   std::function<void()> beforeCommitPlan;
   std::function<void()> beforeDeletionPlan;
   std::function<void()> beforeDeleteRemnants;
+  std::function<void()> beforeQuery;
+  std::function<void()> afterDeletionBarrier;
   RemovalState removalState = RemovalState::MarkedForDeletion;
 
   [[nodiscard]] app::EnhancedModeStatus query() const override {
     ++queries;
+    if (beforeQuery) beforeQuery();
     if (!queryFailure.isEmpty()) throw std::runtime_error(queryFailure.toStdString());
     if (activeDeletionBarriers != 0) queriedDuringDeletion = true;
     return current;
@@ -57,6 +66,16 @@ class MemoryEnhancedModeServiceControl final : public app::EnhancedModeServiceCo
     current.preshutdownAccepted = true;
     current.state = current.serviceContractSatisfied() ? app::EnhancedModeState::Enabled : app::EnhancedModeState::RepairRequired;
   }
+  void disable() override {
+    if (beforeDisable) beforeDisable();
+    if (!current.serviceExists) throw std::runtime_error("enhanced mode service does not exist");
+    ++disables;
+    current.running = false;
+    current.preshutdownAccepted = false;
+    current.automaticStart = false;
+    current.startupDisabled = true;
+    current.state = current.serviceInstallationSatisfied() ? app::EnhancedModeState::Disabled : app::EnhancedModeState::RepairRequired;
+  }
   [[nodiscard]] std::vector<uwf::app::RegistryCommitTarget> planRegistryCommit() const override {
     if (beforeCommitPlan) beforeCommitPlan();
     return installationPlan;
@@ -65,9 +84,7 @@ class MemoryEnhancedModeServiceControl final : public app::EnhancedModeServiceCo
     if (beforeDeletionPlan) beforeDeletionPlan();
     return deletionPlan;
   }
-  [[nodiscard]] bool registryTargetExists(const app::RegistryCommitTarget& target) const override {
-    return std::ranges::any_of(deletionPlan, [&](const auto& item) { return item.key == target.key && item.valueName == target.valueName; });
-  }
+
   void deleteRegistryRemnants() override {
     if (beforeDeleteRemnants) beforeDeleteRemnants();
     current.serviceRegistryPresent = false;

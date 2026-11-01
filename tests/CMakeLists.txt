@@ -6,6 +6,11 @@ add_subdirectory(tools)
 add_subdirectory(support)
 add_subdirectory(cases)
 
+add_test(NAME UwfLayerBoundaryCheck
+    COMMAND "${CMAKE_COMMAND}" -P "${PROJECT_SOURCE_DIR}/cmake/CheckLayerBoundaries.cmake"
+)
+set_tests_properties(UwfLayerBoundaryCheck PROPERTIES LABELS "kind-check;feature-architecture;runtime-appless")
+
 # This gate validates translation artifacts; it is not a QtTest behavior suite.
 string(JOIN "," uwf_test_locales ${UWF_I18N_LOCALES})
 add_test(NAME UwfTranslationCatalogCheck

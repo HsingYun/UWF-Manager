@@ -5,15 +5,15 @@
         <name>QAbstractSpinBox</name>
         <message>
             <source>&amp;Select All</source>
-            <translation>全部選擇(&amp;S)</translation>
+            <translation>全部選取(&amp;S)</translation>
         </message>
         <message>
             <source>&amp;Step up</source>
-            <translation>單步向上(&amp;S)</translation>
+            <translation>遞增(&amp;S)</translation>
         </message>
         <message>
             <source>Step &amp;down</source>
-            <translation>單步向下(&amp;D)</translation>
+            <translation>遞減(&amp;D)</translation>
         </message>
     </context>
     <context>
@@ -44,26 +44,26 @@
         </message>
         <message>
             <source>Select All</source>
-            <translation>全部選擇</translation>
+            <translation>全部選取</translation>
         </message>
     </context>
     <context>
         <name>QUnicodeControlCharacterMenu</name>
         <message>
             <source>LRM Left-to-right mark</source>
-            <translation>LRM 左到右標記</translation>
+            <translation>LRM 由左至右標記</translation>
         </message>
         <message>
             <source>RLM Right-to-left mark</source>
-            <translation>RLM 右到左標記</translation>
+            <translation>RLM 由右至左標記</translation>
         </message>
         <message>
             <source>ZWJ Zero width joiner</source>
-            <translation>ZWJ 零寬度連接器</translation>
+            <translation>ZWJ 零寬度連接符</translation>
         </message>
         <message>
             <source>ZWNJ Zero width non-joiner</source>
-            <translation>ZWNJ 零寬度非連接器</translation>
+            <translation>ZWNJ 零寬度非連接符</translation>
         </message>
         <message>
             <source>ZWSP Zero width space</source>
@@ -71,36 +71,36 @@
         </message>
         <message>
             <source>LRE Start of left-to-right embedding</source>
-            <translation>LRE 左到右嵌入起點</translation>
+            <translation>LRE 由左至右嵌入起點</translation>
         </message>
         <message>
             <source>RLE Start of right-to-left embedding</source>
-            <translation>RLE 右到左嵌入起點</translation>
+            <translation>RLE 由右至左嵌入起點</translation>
         </message>
         <message>
             <source>LRO Start of left-to-right override</source>
-            <translation>LRO 左到右覆寫起點</translation>
+            <translation>LRO 由左至右覆寫起點</translation>
         </message>
         <message>
             <source>RLO Start of right-to-left override</source>
-            <translation>RLO 右到左覆寫起點</translation>
+            <translation>RLO 由右至左覆寫起點</translation>
         </message>
         <message>
             <source>PDF Pop directional formatting</source>
-            <translation>PDF 彈出方向格式</translation>
+            <translation>PDF 結束方向格式</translation>
         </message>
         <message>
             <source>LRI Left-to-right isolate</source>
-            <translation>LRI 左至右分隔</translation>
+            <translation>LRI 由左至右隔離</translation>
         </message>
         <message>
             <source>RLI Right-to-left isolate</source>
-            <translation>RLI 右至左分隔</translation>
+            <translation>RLI 由右至左隔離</translation>
         </message>
         <message>
             <source>FSI First strong isolate</source>
             <translatorcomment>為 Unicode 專有名詞，因找不到適合翻譯因此留空，等待有較適合用詞後再填入。</translatorcomment>
-            <translation>FSI 首個強方向字元隔離</translation>
+            <translation>FSI 依首個強方向字元隔離</translation>
         </message>
         <message>
             <source>PDI Pop directional isolate</source>
@@ -144,7 +144,7 @@
         </message>
         <message>
             <source>Select All</source>
-            <translation>全部選擇</translation>
+            <translation>全部選取</translation>
         </message>
     </context>
 </TS>

@@ -9,5 +9,7 @@ class QWidget;
 namespace uwf::test {
 
 QString clippedText(const QWidget& root);
+QString waitForUnclippedText(const QWidget& root, int timeoutMs);
+QString waitForUnclippedText(const QWidget& root);
 
 }  // namespace uwf::test

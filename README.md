@@ -1,6 +1,6 @@
 # UWF Manager
 
-A Qt GUI for the Windows Unified Write Filter (UWF) — a convenient graphical front end for inspecting and configuring UWF state, alongside the built-in `uwfmgr.exe` command line.
+A Qt-based graphical management tool for the Windows Unified Write Filter (UWF), with a command-line interface.
 
 [简体中文](README.zh_CN.md)
 
@@ -10,47 +10,39 @@ A Qt GUI for the Windows Unified Write Filter (UWF) — a convenient graphical f
 
 ## About UWF
 
-The Unified Write Filter is a sector-level write-protection driver shipped with Windows Enterprise, Education, IoT Enterprise, and the LTSC variants. When a volume is protected, every write to it is intercepted and redirected to an *overlay* — either a region of RAM or a sparse file on a designated disk volume — instead of touching the underlying sectors. The overlay is discarded on reboot, returning the volume to its previous state. File and registry-key exclusions can be declared so that specific paths bypass the overlay and write through to disk; overlay contents can also be selectively *persisted* (committed back to the underlying media) before reboot.
+The [Unified Write Filter](https://learn.microsoft.com/en-us/windows/configuration/unified-write-filter/) is an optional sector-level write-protection component available in Windows Enterprise, Education, IoT Enterprise, and their applicable LTSC editions. Writes to protected volumes are redirected to an overlay in RAM or on disk. Nonpersistent overlays are cleared on restart; persistent disk overlays retain changes across restarts. In normal operation, file and registry exclusions allow specified paths to write directly to the protected volume. Selected overlay changes can also be committed to the protected volume.
 
-UWF is configured per-volume and operates with two parallel state sets: the *current* session (read-only, reflecting what the driver is enforcing right now) and the *next* session (writable, taking effect after reboot). All configuration changes — enabling protection, setting the overlay type and size, adding exclusions — apply to the next session.
+UWF exposes current- and next-session state separately. Changes to filter enablement, overlay type and size, and exclusions normally take effect in the next session. Runtime thresholds and immediate commit operations have their own scope.
 
-UWF is the supported successor to the older Enhanced Write Filter (EWF) and File-Based Write Filter (FBWF), and is the standard mechanism for building stateless kiosks, point-of-sale terminals, ATMs, medical devices, classroom workstations, and digital signage on Windows.
-
-> **Note**: *Servicing mode* (`uwfmgr filter enable-servicing` / `disable-servicing`, used to suspend the filter for Windows Update or scheduled maintenance) is not planned.
+UWF replaces the earlier Enhanced Write Filter (EWF) and File-Based Write Filter (FBWF). It is suitable for stateless Windows kiosks, point-of-sale terminals, ATMs, medical devices, computer-lab workstations, and digital signage.
 
 ## Features
 
-- Filter enable / disable, current and next session
+- View the current filter state and configure filter enablement for the next session
 - Overlay configuration: type (RAM / Disk), maximum size, warning and critical thresholds
+- Advanced overlay settings: Freespace Passthrough, Persistent Overlay, clearing persistent data at the next startup, Read-Only Media mode, and HORM
 - Per-volume protection toggle and drive-letter / volume-ID binding
-- File and directory exclusion lists per volume
-- Registry exclusion list (system volume)
-- DomainSecretKey / TSCAL persistence switches, shown and toggled inline in the registry exclusion list
-- Persist overlay contents back to disk or registry (files, directories, file deletions, registry keys)
-- File staging: persist a user-defined file/folder list in the registry and commit its current contents automatically before safe shutdown or restart
-- Read-only enumeration of overlay file entries
-- Import settings — paste commands or choose a command file, then review and apply the changes
+- Per-volume file and directory exclusion management
+- Registry exclusion management
+- DomainSecretKey / TSCAL persistence switches displayed and controlled directly in the registry exclusion list
+- Selective file and registry-value commits, with recursive processing of directories and registry keys; deletion commits for files, directories, registry keys, and named values
+- File staging: save a specified file / directory list in the registry and automatically commit its current contents before an in-app safe shutdown or restart
+- Overlay file-entry enumeration
+- Settings import: paste commands or select command files, then preview and apply
 - System restart and shutdown
-- In-app log viewer
-- Portable by default — file staging is the only feature that stores application state (its path list is kept in the registry); no configuration files are created, and the in-app log remains in memory and is discarded when the process exits
-
-## Out of scope
-
-- HORM (Hibernate Once / Resume Many)
-- Servicing mode
-- Free-space passthrough, persistent overlay, read-only media mode, swapfile creation
+- In-app log viewer; logs remain in memory and are cleared when the process exits
+- Overlay storage-location configuration
+- Enhanced mode: use a Windows service to automatically commit eligible staged files before system shutdown or restart
 
 ## Requirements
 
-- Windows 10 / 11 Enterprise, Education, IoT Enterprise, or LTSC variants
+- Windows 10 / 11 Enterprise, Education, IoT Enterprise, or their applicable LTSC editions
 - "Unified Write Filter" Windows feature enabled
-- Administrator privileges — needed to apply changes
-
-Note: the program still starts when these conditions are not met.
+- Administrator privileges: the main UI requests elevation at startup; commands use the calling process's permissions, so protected operations require an elevated terminal
 
 ## Custom configuration
 
-To customize the startup theme, language, or HUB visibility, create a UTF-8 text file named **`UWF.ini`** in the same directory as the executable:
+The startup theme, language, and overlay status display (HUB) visibility are configured in a UTF-8 file named **`UWF.ini`** next to the executable:
 
 ```ini
 [UI]
@@ -62,22 +54,16 @@ HubVisible=false
 | Option | Values | Default |
 | --- | --- | --- |
 | `[UI] Theme` | `system`, `light`, `dark` | `system` |
-| `[UI] Language` | `system`, standard language codes | `system` |
+| `[UI] Language` | `system`, supported language codes | `system` |
 | `[UI] HubVisible` | `true`, `false` | `true` |
 
-`system` uses the Windows application theme or system language at startup. An omitted language or `system` follows the system’s preferred UI languages, falling back to English when none are supported. An explicit supported language code takes precedence. `HubVisible=false` starts with both the taskbar and floating HUB hidden; `true` allows the HUB to appear when UWF protection is active. Values are case-insensitive. All options are optional. The file name stays `UWF.ini` even when the executable includes a version number; ensure that the file is not accidentally named `UWF.ini.txt`.
-
-Configuration is loaded at startup, including tray-only startup. Fully exit and restart the application after editing the file.
-
-You can also click **Export configuration** in the About dialog to save the current theme, language, and HUB visibility to `UWF.ini` next to the executable. An existing file is left unchanged and a message is shown; failures report the reason. This saves the current interface settings, not the Windows UWF protection configuration.
-
-Omitted options use their defaults. Remove `UWF.ini` to restore the defaults on the next startup.
+Select **Export interface settings** in the About dialog to save the current theme, language, and HUB visibility to `UWF.ini` next to the executable.
 
 ## Build
 
 - C++20
 - CMake ≥ 3.16
-- Qt 6 (Widgets, Svg, LinguistTools)
+- Qt 6 (Widgets, Svg, Network, LinguistTools)
 - A Windows-targeting compiler (MSVC, clang-cl, MSYS2 clang64, mingw-w64)
 
 ```sh
@@ -87,7 +73,7 @@ cmake --build build --config Release
 
 ## AI-generated code
 
-Most of the source in this repository was produced by AI coding assistants under human review and direction. Treat the code accordingly: it is functional but you should verify any non-obvious behavior against the source, the WMI documentation, or the running system before relying on it.
+Most of the source in this repository was generated by AI coding assistants under human review and direction. The code is functional, but non-obvious behavior should still be verified against the source, WMI documentation, or the running system before use.
 
 ## License
 

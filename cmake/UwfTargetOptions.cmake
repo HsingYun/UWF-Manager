@@ -3,6 +3,10 @@
 
 include_guard(GLOBAL)
 
+if(MSVC)
+    include(UwfMsvcIncludes)
+endif()
+
 function(uwf_configure_cpp_target target)
     set(_sanitize_enabled OFF)
     if(UWF_SANITIZE AND NOT MSVC)

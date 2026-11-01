@@ -5,13 +5,13 @@
 #include <QSize>
 #include <QWindow>
 
-#include "ui/overlay/taskbar/TaskbarLayoutStrategy.h"
-#include "ui/overlay/taskbar/Win11TaskbarEnvironment.h"
-#include "ui/overlay/taskbar/Win11TaskbarLayoutStrategy.h"
+#include "presentation/views/overlay/taskbar/TaskbarLayoutStrategy.h"
+#include "presentation/views/overlay/taskbar/Win11TaskbarEnvironment.h"
+#include "presentation/views/overlay/taskbar/Win11TaskbarLayoutStrategy.h"
 
 namespace uwf::ui {
 
-// 测试专用访问边界：构造部分附着状态并调用生产回滚入口，仅链接进集成测试。
+// Integration-test access to partial attachment setup and the production rollback path.
 class Win11TaskbarLayoutStrategyTestAccess {
  public:
   [[nodiscard]] static bool plantPartialParentCommit(Win11TaskbarLayoutStrategy& strategy, QWindow* window, const win11_taskbar::Environment& environment,

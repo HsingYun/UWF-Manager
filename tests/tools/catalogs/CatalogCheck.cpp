@@ -6,9 +6,13 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QMap>
+#include <QRegularExpression>
 #include <QSet>
 #include <QXmlStreamReader>
+#include <algorithm>
 #include <stdexcept>
+#include <utility>
+#include <vector>
 
 namespace uwf::test::tools {
 namespace {
@@ -38,7 +42,7 @@ QMap<QString, int> placeholders(const QString& text) {
 
 QStringList filterPatterns(const QString& text) {
   QStringList patterns;
-  for (const auto filters = text.split(QLatin1String(";;")); const auto& filter : filters) {
+  for (auto filters = text.split(QLatin1String(";;")); const auto& filter : std::as_const(filters)) {
     const auto trimmed = filter.trimmed();
     const auto start = trimmed.lastIndexOf(u'(');
     if (start < 0 || !trimmed.endsWith(u')')) invalid(QStringLiteral("invalid file filter"));
@@ -110,62 +114,110 @@ QString xmlMarkup(const QString& text) {
   return QStringLiteral("<root>") + result + QStringLiteral("</root>");
 }
 
-QMap<QString, int> markupStructure(const QString& text) {
+QJsonArray placeholderStructure(const QString& text) {
+  QJsonArray structure;
+  const auto tokens = placeholders(text);
+  for (auto token = tokens.cbegin(); token != tokens.cend(); ++token) structure.append(QJsonArray{token.key(), token.value()});
+  return structure;
+}
+
+struct MarkupElement {
+  QString name;
+  QStringList attributes;
+  QStringList children;
+  QString directText;
+
+  [[nodiscard]] QString signature() {
+    // Allow translated word order while preserving subtrees and placeholder scope.
+    attributes.sort();
+    children.sort();
+    const QJsonArray value{name, QJsonArray::fromStringList(attributes), !directText.trimmed().isEmpty(), placeholderStructure(directText),
+                           QJsonArray::fromStringList(children)};
+    return QString::fromUtf8(QJsonDocument(value).toJson(QJsonDocument::Compact));
+  }
+};
+
+QString markupStructure(const QString& text) {
   QXmlStreamReader xml(xmlMarkup(text));
-  QMap<QString, int> structure;
+  std::vector<MarkupElement> elements;
+  QString structure;
   while (!xml.atEnd()) {
     xml.readNext();
-    if (!xml.isStartElement() || xml.name() == QLatin1String("root")) continue;
-    QStringList attributes;
-    for (const auto xmlAttributes = xml.attributes(); const auto& attribute : xmlAttributes) {
-      const auto name = attribute.name().toString();
-      // These attributes contain human-readable text; links and styling retain
-      // their original values. Placeholder validation covers the whole message.
-      const auto value = (name == QLatin1String("title") || name == QLatin1String("alt")) && !attribute.value().isEmpty() ? QStringLiteral("translated-text")
-                                                                                                                          : attribute.value().toString();
-      attributes.append(name + u'=' + value);
+    if (xml.isStartElement()) {
+      if (!elements.empty()) elements.back().directText.append(u'\n');
+      MarkupElement element{xml.name().toString(), {}, {}, {}};
+      for (auto xmlAttributes = xml.attributes(); const auto& attribute : std::as_const(xmlAttributes)) {
+        const auto name = attribute.qualifiedName().toString().toLower();
+        const auto attributeText = attribute.value().toString();
+        // title/alt text may translate within its placeholder scope; other attributes remain exact.
+        const QJsonArray value = name == QLatin1String("title") || name == QLatin1String("alt")
+                                     ? QJsonArray{name, !attributeText.isEmpty(), placeholderStructure(attributeText)}
+                                     : QJsonArray{name, attributeText};
+        element.attributes.append(QString::fromUtf8(QJsonDocument(value).toJson(QJsonDocument::Compact)));
+      }
+      elements.push_back(std::move(element));
+    } else if (xml.isCharacters() && !elements.empty()) {
+      elements.back().directText.append(xml.text());
+    } else if (xml.isEndElement() && !elements.empty()) {
+      const auto signature = elements.back().signature();
+      elements.pop_back();
+      if (elements.empty())
+        structure = signature;
+      else {
+        elements.back().children.append(signature);
+        elements.back().directText.append(u'\n');
+      }
     }
-    attributes.sort();
-    ++structure[xml.name().toString() + u'|' + QString::fromUtf8(QJsonDocument(QJsonArray::fromStringList(attributes)).toJson(QJsonDocument::Compact))];
   }
   if (xml.hasError()) invalid(QStringLiteral("invalid rich text: ") + xml.errorString());
   return structure;
 }
 
+bool containsMarkup(const QString& text) {
+  static const QRegularExpression tag(QStringLiteral(R"(<\s*/?\s*[A-Za-z][A-Za-z0-9]*(?:\s|/?>))"));
+  return tag.match(text).hasMatch();
+}
+
 bool identicalIsValid(const QString& source, const QString& language, const bool qtSupplement) {
   if (qtSupplement) {
-    return QSet<QString>{QStringLiteral("OK"), QStringLiteral("Alt+Left"), QStringLiteral("Alt+Right"), QStringLiteral("Alt+Up")}.contains(source) ||
-           (language == QLatin1String("id") && QSet<QString>{QStringLiteral("Drive"), QStringLiteral("Folder"), QStringLiteral("Alias")}.contains(source));
+    return false;
   }
-  static const QSet<QString> shared{QStringLiteral("Microsoft Defender"), QStringLiteral("System Center Endpoint Protection"), QStringLiteral("#")};
+  // Exempt placeholder/punctuation-only text; labels containing words still require translation review.
+  QString composition = source;
+  auto tokens = placeholders(source).keys();
+  std::sort(tokens.begin(), tokens.end(), [](const QString& first, const QString& second) { return first.size() > second.size(); });
+  for (const auto& token : std::as_const(tokens)) composition.remove(token);
+  const auto codepoints = composition.toUcs4();
+  if (std::none_of(codepoints.cbegin(), codepoints.cend(), [](const auto point) { return QChar::isLetterOrNumber(static_cast<char32_t>(point)); })) return true;
+  // Product names, protocol identifiers and units retain their spelling.
+  static const QSet<QString> shared{QStringLiteral("Microsoft Defender"), QStringLiteral("System Center Endpoint Protection"), QStringLiteral("HORM"),
+                                    QStringLiteral("%1 MB")};
   static const QMap<QString, QSet<QString>> reviewed{
       {QStringLiteral("de"),
-       {QStringLiteral("OK"), QStringLiteral("Filter"), QStringLiteral("Overlay"), QStringLiteral("Name"), QStringLiteral("✓ Filter: %1"),
-        QStringLiteral("Tag"), QStringLiteral("Status"), QStringLiteral("Administrator"), QStringLiteral("Information"), QStringLiteral("System"),
-        QStringLiteral("Version %1"), QStringLiteral("Desktop"), QStringLiteral("Downloads")}},
+       {QStringLiteral("OK"), QStringLiteral("Overlay"), QStringLiteral("Name"), QStringLiteral("✓ Filter: %1"), QStringLiteral("Status"),
+        QStringLiteral("Administrator"), QStringLiteral("Information"), QStringLiteral("System"), QStringLiteral("Version %1"), QStringLiteral("Desktop"),
+        QStringLiteral("Downloads"), QStringLiteral("Partition"), QStringLiteral("Partition %1")}},
       {QStringLiteral("es"), {QStringLiteral("No"), QStringLiteral("Editable"), QStringLiteral("Error")}},
       {QStringLiteral("fr"),
-       {QStringLiteral("OK"), QStringLiteral("Type"), QStringLiteral("Overlay"), QStringLiteral("Message"), QStringLiteral("Architecture"),
-        QStringLiteral("Information"), QStringLiteral("Module"), QStringLiteral("Version %1"), QStringLiteral("Documents")}},
+       {QStringLiteral("OK"), QStringLiteral("Type"), QStringLiteral("Message"), QStringLiteral("Architecture"), QStringLiteral("Information"),
+        QStringLiteral("Module"), QStringLiteral("Version %1"), QStringLiteral("Documents"), QStringLiteral("Partition"), QStringLiteral("Partition %1")}},
       {QStringLiteral("id"),
-       {QStringLiteral("OK"), QStringLiteral("File…"), QStringLiteral("Folder…"), QStringLiteral("Filter"), QStringLiteral("Overlay"), QStringLiteral("Data"),
-        QStringLiteral("(Default)"), QStringLiteral("Log"), QStringLiteral("✓ Filter: %1"), QStringLiteral("Tag"), QStringLiteral("Status"),
-        QStringLiteral("Detail"), QStringLiteral("Administrator"), QStringLiteral("Debug"), QStringLiteral("Disk"), QStringLiteral("File"),
-        QStringLiteral("Folder"), QStringLiteral("Target"), QStringLiteral("Desktop")}},
+       {QStringLiteral("OK"), QStringLiteral("File…"), QStringLiteral("Folder…"), QStringLiteral("Overlay"), QStringLiteral("Data"),
+        QStringLiteral("(Default)"), QStringLiteral("Log"), QStringLiteral("✓ Filter: %1"), QStringLiteral("Status"), QStringLiteral("Administrator"),
+        QStringLiteral("Debug"), QStringLiteral("Disk"), QStringLiteral("File"), QStringLiteral("Folder"), QStringLiteral("Target"),
+        QStringLiteral("Desktop")}},
       {QStringLiteral("it"),
-       {QStringLiteral("OK"), QStringLiteral("No"), QStringLiteral("File…"), QStringLiteral("Overlay"), QStringLiteral("Tag"), QStringLiteral("Account"),
-        QStringLiteral("Debug"), QStringLiteral("File"), QStringLiteral("Desktop")}},
+       {QStringLiteral("OK"), QStringLiteral("No"), QStringLiteral("File…"), QStringLiteral("Overlay"), QStringLiteral("Account"), QStringLiteral("Debug"),
+        QStringLiteral("File"), QStringLiteral("Desktop")}},
       {QStringLiteral("ja"), {QStringLiteral("OK")}},
       {QStringLiteral("nl"),
-       {QStringLiteral("OK"), QStringLiteral("Filter"), QStringLiteral("Type"), QStringLiteral("Overlay"), QStringLiteral("✓ Filter: %1"),
-        QStringLiteral("Tag"), QStringLiteral("Status"), QStringLiteral("Background Intelligent Transfer Service (BITS)"), QStringLiteral("── Batch %1 ──"),
-        QStringLiteral("%1 items"), QStringLiteral("%1 items · %2"), QStringLiteral("%1 records"), QStringLiteral("Account"), QStringLiteral("Module"),
-        QStringLiteral("Downloads")}},
+       {QStringLiteral("OK"), QStringLiteral("Type"), QStringLiteral("Overlay"), QStringLiteral("✓ Filter: %1"), QStringLiteral("Status"),
+        QStringLiteral("Background Intelligent Transfer Service (BITS)"), QStringLiteral("── Batch %1 ──"), QStringLiteral("%1 items"),
+        QStringLiteral("%1 items · %2"), QStringLiteral("%1 records"), QStringLiteral("Account"), QStringLiteral("Module"), QStringLiteral("Downloads")}},
       {QStringLiteral("pl"),
-       {QStringLiteral("OK"), QStringLiteral("Folder…"), QStringLiteral("Tag"), QStringLiteral("Administrator"), QStringLiteral("Folder"),
-        QStringLiteral("System")}},
-      {QStringLiteral("pt_BR"), {QStringLiteral("OK"), QStringLiteral("Log"), QStringLiteral("Tag"), QStringLiteral("Status"), QStringLiteral("Downloads")}},
-      {QStringLiteral("pt_PT"), {QStringLiteral("OK"), QStringLiteral("Tag"), QStringLiteral("Status")}},
+       {QStringLiteral("OK"), QStringLiteral("Folder…"), QStringLiteral("Administrator"), QStringLiteral("Folder"), QStringLiteral("System")}},
+      {QStringLiteral("pt_BR"), {QStringLiteral("OK"), QStringLiteral("Log"), QStringLiteral("Status"), QStringLiteral("Downloads")}},
+      {QStringLiteral("pt_PT"), {QStringLiteral("OK"), QStringLiteral("Status")}},
       {QStringLiteral("vi"), {QStringLiteral("OK")}},
       {QStringLiteral("tr"), {QStringLiteral("Disk")}},
   };
@@ -258,26 +310,23 @@ QStringList checkMessage(const MessageKey& key, const TranslationMessage& messag
                                     QStringLiteral("ignoreallfailures")};
   for (const auto& translated : message.forms) {
     if (translated.trimmed().isEmpty()) problems.append(QStringLiteral("empty translation"));
+    if (translated.count(QChar::ReplacementCharacter) > source.count(QChar::ReplacementCharacter) || translated.count(u'?') > source.count(u'?'))
+      problems.append(QStringLiteral("possible character encoding loss"));
     if (placeholders(source) != placeholders(translated)) problems.append(QStringLiteral("placeholder mismatch"));
-    const bool command = source.startsWith(QLatin1String("uwfmgr filter enable\n"));
-    if (command) {
-      if (source != translated) problems.append(QStringLiteral("modified command"));
-    } else if (translated == source && !identicalIsValid(source, language, qtSupplement)) {
+    if (translated == source && !identicalIsValid(source, language, qtSupplement)) {
       problems.append(QStringLiteral("unreviewed untranslated source"));
     }
     for (const auto& literal : literals)
       if (source.contains(literal) && !translated.contains(literal)) problems.append(QStringLiteral("modified technical literal: ") + literal);
     if (source.startsWith(QLatin1String("Text files (")) || source.startsWith(QLatin1String("Command files (")) ||
-        source.startsWith(QLatin1String("All files (")) ||
-        (qtSupplement && source.endsWith(QLatin1String("(*)")))) {
+        source.startsWith(QLatin1String("All files (")) || (qtSupplement && source.endsWith(QLatin1String("(*)")))) {
       try {
         if (filterPatterns(source) != filterPatterns(translated)) problems.append(QStringLiteral("modified file filter"));
       } catch (const std::exception& error) {
         problems.append(QString::fromUtf8(error.what()));
       }
     }
-    if (source.contains(QLatin1String("<p")) || source.contains(QLatin1String("<b")) || source.contains(QLatin1String("<span")) ||
-        (qtSupplement && source.contains(u'<'))) {
+    if (containsMarkup(source) || containsMarkup(translated) || (qtSupplement && source.contains(u'<'))) {
       try {
         if (markupStructure(source) != markupStructure(translated)) problems.append(QStringLiteral("modified rich-text structure or attributes"));
       } catch (const std::exception& error) {
@@ -299,11 +348,10 @@ QStringList checkCatalog(const TranslationCatalog& catalog, const TranslationCat
     if (!reference.messages.contains(key)) problems.append(QStringLiteral("unexpected message: ") + std::get<1>(key));
     if (reference.messages.contains(key) && reference.messages.at(key).plural != message.plural)
       problems.append(QStringLiteral("changed numerus: ") + std::get<1>(key));
-    for (const auto messageProblems = checkMessage(key, message, language, qtSupplement); const auto& problem : messageProblems)
+    for (auto messageProblems = checkMessage(key, message, language, qtSupplement); const auto& problem : std::as_const(messageProblems))
       problems.append(std::get<1>(key).left(90) + QStringLiteral(": ") + problem);
   }
   return problems;
 }
-
 
 }  // namespace uwf::test::tools
