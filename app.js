@@ -1,468 +1,391 @@
-"use strict";
+(() => {
+  "use strict";
 
-const translations = {
-  en: {
-    pageTitle: "UWF Manager — Windows Unified Write Filter management",
-    pageDescription: "A modern graphical interface for Windows Unified Write Filter, with staged changes, validation, and overlay monitoring.",
-    skip: "Skip to content",
-    homeAria: "UWF Manager home",
-    languageLabel: "Language",
-    sourceAria: "View the GitHub repository",
+  const root = document.documentElement;
+  const languageButton = document.querySelector("#language-toggle");
+  const themeButton = document.querySelector("#theme-toggle");
+  const menuButton = document.querySelector("#menu-toggle");
+  const mobileNav = document.querySelector("#mobile-nav");
+  const dialog = document.querySelector("#screenshot-dialog");
+  const dialogImage = document.querySelector("#dialog-image");
+  const dialogCaption = document.querySelector("#dialog-caption");
+  const dialogClose = document.querySelector("#dialog-close");
+
+  // English stays in the HTML, so content edits have a single source of truth.
+  const english = {};
+  document.querySelectorAll("[data-i18n]").forEach((element) => {
+    english[element.dataset.i18n] = element.textContent;
+  });
+  document.querySelectorAll("[data-i18n-aria]").forEach((element) => {
+    english[element.dataset.i18nAria] = element.getAttribute("aria-label");
+  });
+  Object.assign(english, {
+    pageTitle: document.title,
+    pageDescription: document.querySelector('meta[name="description"]').content,
+    openNavigation: menuButton.getAttribute("aria-label"),
+    closeNavigation: "Close navigation",
+    switchChinese: languageButton.getAttribute("aria-label"),
+    switchEnglish: "Switch to English",
     themeLight: "Switch to light theme",
-    themeDark: "Switch to dark theme",
-    heroLabel: "Windows Unified Write Filter",
-    heroTitle: "A modern interface for Windows UWF",
-    heroSummary: "Bring live state, next-session configuration, staged changes, validation, and overlay monitoring into one workspace—without assembling command output by hand.",
-    download: "Download latest release",
-    source: "Source code",
-    documentationAria: "Open Microsoft UWF documentation",
-    heroMeta: "Windows 10 / 11 · GPL-3.0",
-    galleryLabel: "Product screenshots",
-    previousScreenshot: "Previous screenshot",
-    nextScreenshot: "Next screenshot",
-    closeScreenshot: "Close screenshot",
-    lightboxLabel: "Screenshot viewer",
-    galleryAlt1: "UWF Manager main workspace",
-    galleryAlt2: "Overlay files dialog",
-    galleryAlt3: "Registry picker dialog",
-    galleryAlt4: "About UWF Manager dialog",
-    galleryAlt5: "Review and apply changes dialog",
-    galleryAlt6: "UWF status shown in the Windows taskbar",
-    galleryTitle1: "Main management window",
-    galleryText1: "Volume, exclusion, filter, and overlay configuration.",
-    galleryTitle2: "Overlay file browser",
-    galleryText2: "Paged inspection, filtering, export, and commit actions.",
-    galleryTitle3: "Registry selector",
-    galleryText3: "Selection of registry keys and named values.",
-    galleryTitle4: "Version and license information",
-    galleryText4: "Project version, links, acknowledgements, and license.",
-    galleryTitle5: "Pending-change review",
-    galleryText5: "Planned operations and equivalent uwfmgr commands.",
-    galleryTitle6: "Taskbar status",
-    galleryText6: "Filter state and overlay usage in the Windows taskbar.",
-    featuresTitle: "Core capabilities",
-    featureStatusTitle: "Unified operational view",
-    featureStatusText: "Correlate live state, next-session configuration, pending edits, and overlay usage; keep key status available from the taskbar or floating hub.",
-    featureVolumeTitle: "Stage, validate, review",
-    featureVolumeText: "Stage all changes without writing to the system immediately. Validate constraints and review each operation before applying the batch as a whole.",
-    featureChangeTitle: "Commit changes at any time",
-    featureChangeText: "Use the file and registry selectors to prepare commit operations. Confirm commit or deletion scope and capability limits before execution, then receive an itemized result.",
-    featureToolsTitle: "Single-file, portable operation",
-    featureToolsText: "Distributed as a single executable and creates no configuration files. Only the optional file-staging feature stores its path list in the registry; runtime logs remain in memory and are discarded on exit. The application itself initiates no internet connections.",
-    crashExceptionLabel: "Crash diagnostics",
-    crashExceptionText: "UWF Manager does not create files to persist its own state during normal operation. In the unlikely event that an unhandled exception terminates the program, it writes a .txt crash report and a .dmp minidump beside the executable for diagnostics. If that directory is not writable, it uses UWF-CrashDumps under the Windows temporary directory.",
-    requirementsTitle: "System requirements",
-    requirementsCompatibilityLabel: "Compatibility mode",
-    requirementsCompatibilityText: "The editions below are Microsoft's officially supported configurations. If the UWF driver and WMI provider were installed by other means, UWF Manager still runs in compatibility mode and exposes the capabilities it can verify.",
-    requirementSystemLabel: "Windows",
-    requirementSystemValue: "Windows 10 or 11 Enterprise, Education, or IoT Enterprise, including LTSC releases",
-    requirementFeatureLabel: "Feature",
-    requirementFeatureValue: "Windows Unified Write Filter optional feature installed",
-    requirementPermissionLabel: "Permission",
-    requirementPermissionValue: "Administrator privileges required",
-    poweredByQt: "Powered by Qt",
-    releases: "Releases"
-  },
-  "zh-CN": {
-    pageTitle: "UWF Manager — Windows 统一写入筛选器管理工具",
-    pageDescription: "现代化 Windows 统一写入筛选器图形界面，支持变更暂存、约束校验与覆盖层监控。",
+    themeDark: themeButton.getAttribute("aria-label"),
+  });
+
+  const chinese = {
     skip: "跳到正文",
-    homeAria: "UWF Manager 主页",
-    languageLabel: "语言",
-    sourceAria: "查看 GitHub 仓库",
+    home: "UWF Manager 主页",
+    navigation: "主导航",
+    navConfiguration: "配置管理",
+    navPersistence: "持久化",
+    navRequirements: "系统要求",
+    navDownload: "下载",
+    mobileNavigation: "移动导航",
+    productPosition: "Windows 统一写入筛选器管理工具",
+    heroDescription:
+      "管理卷保护、覆盖层与排除项，分别查看当前会话状态和下次会话配置。",
+    downloadWindows: "下载 Windows 版本",
+    viewSource: "查看源码",
+    productFacts: "产品信息",
+    specPlatform: "平台",
+    specInterfaces: "接口",
+    specLanguages: "界面语言",
+    specLicense: "开源许可",
+    enlargeScreenshot: "放大管理工作区截图",
+    workspaceAlt: "UWF Manager 管理工作区，展示当前会话和下次会话的保护设置",
+    workspaceCaption: "界面使用示例配置；点击截图可放大查看。",
+    featureNavigation: "功能分区",
+    navWorkflow: "导入与审阅",
+    navMonitoring: "运行监控",
+    configurationTitle: "覆盖层配置与 HORM",
+    configurationDescription: "配置覆盖层、检查文件，并验证 HORM 启用条件。",
+    overlayTitle: "覆盖层设置",
+    overlayDescription:
+      "设置覆盖层类型、容量、占用阈值、持久化选项及支持的运行模式。",
+    enlargeOverlay: "放大覆盖层设置截图",
+    overlayAlt: "UWF Manager 的高级覆盖层设置",
+    overlayFilesTitle: "覆盖层文件浏览",
+    overlayFilesDescription:
+      "浏览并筛选覆盖层文件、导出列表，并使用可用的提交操作。",
+    enlargeOverlayFiles: "放大覆盖层文件浏览截图",
+    overlayFilesAlt: "覆盖层文件浏览器，包含路径筛选、文件详情和列表导出操作",
+    hormTitle: "HORM：一次休眠，多次恢复",
+    hormDescription:
+      "在后续启动时恢复至同一休眠状态。检查 HORM 前置条件，将启用或禁用操作加入配置草稿，经审阅后应用。",
+    hormPreparation:
+      "检查项目包括当前 UWF 保护、RAM 只读媒体配置、S4 完整休眠，以及符合 UWF 条件的已挂载固定卷保护。启用 HORM 后，仍需休眠一次以保存基准状态。",
+    hormRestrictions:
+      "HORM 开启时，配置修改、单项提交、自动暂存提交和整卷提交均不可用。维护前需关闭 HORM 并重启。",
+    enlargeHorm: "放大 HORM 前置条件检查截图",
+    hormAlt:
+      "HORM 配置对话框，显示 UWF、RAM 只读媒体模式、完整休眠与固定卷保护检查",
+    workflowTitle: "配置导入与审阅",
+    workflowDescription:
+      "准备配置草稿、审阅计划操作，然后应用变更并查看执行结果。",
+    importTitle: "命令导入",
+    importDescription:
+      "将支持的 uwfmgr 命令导入配置草稿并查看校验结果。导入不会直接执行命令。",
+    enlargeImport: "放大命令导入截图",
+    importAlt: "命令导入对话框，包含 uwfmgr 命令及逐项校验结果",
+    reviewTitle: "配置审阅",
+    reviewDescription:
+      "应用配置前，审阅待应用变更、执行条件及可导出的 uwfmgr 命令。",
+    enlargeReview: "放大变更审阅截图",
+    reviewAlt: "应用变更之前审阅配置计划",
+    persistenceTitle: "文件暂存与增强模式",
+    persistenceDescription:
+      "维护待提交文件列表，并选择关机或重启前的提交方式。",
+    stagingTitle: "文件暂存",
+    stagingDescription: "暂存文件和目录，在通过应用发起安全关机或重启前提交。",
+    enlargeStaging: "放大文件暂存截图",
+    stagingAlt: "文件暂存列表，包含已保存路径、状态和文件管理操作",
+    enhancedTitle: "可选的增强模式",
+    enhancedDescription:
+      "通过 Windows 服务，在系统关机或重启前提交符合条件的暂存文件。",
+    enlargeEnhanced: "放大增强模式截图",
+    enhancedAlt: "增强模式对话框，显示 Windows 服务状态和自动提交设置",
+    commitTitle: "选择性提交",
+    commitDescription: "提交选定的文件或注册表项目，并逐项查看执行结果。",
+    commitConditions:
+      "可用操作取决于当前保护状态和 UWF 配置。执行前请确认所选范围。",
+    enlargeCommit: "放大选择性提交截图",
+    commitAlt: "提交确认对话框，显示所选范围和准备结果",
+    monitoringTitle: "运行状态",
+    hubDescription: "在任务栏或浮动面板中查看筛选器状态与覆盖层占用。",
+    enlargeHub: "放大浮动状态面板截图",
+    hubAlt: "浮动面板显示 UWF 筛选器状态和覆盖层占用",
+    requirementsTitle: "系统要求",
+    osLabel: "操作系统",
+    osValue:
+      "Windows 10 / 11 企业版、教育版或 IoT 企业版，包括适用的 LTSC 版本。",
+    featureLabel: "Windows 功能",
+    featureValue: "已安装并启用 Windows 可选功能中的统一写入筛选器。",
+    permissionsLabel: "权限",
+    permissionsValue: "图形界面及受保护的命令行操作需要管理员权限。",
+    logsTitle: "运行日志",
+    logsDescription: "查看带时间戳的日志条目，检查操作结果并排查问题。",
+    enlargeLogs: "放大运行日志截图",
+    logsAlt: "运行日志查看器，包含带时间戳的消息和诊断信息",
+    factOpen: "GPL-3.0 开源许可",
+    footerContact: "联系作者",
+    projectLinks: "项目链接",
+    footerSource: "源代码",
+    footerIssues: "问题反馈",
+    footerReleases: "发行版本",
+    screenshotDialog: "产品截图",
+    closeScreenshot: "关闭截图",
+    pageTitle: "UWF Manager — Windows 统一写入筛选器管理工具",
+    pageDescription:
+      "Windows 统一写入筛选器配置与管理工具，支持卷保护、覆盖层、排除项和变更审阅。",
+    openNavigation: "打开导航",
+    closeNavigation: "关闭导航",
+    switchChinese: "切换到中文",
+    switchEnglish: "切换到英语",
     themeLight: "切换到浅色主题",
     themeDark: "切换到深色主题",
-    heroLabel: "Windows 统一写入筛选器",
-    heroTitle: "现代化 Windows UWF 图形界面",
-    heroSummary: "在一个工作区内统一查看当前状态、下次会话配置和待应用变更，完成约束校验与覆盖层监控，无需手工拼接和核对命令输出。",
-    download: "下载最新版本",
-    source: "源代码",
-    documentationAria: "打开微软 UWF 官方文档",
-    heroMeta: "Windows 10 / 11 · GPL-3.0",
-    galleryLabel: "产品截图",
-    previousScreenshot: "上一张截图",
-    nextScreenshot: "下一张截图",
-    closeScreenshot: "关闭截图",
-    lightboxLabel: "截图查看器",
-    galleryAlt1: "UWF Manager 主界面",
-    galleryAlt2: "覆盖层文件对话框",
-    galleryAlt3: "注册表选择对话框",
-    galleryAlt4: "UWF Manager 关于对话框",
-    galleryAlt5: "审阅并应用变更对话框",
-    galleryAlt6: "Windows 任务栏中的 UWF 状态",
-    galleryTitle1: "主管理界面",
-    galleryText1: "卷、排除项、筛选器和覆盖层配置。",
-    galleryTitle2: "覆盖层文件浏览器",
-    galleryText2: "分页查看、筛选、导出和提交操作。",
-    galleryTitle3: "注册表选择器",
-    galleryText3: "选择注册表键和命名值。",
-    galleryTitle4: "版本与许可证信息",
-    galleryText4: "项目版本、链接、致谢和许可证。",
-    galleryTitle5: "待应用变更审阅",
-    galleryText5: "计划执行的操作和对应 uwfmgr 命令。",
-    galleryTitle6: "任务栏状态",
-    galleryText6: "显示筛选器状态和覆盖层占用量。",
-    featuresTitle: "核心功能",
-    featureStatusTitle: "统一运行视图",
-    featureStatusText: "在同一界面关联当前状态、下次会话配置、待应用变更与覆盖层占用，并通过任务栏或浮动 HUB 持续查看关键状态。",
-    featureVolumeTitle: "暂存、校验、预审",
-    featureVolumeText: "先暂存所有变更，不立即写入系统；待校验约束并逐项核验后整体生效。",
-    featureChangeTitle: "随时提交改动",
-    featureChangeText: "通过文件（注册表）选择器进行提交变更操作，执行前会确认提交或删除的范围及能力限制，执行后返回逐项执行结果。",
-    featureToolsTitle: "单文件、绿色运行",
-    featureToolsText: "以单个可执行文件分发，不创建配置文件。仅在使用文件暂存功能时将路径列表保存在注册表中；运行日志仅保存在内存中，退出即清除；程序自身不发起任何互联网连接。",
-    crashExceptionLabel: "崩溃诊断文件说明",
-    crashExceptionText: "UWF Manager 正常运行时不会为保存自身状态创建文件。仅在极少数程序因未处理异常而终止的情况下，才会在程序目录生成 .txt 崩溃报告和 .dmp 小型转储，用于故障定位。若程序目录不可写，则保存到 Windows 临时目录中的 UWF-CrashDumps 文件夹。",
-    requirementsTitle: "运行要求",
-    requirementsCompatibilityLabel: "兼容模式说明",
-    requirementsCompatibilityText: "下列版本为 Microsoft 官方支持范围。若通过其他方式安装了 UWF 驱动及 WMI 提供程序，UWF Manager 仍会以兼容模式运行，并根据实际探测结果提供可用功能。",
-    requirementSystemLabel: "系统",
-    requirementSystemValue: "Windows 10 或 11 企业版、教育版或 IoT 企业版（包括 LTSC 版本）",
-    requirementFeatureLabel: "功能",
-    requirementFeatureValue: "已安装 Windows UWF 可选组件",
-    requirementPermissionLabel: "权限",
-    requirementPermissionValue: "运行程序需要管理员权限",
-    poweredByQt: "Powered by Qt",
-    releases: "发布版本"
+  };
+
+  const screenshots = [...document.querySelectorAll("img[data-screenshot]")];
+  const views = {};
+  for (const image of screenshots) {
+    views[image.dataset.screenshot] = {
+      width: Number(image.getAttribute("width")),
+      height: Number(image.getAttribute("height")),
+      caption: image.dataset.caption,
+      altKey: image.dataset.i18nAlt,
+      radius: Number(image.dataset.radius ?? 20),
+      inset: Number(image.dataset.inset ?? 0),
+    };
+    english[image.dataset.i18nAlt] = image.alt;
   }
-};
 
-const languageButtons = [...document.querySelectorAll("[data-language]")];
-const themeButton = document.querySelector("#theme-toggle");
-const galleryTrack = document.querySelector("#gallery-track");
-const galleryItems = [...document.querySelectorAll("[data-gallery-item]")];
-const galleryCurrent = document.querySelector("#gallery-current");
-const galleryCaptionTitle = document.querySelector("#gallery-caption-title");
-const galleryCaptionText = document.querySelector("#gallery-caption-text");
-const galleryPrevious = document.querySelector("#gallery-prev");
-const galleryNext = document.querySelector("#gallery-next");
-const lightbox = document.querySelector("#lightbox");
-const lightboxImage = document.querySelector("#lightbox-image");
-const lightboxCaption = document.querySelector("#lightbox-caption");
-const infoTips = [...document.querySelectorAll(".info-tip")];
-
-let activeGalleryIndex = 0;
-let lightboxIndex = 0;
-let activeLanguage = "en";
-let activeTheme = null;
-let galleryWheelLocked = false;
-let galleryScrollFrame = null;
-let lastLightboxWheelTime = Number.NEGATIVE_INFINITY;
-
-const systemColorScheme = window.matchMedia("(prefers-color-scheme: dark)");
-const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-const themeIcons = {
-  light: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/>',
-  dark: '<path d="M20.5 14.4A8 8 0 0 1 9.6 3.5 8.5 8.5 0 1 0 20.5 14.4Z"/>'
-};
-
-function normalizeLanguage(language) {
-  return language.toLowerCase().startsWith("zh") ? "zh-CN" : "en";
-}
-
-function readPreference(key) {
-  try {
-    return localStorage.getItem(key);
-  } catch {
-    return null;
+  function readPreference(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
   }
-}
 
-function writePreference(key, value) {
-  try {
-    localStorage.setItem(key, value);
-  } catch {
-    // 本地存储不可用时，选择仅在当前页面生效。
+  function savePreference(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* The page also works without storage access. */
+    }
   }
-}
 
-function updateThemeButton() {
-  if (!themeButton) return;
-  const targetTheme = effectiveTheme() === "dark" ? "light" : "dark";
-  const labelKey = targetTheme === "light" ? "themeLight" : "themeDark";
-  const label = translations[activeLanguage][labelKey];
-  themeButton.setAttribute("aria-label", label);
-  themeButton.setAttribute("title", label);
-  themeButton.querySelector("svg").innerHTML = themeIcons[targetTheme];
-}
+  const savedLanguage = readPreference("uwf-site-language");
+  const savedTheme = readPreference("uwf-site-theme");
+  let language =
+    savedLanguage === "en" || savedLanguage === "zh-CN"
+      ? savedLanguage
+      : root.lang === "zh-CN"
+        ? "zh-CN"
+        : "en";
+  let theme =
+    savedTheme === "light" || savedTheme === "dark"
+      ? savedTheme
+      : root.dataset.theme === "dark"
+        ? "dark"
+        : "light";
+  let dialogView = "workspace";
+  let dialogOpener = null;
+  let previousOverflow = "";
 
-function effectiveTheme() {
-  return activeTheme ?? (systemColorScheme.matches ? "dark" : "light");
-}
+  function text(key) {
+    return language === "zh-CN" ? (chinese[key] ?? english[key]) : english[key];
+  }
 
-function updateThemeColor() {
-  const color = getComputedStyle(document.documentElement).getPropertyValue("--page").trim();
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", color);
-}
+  function screenshotPath(view) {
+    return `res/screenshots/${view}.${language === "zh-CN" ? "zh" : "en"}.${theme}.png`;
+  }
 
-function setTheme(theme, persist = true) {
-  activeTheme = theme === "light" || theme === "dark" ? theme : null;
-  if (activeTheme) document.documentElement.dataset.theme = activeTheme;
-  else delete document.documentElement.dataset.theme;
-  updateThemeButton();
-  syncGalleryImages();
-  if (persist && activeTheme) writePreference("uwf-site-theme", activeTheme);
-  requestAnimationFrame(updateThemeColor);
-}
+  function updateScreenshot(image, view) {
+    image.dataset.screenshot = view;
+    const details = views[view];
+    const source = screenshotPath(view);
+    const changed = image.getAttribute("src") !== source;
+    if (changed) image.src = source;
+    setScreenshotSize(
+      image,
+      (!changed && image.naturalWidth) || details.width,
+      (!changed && image.naturalHeight) || details.height,
+    );
+    image.style.setProperty("--capture-radius", details.radius);
+    image.style.setProperty("--capture-inset", details.inset);
+    image.alt = text(details.altKey);
+  }
 
-function syncGalleryPresentation() {
-  const item = galleryItems[activeGalleryIndex];
-  if (!item) return;
-  const image = item.querySelector("img");
-  const width = Number(image?.getAttribute("width"));
-  const height = Number(image?.getAttribute("height"));
-  if (galleryTrack && width > 0 && height > 0) galleryTrack.style.aspectRatio = `${width} / ${height}`;
-  galleryCurrent.textContent = String(activeGalleryIndex + 1);
-  galleryCaptionTitle.textContent = item.querySelector("figcaption strong")?.textContent ?? "";
-  galleryCaptionText.textContent = item.querySelector("figcaption p")?.textContent ?? "";
-  galleryPrevious.disabled = activeGalleryIndex === 0;
-  galleryNext.disabled = activeGalleryIndex === galleryItems.length - 1;
-}
+  function setScreenshotSize(image, width, height) {
+    image.width = width;
+    image.height = height;
+    image.style.setProperty("--capture-width", width);
+    image.style.setProperty("--capture-height", height);
+  }
 
-function syncGalleryImages() {
-  const languageKey = activeLanguage === "zh-CN" ? "Zh" : "En";
-  const variant = languageKey + (effectiveTheme() === "light" ? "Light" : "");
-  document.querySelectorAll("[data-src-en][data-src-zh]").forEach((image) => {
-    image.src = image.dataset[`src${variant}`];
-    image.setAttribute("width", image.dataset[`width${variant}`]);
-    image.setAttribute("height", image.dataset[`height${variant}`]);
+  function updateWindowPair(pair) {
+    const columns = [...pair.querySelectorAll("img[data-screenshot]")].map(
+      (image) =>
+        `${(Number(image.getAttribute("width")) / Number(image.getAttribute("height"))).toFixed(6)}fr`,
+    );
+    pair
+      .closest(".feature-section")
+      .style.setProperty("--window-columns", columns.join(" "));
+  }
+
+  function updateScreenshots() {
+    screenshots.forEach((image) =>
+      updateScreenshot(image, image.dataset.screenshot),
+    );
+    document.querySelectorAll(".window-pair").forEach(updateWindowPair);
+    if (dialog.open) {
+      updateScreenshot(dialogImage, dialogView);
+      dialogCaption.textContent = text(views[dialogView].caption);
+    }
+  }
+
+  function updateControls() {
+    languageButton.textContent = language === "zh-CN" ? "EN" : "中文";
+    languageButton.lang = language === "zh-CN" ? "en" : "zh-CN";
+    languageButton.setAttribute(
+      "aria-label",
+      text(language === "zh-CN" ? "switchEnglish" : "switchChinese"),
+    );
+    themeButton.setAttribute(
+      "aria-label",
+      text(theme === "dark" ? "themeLight" : "themeDark"),
+    );
+    menuButton.setAttribute(
+      "aria-label",
+      text(mobileNav.hidden ? "openNavigation" : "closeNavigation"),
+    );
+  }
+
+  function updateMetadata() {
+    document.title = text("pageTitle");
+    const imageUrl = new URL(
+      screenshotPath("workspace"),
+      document.querySelector('link[rel="canonical"]').href,
+    ).href;
+    const metadata = {
+      'meta[name="description"]': text("pageDescription"),
+      'meta[name="theme-color"]': getComputedStyle(root)
+        .getPropertyValue("--background")
+        .trim(),
+      'meta[property="og:title"]': text("pageTitle"),
+      'meta[property="og:description"]': text("pageDescription"),
+      'meta[property="og:locale"]': language === "zh-CN" ? "zh_CN" : "en_US",
+      'meta[property="og:locale:alternate"]':
+        language === "zh-CN" ? "en_US" : "zh_CN",
+      'meta[property="og:image"]': imageUrl,
+      'meta[property="og:image:alt"]': text(views.workspace.altKey),
+      'meta[name="twitter:title"]': text("pageTitle"),
+      'meta[name="twitter:description"]': text("pageDescription"),
+      'meta[name="twitter:image"]': imageUrl,
+    };
+    for (const [selector, value] of Object.entries(metadata)) {
+      document.querySelector(selector).setAttribute("content", value);
+    }
+  }
+
+  function applyLanguage() {
+    root.lang = language;
+    document.querySelectorAll("[data-i18n]").forEach((element) => {
+      element.textContent = text(element.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-aria]").forEach((element) => {
+      element.setAttribute("aria-label", text(element.dataset.i18nAria));
+    });
+    updateControls();
+    updateScreenshots();
+    updateMetadata();
+  }
+
+  function setMenuOpen(open, returnFocus = false) {
+    mobileNav.hidden = !open;
+    menuButton.setAttribute("aria-expanded", String(open));
+    menuButton
+      .querySelector("use")
+      .setAttribute("href", open ? "#i-close" : "#i-menu");
+    updateControls();
+    if (returnFocus) menuButton.focus();
+  }
+
+  languageButton.addEventListener("click", () => {
+    language = language === "en" ? "zh-CN" : "en";
+    savePreference("uwf-site-language", language);
+    applyLanguage();
   });
-  syncGalleryPresentation();
-  if (lightbox?.open) updateLightbox(lightboxIndex);
-}
-
-function setLanguage(language, persist = true) {
-  activeLanguage = normalizeLanguage(language);
-  const copy = translations[activeLanguage];
-
-  document.documentElement.lang = activeLanguage;
-  document.title = copy.pageTitle;
-  document.querySelector('meta[name="description"]')?.setAttribute("content", copy.pageDescription);
-  document.querySelector('meta[property="og:title"]')?.setAttribute("content", copy.pageTitle);
-  document.querySelector('meta[property="og:description"]')?.setAttribute("content", copy.pageDescription);
-  document.querySelector('meta[property="og:locale"]')?.setAttribute("content", activeLanguage === "zh-CN" ? "zh_CN" : "en_US");
-  document.querySelector('meta[property="og:locale:alternate"]')?.setAttribute("content", activeLanguage === "zh-CN" ? "en_US" : "zh_CN");
-  document.querySelector('meta[property="og:image"]')?.setAttribute("content", activeLanguage === "zh-CN"
-    ? "https://async.page/UWF-Manager/res/imgs/1.cn.png"
-    : "https://async.page/UWF-Manager/res/imgs/1.en.png");
-  document.querySelector('meta[property="og:image:alt"]')?.setAttribute("content", copy.galleryAlt1);
-  document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", copy.pageTitle);
-  document.querySelector('meta[name="twitter:description"]')?.setAttribute("content", copy.pageDescription);
-  document.querySelector('meta[name="twitter:image"]')?.setAttribute("content", activeLanguage === "zh-CN"
-    ? "https://async.page/UWF-Manager/res/imgs/1.cn.png"
-    : "https://async.page/UWF-Manager/res/imgs/1.en.png");
-  document.querySelector('meta[name="twitter:image:alt"]')?.setAttribute("content", copy.galleryAlt1);
-
-  document.querySelectorAll("[data-i18n]").forEach((element) => {
-    const value = copy[element.dataset.i18n];
-    if (value !== undefined) element.textContent = value;
+  themeButton.addEventListener("click", () => {
+    theme = theme === "dark" ? "light" : "dark";
+    root.dataset.theme = theme;
+    savePreference("uwf-site-theme", theme);
+    updateControls();
+    updateScreenshots();
+    updateMetadata();
   });
 
-  document.querySelectorAll("[data-i18n-aria]").forEach((element) => {
-    const value = copy[element.dataset.i18nAria];
-    if (value !== undefined) element.setAttribute("aria-label", value);
+  menuButton.addEventListener("click", () => setMenuOpen(mobileNav.hidden));
+  mobileNav.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => setMenuOpen(false));
   });
-
-  document.querySelectorAll("[data-i18n-title]").forEach((element) => {
-    const value = copy[element.dataset.i18nTitle];
-    if (value !== undefined) element.setAttribute("title", value);
+  document.addEventListener("click", (event) => {
+    if (
+      !mobileNav.hidden &&
+      !mobileNav.contains(event.target) &&
+      !menuButton.contains(event.target)
+    )
+      setMenuOpen(false);
   });
-
-  document.querySelectorAll("[data-i18n-alt]").forEach((element) => {
-    const value = copy[element.dataset.i18nAlt];
-    if (value !== undefined) element.setAttribute("alt", value);
-  });
-
-  syncGalleryImages();
-
-  document.querySelectorAll("[data-href-en][data-href-zh]").forEach((link) => {
-    link.href = activeLanguage === "zh-CN" ? link.dataset.hrefZh : link.dataset.hrefEn;
-  });
-
-  languageButtons.forEach((button) => {
-    const selected = button.dataset.language === activeLanguage;
-    button.classList.toggle("active", selected);
-    button.setAttribute("aria-pressed", String(selected));
-  });
-
-  updateThemeButton();
-  if (persist) writePreference("uwf-site-language", activeLanguage);
-}
-
-function scrollToGalleryItem(index, behavior = reducedMotion.matches ? "auto" : "smooth") {
-  const nextIndex = Math.max(0, Math.min(galleryItems.length - 1, index));
-  const item = galleryItems[nextIndex];
-  if (!galleryTrack || !item) return;
-  const left = galleryTrack.scrollLeft + item.getBoundingClientRect().left - galleryTrack.getBoundingClientRect().left;
-  galleryTrack.scrollTo({ left, behavior });
-}
-
-function updateGalleryIndex() {
-  if (!galleryTrack || !galleryItems.length) return;
-  const trackLeft = galleryTrack.getBoundingClientRect().left;
-  let closestDistance = Number.POSITIVE_INFINITY;
-  let closestIndex = 0;
-
-  galleryItems.forEach((item, index) => {
-    const distance = Math.abs(item.getBoundingClientRect().left - trackLeft);
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestIndex = index;
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !mobileNav.hidden && !dialog.open) {
+      event.preventDefault();
+      setMenuOpen(false, true);
     }
   });
-
-  if (closestIndex === activeGalleryIndex) return;
-  activeGalleryIndex = closestIndex;
-  syncGalleryPresentation();
-}
-
-function updateLightbox(index) {
-  const item = galleryItems[index];
-  if (!item) return;
-  const image = item.querySelector("img");
-  const title = item.querySelector("figcaption strong")?.textContent ?? "";
-  const description = item.querySelector("figcaption p")?.textContent ?? "";
-  const sourceChanged = lightboxImage.src !== image.src;
-  lightboxImage.classList.toggle("loading", sourceChanged);
-  lightboxImage.src = image.src;
-  lightboxImage.setAttribute("width", image.getAttribute("width"));
-  lightboxImage.setAttribute("height", image.getAttribute("height"));
-  lightboxImage.alt = image.alt;
-  lightboxCaption.textContent = description ? `${title} — ${description}` : title;
-  if (lightboxImage.complete) lightboxImage.classList.remove("loading");
-}
-
-function openLightbox(index) {
-  if (!lightbox || typeof lightbox.showModal !== "function") return;
-  lightboxIndex = Math.max(0, Math.min(galleryItems.length - 1, index));
-  lastLightboxWheelTime = Number.NEGATIVE_INFINITY;
-  updateLightbox(lightboxIndex);
-  lightbox.showModal();
-}
-
-function moveLightbox(offset) {
-  lightboxIndex = (lightboxIndex + offset + galleryItems.length) % galleryItems.length;
-  updateLightbox(lightboxIndex);
-}
-
-function dominantWheelDelta(event) {
-  const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
-  if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) return delta * 16;
-  if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) return delta * window.innerHeight;
-  return delta;
-}
-
-function commitLightboxSelection() {
-  activeGalleryIndex = lightboxIndex;
-  scrollToGalleryItem(activeGalleryIndex, "auto");
-  syncGalleryPresentation();
-}
-
-languageButtons.forEach((button) => {
-  button.addEventListener("click", () => setLanguage(button.dataset.language));
-});
-
-themeButton?.addEventListener("click", () => {
-  setTheme(effectiveTheme() === "dark" ? "light" : "dark");
-});
-
-galleryPrevious?.addEventListener("click", () => scrollToGalleryItem(activeGalleryIndex - 1));
-galleryNext?.addEventListener("click", () => scrollToGalleryItem(activeGalleryIndex + 1));
-
-galleryTrack?.addEventListener("scroll", () => {
-  if (galleryScrollFrame !== null) return;
-  galleryScrollFrame = requestAnimationFrame(() => {
-    galleryScrollFrame = null;
-    updateGalleryIndex();
+  window.addEventListener("resize", () => {
+    if (!mobileNav.hidden && getComputedStyle(menuButton).display === "none")
+      setMenuOpen(false);
   });
-}, { passive: true });
-galleryTrack?.addEventListener("wheel", (event) => {
-  const delta = dominantWheelDelta(event);
-  if (Math.abs(delta) < 8) return;
 
-  const targetIndex = activeGalleryIndex + (delta > 0 ? 1 : -1);
-  if (targetIndex < 0 || targetIndex >= galleryItems.length) return;
+  for (const image of [...screenshots, dialogImage]) {
+    image.addEventListener("load", () => {
+      setScreenshotSize(image, image.naturalWidth, image.naturalHeight);
+      const pair = image.closest(".window-pair");
+      if (pair) updateWindowPair(pair);
+    });
+  }
 
-  event.preventDefault();
-  if (galleryWheelLocked) return;
-
-  galleryWheelLocked = true;
-  scrollToGalleryItem(targetIndex);
-  window.setTimeout(() => {
-    galleryWheelLocked = false;
-  }, 450);
-}, { passive: false });
-galleryTrack?.addEventListener("keydown", (event) => {
-  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-  event.preventDefault();
-  scrollToGalleryItem(activeGalleryIndex + (event.key === "ArrowRight" ? 1 : -1));
-});
-
-document.querySelectorAll("[data-gallery-open]").forEach((button) => {
-  button.addEventListener("click", () => openLightbox(Number(button.dataset.galleryOpen)));
-});
-
-document.querySelector(".lightbox-close")?.addEventListener("click", () => lightbox.close());
-document.querySelector(".lightbox-prev")?.addEventListener("click", () => moveLightbox(-1));
-document.querySelector(".lightbox-next")?.addEventListener("click", () => moveLightbox(1));
-
-lightboxImage?.addEventListener("load", () => lightboxImage.classList.remove("loading"));
-lightboxImage?.addEventListener("error", () => lightboxImage.classList.remove("loading"));
-
-lightbox?.addEventListener("click", (event) => {
-  if (event.target === lightbox) lightbox.close();
-});
-
-lightbox?.addEventListener("keydown", (event) => {
-  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-  event.preventDefault();
-  moveLightbox(event.key === "ArrowRight" ? 1 : -1);
-});
-
-lightbox?.addEventListener("wheel", (event) => {
-  const delta = dominantWheelDelta(event);
-  if (Math.abs(delta) < 8) return;
-
-  event.preventDefault();
-  const now = performance.now();
-  if (now - lastLightboxWheelTime < 350) return;
-
-  lastLightboxWheelTime = now;
-  moveLightbox(delta > 0 ? 1 : -1);
-}, { passive: false });
-
-lightbox?.addEventListener("close", commitLightboxSelection);
-
-infoTips.forEach((tip) => {
-  tip.addEventListener("focus", () => tip.classList.remove("tooltip-dismissed"));
-  tip.addEventListener("mouseleave", () => tip.classList.remove("tooltip-dismissed"));
-});
-
-document.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape" || lightbox?.open) return;
-  const visibleTips = infoTips.filter((tip) => tip.matches(":hover, :focus"));
-  if (!visibleTips.length) return;
-
-  event.preventDefault();
-  visibleTips.forEach((tip) => {
-    tip.classList.add("tooltip-dismissed");
-    if (tip === document.activeElement) tip.blur();
+  document.querySelectorAll("[data-lightbox]").forEach((button) => {
+    button.addEventListener("click", () => {
+      dialogView = button.dataset.lightbox;
+      dialogOpener = button;
+      updateScreenshot(dialogImage, dialogView);
+      dialogCaption.textContent = text(views[dialogView].caption);
+      dialog.showModal();
+      previousOverflow = root.style.overflow;
+      root.style.overflow = "hidden";
+      dialogClose.focus({ preventScroll: true });
+    });
   });
-});
+  dialogClose.addEventListener("click", () => dialog.close());
+  // Escape and focus containment are supplied by the native modal dialog.
+  dialog.addEventListener("click", (event) => {
+    if (event.target !== dialog) return;
+    const bounds = dialog.getBoundingClientRect();
+    if (
+      event.clientX < bounds.left ||
+      event.clientX > bounds.right ||
+      event.clientY < bounds.top ||
+      event.clientY > bounds.bottom
+    )
+      dialog.close();
+  });
+  dialog.addEventListener("close", () => {
+    root.style.overflow = previousOverflow;
+    if (dialogOpener?.isConnected) dialogOpener.focus({ preventScroll: true });
+    dialogOpener = null;
+  });
 
-window.addEventListener("scroll", () => {
-  document.querySelector(".site-header")?.classList.toggle("scrolled", window.scrollY > 8);
-}, { passive: true });
-
-systemColorScheme.addEventListener("change", () => {
-  if (activeTheme !== null) return;
-  setTheme(null, false);
-});
-
-const savedLanguage = readPreference("uwf-site-language");
-const savedTheme = readPreference("uwf-site-theme");
-const systemLanguage = navigator.languages?.[0] || navigator.language || "en";
-setLanguage(savedLanguage || systemLanguage, Boolean(savedLanguage));
-setTheme(savedTheme, false);
-syncGalleryPresentation();
+  root.dataset.theme = theme;
+  applyLanguage();
+})();

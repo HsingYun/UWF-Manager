@@ -1,232 +1,783 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <meta name="theme-color" content="#f7f8fa">
-  <meta name="description" content="A modern graphical interface for Windows Unified Write Filter, with staged changes, validation, and overlay monitoring.">
-  <link rel="canonical" href="https://async.page/UWF-Manager/">
-  <meta property="og:type" content="website">
-  <meta property="og:site_name" content="UWF Manager">
-  <meta property="og:title" content="UWF Manager — Windows Unified Write Filter management">
-  <meta property="og:description" content="A modern graphical interface for Windows Unified Write Filter, with staged changes, validation, and overlay monitoring.">
-  <meta property="og:url" content="https://async.page/UWF-Manager/">
-  <meta property="og:locale" content="en_US">
-  <meta property="og:locale:alternate" content="zh_CN">
-  <meta property="og:image" content="https://async.page/UWF-Manager/res/imgs/1.en.png">
-  <meta property="og:image:type" content="image/png">
-  <meta property="og:image:width" content="3200">
-  <meta property="og:image:height" content="1728">
-  <meta property="og:image:alt" content="UWF Manager main workspace">
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="UWF Manager — Windows Unified Write Filter management">
-  <meta name="twitter:description" content="A modern graphical interface for Windows Unified Write Filter, with staged changes, validation, and overlay monitoring.">
-  <meta name="twitter:image" content="https://async.page/UWF-Manager/res/imgs/1.en.png">
-  <meta name="twitter:image:alt" content="UWF Manager main workspace">
-  <title>UWF Manager — Windows Unified Write Filter management</title>
-  <link rel="icon" href="res/app.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css">
-  <script>
-    (() => {
-      let language = null;
-      let theme = null;
-      try {
-        language = localStorage.getItem("uwf-site-language");
-        theme = localStorage.getItem("uwf-site-theme");
-      } catch {
-        // 本地存储不可用时使用系统设置。
-      }
-      const systemLanguage = (navigator.languages?.[0] || navigator.language || "en").toLowerCase();
-      document.documentElement.lang = language || (systemLanguage.startsWith("zh") ? "zh-CN" : "en");
-      if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
-    })();
-  </script>
-</head>
-<body>
-  <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
-
-  <header class="site-header">
-    <a class="brand" href="#top" aria-label="UWF Manager home" data-i18n-aria="homeAria">
-      <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
-        <defs>
-          <linearGradient id="brand-gradient" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stop-color="#62a5ff"/>
-            <stop offset="1" stop-color="#2866df"/>
-          </linearGradient>
-        </defs>
-        <rect x="6" y="6" width="52" height="52" rx="12" fill="url(#brand-gradient)"/>
-        <path d="M20 32h24M20 22h24M20 42h18" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
-        <circle cx="46" cy="42" r="3" fill="#ffb45a"/>
-      </svg>
-      <span>UWF Manager</span>
-    </a>
-
-    <div class="header-actions">
-      <div class="language-switch" role="group" aria-label="Language" data-i18n-aria="languageLabel">
-        <button type="button" data-language="zh-CN">中文</button>
-        <button type="button" data-language="en">EN</button>
-      </div>
-      <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch color theme" title="Switch color theme">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"/></svg>
-      </button>
-      <a class="icon-button github-link" href="https://github.com/HsingYun/UWF-Manager" target="_blank" rel="noreferrer" aria-label="View the GitHub repository" data-i18n-aria="sourceAria">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .8a11.4 11.4 0 0 0-3.6 22.2c.6.1.8-.2.8-.6v-2.2c-3.3.7-4-1.4-4-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.3 11.3 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.9.1 3.2.8.8 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.1v3.2c0 .4.2.7.8.6A11.4 11.4 0 0 0 12 .8Z"/></svg>
-      </a>
-    </div>
-  </header>
-
-  <main id="main">
-    <section class="hero section" id="top">
-      <div class="hero-copy">
-        <p class="product-label" data-i18n="heroLabel">Windows Unified Write Filter</p>
-        <h1 data-i18n="heroTitle">A modern interface for Windows UWF</h1>
-        <p class="hero-summary" data-i18n="heroSummary">Bring live state, next-session configuration, staged changes, validation, and overlay monitoring into one workspace—without assembling command output by hand.</p>
-        <div class="hero-actions">
-          <a class="button button-primary" href="https://github.com/HsingYun/UWF-Manager/releases/latest" target="_blank" rel="noreferrer">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 5-5m-5 5-5-5M5 20h14"/></svg>
-            <span data-i18n="download">Download latest release</span>
-          </a>
-          <a class="button button-secondary" href="https://github.com/HsingYun/UWF-Manager" target="_blank" rel="noreferrer" data-i18n="source">Source code</a>
-          <a class="button button-secondary documentation-link"
-             href="https://learn.microsoft.com/en-us/windows/configuration/unified-write-filter/"
-             data-href-en="https://learn.microsoft.com/en-us/windows/configuration/unified-write-filter/"
-             data-href-zh="https://learn.microsoft.com/zh-cn/windows/configuration/unified-write-filter/"
-             target="_blank" rel="noreferrer"
-             aria-label="Open Microsoft UWF documentation" data-i18n-aria="documentationAria"
-             title="Open Microsoft UWF documentation" data-i18n-title="documentationAria">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.2 10.5 4v7H3V5.2Zm8.5-1.35L21 2.5V11h-9.5V3.85ZM3 12h7.5v7L3 17.8V12Zm8.5 0H21v8.5l-9.5-1.35V12Z"/></svg>
-          </a>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="author" content="HsingYun" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#dce2e9" />
+    <meta
+      name="description"
+      content="Configuration and management for Windows Unified Write Filter, including volume protection, overlays, exclusions, and change review."
+    />
+    <link rel="canonical" href="https://async.page/UWF-Manager/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="UWF Manager" />
+    <meta
+      property="og:title"
+      content="UWF Manager — Windows Unified Write Filter management"
+    />
+    <meta
+      property="og:description"
+      content="Configuration and management for Windows Unified Write Filter, including volume protection, overlays, exclusions, and change review."
+    />
+    <meta property="og:url" content="https://async.page/UWF-Manager/" />
+    <meta
+      property="og:image"
+      content="https://async.page/UWF-Manager/res/screenshots/workspace.en.light.png"
+    />
+    <meta property="og:image:alt" content="The UWF Manager workspace" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="zh_CN" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="UWF Manager — Windows Unified Write Filter management"
+    />
+    <meta
+      name="twitter:description"
+      content="Configuration and management for Windows Unified Write Filter, including volume protection, overlays, exclusions, and change review."
+    />
+    <meta
+      name="twitter:image"
+      content="https://async.page/UWF-Manager/res/screenshots/workspace.en.light.png"
+    />
+    <title>UWF Manager — Windows Unified Write Filter management</title>
+    <link rel="icon" href="res/app.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script>
+      (() => {
+        try {
+          const theme = localStorage.getItem("uwf-site-theme");
+          if (theme === "light" || theme === "dark")
+            document.documentElement.dataset.theme = theme;
+          const language = localStorage.getItem("uwf-site-language");
+          document.documentElement.lang =
+            language === "en" || language === "zh-CN"
+              ? language
+              : navigator.language.startsWith("zh")
+                ? "zh-CN"
+                : "en";
+        } catch {
+          document.documentElement.lang = navigator.language.startsWith("zh")
+            ? "zh-CN"
+            : "en";
+        }
+      })();
+    </script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <svg
+      class="icon-definitions"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <symbol id="i-download" viewBox="0 0 24 24">
+        <path d="M12 3v12m-5-5 5 5 5-5M5 16v4h14v-4" />
+      </symbol>
+      <symbol id="i-windows" viewBox="0 0 24 24">
+        <path
+          d="M3 5.5 10.5 4.5v7H3Zm9-1.2L21 3v8.5h-9ZM3 13h7.5v7L3 19Zm9 0h9v9l-9-1.3Z"
+          fill="currentColor"
+          stroke="none"
+        />
+      </symbol>
+      <symbol id="i-github" viewBox="0 0 24 24">
+        <path
+          d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.87c-2.78.6-3.37-1.18-3.37-1.18-.45-1.16-1.11-1.46-1.11-1.46-.91-.62.07-.61.07-.61 1 .07 1.53 1.03 1.53 1.03.9 1.53 2.34 1.09 2.91.83.09-.65.35-1.09.64-1.34-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02A9.6 9.6 0 0 1 12 6.82c.85 0 1.71.11 2.51.34 1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.69-4.58 4.94.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2Z"
+          fill="currentColor"
+          stroke="none"
+        />
+      </symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="4" />
+        <path
+          d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+        />
+      </symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24">
+        <path d="M20.8 13.4A8.9 8.9 0 0 1 10.6 3.2 9 9 0 1 0 20.8 13.4Z" />
+      </symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24">
+        <path d="M4 7h16M4 12h16M4 17h16" />
+      </symbol>
+      <symbol id="i-close" viewBox="0 0 24 24">
+        <path d="m6 6 12 12M6 18 18 6" />
+      </symbol>
+      <symbol id="i-expand" viewBox="0 0 24 24">
+        <path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" />
+      </symbol>
+    </svg>
+    <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
+    <header class="site-header">
+      <div class="page-width header-inner">
+        <a
+          class="brand"
+          href="#top"
+          aria-label="UWF Manager home"
+          data-i18n-aria="home"
+          ><img src="res/app.svg" width="30" height="30" alt="" /><span
+            >UWF Manager</span
+          ></a
+        >
+        <nav
+          class="desktop-nav"
+          aria-label="Main navigation"
+          data-i18n-aria="navigation"
+        >
+          <a href="#configuration" data-i18n="navConfiguration"
+            >Configuration</a
+          >
+          <a href="#persistence" data-i18n="navPersistence">Persistence</a>
+          <a href="#requirements" data-i18n="navRequirements">Requirements</a>
+        </nav>
+        <div class="header-actions">
+          <button
+            class="language-toggle"
+            id="language-toggle"
+            type="button"
+            aria-label="Switch to Chinese"
+          >
+            中文
+          </button>
+          <button
+            class="icon-button"
+            id="theme-toggle"
+            type="button"
+            aria-label="Switch to dark theme"
+          >
+            <svg class="icon theme-sun" aria-hidden="true">
+              <use href="#i-sun" /></svg
+            ><svg class="icon theme-moon" aria-hidden="true">
+              <use href="#i-moon" />
+            </svg>
+          </button>
+          <a
+            class="button header-download"
+            href="https://github.com/HsingYun/UWF-Manager/releases/latest"
+            ><span data-i18n="navDownload">Download</span
+            ><svg class="icon" aria-hidden="true">
+              <use href="#i-download" /></svg
+          ></a>
+          <button
+            class="icon-button menu-toggle"
+            id="menu-toggle"
+            type="button"
+            aria-controls="mobile-nav"
+            aria-expanded="false"
+            aria-label="Open navigation"
+          >
+            <svg class="icon" aria-hidden="true"><use href="#i-menu" /></svg>
+          </button>
         </div>
-        <p class="hero-meta" data-i18n="heroMeta">Windows 10 / 11 · GPL-3.0</p>
       </div>
-
-      <div class="product-gallery" id="gallery">
-        <div class="gallery-viewport" id="gallery-track" tabindex="0" aria-label="Product screenshots" data-i18n-aria="galleryLabel">
-          <figure class="gallery-slide" data-gallery-item>
-            <button class="screenshot-button" type="button" data-gallery-open="0">
-              <img src="res/imgs/1.en.png" data-src-en="res/imgs/1.en.png" data-src-zh="res/imgs/1.cn.png" data-src-en-light="res/imgs/1.en.light.png" data-src-zh-light="res/imgs/1.cn.light.png" data-width-en="3200" data-height-en="1728" data-width-zh="3200" data-height-zh="1728" data-width-en-light="3200" data-height-en-light="1728" data-width-zh-light="3200" data-height-zh-light="1728" width="3200" height="1728" loading="eager" decoding="async" fetchpriority="high" alt="UWF Manager main workspace" data-i18n-alt="galleryAlt1">
-            </button>
-            <figcaption class="visually-hidden"><strong data-i18n="galleryTitle1">Main management window</strong><p data-i18n="galleryText1">Volume, exclusion, filter, and overlay configuration.</p></figcaption>
-          </figure>
-          <figure class="gallery-slide" data-gallery-item>
-            <button class="screenshot-button" type="button" data-gallery-open="1">
-              <img src="res/imgs/2.en.png" data-src-en="res/imgs/2.en.png" data-src-zh="res/imgs/2.cn.png" data-src-en-light="res/imgs/2.en.light.png" data-src-zh-light="res/imgs/2.cn.light.png" data-width-en="2880" data-height-en="1620" data-width-zh="2880" data-height-zh="1620" data-width-en-light="2880" data-height-en-light="1620" data-width-zh-light="2880" data-height-zh-light="1620" width="2880" height="1620" loading="lazy" decoding="async" alt="Overlay files dialog" data-i18n-alt="galleryAlt2">
-            </button>
-            <figcaption class="visually-hidden"><strong data-i18n="galleryTitle2">Overlay file browser</strong><p data-i18n="galleryText2">Paged inspection, filtering, export, and commit actions.</p></figcaption>
-          </figure>
-          <figure class="gallery-slide" data-gallery-item>
-            <button class="screenshot-button" type="button" data-gallery-open="2">
-              <img src="res/imgs/3.en.png" data-src-en="res/imgs/3.en.png" data-src-zh="res/imgs/3.cn.png" data-src-en-light="res/imgs/3.en.light.png" data-src-zh-light="res/imgs/3.cn.light.png" data-width-en="2560" data-height-en="1460" data-width-zh="2560" data-height-zh="1460" data-width-en-light="2560" data-height-en-light="1460" data-width-zh-light="2560" data-height-zh-light="1460" width="2560" height="1460" loading="lazy" decoding="async" alt="Registry picker dialog" data-i18n-alt="galleryAlt3">
-            </button>
-            <figcaption class="visually-hidden"><strong data-i18n="galleryTitle3">Registry selector</strong><p data-i18n="galleryText3">Selection of registry keys and named values.</p></figcaption>
-          </figure>
-          <figure class="gallery-slide" data-gallery-item>
-            <button class="screenshot-button" type="button" data-gallery-open="3">
-              <img src="res/imgs/4.en.png" data-src-en="res/imgs/4.en.png" data-src-zh="res/imgs/4.cn.png" data-src-en-light="res/imgs/4.en.light.png" data-src-zh-light="res/imgs/4.cn.light.png" data-width-en="1308" data-height-en="1320" data-width-zh="1308" data-height-zh="1320" data-width-en-light="1308" data-height-en-light="1320" data-width-zh-light="1308" data-height-zh-light="1320" width="1308" height="1320" loading="lazy" decoding="async" alt="About UWF Manager dialog" data-i18n-alt="galleryAlt4">
-            </button>
-            <figcaption class="visually-hidden"><strong data-i18n="galleryTitle4">Version and license information</strong><p data-i18n="galleryText4">Project version, links, acknowledgements, and license.</p></figcaption>
-          </figure>
-          <figure class="gallery-slide" data-gallery-item>
-            <button class="screenshot-button" type="button" data-gallery-open="4">
-              <img src="res/imgs/5.en.png" data-src-en="res/imgs/5.en.png" data-src-zh="res/imgs/5.cn.png" data-src-en-light="res/imgs/5.en.light.png" data-src-zh-light="res/imgs/5.cn.light.png" data-width-en="2720" data-height-en="1620" data-width-zh="2720" data-height-zh="1620" data-width-en-light="2720" data-height-en-light="1620" data-width-zh-light="2720" data-height-zh-light="1620" width="2720" height="1620" loading="lazy" decoding="async" alt="Review and apply changes dialog" data-i18n-alt="galleryAlt5">
-            </button>
-            <figcaption class="visually-hidden"><strong data-i18n="galleryTitle5">Pending-change review</strong><p data-i18n="galleryText5">Planned operations and equivalent uwfmgr commands.</p></figcaption>
-          </figure>
-          <figure class="gallery-slide" data-gallery-item>
-            <button class="screenshot-button" type="button" data-gallery-open="5">
-              <img src="res/imgs/6.en.png" data-src-en="res/imgs/6.en.png" data-src-zh="res/imgs/6.cn.png" data-src-en-light="res/imgs/6.en.light.png" data-src-zh-light="res/imgs/6.cn.light.png" data-width-en="2560" data-height-en="1908" data-width-zh="2560" data-height-zh="1908" data-width-en-light="2560" data-height-en-light="1908" data-width-zh-light="2560" data-height-zh-light="1908" width="2560" height="1908" loading="lazy" decoding="async" alt="UWF status shown in the Windows taskbar" data-i18n-alt="galleryAlt6">
-            </button>
-            <figcaption class="visually-hidden"><strong data-i18n="galleryTitle6">Taskbar status</strong><p data-i18n="galleryText6">Filter state and overlay usage in the Windows taskbar.</p></figcaption>
-          </figure>
-        </div>
-        <div class="gallery-footer">
-          <div class="gallery-caption" aria-live="polite">
-            <strong id="gallery-caption-title">Main management window</strong>
-            <span id="gallery-caption-text">Volume, exclusion, filter, and overlay configuration.</span>
+      <nav
+        class="mobile-nav page-width"
+        id="mobile-nav"
+        aria-label="Mobile navigation"
+        data-i18n-aria="mobileNavigation"
+        hidden
+      >
+        <a href="#configuration" data-i18n="navConfiguration">Configuration</a>
+        <a href="#persistence" data-i18n="navPersistence">Persistence</a>
+        <a href="#requirements" data-i18n="navRequirements">Requirements</a>
+        <a
+          href="https://github.com/HsingYun/UWF-Manager/releases/latest"
+          data-i18n="navDownload"
+          >Download</a
+        >
+      </nav>
+    </header>
+    <main id="main">
+      <section
+        class="product-intro page-width"
+        id="top"
+        aria-labelledby="product-title"
+      >
+        <div class="intro-copy">
+          <h1 id="product-title">UWF Manager</h1>
+          <h2 data-i18n="productPosition">
+            Windows Unified Write Filter management
+          </h2>
+          <p class="intro-description" data-i18n="heroDescription">
+            Configure volume protection, overlays, and exclusions. View
+            current-session state separately from next-session configuration.
+          </p>
+          <div class="intro-actions">
+            <a
+              class="button button-primary"
+              href="https://github.com/HsingYun/UWF-Manager/releases/latest"
+              ><svg class="icon" aria-hidden="true">
+                <use href="#i-windows" /></svg
+              ><span data-i18n="downloadWindows">Download for Windows</span></a
+            >
+            <a
+              class="button button-secondary"
+              href="https://github.com/HsingYun/UWF-Manager"
+              ><svg class="icon" aria-hidden="true">
+                <use href="#i-github" /></svg
+              ><span data-i18n="viewSource">View source</span></a
+            >
           </div>
-          <div class="gallery-controls">
-            <span class="gallery-count"><b id="gallery-current">1</b> / 6</span>
-            <button class="gallery-button" id="gallery-prev" type="button" aria-label="Previous screenshot" data-i18n-aria="previousScreenshot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
-            <button class="gallery-button" id="gallery-next" type="button" aria-label="Next screenshot" data-i18n-aria="nextScreenshot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="features section" id="features">
-      <div class="section-title">
-        <h2 data-i18n="featuresTitle">Core capabilities</h2>
-      </div>
-      <div class="feature-grid">
-        <article class="feature">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 18V6m0 12h16M8 14l3-3 3 2 5-6"/></svg>
-          <div><h3 data-i18n="featureStatusTitle">Unified operational view</h3><p data-i18n="featureStatusText">Correlate live state, next-session configuration, pending edits, and overlay usage; keep key status available from the taskbar or floating hub.</p></div>
-        </article>
-        <article class="feature">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h14v16H5zM8 8h8M8 12h5m-5 4h3M15 15l2 2 3-4"/></svg>
-          <div><h3 data-i18n="featureVolumeTitle">Stage, validate, review</h3><p data-i18n="featureVolumeText">Stage all changes without writing to the system immediately. Validate constraints and review each operation before applying the batch as a whole.</p></div>
-        </article>
-        <article class="feature">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h7l2 2h9v10H3zM7 12h10M7 15h7"/></svg>
-          <div><h3 data-i18n="featureChangeTitle">Commit changes at any time</h3><p data-i18n="featureChangeText">Use the file and registry selectors to prepare commit operations. Confirm commit or deletion scope and capability limits before execution, then receive an itemized result.</p></div>
-        </article>
-        <article class="feature">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 7 8-4 8 4-8 4-8-4Zm0 0v10l8 4 8-4V7M12 11v10"/></svg>
-          <div>
-            <div class="feature-heading">
-              <h3 data-i18n="featureToolsTitle">Single-file, portable operation</h3>
-              <span class="info-tip" tabindex="0" aria-label="Crash diagnostics" data-i18n-aria="crashExceptionLabel" aria-describedby="crash-exception-tooltip">!
-                <span class="info-tooltip" id="crash-exception-tooltip" role="tooltip" data-i18n="crashExceptionText">UWF Manager does not create files to persist its own state during normal operation. In the unlikely event that an unhandled exception terminates the program, it writes a .txt crash report and a .dmp minidump beside the executable for diagnostics. If that directory is not writable, it uses UWF-CrashDumps under the Windows temporary directory.</span>
-              </span>
+          <dl
+            class="product-specs"
+            aria-label="Product information"
+            data-i18n-aria="productFacts"
+          >
+            <div>
+              <dt data-i18n="specPlatform">Platform</dt>
+              <dd>Windows 10 / 11</dd>
             </div>
-            <p data-i18n="featureToolsText">Distributed as a single executable and creates no configuration files. Only the optional file-staging feature stores its path list in the registry; runtime logs remain in memory and are discarded on exit. The application itself initiates no internet connections.</p>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="requirements section" id="requirements">
-      <div class="section-title">
-        <h2 data-i18n="requirementsTitle">System requirements</h2>
-      </div>
-      <dl class="requirement-grid">
-        <div>
-          <dt class="requirement-heading">
-            <span data-i18n="requirementSystemLabel">Windows</span>
-            <span class="info-tip" tabindex="0" aria-label="Compatibility mode" data-i18n-aria="requirementsCompatibilityLabel" aria-describedby="requirements-compatibility-tooltip">!
-              <span class="info-tooltip" id="requirements-compatibility-tooltip" role="tooltip" data-i18n="requirementsCompatibilityText">The editions below are Microsoft's officially supported configurations. If the UWF driver and WMI provider were installed by other means, UWF Manager still runs in compatibility mode and exposes the capabilities it can verify.</span>
-            </span>
-          </dt>
-          <dd data-i18n="requirementSystemValue">Windows 10 or 11 Enterprise, Education, or IoT Enterprise, including LTSC releases</dd>
+            <div>
+              <dt data-i18n="specInterfaces">Interfaces</dt>
+              <dd>GUI + CLI</dd>
+            </div>
+            <div>
+              <dt data-i18n="specLanguages">Languages</dt>
+              <dd>19</dd>
+            </div>
+            <div>
+              <dt data-i18n="specLicense">License</dt>
+              <dd>GPL-3.0</dd>
+            </div>
+          </dl>
         </div>
-        <div><dt data-i18n="requirementFeatureLabel">Feature</dt><dd data-i18n="requirementFeatureValue">Windows Unified Write Filter optional feature installed</dd></div>
-        <div><dt data-i18n="requirementPermissionLabel">Permission</dt><dd data-i18n="requirementPermissionValue">Administrator privileges required</dd></div>
-      </dl>
-    </section>
-  </main>
+        <figure class="intro-figure">
+          <button
+            class="screenshot-open"
+            type="button"
+            data-lightbox="workspace"
+            aria-label="Enlarge the workspace screenshot"
+            data-i18n-aria="enlargeScreenshot"
+          >
+            <img
+              data-screenshot="workspace"
+              data-caption="workspaceCaption"
+              data-i18n-alt="workspaceAlt"
+              src="res/screenshots/workspace.en.light.png"
+              alt="UWF Manager workspace with current and next-session protection settings"
+              width="2400"
+              height="1560"
+              fetchpriority="high"
+            />
+            <span class="expand-hint" aria-hidden="true"
+              ><svg class="icon"><use href="#i-expand" /></svg
+            ></span>
+          </button>
+          <figcaption data-i18n="workspaceCaption">
+            Example configuration. Select a screenshot to view it at a larger
+            size.
+          </figcaption>
+        </figure>
+      </section>
+      <nav
+        class="feature-index page-width"
+        aria-label="Feature sections"
+        data-i18n-aria="featureNavigation"
+      >
+        <a href="#configuration"
+          ><span class="index-number">01</span
+          ><span data-i18n="navConfiguration">Configuration</span></a
+        >
+        <a href="#workflow"
+          ><span class="index-number">02</span
+          ><span data-i18n="navWorkflow">Import and review</span></a
+        >
+        <a href="#persistence"
+          ><span class="index-number">03</span
+          ><span data-i18n="navPersistence">Persistence</span></a
+        >
+        <a href="#monitoring"
+          ><span class="index-number">04</span
+          ><span data-i18n="navMonitoring">Monitoring</span></a
+        >
+      </nav>
+      <section
+        class="feature-section"
+        id="configuration"
+        aria-labelledby="configuration-title"
+      >
+        <div class="page-width">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">01</span>
+              <h2 id="configuration-title" data-i18n="configurationTitle">
+                Overlay configuration and HORM
+              </h2>
+            </div>
+            <p data-i18n="configurationDescription">
+              Configure overlay storage, inspect its files, and verify the
+              prerequisites for HORM.
+            </p>
+          </div>
+          <div class="window-pair">
+            <article class="window-example">
+              <h3 data-i18n="overlayTitle">Overlay settings</h3>
+              <p data-i18n="overlayDescription">
+                Set overlay type, capacity, usage thresholds, persistence, and
+                supported operating modes.
+              </p>
+              <button
+                class="screenshot-open"
+                type="button"
+                data-lightbox="overlay"
+                aria-label="Enlarge the overlay settings screenshot"
+                data-i18n-aria="enlargeOverlay"
+              >
+                <img
+                  data-screenshot="overlay"
+                  data-caption="overlayTitle"
+                  data-i18n-alt="overlayAlt"
+                  src="res/screenshots/overlay.en.light.png"
+                  alt="Advanced overlay settings in UWF Manager"
+                  width="1320"
+                  height="1200"
+                  loading="lazy"
+                />
+                <span class="expand-hint" aria-hidden="true"
+                  ><svg class="icon"><use href="#i-expand" /></svg
+                ></span>
+              </button>
+            </article>
+            <article class="window-example">
+              <h3 data-i18n="overlayFilesTitle">Overlay file browser</h3>
+              <p data-i18n="overlayFilesDescription">
+                Browse and filter overlay files, export the list, and use
+                available commit actions.
+              </p>
+              <button
+                class="screenshot-open"
+                type="button"
+                data-lightbox="overlay-files"
+                aria-label="Enlarge the overlay file browser screenshot"
+                data-i18n-aria="enlargeOverlayFiles"
+              >
+                <img
+                  data-screenshot="overlay-files"
+                  data-caption="overlayFilesTitle"
+                  data-i18n-alt="overlayFilesAlt"
+                  src="res/screenshots/overlay-files.en.light.png"
+                  alt="Overlay file browser with path filtering, file details, and export controls"
+                  width="2192"
+                  height="1508"
+                  loading="lazy"
+                />
+                <span class="expand-hint" aria-hidden="true"
+                  ><svg class="icon"><use href="#i-expand" /></svg
+                ></span>
+              </button>
+            </article>
+          </div>
 
-  <footer class="site-footer section">
-    <span class="footer-copyright">© 2026 <a href="https://github.com/HsingYun" target="_blank" rel="noreferrer">HsingYun</a> · <a href="mailto:iakext@gmail.com">iakext@gmail.com</a> · <span data-i18n="poweredByQt">Powered by Qt</span></span>
-    <div class="footer-links">
-      <a href="https://github.com/HsingYun/UWF-Manager" target="_blank" rel="noreferrer">GitHub</a>
-      <a href="https://github.com/HsingYun/UWF-Manager/releases/latest" target="_blank" rel="noreferrer" data-i18n="releases">Releases</a>
-      <a href="https://github.com/HsingYun/UWF-Manager/blob/main/LICENSE" target="_blank" rel="noreferrer">GPL-3.0</a>
-    </div>
-  </footer>
-
-  <dialog class="lightbox" id="lightbox" aria-label="Screenshot viewer" aria-describedby="lightbox-caption" data-i18n-aria="lightboxLabel">
-    <button class="lightbox-close" type="button" aria-label="Close screenshot" data-i18n-aria="closeScreenshot">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
-    </button>
-    <button class="lightbox-arrow lightbox-prev" type="button" aria-label="Previous screenshot" data-i18n-aria="previousScreenshot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
-    <figure>
-      <img id="lightbox-image" src="res/imgs/1.en.png" width="3200" height="1728" decoding="async" alt="">
-      <figcaption id="lightbox-caption"></figcaption>
-    </figure>
-    <button class="lightbox-arrow lightbox-next" type="button" aria-label="Next screenshot" data-i18n-aria="nextScreenshot"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
-  </dialog>
-
-  <script src="app.js" defer></script>
-</body>
+          <div class="feature-detail" id="horm">
+            <div class="feature-copy">
+              <h3 data-i18n="hormTitle">HORM: Hibernate Once, Resume Many</h3>
+              <p data-i18n="hormDescription">
+                Resume the same saved hibernation state on subsequent starts.
+                Inspect HORM prerequisites and stage enable or disable
+                operations for review.
+              </p>
+              <p data-i18n="hormPreparation">
+                Checks cover current UWF protection, the RAM Read-Only Media
+                configuration, full S4 hibernation, and protection of eligible
+                mounted fixed volumes. After enabling HORM, hibernate once to
+                save the baseline.
+              </p>
+              <p data-i18n="hormRestrictions">
+                While HORM is active, configuration changes, individual commits,
+                automatic staged-file commits, and full volume commits are
+                unavailable. Disable HORM and restart before maintenance.
+              </p>
+            </div>
+            <figure class="feature-figure">
+              <button
+                class="screenshot-open"
+                type="button"
+                data-lightbox="horm"
+                aria-label="Enlarge the HORM prerequisites screenshot"
+                data-i18n-aria="enlargeHorm"
+              >
+                <img
+                  data-screenshot="horm"
+                  data-caption="hormTitle"
+                  data-i18n-alt="hormAlt"
+                  src="res/screenshots/horm.en.light.png"
+                  alt="HORM configuration dialog with UWF, RAM Read-Only Media, full hibernation, and fixed-volume protection checks"
+                  width="1040"
+                  height="810"
+                  loading="lazy"
+                />
+                <span class="expand-hint" aria-hidden="true"
+                  ><svg class="icon"><use href="#i-expand" /></svg
+                ></span>
+              </button>
+            </figure>
+          </div>
+        </div>
+      </section>
+      <section
+        class="feature-section"
+        id="workflow"
+        aria-labelledby="workflow-title"
+      >
+        <div class="page-width">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">02</span>
+              <h2 id="workflow-title" data-i18n="workflowTitle">
+                Configuration import and review
+              </h2>
+            </div>
+            <p data-i18n="workflowDescription">
+              Prepare a draft, review the planned operations, then apply changes
+              and inspect the results.
+            </p>
+          </div>
+          <div class="window-pair">
+            <article class="window-example">
+              <h3 data-i18n="importTitle">Command import</h3>
+              <p data-i18n="importDescription">
+                Import supported uwfmgr commands into a configuration draft and
+                inspect validation results. Import does not execute commands.
+              </p>
+              <button
+                class="screenshot-open"
+                type="button"
+                data-lightbox="import"
+                aria-label="Enlarge the command import screenshot"
+                data-i18n-aria="enlargeImport"
+              >
+                <img
+                  data-screenshot="import"
+                  data-caption="importTitle"
+                  data-i18n-alt="importAlt"
+                  src="res/screenshots/import.en.light.png"
+                  alt="Command import dialog with uwfmgr commands and per-command validation results"
+                  width="2192"
+                  height="1508"
+                  loading="lazy"
+                />
+                <span class="expand-hint" aria-hidden="true"
+                  ><svg class="icon"><use href="#i-expand" /></svg
+                ></span>
+              </button>
+            </article>
+            <article class="window-example">
+              <h3 data-i18n="reviewTitle">Configuration review</h3>
+              <p data-i18n="reviewDescription">
+                Review pending changes, execution requirements, and exportable
+                uwfmgr commands before applying a configuration.
+              </p>
+              <button
+                class="screenshot-open"
+                type="button"
+                data-lightbox="review"
+                aria-label="Enlarge the configuration review screenshot"
+                data-i18n-aria="enlargeReview"
+              >
+                <img
+                  data-screenshot="review"
+                  data-caption="reviewTitle"
+                  data-i18n-alt="reviewAlt"
+                  src="res/screenshots/review.en.light.png"
+                  alt="Reviewing a configuration plan before applying it"
+                  width="2192"
+                  height="1508"
+                  loading="lazy"
+                />
+                <span class="expand-hint" aria-hidden="true"
+                  ><svg class="icon"><use href="#i-expand" /></svg
+                ></span>
+              </button>
+            </article>
+          </div>
+        </div>
+      </section>
+      <section
+        class="feature-section"
+        id="persistence"
+        aria-labelledby="persistence-title"
+      >
+        <div class="page-width">
+          <div class="section-heading">
+            <div>
+              <span class="section-number">03</span>
+              <h2 id="persistence-title" data-i18n="persistenceTitle">
+                File staging and enhanced mode
+              </h2>
+            </div>
+            <p data-i18n="persistenceDescription">
+              Maintain a list of files to commit and choose how commits are
+              handled before shutdown or restart.
+            </p>
+          </div>
+          <div class="window-pair">
+            <article class="window-example">
+              <h3 data-i18n="stagingTitle">File staging</h3>
+              <p data-i18n="stagingDescription">
+                Stage files and directories for commit before a safe shutdown or
+                restart initiated from the application.
+              </p>
+              <button
+                class="screenshot-open"
+                type="button"
+                data-lightbox="staging"
+                aria-label="Enlarge the file staging screenshot"
+                data-i18n-aria="enlargeStaging"
+              >
+                <img
+                  data-screenshot="staging"
+                  data-caption="stagingTitle"
+                  data-i18n-alt="stagingAlt"
+                  src="res/screenshots/staging.en.light.png"
+                  alt="File staging list with saved paths, status, and file management actions"
+                  width="2400"
+                  height="1560"
+                  loading="lazy"
+                />
+                <span class="expand-hint" aria-hidden="true"
+                  ><svg class="icon"><use href="#i-expand" /></svg
+                ></span>
+              </button>
+            </article>
+            <article class="window-example">
+              <h3 data-i18n="enhancedTitle">Optional enhanced mode</h3>
+              <p data-i18n="enhancedDescription">
+                Use a Windows service to commit eligible staged files before
+                system shutdown or restart.
+              </p>
+              <button
+                class="screenshot-open"
+                type="button"
+                data-lightbox="enhanced"
+                aria-label="Enlarge the enhanced mode screenshot"
+                data-i18n-aria="enlargeEnhanced"
+              >
+                <img
+                  data-screenshot="enhanced"
+                  data-caption="enhancedTitle"
+                  data-i18n-alt="enhancedAlt"
+                  src="res/screenshots/enhanced.en.light.png"
+                  alt="Enhanced mode dialog showing Windows service status and automatic commit settings"
+                  width="1640"
+                  height="1520"
+                  loading="lazy"
+                />
+                <span class="expand-hint" aria-hidden="true"
+                  ><svg class="icon"><use href="#i-expand" /></svg
+                ></span>
+              </button>
+            </article>
+          </div>
+          <div class="feature-detail">
+            <div class="feature-copy">
+              <h3 data-i18n="commitTitle">Selective commits</h3>
+              <p data-i18n="commitDescription">
+                Commit selected files or registry items and inspect the result
+                for each item.
+              </p>
+              <p class="operation-note" data-i18n="commitConditions">
+                Available operations depend on the current protection state and
+                UWF configuration. Review the selected scope before execution.
+              </p>
+            </div>
+            <figure class="feature-figure">
+              <button
+                class="screenshot-open"
+                type="button"
+                data-lightbox="commit"
+                aria-label="Enlarge the selective commit screenshot"
+                data-i18n-aria="enlargeCommit"
+              >
+                <img
+                  data-screenshot="commit"
+                  data-caption="commitTitle"
+                  data-i18n-alt="commitAlt"
+                  src="res/screenshots/commit.en.light.png"
+                  alt="Commit confirmation showing the selected scope and preparation summary"
+                  width="1052"
+                  height="812"
+                  loading="lazy"
+                />
+                <span class="expand-hint" aria-hidden="true"
+                  ><svg class="icon"><use href="#i-expand" /></svg
+                ></span>
+              </button>
+            </figure>
+          </div>
+        </div>
+      </section>
+      <section
+        class="runtime-section"
+        id="monitoring"
+        aria-labelledby="monitoring-title"
+      >
+        <div class="page-width runtime-layout">
+          <div class="runtime-copy">
+            <h2 id="monitoring-title" data-i18n="monitoringTitle">
+              Runtime status
+            </h2>
+            <p data-i18n="hubDescription">
+              View filter status and overlay usage in the taskbar or floating
+              panel.
+            </p>
+            <figure class="hub-example">
+              <button
+                class="screenshot-open"
+                type="button"
+                data-lightbox="hub"
+                aria-label="Enlarge the floating status panel screenshot"
+                data-i18n-aria="enlargeHub"
+              >
+                <img
+                  data-screenshot="hub"
+                  data-caption="hubDescription"
+                  data-i18n-alt="hubAlt"
+                  src="res/screenshots/hub.en.light.png"
+                  alt="Floating panel showing UWF filter status and overlay usage"
+                  width="394"
+                  height="88"
+                  data-radius="20"
+                  data-inset="2"
+                  loading="lazy"
+                />
+                <span class="expand-hint" aria-hidden="true"
+                  ><svg class="icon"><use href="#i-expand" /></svg
+                ></span>
+              </button>
+            </figure>
+            <div class="requirements" id="requirements">
+              <h3 data-i18n="requirementsTitle">System requirements</h3>
+              <dl class="requirements-list">
+                <div>
+                  <dt data-i18n="osLabel">Operating system</dt>
+                  <dd data-i18n="osValue">
+                    Windows 10 / 11 Enterprise, Education, or IoT Enterprise,
+                    including applicable LTSC editions.
+                  </dd>
+                </div>
+                <div>
+                  <dt data-i18n="featureLabel">Windows feature</dt>
+                  <dd data-i18n="featureValue">
+                    Unified Write Filter installed and enabled as a Windows
+                    optional feature.
+                  </dd>
+                </div>
+                <div>
+                  <dt data-i18n="permissionsLabel">Permissions</dt>
+                  <dd data-i18n="permissionsValue">
+                    Administrator privileges for the graphical interface and
+                    protected command-line operations.
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+          <figure class="logs-figure">
+            <h3 data-i18n="logsTitle">Application logs</h3>
+            <p data-i18n="logsDescription">
+              Inspect timestamped log entries for operation results and
+              troubleshooting.
+            </p>
+            <button
+              class="screenshot-open"
+              type="button"
+              data-lightbox="logs"
+              aria-label="Enlarge the application logs screenshot"
+              data-i18n-aria="enlargeLogs"
+            >
+              <img
+                data-screenshot="logs"
+                data-caption="logsTitle"
+                data-i18n-alt="logsAlt"
+                src="res/screenshots/logs.en.light.png"
+                alt="Application log viewer with timestamped messages and diagnostic details"
+                width="2192"
+                height="1508"
+                loading="lazy"
+              />
+              <span class="expand-hint" aria-hidden="true"
+                ><svg class="icon"><use href="#i-expand" /></svg
+              ></span>
+            </button>
+          </figure>
+        </div>
+      </section>
+    </main>
+    <footer class="site-footer page-width">
+      <div class="footer-brand">
+        <a
+          class="brand"
+          href="#top"
+          aria-label="UWF Manager home"
+          data-i18n-aria="home"
+          ><img src="res/app.svg" width="30" height="30" alt="" /><span
+            >UWF Manager</span
+          ></a
+        >
+        <div class="footer-meta">
+          <p>
+            <span
+              >© 2026
+              <a href="https://github.com/HsingYun" rel="author"
+                >HsingYun</a
+              ></span
+            >
+            <span aria-hidden="true">·</span>
+            <a
+              href="https://github.com/HsingYun/UWF-Manager/blob/main/LICENSE"
+              data-i18n="factOpen"
+              >GPL-3.0 license</a
+            >
+          </p>
+          <p>
+            <span data-i18n="footerContact">Contact author</span>
+            <a href="mailto:iakext@gmail.com">iakext@gmail.com</a>
+          </p>
+        </div>
+      </div>
+      <nav
+        class="footer-links"
+        aria-label="Project links"
+        data-i18n-aria="projectLinks"
+      >
+        <a
+          href="https://github.com/HsingYun/UWF-Manager"
+          data-i18n="footerSource"
+          >Source</a
+        >
+        <a
+          href="https://github.com/HsingYun/UWF-Manager/issues"
+          data-i18n="footerIssues"
+          >Issues</a
+        >
+        <a
+          href="https://github.com/HsingYun/UWF-Manager/releases"
+          data-i18n="footerReleases"
+          >Releases</a
+        >
+      </nav>
+    </footer>
+    <dialog
+      class="screenshot-dialog"
+      id="screenshot-dialog"
+      aria-label="Product screenshot"
+      data-i18n-aria="screenshotDialog"
+    >
+      <div class="dialog-toolbar">
+        <span id="dialog-caption"></span
+        ><button
+          class="icon-button"
+          id="dialog-close"
+          type="button"
+          aria-label="Close screenshot"
+          data-i18n-aria="closeScreenshot"
+        >
+          <svg class="icon" aria-hidden="true"><use href="#i-close" /></svg>
+        </button>
+      </div>
+      <img id="dialog-image" alt="" />
+    </dialog>
+  </body>
 </html>
