@@ -15,6 +15,7 @@
 
 #include "application/configuration/execution/ConfigurationExecutor.h"
 #include "application/staging/editing/FileStagingDraft.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/state/contracts/ApplicationStateSource.h"
 #include "application/uwf/adapters/UwfConfigurationRepository.h"
 #include "foundation/logging/Log.h"

@@ -695,7 +695,7 @@ void DomainPolicyTests::pendingChangesCountsEveryBusinessField() {
 
   QVERIFY(!changes.empty());
   QCOMPARE(changes.count(), std::size_t{14});
-  QVERIFY(changes.setOverlay.touchesOverlayConfig());
+  QVERIFY(changes.setOverlay.touchesTypeOrSize());
 
   changes.clear();
   QVERIFY(changes.empty());

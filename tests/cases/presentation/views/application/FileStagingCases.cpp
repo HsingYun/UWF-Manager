@@ -41,6 +41,7 @@
 #include "application/staging/contracts/FileStagingStore.h"
 #include "application/staging/editing/FileStagingConflictPolicy.h"
 #include "application/staging/editing/FileStagingDraft.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/uwf/contracts/UwfCapability.h"
 #include "cases/presentation/views/application/ApplicationUiFixture.h"
 #include "cases/presentation/views/application/ApplicationUiTest.h"

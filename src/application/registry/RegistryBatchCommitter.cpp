@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
-#include "application/registry/RegistryTreeCommitter.h"
+#include "application/registry/RegistryBatchCommitter.h"
 
 #include <exception>
 #include <optional>
@@ -118,15 +118,15 @@ RegistryCommitResult executeRegistryBatch(const std::shared_ptr<UwfMaintenanceRe
 }
 }  // namespace
 
-RegistryTreeCommitter::RegistryTreeCommitter(std::shared_ptr<UwfMaintenanceRepository> repository) : m_registry(std::move(repository)) {
+RegistryBatchCommitter::RegistryBatchCommitter(std::shared_ptr<UwfMaintenanceRepository> repository) : m_registry(std::move(repository)) {
   if (!m_registry) throw std::invalid_argument("registry commits require a repository");
 }
 
-RegistryCommitResult RegistryTreeCommitter::commit(const std::vector<RegistryCommitTarget>& targets) const {
+RegistryCommitResult RegistryBatchCommitter::commit(const std::vector<RegistryCommitTarget>& targets) const {
   return executeRegistryBatch(m_registry, targets, RegistryOperation::Commit);
 }
 
-RegistryCommitResult RegistryTreeCommitter::persistDeletions(const std::vector<RegistryCommitTarget>& targets) const {
+RegistryCommitResult RegistryBatchCommitter::persistDeletions(const std::vector<RegistryCommitTarget>& targets) const {
   return executeRegistryBatch(m_registry, targets, RegistryOperation::PersistDeletion);
 }
 

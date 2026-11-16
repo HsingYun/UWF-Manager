@@ -42,6 +42,7 @@
 #include "application/configuration/execution/ConfigurationExecutor.h"
 #include "application/configuration/importing/ConfigurationImporter.h"
 #include "application/overlay/contracts/OverlayPolicy.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/uwf/CompositeAllVolumeProtection.h"
 #include "application/uwf/adapters/UwfConfigurationRepository.h"
 #include "application/uwf/adapters/UwfOverlayOperations.h"

@@ -18,6 +18,7 @@
 #include "application/configuration/volumes/VolumeConfigurationEditor.h"
 #include "application/console/ConsoleCommandExecutor.h"
 #include "application/staging/editing/FileStagingDraft.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/uwf/CompositeAllVolumeProtection.h"
 #include "application/uwf/adapters/UwfConfigurationRepository.h"
 #include "application/uwf/adapters/UwfOverlayMaintenance.h"

@@ -50,6 +50,7 @@
 
 #include "application/staging/contracts/FileStagingStore.h"
 #include "application/staging/editing/FileStagingEditor.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "cases/presentation/views/widgets/WidgetUiFixture.h"
 #include "domain/uwf/model/UwfModel.h"
 #include "domain/uwf/policies/IndividualCommitPolicy.h"
@@ -930,7 +931,9 @@ void WidgetConfigurationTests::stagingActionsFollowStorageSelectionAndLanguage()
   QVERIFY(model->storageAvailable());
   QCOMPARE(list->model()->rowCount(), 1);
   if (removed) {
-    editor->removePaths({path});
+    auto preparation = editor->prepareRemovePaths({path});
+    preparation.prepare({});
+    preparation.complete({});
     QCoreApplication::sendPostedEvents(editor.get(), QEvent::MetaCall);
     QCOMPARE(list->model()->rowCount(), 1);
   }

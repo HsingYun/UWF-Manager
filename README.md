@@ -2,11 +2,11 @@
 
 A Qt-based graphical management tool for the Windows Unified Write Filter (UWF), with a command-line interface.
 
-[简体中文](README.zh_CN.md)
+[简体中文](.github/assets/README.zh_CN.md)
 
-![Screenshot](snapshot/snapshot.1.png)
+![Screenshot](.github/assets/snapshot.1.png)
 
-![Screenshot](snapshot/snapshot.2.png)
+![Screenshot](.github/assets/snapshot.2.png)
 
 ## About UWF
 
@@ -16,11 +16,13 @@ UWF exposes current- and next-session state separately. Changes to filter enable
 
 UWF replaces the earlier Enhanced Write Filter (EWF) and File-Based Write Filter (FBWF). It is suitable for stateless Windows kiosks, point-of-sale terminals, ATMs, medical devices, computer-lab workstations, and digital signage.
 
+> **Note**: *Servicing mode* (`uwfmgr filter enable-servicing` / `disable-servicing`, used to suspend the filter for Windows Update or scheduled maintenance) is not planned.
+
 ## Features
 
 - View the current filter state and configure filter enablement for the next session
 - Overlay configuration: type (RAM / Disk), maximum size, warning and critical thresholds
-- Advanced overlay settings: Freespace Passthrough, Persistent Overlay, clearing persistent data at the next startup, Read-Only Media mode, and HORM
+- Advanced overlay settings: `Freespace Passthrough`, `Persistent Overlay`, `clearing persistent data at the next startup`, `Read-Only Media mode`, and `HORM`
 - Per-volume protection toggle and drive-letter / volume-ID binding
 - Per-volume file and directory exclusion management
 - Registry exclusion management
@@ -51,11 +53,11 @@ Language=en
 HubVisible=false
 ```
 
-| Option | Values | Default |
-| --- | --- | --- |
-| `[UI] Theme` | `system`, `light`, `dark` | `system` |
-| `[UI] Language` | `system`, supported language codes | `system` |
-| `[UI] HubVisible` | `true`, `false` | `true` |
+| Option            | Values                             | Default  |
+|-------------------|------------------------------------|----------|
+| `[UI] Theme`      | `system`, `light`, `dark`          | `system` |
+| `[UI] Language`   | `system`, supported language codes | `system` |
+| `[UI] HubVisible` | `true`, `false`                    | `true`   |
 
 Select **Export interface settings** in the About dialog to save the current theme, language, and HUB visibility to `UWF.ini` next to the executable.
 

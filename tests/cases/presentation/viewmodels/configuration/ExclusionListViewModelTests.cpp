@@ -27,6 +27,7 @@
 #include "application/configuration/execution/ConfigurationExecutor.h"
 #include "application/configuration/planning/ConfigurationScript.h"
 #include "application/staging/contracts/FileStagingStore.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/uwf/adapters/UwfConfigurationRepository.h"
 #include "application/uwf/adapters/UwfReadState.h"
 #include "application/volumes/contracts/VolumeRepository.h"

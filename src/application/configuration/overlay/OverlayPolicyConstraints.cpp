@@ -131,6 +131,6 @@ OverlayPolicyValidation validateOverlayPolicyPlan(const ConfigurationPlan& plan)
   if (!plan.hasPolicyContext && plan.overlayPolicy.empty() && !plan.maintenance.storageVolume) return {};
   const auto target = configurationOverlayTarget(plan);
   return draftValidation(configurationOverlayBaseline(plan), target.overlay.type, plan.overlayPolicy, target.flags,
-                         plan.changes.setOverlay.touchesOverlayConfig() || plan.maintenance.storageVolume.has_value());
+                         plan.changes.setOverlay.touchesTypeOrSize() || plan.maintenance.storageVolume.has_value());
 }
 }  // namespace uwf::app

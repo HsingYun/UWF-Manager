@@ -43,23 +43,14 @@ class FileStagingEditing : public QObject {
   [[nodiscard]] virtual bool storageAvailable() const = 0;
   [[nodiscard]] virtual const QString& storageError() const = 0;
   virtual void load() = 0;
-  // A selection is one batch even when it contains both files and directories.
-  virtual void addEntries(const QList<FileStagingEntry>& entries) = 0;
-  virtual void removePaths(const QStringList& paths) = 0;
-  virtual void restorePaths(const QStringList& paths) = 0;
   [[nodiscard]] virtual bool busy() const { return false; }
   [[nodiscard]] virtual FileStagingPreparation prepareLoad() {
     return {{}, [this](std::exception_ptr) { load(); }, {}};
   }
-  [[nodiscard]] virtual FileStagingPreparation prepareAddEntries(const QList<FileStagingEntry>& entries) {
-    return {{}, [this, entries](std::exception_ptr) { addEntries(entries); }, {}};
-  }
-  [[nodiscard]] virtual FileStagingPreparation prepareRemovePaths(const QStringList& paths) {
-    return {{}, [this, paths](std::exception_ptr) { removePaths(paths); }, {}};
-  }
-  [[nodiscard]] virtual FileStagingPreparation prepareRestorePaths(const QStringList& paths) {
-    return {{}, [this, paths](std::exception_ptr) { restorePaths(paths); }, {}};
-  }
+  // A selection is one batch even when it contains both files and directories.
+  [[nodiscard]] virtual FileStagingPreparation prepareAddEntries(const QList<FileStagingEntry>& entries) = 0;
+  [[nodiscard]] virtual FileStagingPreparation prepareRemovePaths(const QStringList& paths) = 0;
+  [[nodiscard]] virtual FileStagingPreparation prepareRestorePaths(const QStringList& paths) = 0;
 
  signals:
   void entriesChanged();

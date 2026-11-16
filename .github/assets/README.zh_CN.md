@@ -2,11 +2,11 @@
 
 基于 Qt 的 Windows 统一写入筛选器（Unified Write Filter，UWF）图形管理工具，同时提供命令行接口。
 
-[English](README.md)
+[English](../../README.md)
 
-![截图](snapshot/screenshot.1.zh_CN.png)
+![截图](screenshot.1.zh_CN.png)
 
-![截图](snapshot/screenshot.2.zh_CN.png)
+![截图](screenshot.2.zh_CN.png)
 
 ## 关于 UWF
 
@@ -16,11 +16,13 @@ UWF 分别提供当前会话和下次会话的状态。筛选器开关、覆盖�
 
 UWF 取代了早期的增强型写入筛选器（EWF）和基于文件的写入筛选器（FBWF），适用于 Windows 无状态自助终端、收银终端、ATM、医疗设备、机房工作站和数字标牌等场景。
 
+> **说明**：*服务模式*（`uwfmgr filter enable-servicing` / `disable-servicing`，用于挂起筛选器以执行 Windows Update 或计划维护）没有计划实现。
+
 ## 功能
 
 - 查看当前筛选器状态，设置下次会话的筛选器开关
 - 覆盖层配置：类型（RAM / Disk）、最大容量、警告阈值与严重阈值
-- 覆盖层高级设置：可用空间直通、持久覆盖层、下次启动清除持久数据、只读媒体模式与 HORM
+- 覆盖层高级设置：`可用空间直通`、`持久覆盖层`、`下次启动清除持久数据`、`只读媒体模式`与 `HORM`
 - 单卷保护开关及盘符 / 卷 ID 绑定
 - 按卷管理文件与目录排除项
 - 注册表排除项管理
@@ -51,11 +53,11 @@ Language=zh_CN
 HubVisible=false
 ```
 
-| 选项 | 可选值 | 默认值 |
-| --- | --- | --- |
-| `[UI] Theme` | `system`、`light`、`dark` | `system` |
-| `[UI] Language` | `system`、受支持的语言代码 | `system` |
-| `[UI] HubVisible` | `true`、`false` | `true` |
+| 选项              | 可选值                     | 默认值   |
+|-------------------|----------------------------|----------|
+| `[UI] Theme`      | `system`、`light`、`dark`  | `system` |
+| `[UI] Language`   | `system`、受支持的语言代码 | `system` |
+| `[UI] HubVisible` | `true`、`false`            | `true`   |
 
 在“关于”对话框中选择“导出界面设置”，可将当前主题、语言和 HUB 显示状态保存为同目录的 `UWF.ini`。
 
@@ -77,4 +79,4 @@ cmake --build build --config Release
 
 ## 许可
 
-GNU General Public License v3.0，见 [LICENSE](LICENSE)。
+GNU General Public License v3.0，见 [LICENSE](../../LICENSE)。

@@ -152,7 +152,7 @@ std::vector<ConfigurationPhase> configurationPhases(const ConfigurationPlan& pla
     if (plan.maintenance.hormEnabled || plan.maintenance.fullCommit)
       phases.emplace_back(ConfigurationMaintenancePhase{{.hormEnabled = plan.maintenance.hormEnabled, .fullCommit = plan.maintenance.fullCommit}});
   };
-  const bool storageChange = plan.changes.setOverlay.touchesOverlayConfig() || plan.maintenance.storageVolume.has_value();
+  const bool storageChange = plan.changes.setOverlay.touchesTypeOrSize() || plan.maintenance.storageVolume.has_value();
   const bool mixed = plan.hasPolicyContext || !delta.empty() || plan.maintenance.storageVolume.has_value();
   // Without policy context, retain the standard-settings execution path.
   if (!mixed) {

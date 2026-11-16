@@ -42,7 +42,7 @@ void verifyPolicy(const ConfigurationPlan& plan, const OverlayPolicySnapshot& st
     match(require(state.next.overlayType, OverlayProperty::NextOverlayType) == require(baseline.next.overlayType, OverlayProperty::NextOverlayType),
           OverlayProperty::NextOverlayType);
   }
-  if (plan.maintenance.storageVolume || plan.changes.setOverlay.touchesOverlayConfig() || overlayOptionsRequireCurrentFilterOff(baseline, delta))
+  if (plan.maintenance.storageVolume || plan.changes.setOverlay.touchesTypeOrSize() || overlayOptionsRequireCurrentFilterOff(baseline, delta))
     match(!require(state.current.filterEnabled, OverlayProperty::CurrentFilterEnabled), OverlayProperty::CurrentFilterEnabled);
   if (delta.reset) {
     match(require(state.resetPersistentState, OverlayProperty::ResetPersistentState) ==

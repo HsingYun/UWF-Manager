@@ -24,6 +24,7 @@
 
 #include "application/configuration/contracts/ConfigurationPlan.h"
 #include "application/staging/editing/FileStagingEditor.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "cases/presentation/viewmodels/staging/MemoryStagingStore.h"
 #include "presentation/viewmodels/common/AutomaticCommitText.h"
 #include "presentation/viewmodels/staging/FileStagingViewModel.h"
@@ -55,9 +56,15 @@ class ProjectedStagingEditing final : public app::FileStagingEditing {
   bool busy() const override { return working; }
   const QString& storageError() const override { return error; }
   void load() override { emit entriesChanged(); }
-  void addEntries(const QList<app::FileStagingEntry>&) override { throw std::logic_error("Unexpected edit"); }
-  void removePaths(const QStringList&) override { throw std::logic_error("Unexpected edit"); }
-  void restorePaths(const QStringList&) override { throw std::logic_error("Unexpected edit"); }
+  app::FileStagingPreparation prepareAddEntries(const QList<app::FileStagingEntry>&) override {
+    return {{}, [](std::exception_ptr) { throw std::logic_error("Unexpected edit"); }, {}};
+  }
+  app::FileStagingPreparation prepareRemovePaths(const QStringList&) override {
+    return {{}, [](std::exception_ptr) { throw std::logic_error("Unexpected edit"); }, {}};
+  }
+  app::FileStagingPreparation prepareRestorePaths(const QStringList&) override {
+    return {{}, [](std::exception_ptr) { throw std::logic_error("Unexpected edit"); }, {}};
+  }
 };
 
 class GatedStagingSource final : public app::CommitTraversalSource {
@@ -774,7 +781,9 @@ void FileStagingViewModelTests::editingPreparationKeepsTheEventLoopResponsive() 
   QTRY_VERIFY(!model.busy());
   QCOMPARE(model.entries().size(), 2);
   if (operation == 2) {
-    editing->removePaths({original.path});
+    auto preparation = editing->prepareRemovePaths({original.path});
+    preparation.prepare({});
+    preparation.complete({});
     QCOMPARE(model.entries().size(), 1);
   }
   presentation::FileStagingViewModel peer(std::make_shared<app::FileStagingEditor>(QStringLiteral("C:"), draft, source));

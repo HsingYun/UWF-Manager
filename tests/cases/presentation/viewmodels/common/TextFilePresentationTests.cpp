@@ -11,6 +11,7 @@
 #include <utility>
 
 #include "application/staging/contracts/FileStagingStore.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "domain/uwf/policies/ExclusionCoverage.h"
 #include "presentation/viewmodels/common/TextFileExport.h"
 #include "presentation/viewmodels/configuration/ApplyPlanViewModel.h"

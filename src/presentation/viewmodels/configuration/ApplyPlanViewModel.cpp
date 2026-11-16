@@ -82,7 +82,7 @@ ApplyPlanViewModel::ApplyPlanViewModel(app::ConfigurationPlan plan, std::shared_
     m_warning = QString::fromUtf8(error.what());
   }
   m_changeCommandCount = m_changeScript.commands.size();
-  if (m_plan.changes.setOverlay.touchesOverlayConfig() && m_plan.snapshot.current.filter.enabled)
+  if (m_plan.changes.setOverlay.touchesTypeOrSize() && m_plan.snapshot.current.filter.enabled)
     m_warning = PresentationText::tr("Disable UWF and restart before changing the overlay type or maximum capacity.");
   m_canApply = m_validPlan && changeCount() > 0;
   const auto enabledText = [](const bool value) { return value ? PresentationText::tr("On") : PresentationText::tr("Off"); };

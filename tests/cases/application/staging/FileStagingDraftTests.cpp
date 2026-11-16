@@ -18,6 +18,7 @@
 #include "application/staging/editing/FileStagingConflictPolicy.h"
 #include "application/staging/editing/FileStagingDraft.h"
 #include "application/staging/editing/FileStagingEditor.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/uwf/adapters/UwfConfigurationRepository.h"
 #include "domain/uwf/contracts/Types.h"
 #include "infrastructure/windows/commit/WindowsCommitTraversalSource.h"
@@ -28,6 +29,16 @@
 
 using namespace uwf;
 namespace {
+void complete(app::FileStagingPreparation preparation) {
+  std::exception_ptr failure;
+  try {
+    if (preparation.prepare) preparation.prepare({});
+  } catch (...) {
+    failure = std::current_exception();
+  }
+  if (preparation.complete) preparation.complete(failure);
+}
+
 class DraftBindingSource final : public app::CommitTraversalSource {
  public:
   std::string mountedVolume = "11111111-2222-3333-4444-555555555555";
@@ -424,31 +435,34 @@ class FileStagingDraftTests final : public QObject {
     }
     QCOMPARE(store->writes, 0);
   }
-  void editSnapshotsTrackIntentRatherThanOnlyObjectEquality_data() {
+  void projectionRevisionsTrackIntentRatherThanOnlyObjectEquality_data() {
     QTest::addColumn<int>("intervening");
     QTest::newRow("cached-read") << 0;
     QTest::newRow("changed-and-restored-target") << 1;
     QTest::newRow("same-valued-observation") << 2;
   }
-  void editSnapshotsTrackIntentRatherThanOnlyObjectEquality() {
+  void projectionRevisionsTrackIntentRatherThanOnlyObjectEquality() {
     QFETCH(int, intervening);
     auto store = std::make_shared<Store>();
     store->entries = {first};
     app::FileStagingDraft draft(store);
-    const auto edit = draft.readEdit();
-    QVERIFY(edit);
-    QCOMPARE(edit->entries, QList<app::FileStagingEntry>{first});
+    const auto entries = draft.load();
+    const auto revision = draft.revision();
+    const auto project = draft.prepareProjection({});
+    auto projection = project({second}, {});
+    QVERIFY(projection);
+    QCOMPARE(entries, QList<app::FileStagingEntry>{first});
     if (intervening == 0) {
-      QCOMPARE(draft.load(), edit->entries);
-      draft.replace(edit->entries);  // An equal target is also a genuine no-op.
+      QCOMPARE(draft.load(), entries);
+      draft.replace(entries);  // An equal target is also a genuine no-op.
     } else if (intervening == 1) {
       draft.replace({second});
-      draft.replace(edit->entries);
+      draft.replace(entries);
     } else {
       draft.reload();
     }
-    QCOMPARE(draft.replaceIfCurrent(edit->revision, {second}), intervening == 0);
-    QCOMPARE(draft.load(), intervening == 0 ? QList<app::FileStagingEntry>{second} : edit->entries);
+    QCOMPARE(draft.acceptProjection(revision, std::move(*projection)), intervening == 0);
+    QCOMPARE(draft.load(), intervening == 0 ? QList<app::FileStagingEntry>{second} : entries);
     QCOMPARE(store->writes, 0);
   }
 
@@ -819,10 +833,10 @@ class FileStagingDraftTests final : public QObject {
     app::FileStagingConflictPolicy conflicts;
     app::FileStagingEditor editor(QStringLiteral("C:"), draft, uwf::windows::systemCommitTraversalSource(), &conflicts);
     editor.load();
-    editor.removePaths({first.path});
+    complete(editor.prepareRemovePaths({first.path}));
     conflicts.setFileExclusions({first.path});
     QSignalSpy rejected(&editor, &app::FileStagingEditing::pathRejected);
-    editor.restorePaths({first.path});
+    complete(editor.prepareRestorePaths({first.path}));
     QCOMPARE(rejected.count(), 1);
     QVERIFY(draft.load().isEmpty());
     QCOMPARE(store.entries, QList<app::FileStagingEntry>{first});

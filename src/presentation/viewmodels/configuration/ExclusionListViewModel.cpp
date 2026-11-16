@@ -202,7 +202,11 @@ void ExclusionListViewModel::rebuildRows() {
                                                   : ":/icons/registry.svg";
       rows.append(std::move(row));
     }
-    const auto rank = [](const Row& row) { return row.status == ItemStatus::Removed ? 0 : row.status == ItemStatus::Added ? 1 : 2; };
+    const auto rank = [this](const Row& row) {
+      const bool stagingRoot = kind() == Kind::Registry && app::isFileStagingRegistryRoot(row.path);
+      const int status = row.status == ItemStatus::Removed ? 0 : row.status == ItemStatus::Added ? 1 : 2;
+      return std::pair{stagingRoot, status};
+    };
     std::stable_sort(rows.begin(), rows.end(), [&](const Row& a, const Row& b) { return rank(a) < rank(b); });
     beginResetModel();
     if (!self) return;

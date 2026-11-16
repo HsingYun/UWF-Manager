@@ -30,9 +30,15 @@ class StagingEditingProbe final : public app::FileStagingEditing {
   bool storageAvailable() const override { return true; }
   const QString& storageError() const override { return error; }
   void load() override {}
-  void addEntries(const QList<app::FileStagingEntry>&) override { ++mutations; }
-  void removePaths(const QStringList&) override { ++mutations; }
-  void restorePaths(const QStringList&) override { ++mutations; }
+  app::FileStagingPreparation prepareAddEntries(const QList<app::FileStagingEntry>&) override {
+    return {{}, [this](std::exception_ptr) { ++mutations; }, {}};
+  }
+  app::FileStagingPreparation prepareRemovePaths(const QStringList&) override {
+    return {{}, [this](std::exception_ptr) { ++mutations; }, {}};
+  }
+  app::FileStagingPreparation prepareRestorePaths(const QStringList&) override {
+    return {{}, [this](std::exception_ptr) { ++mutations; }, {}};
+  }
 };
 
 class EmptyTranslator final : public QTranslator {

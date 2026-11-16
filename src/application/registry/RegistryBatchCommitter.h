@@ -9,9 +9,9 @@
 
 namespace uwf::app {
 
-class RegistryTreeCommitter final {
+class RegistryBatchCommitter final {
  public:
-  explicit RegistryTreeCommitter(std::shared_ptr<UwfMaintenanceRepository> repository);
+  explicit RegistryBatchCommitter(std::shared_ptr<UwfMaintenanceRepository> repository);
 
   [[nodiscard]] RegistryCommitResult commit(const std::vector<RegistryCommitTarget>& targets) const;
   // Persist a postorder plan after external host deletion. This does not perform

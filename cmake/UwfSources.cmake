@@ -249,8 +249,8 @@ set(UWF_APPLICATION_SOURCES
     src/application/paths/PathPolicy.h
     src/application/power/PowerCoordinator.cpp
     src/application/power/PowerCoordinator.h
-    src/application/registry/RegistryTreeCommitter.cpp
-    src/application/registry/RegistryTreeCommitter.h
+    src/application/registry/RegistryBatchCommitter.cpp
+    src/application/registry/RegistryBatchCommitter.h
     src/application/registry/RegistryValueFormat.cpp
     src/application/registry/RegistryValueFormat.h
     src/application/settings/UiPreferences.cpp

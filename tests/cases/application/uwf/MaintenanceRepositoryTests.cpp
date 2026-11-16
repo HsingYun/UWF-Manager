@@ -20,7 +20,7 @@
 #include "application/commit/contracts/CommitTraversalSource.h"
 #include "application/identity/contracts/ObjectIdentity.h"
 #include "application/operations/contracts/OperationError.h"
-#include "application/registry/RegistryTreeCommitter.h"
+#include "application/registry/RegistryBatchCommitter.h"
 #include "application/staging/execution/FileStagingCommitter.h"
 #include "application/uwf/UwfRequestPrecheck.h"
 #include "application/uwf/adapters/UwfMaintenanceRepositoryFactory.h"
@@ -777,7 +777,7 @@ class MaintenanceRepositoryTests final : public QObject {
       changed.runtime.horm = compat::Fact<bool>::known(true);
       system->updateState(std::move(changed));
     };
-    const RegistryTreeCommitter committer(uwfMaintenanceRepository(system));
+    const RegistryBatchCommitter committer(uwfMaintenanceRepository(system));
     const auto result = committer.commit({{"HKLM\\Software\\Exact", "first"}, {"HKLM\\Software\\Exact", "second"}});
     QCOMPARE(result.committed, std::size_t{1});
     QCOMPARE(result.failures.size(), std::size_t{1});
@@ -922,7 +922,7 @@ class MaintenanceRepositoryTests final : public QObject {
     for (const auto receipt : {WriteEffect::None, WriteEffect::Confirmed}) {
       const auto repository = std::make_shared<Repository>();
       repository->keys->receipt = receipt;
-      const RegistryTreeCommitter registry(repository);
+      const RegistryBatchCommitter registry(repository);
       const auto registryResult = registry.commit({{"HKLM\\SOFTWARE\\Test", "Value"}});
       QCOMPARE(registryResult.committed, std::size_t{1});
       QCOMPARE(registryResult.writeEffect(), receipt);
@@ -1592,7 +1592,7 @@ class MaintenanceRepositoryTests final : public QObject {
         if (plan.targets().size() != 1) throw std::logic_error("expected one ordinary commit target");
         if (!backend->execute(request.target, CommitOperation::Persist).succeeded) throw std::logic_error("ordinary commit failed");
       } else {
-        RegistryTreeCommitter committer(repository);
+        RegistryBatchCommitter committer(repository);
         const std::vector<RegistryCommitTarget> targets{{key, value}};
         const auto result = action == MaintenanceOperation::RegistryBatch ? committer.commit(targets) : committer.persistDeletions(targets);
         if (!result.succeeded() || result.committed != 1) throw std::logic_error("ordinary registry batch failed");
@@ -1813,7 +1813,7 @@ class MaintenanceRepositoryTests final : public QObject {
   }
   void registryBatchReadsOnceAndCommitsEveryValue() {
     auto repository = std::make_shared<Repository>();
-    RegistryTreeCommitter committer(repository);
+    RegistryBatchCommitter committer(repository);
     const auto result = committer.commit({{"HKLM\\Software\\Test", "one"}, {"HKLM\\Software\\Test", "two"}});
     QCOMPARE(result.committed, std::size_t{2});
     QCOMPARE(repository->registryReads, 1);

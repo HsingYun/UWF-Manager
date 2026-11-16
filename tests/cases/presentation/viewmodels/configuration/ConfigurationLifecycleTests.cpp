@@ -6,6 +6,7 @@
 #include <QThreadPool>
 #include <utility>
 
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "presentation/models/ItemRoles.h"
 #include "presentation/viewmodels/configuration/OverlayAdvancedViewModel.h"
 #include "presentation/viewmodels/shell/MainWindowViewModel.h"

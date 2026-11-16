@@ -4,7 +4,6 @@
 
 #include <QString>
 #include <QStringView>
-#include <algorithm>
 
 #include "foundation/text/StringUtil.h"
 
@@ -17,9 +16,5 @@ namespace uwf::app {
 }
 [[nodiscard]] inline QString configuredExclusionKey(const QStringView path) {
   return QString::fromStdU16String(toLowerAscii(path.toString().toStdU16String()));
-}
-template <typename Entries>
-[[nodiscard]] bool containsConfiguredExclusion(const Entries& entries, const QStringView path) {
-  return std::ranges::any_of(entries, [&](const auto& entry) { return equalConfiguredExclusions(entry, path); });
 }
 }  // namespace uwf::app

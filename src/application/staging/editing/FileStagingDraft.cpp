@@ -235,10 +235,6 @@ FileStagingDraft::ReadSnapshot FileStagingDraft::readSnapshot() {
   const auto entries = load();
   return {entries, m_baseline, m_drives, m_baselineDrives};
 }
-std::optional<FileStagingDraft::EditSnapshot> FileStagingDraft::readEdit() {
-  if (!ensureLoaded()) return std::nullopt;
-  return EditSnapshot{load(), m_revision};
-}
 QList<FileStagingEntry> FileStagingDraft::baseline() const { return m_baseline; }
 void FileStagingDraft::replace(const QList<FileStagingEntry>& entries) {
   auto normalized = projectEntries(entries);
@@ -246,15 +242,6 @@ void FileStagingDraft::replace(const QList<FileStagingEntry>& entries) {
   if (!ensureLoaded()) return;
   static_cast<void>(load());
   replaceCached(std::move(*normalized));
-}
-bool FileStagingDraft::replaceIfCurrent(const std::uint64_t revision, const QList<FileStagingEntry>& entries) {
-  auto normalized = projectEntries(entries);
-  if (!normalized) return false;
-  if (!ensureLoaded()) return false;
-  static_cast<void>(load());
-  if (m_revision != revision) return false;
-  replaceCached(std::move(*normalized));
-  return true;
 }
 void FileStagingDraft::replaceCached(Projection projection) {
   if (m_drives == projection.drives && m_volumeIdentities == projection.volumes &&

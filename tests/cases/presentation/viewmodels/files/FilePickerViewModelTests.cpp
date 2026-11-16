@@ -376,7 +376,11 @@ class FilePickerViewModelTests final : public QObject {
     editor.load();
     QSignalSpy rejected(&editor, &app::FileStagingEditing::pathRejected);
     QSignalSpy updateFailed(&editor, &app::FileStagingEditing::updateFailed);
-    editor.addEntries(selections);
+    const auto complete = [](app::FileStagingPreparation preparation) {
+      preparation.prepare({});
+      preparation.complete({});
+    };
+    complete(editor.prepareAddEntries(selections));
     QCOMPARE(rejected.size(), 0);
     QCOMPARE(updateFailed.size(), 0);
     QVERIFY(editor.storageAvailable());
@@ -396,7 +400,7 @@ class FilePickerViewModelTests final : public QObject {
     QCOMPARE(editor.entries().size(), 1);
     QCOMPARE(editor.entries().constFirst().path, extendedFile);
 
-    editor.addEntries({{app::FileStagingKind::File, driveFile}});
+    complete(editor.prepareAddEntries({{app::FileStagingKind::File, driveFile}}));
     QCOMPARE(rejected.size(), 0);
     QCOMPARE(editor.entries().size(), 1);
     QVERIFY(editor.entries().constFirst().fileTarget);
@@ -409,10 +413,10 @@ class FilePickerViewModelTests final : public QObject {
     QCOMPARE(replacement->count(), std::size_t{2});
     QCOMPARE(replacement->added().constFirst().path, driveFile);
     QCOMPARE(replacement->removed().constFirst().path, extendedFile);
-    editor.removePaths({driveFile});
+    complete(editor.prepareRemovePaths({driveFile}));
     QVERIFY(editor.entries().isEmpty());
     QVERIFY(draft.changes());
-    editor.restorePaths({extendedFile});
+    complete(editor.prepareRestorePaths({extendedFile}));
     QCOMPARE(rejected.size(), 0);
     QCOMPARE(updateFailed.size(), 0);
     QCOMPARE(editor.entries().size(), 1);

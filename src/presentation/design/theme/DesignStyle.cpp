@@ -657,7 +657,6 @@ void DesignStyle::drawControl(const ControlElement element, const QStyleOption* 
                    : logical;
       };
       const bool selected = tab->state.testFlag(State_Selected);
-      if (tab->state.testFlag(State_MouseOver)) rounded(painter, bounds, color(Color::Hover), Qt::transparent, 4);
       if (selected) {
         painter->setPen(Qt::NoPen);
         painter->setBrush(color(Color::Accent));

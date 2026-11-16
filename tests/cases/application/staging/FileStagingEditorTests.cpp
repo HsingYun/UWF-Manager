@@ -4,6 +4,7 @@
 #include <QSignalSpy>
 #include <QTest>
 #include <array>
+#include <exception>
 #include <functional>
 #include <memory>
 #include <utility>
@@ -14,6 +15,7 @@
 #include "application/staging/editing/FileStagingDraft.h"
 #include "application/staging/editing/FileStagingEditor.h"
 #include "application/staging/editing/FileStagingEntries.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "domain/uwf/contracts/Types.h"
 #include "support/app/FileStagingFixture.h"
 #include "support/app/FileTargetFixture.h"
@@ -22,6 +24,20 @@ namespace {
 using namespace uwf;
 using app::FileStagingEntry;
 using app::FileStagingKind;
+
+std::exception_ptr prepare(app::FileStagingPreparation& preparation) {
+  try {
+    if (preparation.prepare) preparation.prepare({});
+  } catch (...) {
+    return std::current_exception();
+  }
+  return {};
+}
+
+void complete(app::FileStagingPreparation preparation) {
+  const auto failure = prepare(preparation);
+  if (preparation.complete) preparation.complete(failure);
+}
 
 class SelectionSource final : public app::CommitTraversalSource {
  public:
@@ -120,7 +136,7 @@ class FileStagingEditorTests final : public QObject {
     app::FileStagingEditor editor(QStringLiteral("C:"), draft, source);
     editor.load();
     QSignalSpy rejected(&editor, &app::FileStagingEditing::pathRejected);
-    editor.addEntries({{FileStagingKind::File, QStringLiteral(R"(\\?\Z:\Unavailable\state.bin)")}});
+    complete(editor.prepareAddEntries({{FileStagingKind::File, QStringLiteral(R"(\\?\Z:\Unavailable\state.bin)")}}));
     QCOMPARE(source->inspections, 1);
     QCOMPARE(source->bindings, 1);
     QCOMPARE(source->driveReads, 0);
@@ -140,11 +156,11 @@ class FileStagingEditorTests final : public QObject {
     editor.load();
     QVERIFY(editor.entries().constFirst().fileTarget);
     QCOMPARE(editor.entries().constFirst().fileTarget->volumeId, std::string(fixtureVolumeId));
-    editor.removePaths({entry.path});
+    complete(editor.prepareRemovePaths({entry.path}));
     QVERIFY(editor.entries().isEmpty());
     source->targetResolver = [](const QString& path) { return memoryFileTarget(path, otherFixtureVolumeId); };
     QSignalSpy rejected(&editor, &app::FileStagingEditing::pathRejected);
-    editor.restorePaths({entry.path});
+    complete(editor.prepareRestorePaths({entry.path}));
     QCOMPARE(rejected.size(), 1);
     QCOMPARE(qvariant_cast<app::FileStagingRejection>(rejected.constFirst().constFirst()).kind, app::FileStagingRejection::Kind::ResolutionFailed);
     QVERIFY(editor.entries().isEmpty());
@@ -152,7 +168,7 @@ class FileStagingEditorTests final : public QObject {
     QCOMPARE(draft.changes()->removed().size(), qsizetype{1});
     QCOMPARE(store->writes, 0);
     source->targetResolver = {};
-    editor.restorePaths({entry.path});
+    complete(editor.prepareRestorePaths({entry.path}));
     QCOMPARE(editor.entries().size(), qsizetype{1});
     QVERIFY(!draft.changes());
   }
@@ -180,14 +196,14 @@ class FileStagingEditorTests final : public QObject {
     QVERIFY(!draft.changes());
     QVERIFY(draft.editSnapshot()->storedBefore);
     QCOMPARE(*draft.editSnapshot()->storedBefore, store->entries);
-    editor.removePaths({guid.path});
+    complete(editor.prepareRemovePaths({guid.path}));
     QVERIFY(editor.entries().isEmpty());
     QVERIFY(draft.changes());
     QCOMPARE(draft.changes()->removed().size(), 1);
-    editor.restorePaths({guid.path});
+    complete(editor.prepareRestorePaths({guid.path}));
     QCOMPARE(editor.entries().size(), 1);
     QVERIFY(!draft.changes());
-    editor.removePaths({guid.path});
+    complete(editor.prepareRemovePaths({guid.path}));
     const auto reviewed = *draft.changes();
     store->entries = {drive};
     const auto rejected = draft.prepareWrite(reviewed)();
@@ -250,7 +266,7 @@ class FileStagingEditorTests final : public QObject {
     }
     QCOMPARE(source->bindings, bindings);
     QCOMPARE(source->driveReads, driveReads);
-    pages.front()->removePaths({store->entries.front().path});
+    complete(pages.front()->prepareRemovePaths({store->entries.front().path}));
     QCOMPARE(pages.front()->entries().size(), 99);
     QCOMPARE(pages.front()->baselineEntries().size(), 100);
     // 99 target bindings and one root observation, regardless of page count.
@@ -300,13 +316,13 @@ class FileStagingEditorTests final : public QObject {
     const FileStagingEntry alias{FileStagingKind::File, QStringLiteral("C:\\MountedD\\Data\\file.bin")};
     QSignalSpy wrongPage(&c, &app::FileStagingEditing::pathRejected);
     QSignalSpy excluded(&d, &app::FileStagingEditing::pathRejected);
-    c.addEntries({alias});
-    d.addEntries({alias});
+    complete(c.prepareAddEntries({alias}));
+    complete(d.prepareAddEntries({alias}));
     QCOMPARE(wrongPage.size(), 1);
     QCOMPARE(excluded.size(), 1);
     QVERIFY(draft.load().isEmpty());
     conflicts.setFileExclusions({});
-    d.addEntries({alias, {FileStagingKind::File, QStringLiteral("D:\\Data\\file.bin")}});
+    complete(d.prepareAddEntries({alias, {FileStagingKind::File, QStringLiteral("D:\\Data\\file.bin")}}));
     QCOMPARE(draft.load(), QList<FileStagingEntry>{alias});
     QVERIFY(c.entries().isEmpty());
     QCOMPARE(d.entries(), QList<FileStagingEntry>{alias});
@@ -319,15 +335,10 @@ class FileStagingEditorTests final : public QObject {
   }
 
   void explicitAddressReplacementPersistsAndSurvivesTheOldMount_data() {
-    QTest::addColumn<bool>("prepared");
     QTest::addColumn<QString>("originalDrive");
-    for (const auto& originalDrive : {QStringLiteral("C:"), QStringLiteral("E:")})
-      for (const bool prepared : {false, true})
-        QTest::newRow(qUtf8Printable(originalDrive + (prepared ? QStringLiteral("/prepared") : QStringLiteral("/synchronous"))))
-            << prepared << originalDrive;
+    for (const auto& originalDrive : {QStringLiteral("C:"), QStringLiteral("E:")}) QTest::newRow(qUtf8Printable(originalDrive)) << originalDrive;
   }
   void explicitAddressReplacementPersistsAndSurvivesTheOldMount() {
-    QFETCH(bool, prepared);
     QFETCH(QString, originalDrive);
     using namespace test::application;
     const auto mountRoot = originalDrive + QStringLiteral("\\MountedD");
@@ -349,18 +360,9 @@ class FileStagingEditorTests final : public QObject {
     app::FileStagingEditor editor(QStringLiteral("D:"), draft, source);
     editor.load();
     const auto original = editor.entries().constFirst().fileTarget;
-    const auto complete = [](app::FileStagingPreparation preparation) {
-      preparation.prepare({});
-      preparation.complete({});
-    };
     const auto replaceAddress = [&] {
-      if (prepared) {
-        complete(editor.prepareRemovePaths({alias.path}));
-        complete(editor.prepareAddEntries({direct}));
-      } else {
-        editor.removePaths({alias.path});
-        editor.addEntries({direct});
-      }
+      complete(editor.prepareRemovePaths({alias.path}));
+      complete(editor.prepareAddEntries({direct}));
     };
     replaceAddress();
     QCOMPARE(editor.entries(), QList<FileStagingEntry>{direct});
@@ -368,10 +370,7 @@ class FileStagingEditorTests final : public QObject {
     QCOMPARE(draft.changes()->removed(), QList<FileStagingEntry>{alias});
     QCOMPARE(draft.changes()->added(), QList<FileStagingEntry>{direct});
     QCOMPARE(store->writes, 0);
-    if (prepared)
-      complete(editor.prepareRestorePaths({alias.path}));
-    else
-      editor.restorePaths({alias.path});
+    complete(editor.prepareRestorePaths({alias.path}));
     QCOMPARE(editor.entries(), QList<FileStagingEntry>{alias});
     QVERIFY(!draft.changes());
     replaceAddress();
@@ -390,13 +389,7 @@ class FileStagingEditorTests final : public QObject {
     QVERIFY(!draft.changes());
   }
 
-  void restoringTheSavedSelectionReplacesItsCurrentKind_data() {
-    QTest::addColumn<bool>("prepared");
-    QTest::newRow("synchronous") << false;
-    QTest::newRow("prepared") << true;
-  }
   void restoringTheSavedSelectionReplacesItsCurrentKind() {
-    QFETCH(bool, prepared);
     const FileStagingEntry original{FileStagingKind::File, QStringLiteral("C:\\folder")};
     const FileStagingEntry replacement{FileStagingKind::Directory, original.path};
     auto store = std::make_shared<test::application::MemoryFileStagingStore>();
@@ -405,36 +398,18 @@ class FileStagingEditorTests final : public QObject {
     app::FileStagingDraft draft(store, source);
     app::FileStagingEditor editor(QStringLiteral("C:"), draft, source);
     editor.load();
-    const auto complete = [](app::FileStagingPreparation preparation) {
-      preparation.prepare({});
-      preparation.complete({});
-    };
-    if (prepared) {
-      complete(editor.prepareRemovePaths({original.path}));
-      complete(editor.prepareAddEntries({replacement}));
-    } else {
-      editor.removePaths({original.path});
-      editor.addEntries({replacement});
-    }
+    complete(editor.prepareRemovePaths({original.path}));
+    complete(editor.prepareAddEntries({replacement}));
     QCOMPARE(editor.entries(), QList<FileStagingEntry>{replacement});
     QCOMPARE(draft.changes()->count(), std::size_t{2});
-    if (prepared)
-      complete(editor.prepareRestorePaths({original.path}));
-    else
-      editor.restorePaths({original.path});
+    complete(editor.prepareRestorePaths({original.path}));
     QCOMPARE(editor.entries(), QList<FileStagingEntry>{original});
     QVERIFY(!draft.changes());
     QCOMPARE(store->entries, QList<FileStagingEntry>{original});
     QCOMPARE(store->writes, 0);
   }
 
-  void rejectedRestorePublishesNoneOfTheSelectedAddresses_data() {
-    QTest::addColumn<bool>("prepared");
-    QTest::newRow("synchronous") << false;
-    QTest::newRow("prepared") << true;
-  }
   void rejectedRestorePublishesNoneOfTheSelectedAddresses() {
-    QFETCH(bool, prepared);
     using namespace test::application;
     const auto mountRoot = QStringLiteral("E:\\MountedD");
     const FileStagingEntry first{FileStagingKind::File, mountRoot + QStringLiteral("\\first.bin")};
@@ -445,7 +420,7 @@ class FileStagingEditorTests final : public QObject {
     auto source = std::make_shared<SelectionSource>();
     source->targetResolver = [mountRoot](const QString& path) {
       return path.startsWith(mountRoot + u'\\') ? app::FileCommitTarget{otherFixtureVolumeId, path.mid(mountRoot.size())}
-                                              : memoryFileTarget(path, otherFixtureVolumeId);
+                                                : memoryFileTarget(path, otherFixtureVolumeId);
     };
     source->driveResolver = [](const QString&) { return std::string("D:"); };
     auto store = std::make_shared<MemoryFileStagingStore>();
@@ -455,27 +430,15 @@ class FileStagingEditorTests final : public QObject {
     conflicts.setVolumeIdentity(QStringLiteral("D:"), otherFixtureVolumeId);
     app::FileStagingEditor editor(QStringLiteral("D:"), draft, source, &conflicts);
     editor.load();
-    const auto complete = [](app::FileStagingPreparation preparation) {
-      preparation.prepare({});
-      preparation.complete({});
-    };
-    if (prepared) {
-      complete(editor.prepareRemovePaths({first.path, second.path}));
-      complete(editor.prepareAddEntries(replacements));
-    } else {
-      editor.removePaths({first.path, second.path});
-      editor.addEntries(replacements);
-    }
+    complete(editor.prepareRemovePaths({first.path, second.path}));
+    complete(editor.prepareAddEntries(replacements));
     QCOMPARE(editor.entries(), replacements);
     QCOMPARE(draft.changes()->count(), std::size_t{4});
     const auto rawBefore = draft.editSnapshot()->storedBefore;
     conflicts.setFileExclusions({QStringLiteral("D:\\second.bin")});
     QSignalSpy changed(&draft, &app::FileStagingDraft::changed);
     QSignalSpy rejected(&editor, &app::FileStagingEditing::pathRejected);
-    if (prepared)
-      complete(editor.prepareRestorePaths({second.path, first.path}));
-    else
-      editor.restorePaths({second.path, first.path});
+    complete(editor.prepareRestorePaths({second.path, first.path}));
     QCOMPARE(rejected.size(), 1);
     QCOMPARE(qvariant_cast<app::FileStagingRejection>(rejected.constFirst().constFirst()).kind, app::FileStagingRejection::Kind::ExclusionConflict);
     QCOMPARE(changed.size(), 0);
@@ -485,10 +448,7 @@ class FileStagingEditorTests final : public QObject {
     QCOMPARE(store->entries, originals);
     QCOMPARE(store->writes, 0);
     conflicts.setFileExclusions({});
-    if (prepared)
-      complete(editor.prepareRestorePaths({second.path, first.path}));
-    else
-      editor.restorePaths({second.path, first.path});
+    complete(editor.prepareRestorePaths({second.path, first.path}));
     QCOMPARE(editor.entries(), originals);
     QVERIFY(!draft.changes());
     QCOMPARE(store->entries, originals);
@@ -526,7 +486,7 @@ class FileStagingEditorTests final : public QObject {
     editor.load();
     QCOMPARE(editor.entries(), QList<FileStagingEntry>{offline});
     QVERIFY(!editor.entries().front().fileTarget);
-    editor.removePaths({offline.path});
+    complete(editor.prepareRemovePaths({offline.path}));
     QVERIFY(editor.entries().isEmpty());
     QCOMPARE(store->entries, QList<FileStagingEntry>{offline});
     QCOMPARE(store->writes, 0);
@@ -547,7 +507,7 @@ class FileStagingEditorTests final : public QObject {
     app::FileStagingDraft draft(store, source);
     app::FileStagingEditor d(QStringLiteral("D:"), draft, source);
     d.load();
-    if (removed) d.removePaths({saved.path});
+    if (removed) complete(d.prepareRemovePaths({saved.path}));
     source->targetResolver = [](const QString&) -> app::FileCommitTarget { throw std::runtime_error("offline"); };
     source->driveResolver = [](const QString&) -> std::string { throw std::runtime_error("offline"); };
     draft.reconcile();
@@ -556,7 +516,7 @@ class FileStagingEditorTests final : public QObject {
     QCOMPARE(fallback.baselineEntries().size(), 1);
     QCOMPARE(fallback.baselineEntries().constFirst().path, saved.path);
     QCOMPARE(fallback.entries().size(), removed ? 0 : 1);
-    if (!removed) fallback.removePaths({saved.path});
+    if (!removed) complete(fallback.prepareRemovePaths({saved.path}));
     QVERIFY(fallback.entries().isEmpty());
     QVERIFY(draft.changes());
     QCOMPARE(draft.changes()->removed().size(), 1);
@@ -567,13 +527,7 @@ class FileStagingEditorTests final : public QObject {
     QCOMPARE(store->writes, 1);
   }
 
-  void fallbackDoesNotAdmitAnotherVolumesNewOrRestoredTargets_data() {
-    QTest::addColumn<bool>("asynchronous");
-    QTest::newRow("synchronous") << false;
-    QTest::newRow("prepared") << true;
-  }
   void fallbackDoesNotAdmitAnotherVolumesNewOrRestoredTargets() {
-    QFETCH(bool, asynchronous);
     using namespace test::application;
     const FileStagingEntry saved{FileStagingKind::File, QStringLiteral("D:\\saved.bin")};
     auto source = std::make_shared<SelectionSource>();
@@ -583,19 +537,10 @@ class FileStagingEditorTests final : public QObject {
     app::FileStagingEditor editor(QStringLiteral("C:"), draft, source, nullptr, {{QStringLiteral("C:")}, QStringLiteral("C:")});
     editor.load();
     QCOMPARE(editor.entries().size(), 1);
-    editor.removePaths({saved.path});
+    complete(editor.prepareRemovePaths({saved.path}));
     QSignalSpy rejected(&editor, &app::FileStagingEditing::pathRejected);
-    const auto complete = [](app::FileStagingPreparation preparation) {
-      preparation.prepare({});
-      preparation.complete({});
-    };
-    if (asynchronous) {
-      complete(editor.prepareAddEntries({saved}));
-      complete(editor.prepareRestorePaths({saved.path}));
-    } else {
-      editor.addEntries({saved});
-      editor.restorePaths({saved.path});
-    }
+    complete(editor.prepareAddEntries({saved}));
+    complete(editor.prepareRestorePaths({saved.path}));
     QVERIFY(editor.entries().isEmpty());
     QCOMPARE(editor.baselineEntries().size(), 1);
     QCOMPARE(rejected.size(), 2);
@@ -650,7 +595,16 @@ class FileStagingEditorTests final : public QObject {
       source->beforeInspection = callback;
     else
       source->beforeResolution = callback;
-    editor->addEntries({{FileStagingKind::File, QStringLiteral("C:\\older.bin")}});
+    auto preparation = editor->prepareAddEntries({{FileStagingKind::File, QStringLiteral("C:\\older.bin")}});
+    QVERIFY(draft->busy());
+    const auto failure = prepare(preparation);
+    // Match the owner lifecycle: a destroyed owner cancels instead of
+    // publishing the worker result; a surviving owner rejects stale revisions.
+    if (editorLifetime && draftLifetime)
+      preparation.complete(failure);
+    else
+      preparation.cancel();
+    preparation = {};
     QVERIFY(called);
     QCOMPARE(editorLifetime.isNull(), outcome == 1);
     QCOMPARE(draftLifetime.isNull(), outcome == 2);
@@ -664,6 +618,7 @@ class FileStagingEditorTests final : public QObject {
     } else {
       QVERIFY(!editor->storageAvailable());
     }
+    if (draft) QVERIFY(!draft->busy());
     QCOMPARE(store->writes, 0);
   }
 
@@ -709,17 +664,25 @@ class FileStagingEditorTests final : public QObject {
         draft.reset();
       }
     };
+    app::FileStagingPreparation preparation;
     switch (operation) {
       case 0:
-        editor->addEntries({{FileStagingKind::File, QStringLiteral("C:\\older.bin")}});
+        preparation = editor->prepareAddEntries({{FileStagingKind::File, QStringLiteral("C:\\older.bin")}});
         break;
       case 1:
-        editor->removePaths({original.path});
+        preparation = editor->prepareRemovePaths({original.path});
         break;
       case 2:
-        editor->restorePaths({original.path});
+        preparation = editor->prepareRestorePaths({original.path});
         break;
     }
+    QVERIFY(draft->busy());
+    const auto failure = prepare(preparation);
+    if (editorLifetime && draftLifetime)
+      preparation.complete(failure);
+    else
+      preparation.cancel();
+    preparation = {};
     QVERIFY(called);
     QCOMPARE(editorLifetime.isNull(), outcome == 1);
     QCOMPARE(draftLifetime.isNull(), outcome == 2);
@@ -734,6 +697,7 @@ class FileStagingEditorTests final : public QObject {
     } else {
       QVERIFY(!editor->storageAvailable());
     }
+    if (draft) QVERIFY(!draft->busy());
     QCOMPARE(store->writes, 0);
   }
 
@@ -829,16 +793,11 @@ class FileStagingEditorTests final : public QObject {
 
   void additionsAndRestorationsShareSetRules_data() {
     QTest::addColumn<bool>("restoreParent");
-    QTest::addColumn<bool>("prepared");
-    for (const bool prepared : {false, true}) {
-      const auto route = prepared ? QStringLiteral("/prepared") : QStringLiteral("/synchronous");
-      QTest::newRow(qUtf8Printable(QStringLiteral("add-child-restore-parent") + route)) << true << prepared;
-      QTest::newRow(qUtf8Printable(QStringLiteral("add-parent-restore-child") + route)) << false << prepared;
-    }
+    QTest::newRow("add-child-restore-parent") << true;
+    QTest::newRow("add-parent-restore-child") << false;
   }
   void additionsAndRestorationsShareSetRules() {
     QFETCH(bool, restoreParent);
-    QFETCH(bool, prepared);
     const FileStagingEntry parent{FileStagingKind::Directory, QStringLiteral("C:\\folder")};
     const FileStagingEntry child{FileStagingKind::File, QStringLiteral("C:\\folder\\child.txt")};
     const FileStagingEntry offline{FileStagingKind::File, QStringLiteral("Z:\\Offline\\saved.bin")};
@@ -849,19 +808,9 @@ class FileStagingEditorTests final : public QObject {
     app::FileStagingDraft draft(store);
     app::FileStagingEditor editor(QStringLiteral("C:"), draft, std::make_shared<SelectionSource>());
     editor.load();
-    if (prepared) {
-      const auto complete = [](app::FileStagingPreparation preparation) {
-        preparation.prepare({});
-        preparation.complete({});
-      };
-      complete(editor.prepareRemovePaths({original.path}));
-      complete(editor.prepareAddEntries({added}));
-      complete(editor.prepareRestorePaths({original.path}));
-    } else {
-      editor.removePaths({original.path});
-      editor.addEntries({added});
-      editor.restorePaths({original.path});
-    }
+    complete(editor.prepareRemovePaths({original.path}));
+    complete(editor.prepareAddEntries({added}));
+    complete(editor.prepareRestorePaths({original.path}));
     const QList<FileStagingEntry> expected{parent, offline};
     QCOMPARE(draft.load(), expected);
     QCOMPARE(editor.entries(), QList<FileStagingEntry>{parent});
@@ -893,7 +842,7 @@ class FileStagingEditorTests final : public QObject {
     connect(&editor, &app::FileStagingEditing::entriesChanged, &editor, [&] { QCOMPARE(editor.entries(), item.expected); });
     connect(&editor, &app::FileStagingEditing::pathRejected, &editor, [&] { QCOMPARE(draft.load(), item.expected); });
 
-    editor.addEntries(item.selection);
+    complete(editor.prepareAddEntries(item.selection));
     QCOMPARE(draft.load(), item.expected);
     QCOMPARE(editor.entries(), item.expected);
     QCOMPARE(rejected.size(), item.rejected);
@@ -905,7 +854,7 @@ class FileStagingEditorTests final : public QObject {
     QVERIFY(peer.entries().isEmpty());
     QCOMPARE(store->writes, 0);
     // A no-op must not reset either page or publish a second draft version.
-    editor.addEntries(item.expected);
+    complete(editor.prepareAddEntries(item.expected));
     QCoreApplication::sendPostedEvents();
     QCOMPARE(changed.size(), publications);
     QCOMPARE(published.size(), publications);
@@ -913,7 +862,7 @@ class FileStagingEditorTests final : public QObject {
     QCOMPARE(store->writes, 0);
   }
 
-  void rejectedPathAllowsAnotherAcceptedBatch_data() {
+  void rejectedPathDefersAnotherBatchUntilCompletion_data() {
     QTest::addColumn<int>("rejectionPosition");
     QTest::addColumn<bool>("coalesceDirectory");
     constexpr std::array positions{"before", "between", "after"};
@@ -923,7 +872,7 @@ class FileStagingEditorTests final : public QObject {
             << static_cast<int>(index) << coalesce;
   }
 
-  void rejectedPathAllowsAnotherAcceptedBatch() {
+  void rejectedPathDefersAnotherBatchUntilCompletion() {
     QFETCH(int, rejectionPosition);
     QFETCH(bool, coalesceDirectory);
     const FileStagingEntry child{FileStagingKind::File, QStringLiteral("C:\\folder\\child.txt")};
@@ -955,15 +904,26 @@ class FileStagingEditorTests final : public QObject {
       draftAtRejection = draft.load();
       editorAtRejection = editor.entries();
       peerAtRejection = peer.entries();
-      editor.addEntries({next});
+      QVERIFY(editor.busy());
+      const auto nested = editor.prepareAddEntries({next});
+      QVERIFY(!nested.prepare);
+      QVERIFY(!nested.complete);
+      QVERIFY(!nested.cancel);
     });
 
-    editor.addEntries(selection);
+    complete(editor.prepareAddEntries(selection));
     QCoreApplication::sendPostedEvents();
     QCOMPARE(rejected, 1);
     QCOMPARE(draftAtRejection, firstAccepted);
     QCOMPARE(editorAtRejection, firstAccepted);
     QCOMPARE(peerAtRejection, firstAccepted);
+    QCOMPARE(publications, QList<QList<FileStagingEntry>>{firstAccepted});
+    QCOMPARE(changed.size(), 1);
+    QCOMPARE(peerPublished.size(), 1);
+    QVERIFY(!editor.busy());
+    // A published rejection belongs to the still-running batch. A new user
+    // action is accepted after completion releases that batch's busy state.
+    complete(editor.prepareAddEntries({next}));
     const QList<QList<FileStagingEntry>> expectedPublications{firstAccepted, expected};
     QCOMPARE(publications, expectedPublications);
     QCOMPARE(changed.size(), 2);
@@ -975,17 +935,16 @@ class FileStagingEditorTests final : public QObject {
   }
 
   void rejectedPathMayDestroyItsEditor_data() {
-    QTest::addColumn<bool>("editBeforeDestroy");
+    QTest::addColumn<bool>("attemptEditBeforeDestroy");
     QTest::newRow("destroy-after-first-publication") << false;
-    QTest::newRow("edit-then-destroy") << true;
+    QTest::newRow("reject-nested-edit-then-destroy") << true;
   }
 
   void rejectedPathMayDestroyItsEditor() {
-    QFETCH(bool, editBeforeDestroy);
+    QFETCH(bool, attemptEditBeforeDestroy);
     const FileStagingEntry file{FileStagingKind::File, QStringLiteral("C:\\one.txt")};
     const FileStagingEntry next{FileStagingKind::File, QStringLiteral("C:\\two.txt")};
     const QList<FileStagingEntry> firstAccepted{file};
-    const QList<FileStagingEntry> expected = editBeforeDestroy ? QList<FileStagingEntry>{file, next} : firstAccepted;
     auto store = std::make_shared<test::application::MemoryFileStagingStore>();
     app::FileStagingDraft draft(store);
     auto source = std::make_shared<SelectionSource>();
@@ -1003,21 +962,29 @@ class FileStagingEditorTests final : public QObject {
       ++rejected;
       draftAtRejection = draft.load();
       peerAtRejection = peer.entries();
-      if (editBeforeDestroy) editor->addEntries({next});
+      QVERIFY(editor->busy());
+      if (attemptEditBeforeDestroy) {
+        const auto nested = editor->prepareAddEntries({next});
+        QVERIFY(!nested.prepare);
+        QVERIFY(!nested.complete);
+        QVERIFY(!nested.cancel);
+      }
       editor.reset();
     });
 
     // Two pending rejections require the emitter to stop after its lifetime ends.
-    editor->addEntries({{FileStagingKind::File, QStringLiteral("first-relative.txt")}, file, {FileStagingKind::File, QStringLiteral("second-relative.txt")}});
+    complete(editor->prepareAddEntries(
+        {{FileStagingKind::File, QStringLiteral("first-relative.txt")}, file, {FileStagingKind::File, QStringLiteral("second-relative.txt")}}));
     QCoreApplication::sendPostedEvents();
     QVERIFY(guarded.isNull());
     QCOMPARE(rejected, 1);
     QCOMPARE(draftAtRejection, firstAccepted);
     QCOMPARE(peerAtRejection, firstAccepted);
-    QCOMPARE(changed.size(), editBeforeDestroy ? 2 : 1);
-    QCOMPARE(peerPublished.size(), editBeforeDestroy ? 2 : 1);
-    QCOMPARE(draft.load(), expected);
-    QCOMPARE(peer.entries(), expected);
+    QCOMPARE(changed.size(), 1);
+    QCOMPARE(peerPublished.size(), 1);
+    QCOMPARE(draft.load(), firstAccepted);
+    QCOMPARE(peer.entries(), firstAccepted);
+    QVERIFY(!draft.busy());
     QCOMPARE(store->writes, 0);
   }
 };

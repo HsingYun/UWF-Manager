@@ -25,10 +25,6 @@ class FileStagingDraft final : public QObject {
   };
   // Host resolution belongs to this shared projection; volume pages filter memory.
   [[nodiscard]] ReadSnapshot readSnapshot();
-  struct EditSnapshot {
-    QList<FileStagingEntry> entries;
-    std::uint64_t revision;
-  };
   using Projection = FileStagingProjection;
   struct ReadResult {
     QList<FileStagingEntry> stored;
@@ -50,13 +46,11 @@ class FileStagingDraft final : public QObject {
   [[nodiscard]] bool busy() const { return m_busy; }
   void setBusy(bool busy);
   [[nodiscard]] QList<FileStagingEntry> load();
-  [[nodiscard]] std::optional<EditSnapshot> readEdit();
   void replace(const QList<FileStagingEntry>& entries);
   // An edit may call fallible host ports before committing its candidate. A
   // newer shared target or observation invalidates that candidate, even when
   // the final object set happens to equal the earlier one.
   [[nodiscard]] std::uint64_t revision() const { return m_revision; }
-  [[nodiscard]] bool replaceIfCurrent(std::uint64_t revision, const QList<FileStagingEntry>& entries);
   [[nodiscard]] QList<FileStagingEntry> baseline() const;
   [[nodiscard]] std::optional<FileStagingChanges> changes() const;
   // Complete cached editing state, including an unchanged target. No storage

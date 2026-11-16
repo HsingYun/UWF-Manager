@@ -13,7 +13,7 @@
 #include <variant>
 #include <vector>
 
-#include "application/registry/RegistryTreeCommitter.h"
+#include "application/registry/RegistryBatchCommitter.h"
 #include "application/uwf/UwfRequestPrecheck.h"
 #include "application/uwf/adapters/UwfMaintenanceRepositoryFactory.h"
 #include "foundation/logging/Log.h"
@@ -42,7 +42,7 @@ std::vector<std::string> failureLogs() {
   return lines;
 }
 
-class RegistryTreeCommitterTests final : public QObject {
+class RegistryBatchCommitterTests final : public QObject {
   Q_OBJECT
   enum class ControlSetObservation { Missing, Failing, Available };
   Q_ENUM(ControlSetObservation)
@@ -77,7 +77,7 @@ class RegistryTreeCommitterTests final : public QObject {
     initial.next = initial.current;
     const auto backend = std::make_shared<test::FakeUwfBackend>(initial);
 
-    const app::RegistryTreeCommitter committer(app::uwfMaintenanceRepository(backend));
+    const app::RegistryBatchCommitter committer(app::uwfMaintenanceRepository(backend));
     auto invalid = app::RegistryCommitTarget{key, "named"};
     auto& field = keyField ? invalid.key : invalid.valueName;
     field.append(malformed.constData(), static_cast<std::size_t>(malformed.size()));
@@ -116,7 +116,7 @@ class RegistryTreeCommitterTests final : public QObject {
     if (scene == 0) invalid = {key, ""};
     if (scene == 2) invalid = {key, "named", app::RegistryTargetKind::Key};
     if (scene == 3) invalid = app::RegistryCommitTarget::wholeKey(key);
-    const app::RegistryTreeCommitter committer(fixture.repository());
+    const app::RegistryBatchCommitter committer(fixture.repository());
     const auto before = fixture.backend->snapshot();
     const std::vector<app::RegistryCommitTarget> plan{{key, "valid-first"}, invalid};
     const auto result = scene < 3 ? committer.persistDeletions(plan) : committer.commit(plan);
@@ -141,7 +141,7 @@ class RegistryTreeCommitterTests final : public QObject {
     const auto wholeKey = app::RegistryCommitTarget::wholeKey(key);
     QVERIFY(!defaultValue.isKey());
     QVERIFY(wholeKey.isKey());
-    const app::RegistryTreeCommitter committer(fixture.repository());
+    const app::RegistryBatchCommitter committer(fixture.repository());
     QVERIFY(committer.commit({defaultValue}).succeeded());
     QCOMPARE(fixture.backend->readRegistryValue(key, ""), std::optional<std::string>{"default-after"});
     const auto before = fixture.backend->snapshot();
@@ -199,7 +199,7 @@ class RegistryTreeCommitterTests final : public QObject {
           fixture.state->beforeRegistryCommit = [&] {
             if (++writes == 2) throw test::application::DetailedOperationFailure(kind, effect);
           };
-          const RegistryTreeCommitter committer(fixture.repository());
+          const RegistryBatchCommitter committer(fixture.repository());
           const auto result = deletion ? committer.persistDeletions(targets) : committer.commit(targets);
           QCOMPARE(result.committed, std::size_t{1});
           QCOMPARE(result.failures.size(), std::size_t{1});
@@ -241,14 +241,14 @@ class RegistryTreeCommitterTests final : public QObject {
   void unprotectedSystemVolumeNeedsNoRegistryPersistence();
 };
 
-void RegistryTreeCommitterTests::fullCommitDoesNotConfirmHistoricalRegistryPlans_data() {
+void RegistryBatchCommitterTests::fullCommitDoesNotConfirmHistoricalRegistryPlans_data() {
   QTest::addColumn<MaintenanceOperation>("operation");
   QTest::newRow("commit-value") << MaintenanceOperation::CommitValue;
   QTest::newRow("persist-value-deletion") << MaintenanceOperation::PersistValueDeletion;
   QTest::newRow("persist-key-deletion") << MaintenanceOperation::PersistKeyDeletion;
 }
 
-void RegistryTreeCommitterTests::fullCommitDoesNotConfirmHistoricalRegistryPlans() {
+void RegistryBatchCommitterTests::fullCommitDoesNotConfirmHistoricalRegistryPlans() {
   QFETCH(MaintenanceOperation, operation);
   auto initial = protectedRegistryState();
   initial.current.overlayFlags = compat::flags::readOnlyMedia;
@@ -270,7 +270,7 @@ void RegistryTreeCommitterTests::fullCommitDoesNotConfirmHistoricalRegistryPlans
   QCOMPARE(repository->registryWriteRequirement(), app::CommitRequirement::AlreadyPersistent);
   backend->writeRegistryValue(key, "Future", "new-direct-write");
   QCOMPARE(backend->readRegistryValue(key, "Future"), std::optional<std::string>{"new-direct-write"});
-  const app::RegistryTreeCommitter committer(repository);
+  const app::RegistryBatchCommitter committer(repository);
   const auto before = backend->snapshot();
   backend->clearTrace();
   const std::vector<app::RegistryCommitTarget> targets{operation == MaintenanceOperation::PersistKeyDeletion ? app::RegistryCommitTarget::wholeKey(key)
@@ -283,7 +283,7 @@ void RegistryTreeCommitterTests::fullCommitDoesNotConfirmHistoricalRegistryPlans
   QVERIFY(backend->trace().empty());
 }
 
-void RegistryTreeCommitterTests::unprotectedSystemVolumeNeedsNoRegistryPersistence_data() {
+void RegistryBatchCommitterTests::unprotectedSystemVolumeNeedsNoRegistryPersistence_data() {
   QTest::addColumn<bool>("rom");
   QTest::addColumn<bool>("horm");
   QTest::addColumn<MaintenanceOperation>("operation");
@@ -295,7 +295,7 @@ void RegistryTreeCommitterTests::unprotectedSystemVolumeNeedsNoRegistryPersisten
       QTest::newRow((std::string(mode) + '/' + name).c_str()) << flags.first << flags.second << operation;
 }
 
-void RegistryTreeCommitterTests::unprotectedSystemVolumeNeedsNoRegistryPersistence() {
+void RegistryBatchCommitterTests::unprotectedSystemVolumeNeedsNoRegistryPersistence() {
   QFETCH(bool, rom);
   QFETCH(bool, horm);
   QFETCH(MaintenanceOperation, operation);
@@ -329,7 +329,7 @@ void RegistryTreeCommitterTests::unprotectedSystemVolumeNeedsNoRegistryPersisten
   const auto before = backend->snapshot();
   backend->clearTrace();
 
-  app::RegistryTreeCommitter committer(app::uwfMaintenanceRepository(backend));
+  app::RegistryBatchCommitter committer(app::uwfMaintenanceRepository(backend));
   const std::vector<app::RegistryCommitTarget> targets{operation == MaintenanceOperation::PersistKeyDeletion ? app::RegistryCommitTarget::wholeKey(key)
                                                                                                              : app::RegistryCommitTarget{key, name}};
   const auto result = operation == MaintenanceOperation::CommitValue ? committer.commit(targets) : committer.persistDeletions(targets);
@@ -351,7 +351,7 @@ void RegistryTreeCommitterTests::unprotectedSystemVolumeNeedsNoRegistryPersisten
   QCOMPARE(backend->visibleRegistryValue(sibling, name), std::optional<std::string>{"untouched"});
 }
 
-void RegistryTreeCommitterTests::independentExclusionProofDoesNotDependOnListOrderOrEnvironment_data() {
+void RegistryBatchCommitterTests::independentExclusionProofDoesNotDependOnListOrderOrEnvironment_data() {
   QTest::addColumn<bool>("targetAlias");
   QTest::addColumn<bool>("knownProof");
   QTest::addColumn<bool>("reverse");
@@ -377,7 +377,7 @@ void RegistryTreeCommitterTests::independentExclusionProofDoesNotDependOnListOrd
       }
 }
 
-void RegistryTreeCommitterTests::independentExclusionProofDoesNotDependOnListOrderOrEnvironment() {
+void RegistryBatchCommitterTests::independentExclusionProofDoesNotDependOnListOrderOrEnvironment() {
   QFETCH(bool, targetAlias);
   QFETCH(bool, knownProof);
   QFETCH(bool, reverse);
@@ -426,7 +426,7 @@ void RegistryTreeCommitterTests::independentExclusionProofDoesNotDependOnListOrd
   auto published = backend->state();
   if (observation != ControlSetObservation::Available) published.runtime.currentControlSet = {};
   checkedSystem->updateState(std::move(published));
-  app::RegistryTreeCommitter committer(app::uwfMaintenanceRepository(checkedSystem));
+  app::RegistryBatchCommitter committer(app::uwfMaintenanceRepository(checkedSystem));
   const auto before = backend->snapshot();
   backend->clearTrace();
   const std::vector<app::RegistryCommitTarget> targets{operation == MaintenanceOperation::PersistKeyDeletion ? app::RegistryCommitTarget::wholeKey(key)
@@ -450,9 +450,9 @@ void RegistryTreeCommitterTests::independentExclusionProofDoesNotDependOnListOrd
   if (operation == MaintenanceOperation::PersistKeyDeletion) QVERIFY(!backend->visibleRegistryKey(key));
 }
 
-void RegistryTreeCommitterTests::emptyPlansSkipUwfAndExternalDeletionsRetainTheirProviderFailure() {
+void RegistryBatchCommitterTests::emptyPlansSkipUwfAndExternalDeletionsRetainTheirProviderFailure() {
   Fixture fixture;
-  app::RegistryTreeCommitter committer(fixture.repository());
+  app::RegistryBatchCommitter committer(fixture.repository());
   QVERIFY(committer.commit({}).succeeded());
   QVERIFY(committer.persistDeletions({}).succeeded());
   QVERIFY(fixture.state->registryCommits.empty());
@@ -474,13 +474,13 @@ void RegistryTreeCommitterTests::emptyPlansSkipUwfAndExternalDeletionsRetainThei
   QVERIFY(fixture.backend->snapshot().durable.registryKeys.contains(missingKey));
 }
 
-void RegistryTreeCommitterTests::commitLogsEveryFailureBeforeTheVisibleSummaryLimit_data() {
+void RegistryBatchCommitterTests::commitLogsEveryFailureBeforeTheVisibleSummaryLimit_data() {
   QTest::addColumn<int>("count");
   QTest::newRow("beyond-four-visible-failures") << 5;
   QTest::newRow("one-hundred-failures") << 100;
 }
 
-void RegistryTreeCommitterTests::commitLogsEveryFailureBeforeTheVisibleSummaryLimit() {
+void RegistryBatchCommitterTests::commitLogsEveryFailureBeforeTheVisibleSummaryLimit() {
   QFETCH(int, count);
   Fixture fixture;
   std::vector<app::RegistryCommitTarget> targets;
@@ -497,7 +497,7 @@ void RegistryTreeCommitterTests::commitLogsEveryFailureBeforeTheVisibleSummaryLi
     if (index >= targets.size()) throw std::logic_error("unexpected registry invocation");
     fixture.state->registryCommitFailure = index % 2 == 0 ? std::make_exception_ptr(std::runtime_error(reasons[index])) : std::make_exception_ptr(42);
   };
-  app::RegistryTreeCommitter committer(fixture.repository());
+  app::RegistryBatchCommitter committer(fixture.repository());
   const auto result = committer.commit(targets);
   QCOMPARE(result.attempted, targets.size());
   QCOMPARE(result.committed, std::size_t{0});
@@ -517,9 +517,9 @@ void RegistryTreeCommitterTests::commitLogsEveryFailureBeforeTheVisibleSummaryLi
   QCOMPARE(failureLogs(), lines);
 }
 
-void RegistryTreeCommitterTests::deletionLogsEveryFailureBeforeTheVisibleSummaryLimit_data() { commitLogsEveryFailureBeforeTheVisibleSummaryLimit_data(); }
+void RegistryBatchCommitterTests::deletionLogsEveryFailureBeforeTheVisibleSummaryLimit_data() { commitLogsEveryFailureBeforeTheVisibleSummaryLimit_data(); }
 
-void RegistryTreeCommitterTests::deletionLogsEveryFailureBeforeTheVisibleSummaryLimit() {
+void RegistryBatchCommitterTests::deletionLogsEveryFailureBeforeTheVisibleSummaryLimit() {
   QFETCH(int, count);
   const std::string root = "HKEY_LOCAL_MACHINE\\SOFTWARE\\ControlledRegistry";
   std::vector<app::RegistryCommitTarget> targets;
@@ -531,7 +531,7 @@ void RegistryTreeCommitterTests::deletionLogsEveryFailureBeforeTheVisibleSummary
     reasons.push_back(index % 2 == 0 ? QStringLiteral("删除失败-%1\n原始 Unicode 详情").arg(index).toStdString() : "non-standard exception");
   }
   Fixture fixture;
-  app::RegistryTreeCommitter committer(fixture.repository());
+  app::RegistryBatchCommitter committer(fixture.repository());
   for (const auto& target : targets) {
     if (target.isKey()) {
       fixture.backend->seedRegistryKey(target.key);
@@ -561,7 +561,7 @@ void RegistryTreeCommitterTests::deletionLogsEveryFailureBeforeTheVisibleSummary
   }
 }
 
-void RegistryTreeCommitterTests::persistedExternalDeletionsAreNotLoggedButUnconfirmedBaseDeletionsAre() {
+void RegistryBatchCommitterTests::persistedExternalDeletionsAreNotLoggedButUnconfirmedBaseDeletionsAre() {
   const std::string root = "HKEY_LOCAL_MACHINE\\SOFTWARE\\ControlledRegistry";
   const auto direct = root + "\\Direct";
   const auto pending = root + "\\Pending";
@@ -570,7 +570,7 @@ void RegistryTreeCommitterTests::persistedExternalDeletionsAreNotLoggedButUnconf
   auto initial = fixture.backend->snapshot();
   initial.current.registryExclusions = {direct};
   fixture.backend->seed(std::move(initial));
-  app::RegistryTreeCommitter committer(fixture.repository());
+  app::RegistryBatchCommitter committer(fixture.repository());
   fixture.backend->seedRegistryValue(direct, "existing-value", "before");
   fixture.backend->seedRegistryValue(pending, "pending-value", "before");
   fixture.backend->seedRegistryKey(pendingKey);
@@ -594,18 +594,18 @@ void RegistryTreeCommitterTests::persistedExternalDeletionsAreNotLoggedButUnconf
   QVERIFY(fixture.backend->snapshot().durable.registryKeys.contains(pendingKey));
 }
 
-void RegistryTreeCommitterTests::requestPreparationFailuresRemainBatchFailures_data() {
+void RegistryBatchCommitterTests::requestPreparationFailuresRemainBatchFailures_data() {
   QTest::addColumn<bool>("unknown");
   QTest::newRow("multiline-utf8") << false;
   QTest::newRow("unknown") << true;
 }
 
-void RegistryTreeCommitterTests::requestPreparationFailuresRemainBatchFailures() {
+void RegistryBatchCommitterTests::requestPreparationFailuresRemainBatchFailures() {
   QFETCH(bool, unknown);
   Fixture fixture;
   const auto detail = QStringLiteral("无法读取注册表批次\n保留完整的原始 Unicode 错误");
   fixture.state->registryTargetFailure = unknown ? std::make_exception_ptr(42) : std::make_exception_ptr(std::runtime_error(detail.toStdString()));
-  app::RegistryTreeCommitter committer(fixture.repository());
+  app::RegistryBatchCommitter committer(fixture.repository());
   const std::string root = "HKEY_LOCAL_MACHINE\\SOFTWARE\\ControlledRegistry";
   const std::vector<app::RegistryCommitTarget> targets{{root, "first"}, {root, "second"}};
   fixture.stageRegistryValues(targets);
@@ -645,12 +645,12 @@ void RegistryTreeCommitterTests::requestPreparationFailuresRemainBatchFailures()
   std::erase_if(afterRetry, [](const auto& line) { return line.find(" E ") == std::string::npos; });
   QCOMPARE(afterRetry, errors);
 }
-void RegistryTreeCommitterTests::missingCommitValuesAreNotCreated_data() {
+void RegistryBatchCommitterTests::missingCommitValuesAreNotCreated_data() {
   QTest::addColumn<bool>("removedAfterPreparation");
   QTest::newRow("never-present") << false;
   QTest::newRow("removed-before-dispatch") << true;
 }
-void RegistryTreeCommitterTests::missingCommitValuesAreNotCreated() {
+void RegistryBatchCommitterTests::missingCommitValuesAreNotCreated() {
   QFETCH(bool, removedAfterPreparation);
   Fixture fixture;
   const std::string key = "HKEY_LOCAL_MACHINE\\SOFTWARE\\ControlledRegistry";
@@ -659,7 +659,7 @@ void RegistryTreeCommitterTests::missingCommitValuesAreNotCreated() {
     fixture.stageRegistryValue(key, name, "pending contents");
     fixture.state->beforeRegistryCommit = [backend = fixture.backend, key, name] { backend->deleteRegistryValue(key, name); };
   }
-  app::RegistryTreeCommitter committer(fixture.repository());
+  app::RegistryBatchCommitter committer(fixture.repository());
   const auto result = committer.commit({{key, name}});
   QCOMPARE(result.attempted, std::size_t{1});
   QCOMPARE(result.committed, std::size_t{0});
@@ -668,7 +668,7 @@ void RegistryTreeCommitterTests::missingCommitValuesAreNotCreated() {
   QVERIFY(!fixture.backend->readRegistryValue(key, name));
 }
 
-void RegistryTreeCommitterTests::currentExclusionCoveragePreservesRegistryDurability_data() {
+void RegistryBatchCommitterTests::currentExclusionCoveragePreservesRegistryDurability_data() {
   QTest::addColumn<QString>("pattern");
   QTest::addColumn<QString>("key");
   QTest::addColumn<bool>("managementSkipsCommit");
@@ -735,7 +735,7 @@ void RegistryTreeCommitterTests::currentExclusionCoveragePreservesRegistryDurabi
   }
 }
 
-void RegistryTreeCommitterTests::currentExclusionCoveragePreservesRegistryDurability() {
+void RegistryBatchCommitterTests::currentExclusionCoveragePreservesRegistryDurability() {
   QFETCH(QString, pattern);
   QFETCH(QString, key);
   QFETCH(bool, managementSkipsCommit);
@@ -762,7 +762,7 @@ void RegistryTreeCommitterTests::currentExclusionCoveragePreservesRegistryDurabi
   const std::string name = "Named";
   backend->seedRegistryValue(target, name, "before");
 
-  app::RegistryTreeCommitter committer(app::uwfMaintenanceRepository(backend));
+  app::RegistryBatchCommitter committer(app::uwfMaintenanceRepository(backend));
   std::vector<app::RegistryCommitTarget> targets;
   if (deletion) {
     // Model enhanced-mode removal: ordinary host deletion precedes the persistence batch.
@@ -826,7 +826,7 @@ void RegistryTreeCommitterTests::currentExclusionCoveragePreservesRegistryDurabi
       QCOMPARE(backend->visibleRegistryValue(target, value), std::optional<std::string>{persisted ? "after" : "before"});
   }
 }
-void RegistryTreeCommitterTests::controlSetReadFailuresCannotBecomeDurabilityProof_data() {
+void RegistryBatchCommitterTests::controlSetReadFailuresCannotBecomeDurabilityProof_data() {
   QTest::addColumn<QString>("root");
   QTest::addColumn<QString>("targetRoot");
   QTest::addColumn<bool>("required");
@@ -842,7 +842,7 @@ void RegistryTreeCommitterTests::controlSetReadFailuresCannotBecomeDurabilityPro
         << css << QStringLiteral("HKLM\\SYSTEM\\ControlSet002\\ReaderProbe") << true << deletion;
   }
 }
-void RegistryTreeCommitterTests::controlSetReadFailuresCannotBecomeDurabilityProof() {
+void RegistryBatchCommitterTests::controlSetReadFailuresCannotBecomeDurabilityProof() {
   QFETCH(QString, root);
   QFETCH(QString, targetRoot);
   QFETCH(bool, required);
@@ -864,7 +864,7 @@ void RegistryTreeCommitterTests::controlSetReadFailuresCannotBecomeDurabilityPro
   auto published = backend->state();
   published.runtime.currentControlSet = {};
   checkedSystem->updateState(std::move(published));
-  app::RegistryTreeCommitter committer(app::uwfMaintenanceRepository(checkedSystem));
+  app::RegistryBatchCommitter committer(app::uwfMaintenanceRepository(checkedSystem));
   const auto before = backend->snapshot();
   backend->clearTrace();
   const std::vector<app::RegistryCommitTarget> targets{{key, value}};
@@ -882,7 +882,7 @@ void RegistryTreeCommitterTests::controlSetReadFailuresCannotBecomeDurabilityPro
   }));
 }
 
-void RegistryTreeCommitterTests::controlSetNumericFormatGovernsEnvironmentReads_data() {
+void RegistryBatchCommitterTests::controlSetNumericFormatGovernsEnvironmentReads_data() {
   QTest::addColumn<QString>("patternComponent");
   QTest::addColumn<QString>("targetComponent");
   QTest::addColumn<bool>("required");
@@ -901,7 +901,7 @@ void RegistryTreeCommitterTests::controlSetNumericFormatGovernsEnvironmentReads_
   QTest::newRow("extra-leading-zero-is-not-a-formatted-id") << QStringLiteral("CurrentControlSet") << QStringLiteral("ControlSet0011") << false;
   QTest::newRow("numeric-suffix-mismatch") << QStringLiteral("CurrentControlSet1") << QStringLiteral("ControlSet0020") << false;
 }
-void RegistryTreeCommitterTests::controlSetNumericFormatGovernsEnvironmentReads() {
+void RegistryBatchCommitterTests::controlSetNumericFormatGovernsEnvironmentReads() {
   QFETCH(QString, patternComponent);
   QFETCH(QString, targetComponent);
   QFETCH(bool, required);
@@ -919,7 +919,7 @@ void RegistryTreeCommitterTests::controlSetNumericFormatGovernsEnvironmentReads(
   auto published = backend->state();
   published.runtime.currentControlSet = {};
   checkedSystem->updateState(std::move(published));
-  app::RegistryTreeCommitter committer(app::uwfMaintenanceRepository(checkedSystem));
+  app::RegistryBatchCommitter committer(app::uwfMaintenanceRepository(checkedSystem));
   const auto before = backend->snapshot();
   const auto result = committer.commit({{target, "Named"}});
   QCOMPARE(result.succeeded(), !required);
@@ -941,5 +941,5 @@ void RegistryTreeCommitterTests::controlSetNumericFormatGovernsEnvironmentReads(
 
 }  // namespace
 
-QTEST_APPLESS_MAIN(RegistryTreeCommitterTests)
-#include "RegistryTreeCommitterTests.moc"
+QTEST_APPLESS_MAIN(RegistryBatchCommitterTests)
+#include "RegistryBatchCommitterTests.moc"

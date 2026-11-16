@@ -25,9 +25,6 @@ class FileStagingEditor final : public FileStagingEditing {
   [[nodiscard]] bool storageAvailable() const override { return m_storageAvailable; }
   [[nodiscard]] const QString& storageError() const override { return m_storageError; }
   void load() override;
-  void addEntries(const QList<FileStagingEntry>& entries) override;
-  void removePaths(const QStringList& paths) override;
-  void restorePaths(const QStringList& paths) override;
   [[nodiscard]] bool busy() const override { return m_draft && m_draft->busy(); }
   [[nodiscard]] FileStagingPreparation prepareLoad() override;
   [[nodiscard]] FileStagingPreparation prepareAddEntries(const QList<FileStagingEntry>& entries) override;
@@ -35,7 +32,6 @@ class FileStagingEditor final : public FileStagingEditing {
   [[nodiscard]] FileStagingPreparation prepareRestorePaths(const QStringList& paths) override;
 
  private:
-  struct Edit;
   struct Candidate {
     QList<FileStagingEntry> entries;
     QList<FileStagingRejection> rejections;
@@ -43,14 +39,11 @@ class FileStagingEditor final : public FileStagingEditing {
   };
   enum class Update { Load, Add, Remove, Restore };
   FileStagingPreparation prepareUpdate(Update update, QList<FileStagingEntry> entries = {}, QStringList paths = {});
-  void updateSynchronously(Update update, const QList<FileStagingEntry>& entries, const QStringList& paths);
   static std::optional<Candidate> prepareEntries(Update update, const QList<FileStagingEntry>& entries, const QList<FileStagingEntry>& baseline,
                                                  const QList<FileStagingEntry>& selected, const QStringList& paths, const QString& driveLetter,
                                                  const std::shared_ptr<const CommitTraversalSource>& source,
                                                  const std::function<std::optional<QString>(const FileStagingEntry&)>& conflict,
                                                  const std::function<bool()>& current);
-  bool beginEdit(Edit& edit);
-  void commitEdit(const Edit& edit, const QList<FileStagingEntry>& entries);
   void setStorageUnavailable(const QString& error, std::uint64_t generation);
   void reportUpdateFailure(const QString& error);
   void reject(FileStagingRejection::Kind kind, QString detail = {});

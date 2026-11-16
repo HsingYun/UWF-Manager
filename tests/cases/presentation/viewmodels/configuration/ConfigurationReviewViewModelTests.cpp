@@ -24,6 +24,7 @@
 #include "application/configuration/overlay/OverlayPolicyConstraints.h"
 #include "application/configuration/volumes/VolumeConfigurationEditor.h"
 #include "application/staging/contracts/FileStagingStore.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/uwf/adapters/UwfConfigurationRepository.h"
 #include "application/uwf/adapters/UwfReadState.h"
 #include "cases/presentation/viewmodels/common/ViewModelStateFixture.h"

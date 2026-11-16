@@ -2,7 +2,7 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "infrastructure/windows/staging/RegistryFileStagingStore.h"
 
-#include "application/staging/contracts/FileStagingStore.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "infrastructure/windows/registry/RegistryCommitPlan.h"
 #include "infrastructure/windows/registry/RegistryKey.h"
 #include "infrastructure/windows/staging/RegistryFileStagingCodec.h"

@@ -11,6 +11,7 @@
 #include "application/localization/ApplicationText.h"
 #include "application/operations/contracts/OperationError.h"
 #include "application/paths/ExclusionCoverage.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 
 namespace uwf::app {
 namespace {

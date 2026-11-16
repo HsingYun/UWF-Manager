@@ -45,8 +45,7 @@ TabView::TabView(QWidget* parent) : QTabWidget(parent) {
   setElideMode(Qt::ElideNone);
   setUsesScrollButtons(true);
   tabBar()->setExpanding(false);
-  // The custom tab painter consumes State_MouseOver. Fusion does not enable
-  // hover delivery for QTabBar, so opt in for both normal motion and Leave.
+  // Keep hover events available for tab hints as the pointer moves or leaves.
   tabBar()->setAttribute(Qt::WA_Hover);
   setKind(Kind::Pages);
   connect(this, &QTabWidget::currentChanged, this, [this] {

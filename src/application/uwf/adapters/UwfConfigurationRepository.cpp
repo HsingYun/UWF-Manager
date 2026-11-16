@@ -229,7 +229,7 @@ ConfigurationApplyResult executePlan(const compat::Uwf& system, const Configurat
 
   // Type/capacity pairs need a current baseline only to select their order.
   // Single setters retain their own admission and capability boundaries.
-  if (pending.setOverlay.touchesOverlayConfig()) {
+  if (pending.setOverlay.touchesTypeOrSize()) {
     try {
       const auto published = system.state();
       if (published.current.filterEnabled.value == true)

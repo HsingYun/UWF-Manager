@@ -3,7 +3,6 @@
 #include "application/staging/persistence/FileStagingRegistry.h"
 
 #include "application/identity/contracts/ObjectIdentity.h"
-#include "application/staging/contracts/FileStagingStore.h"
 #include "foundation/paths/RegistryPath.h"
 
 namespace uwf::app {

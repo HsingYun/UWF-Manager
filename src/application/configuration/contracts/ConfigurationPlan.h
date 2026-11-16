@@ -69,7 +69,7 @@ struct ConfigurationPlan {
   [[nodiscard]] ConfigurationActivationTiming activationTiming(ConfigurationOperationKind operation) const;
   [[nodiscard]] bool requiresPolicyContext() const {
     return maintenance.storageVolume || !overlayPolicy.empty() ||
-           (hasPolicyContext && (changes.setOverlay.touchesOverlayConfig() || requiresOverlayFlagObservation()));
+           (hasPolicyContext && (changes.setOverlay.touchesTypeOrSize() || requiresOverlayFlagObservation()));
   }
   [[nodiscard]] std::size_t count() const { return ConfigurationChanges{changes, overlayPolicy, maintenance}.count() + (staging ? staging->count() : 0); }
 };

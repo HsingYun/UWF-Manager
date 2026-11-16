@@ -50,7 +50,7 @@ struct OverlayConfigDelta {
   std::optional<uint32_t> criticalThresholdMb{};
 
   [[nodiscard]] bool empty() const { return !type && !maximumSizeMb && !warningThresholdMb && !criticalThresholdMb; }
-  [[nodiscard]] bool touchesOverlayConfig() const { return type.has_value() || maximumSizeMb.has_value(); }
+  [[nodiscard]] bool touchesTypeOrSize() const { return type.has_value() || maximumSizeMb.has_value(); }
 };
 
 // Read-only usage of the running overlay, separate from its configured capacity.

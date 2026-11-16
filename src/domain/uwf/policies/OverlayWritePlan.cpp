@@ -29,7 +29,7 @@ std::uint32_t overlayFlagsAfterStorage(const OverlayType before, const std::uint
 }
 
 void validateOverlayTarget(const OverlayConfig& baseline, const OverlayConfigDelta& changes) {
-  if (!changes.touchesOverlayConfig()) return;
+  if (!changes.touchesTypeOrSize()) return;
   if (!validOverlayTarget(changes.type.value_or(baseline.type), changes.maximumSizeMb.value_or(baseline.maximumSizeMb)))
     throw std::invalid_argument("The overlay target requires RAM size greater than zero or Disk size of at least 1024 MB");
   if (changes.type && changes.maximumSizeMb && !validOverlayTarget(*changes.type, baseline.maximumSizeMb) &&

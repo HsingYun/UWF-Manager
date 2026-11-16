@@ -20,6 +20,7 @@
 #include "application/staging/editing/FileStagingDraft.h"
 #include "application/staging/execution/FileStagingTask.h"
 #include "application/staging/persistence/DurableFileStagingStore.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/uwf/UwfRequestPrecheck.h"
 #include "application/uwf/adapters/UwfConfigurationRepository.h"
 #include "application/uwf/adapters/UwfMaintenanceRepositoryFactory.h"

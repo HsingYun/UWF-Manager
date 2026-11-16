@@ -7,7 +7,7 @@
 #include <utility>
 
 #include "application/localization/ApplicationText.h"
-#include "application/registry/RegistryTreeCommitter.h"
+#include "application/registry/RegistryBatchCommitter.h"
 #include "foundation/logging/Log.h"
 
 namespace uwf::app {
@@ -106,7 +106,7 @@ void EnhancedModeOperations::persistConfiguration(const bool requiresCommit, Enh
   if (!requiresCommit) return;
   bool registryOwnsFailure = false;
   try {
-    RegistryTreeCommitter registry(m_repository);
+    RegistryBatchCommitter registry(m_repository);
     const auto targets = m_serviceControl->planRegistryCommit();
     registryOwnsFailure = true;
     result.persistence = registry.commit(targets);
@@ -140,7 +140,7 @@ void EnhancedModeOperations::persistRemoval(const std::vector<RegistryCommitTarg
   if (deletionPlan.empty()) return;
   bool registryOwnsFailure = false;
   try {
-    RegistryTreeCommitter registry(m_repository);
+    RegistryBatchCommitter registry(m_repository);
     registryOwnsFailure = true;
     result.persistence = registry.persistDeletions(deletionPlan);
     registryOwnsFailure = false;

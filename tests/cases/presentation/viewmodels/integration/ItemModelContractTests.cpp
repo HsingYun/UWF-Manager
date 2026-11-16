@@ -44,12 +44,16 @@ class MemoryEditing final : public app::FileStagingEditing {
   bool storageAvailable() const override { return true; }
   const QString& storageError() const override { return m_error; }
   void load() override { emit entriesChanged(); }
-  void addEntries(const QList<app::FileStagingEntry>& entries) override {
-    m_entries.append(entries);
-    emit entriesChanged();
+  app::FileStagingPreparation prepareAddEntries(const QList<app::FileStagingEntry>& entries) override {
+    return {{},
+            [this, entries](std::exception_ptr) {
+              m_entries.append(entries);
+              emit entriesChanged();
+            },
+            {}};
   }
-  void removePaths(const QStringList&) override {}
-  void restorePaths(const QStringList&) override {}
+  app::FileStagingPreparation prepareRemovePaths(const QStringList&) override { return {{}, [](std::exception_ptr) {}, {}}; }
+  app::FileStagingPreparation prepareRestorePaths(const QStringList&) override { return {{}, [](std::exception_ptr) {}, {}}; }
 
  private:
   QString m_drive = QStringLiteral("C:"), m_error;

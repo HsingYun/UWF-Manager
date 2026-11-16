@@ -84,19 +84,6 @@ class EditingObservations final : public CommitTraversalSource {
 
 }  // namespace
 
-struct FileStagingEditor::Edit {
-  QPointer<FileStagingEditor> owner;
-  QPointer<FileStagingDraft> draft;
-  std::shared_ptr<const CommitTraversalSource> source;
-  QString driveLetter;
-  QList<FileStagingEntry> entries;
-  std::uint64_t generation = 0;
-  std::uint64_t revision = 0;
-
-  [[nodiscard]] bool active() const { return owner && draft && owner->m_editGeneration == generation; }
-  [[nodiscard]] bool current() const { return active() && draft->revision() == revision; }
-};
-
 FileStagingEditor::FileStagingEditor(QString driveLetter, FileStagingDraft& draft, std::shared_ptr<const CommitTraversalSource> source,
                                      FileStagingConflictPolicy* conflicts, FileStagingScope scope)
     : m_driveLetter(QString::fromStdString(drive::normalize(driveLetter.toStdString()))),
@@ -117,10 +104,6 @@ FileStagingEditor::FileStagingEditor(QString driveLetter, FileStagingDraft& draf
 }
 
 QList<FileStagingEntry> FileStagingEditor::baselineEntries() const { return m_baselineEntries; }
-
-void FileStagingEditor::restorePaths(const QStringList& paths) {
-  if (!paths.isEmpty()) updateSynchronously(Update::Restore, {}, paths);
-}
 
 void FileStagingEditor::load() {
   const auto generation = ++m_loadGeneration;
@@ -158,13 +141,6 @@ void FileStagingEditor::load() {
       if (current() && m_storageAvailable) setStorageUnavailable(draft->storageError(), generation);
     }
   }
-}
-
-void FileStagingEditor::addEntries(const QList<FileStagingEntry>& entries) {
-  if (!entries.isEmpty()) updateSynchronously(Update::Add, entries, {});
-}
-void FileStagingEditor::removePaths(const QStringList& paths) {
-  if (!paths.isEmpty()) updateSynchronously(Update::Remove, {}, paths);
 }
 
 FileStagingPreparation FileStagingEditor::prepareLoad() { return prepareUpdate(Update::Load); }
@@ -422,53 +398,6 @@ std::optional<FileStagingEditor::Candidate> FileStagingEditor::prepareEntries(
   }
   return result;
 }
-void FileStagingEditor::updateSynchronously(const Update update, const QList<FileStagingEntry>& entries, const QStringList& paths) {
-  Edit edit;
-  if (!beginEdit(edit)) return;
-  const auto conflict = [policy = m_conflicts](const FileStagingEntry& entry) { return policy ? policy->conflictingExclusion(entry) : std::nullopt; };
-  const auto result =
-      prepareEntries(update, edit.entries, baselineEntries(), entries, paths, edit.driveLetter, edit.source, conflict, [&edit] { return edit.current(); });
-  if (!result) return;
-  if (result->changed) commitEdit(edit, result->entries);
-  for (const auto& rejection : result->rejections) {
-    if (!edit.active()) return;
-    emit pathRejected(rejection);
-  }
-}
-
-bool FileStagingEditor::beginEdit(Edit& edit) {
-  if (m_draft && m_draft->busy()) return false;
-  edit.owner = this;
-  edit.draft = m_draft;
-  edit.source = m_source;
-  edit.driveLetter = m_driveLetter;
-  edit.generation = ++m_editGeneration;
-  if (!edit.draft) return false;
-  try {
-    auto snapshot = edit.draft->readEdit();
-    if (!edit.active() || !snapshot) return false;
-    edit.entries = std::move(snapshot->entries);
-    edit.revision = snapshot->revision;
-    return true;
-  } catch (const std::exception& error) {
-    if (edit.active()) reportUpdateFailure(QString::fromUtf8(error.what()));
-    return false;
-  }
-}
-
-void FileStagingEditor::commitEdit(const Edit& edit, const QList<FileStagingEntry>& entries) {
-  if (!edit.current()) return;
-  try {
-    // All editors consume the draft's single notification for the accepted snapshot.
-    (void)edit.draft->replaceIfCurrent(edit.revision, entries);
-  } catch (const std::exception& error) {
-    if (!edit.current()) return;
-    const auto detail = QString::fromUtf8(error.what());
-    load();
-    if (edit.current() && m_storageAvailable) reportUpdateFailure(detail);
-  }
-}
-
 void FileStagingEditor::setStorageUnavailable(const QString& error, const std::uint64_t generation) {
   m_storageAvailable = false;
   m_storageError = error;

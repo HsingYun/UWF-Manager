@@ -13,6 +13,7 @@
 #include "application/configuration/exclusions/ExclusionDraft.h"
 #include "application/configuration/volumes/VolumeConfigurationEditor.h"
 #include "application/staging/contracts/FileStagingStore.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/state/ApplicationStateSession.h"
 
 namespace {

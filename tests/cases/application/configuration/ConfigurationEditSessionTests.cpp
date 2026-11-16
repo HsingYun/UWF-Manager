@@ -15,6 +15,7 @@
 #include "application/configuration/editing/GlobalConfigurationEditor.h"
 #include "application/configuration/volumes/VolumeConfigurationEditor.h"
 #include "application/staging/contracts/FileStagingStore.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/uwf/adapters/UwfReadState.h"
 #include "application/uwf/contracts/UwfMaintenanceRepository.h"
 #include "support/app/ConfigurationFixture.h"

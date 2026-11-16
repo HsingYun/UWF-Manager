@@ -50,6 +50,7 @@
 #include "application/operations/contracts/OperationError.h"
 #include "application/overlay/files/OverlayFilesQueryManager.h"
 #include "application/staging/editing/FileStagingDraft.h"
+#include "application/staging/persistence/FileStagingRegistry.h"
 #include "application/staging/policy/AutomaticCommitPolicy.h"
 #include "application/state/contracts/ApplicationState.h"
 #include "application/uwf/adapters/UwfCall.h"
