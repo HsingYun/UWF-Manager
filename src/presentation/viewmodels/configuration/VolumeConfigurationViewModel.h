@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <cstdint>
 
 #include "application/configuration/volumes/VolumeConfigurationEditor.h"
 #include "presentation/viewmodels/configuration/ExclusionListViewModel.h"
 #include "presentation/viewmodels/configuration/OverlayMaintenanceViewModel.h"
 #include "presentation/viewmodels/configuration/VolumeStatusViewModel.h"
+
 namespace uwf::presentation {
 [[nodiscard]] QString volumeSupportText(core::VolumeSupport support, const std::string& fileSystem);
 [[nodiscard]] QString volumeRegistrationText(const core::VolumeInfo& volume);

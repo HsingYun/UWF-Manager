@@ -5,7 +5,6 @@
 #include <array>
 #include <memory>
 
-#include "application/overlay/contracts/OverlayMaintenance.h"
 #include "presentation/dialogs/PanelDialog.h"
 #include "presentation/viewmodels/configuration/OverlayAdvancedViewModel.h"
 #include "presentation/viewmodels/configuration/OverlaySettingsEditViewModel.h"
@@ -15,6 +14,7 @@ class QGridLayout;
 class QPushButton;
 class QSpacerItem;
 class QAction;
+
 namespace uwf::presentation {
 class OverlayMaintenanceViewModel;
 }

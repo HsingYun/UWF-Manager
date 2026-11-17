@@ -2,10 +2,10 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
 
+#include <cstdint>
 #include <optional>
 #include <string>
 
-#include "application/configuration/contracts/ConfigurationChanges.h"
 #include "domain/uwf/model/UwfModel.h"
 
 namespace uwf::app {

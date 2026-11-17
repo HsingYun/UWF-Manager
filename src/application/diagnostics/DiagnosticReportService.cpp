@@ -13,6 +13,7 @@
 #include "domain/uwf/policies/VolumeIdentityPolicy.h"
 #include "foundation/logging/Log.h"
 #include "uwf_version.h"
+
 namespace uwf::app {
 namespace {
 QString overlayTypeCode(const core::OverlayType type) {

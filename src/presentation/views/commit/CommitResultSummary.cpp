@@ -9,6 +9,7 @@
 #include "presentation/controls/text/TextLabel.h"
 #include "presentation/appearance/I18n.h"
 #include "presentation/appearance/ThemeManager.h"
+
 namespace uwf::ui {
 CommitResultSummary::CommitResultSummary(const int succeeded, const int failed, QWidget* parent) : QWidget(parent) {
   auto* row = new QHBoxLayout(this);

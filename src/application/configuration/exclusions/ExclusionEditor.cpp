@@ -2,7 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "application/configuration/exclusions/ExclusionEditor.h"
 
-#include <QDir>
 #include <QFileInfo>
 #include <algorithm>
 #include <exception>
@@ -75,9 +74,7 @@ ExclusionEditor::FileEntryKind ExclusionEditor::fileEntryKindHint(const QString&
 
 QString ExclusionEditor::absoluteFilePath(const QString& path) const { return m_kind == Kind::File ? qualifyFileExclusionPath(path, m_driveLetter) : path; }
 
-QStringList ExclusionEditor::effectiveFileExclusions() const {
-  return m_kind == Kind::File ? m_draft.effectiveFileExclusions() : QStringList{};
-}
+QStringList ExclusionEditor::effectiveFileExclusions() const { return m_kind == Kind::File ? m_draft.effectiveFileExclusions() : QStringList{}; }
 
 ExclusionEditor::Update::Update(ExclusionEditor& editor) : EditorUpdate(editor), m_readOnly(editor.readOnly()), m_canAdd(editor.canAdd()) {}
 bool ExclusionEditor::Update::publishSnapshot(const std::function<bool()>& continuePublishing) {
@@ -124,8 +121,7 @@ void ExclusionEditor::setProviderBaseline(const QStringList& current, const QStr
     for (const auto& pattern : patterns) {
       // FileExceptionsUserDefined is raw per-volume MULTI_SZ (native RVA
       // 0x19ef0). Never infer an address from a provider pattern's contents.
-      result.append(!m_driveLetter.isEmpty() ? m_driveLetter + pattern
-                                           : !m_fileVolumeId.empty() ? paths::volumeFilePath({m_fileVolumeId, pattern}) : pattern);
+      result.append(!m_driveLetter.isEmpty() ? m_driveLetter + pattern : !m_fileVolumeId.empty() ? paths::volumeFilePath({m_fileVolumeId, pattern}) : pattern);
     }
     return result;
   };
@@ -317,7 +313,7 @@ ExclusionEditor::EditResult ExclusionEditor::validateAddition(const QString& raw
     // creation would reject it. Cross-feature invariants still apply to both.
     if (!restoringConfigured) {
       const auto address = m_draft.fileAddress(path);
-      if (!address || (!address->relativePath.isEmpty() && !QDir::toNativeSeparators(address->relativePath).startsWith(u'\\'))) {
+      if (!address || (!address->relativePath.isEmpty() && !paths::windowsSeparators(address->relativePath).startsWith(u'\\'))) {
         result.outcome = ImportOutcome::RejectedNotOnVolume;
         return result;
       }
@@ -345,7 +341,7 @@ ExclusionEditor::EditResult ExclusionEditor::validateAddition(const QString& raw
 ExclusionEditor::EditResult ExclusionEditor::addSelectedPath(const QString& selectedPath) {
   // A selected object may use Qt's '/' representation. This conversion belongs
   // only to the new object-entry boundary, never to an observed pattern.
-  auto result = validateAddition(m_kind == Kind::File ? QDir::toNativeSeparators(selectedPath) : selectedPath);
+  auto result = validateAddition(m_kind == Kind::File ? paths::windowsSeparators(selectedPath) : selectedPath);
   if (result.outcome != ImportOutcome::Applied) return result;
   result.outcome = m_draft.add(result.path) ? ImportOutcome::Applied : ImportOutcome::NoOp;
   publishChanges();

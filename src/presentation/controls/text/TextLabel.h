@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QLabel>
 #include <optional>
 
 #include "design/DesignTokens.h"
 #include "presentation/design/painting/TextPainting.h"
+
 namespace uwf::ui {
 enum class TextStyle { Body, Label, Caption, Eyebrow, Subtitle, Title, Section, Description, Metric, MessageTitle };
 class TextLabel : public QLabel {

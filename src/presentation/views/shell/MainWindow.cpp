@@ -26,15 +26,11 @@
 #include <optional>
 #include <tuple>
 #include <utility>
-#include <vector>
 
 #include "application/settings/UserConfig.h"
-#include "application/uwf/contracts/UwfCapability.h"
-#include "foundation/logging/Log.h"
 #include "presentation/appearance/I18n.h"
 #include "presentation/appearance/ThemeManager.h"
 #include "presentation/appearance/WindowAppearance.h"
-#include "presentation/controls/feedback/ContentHintBox.h"
 #include "presentation/controls/feedback/ContentState.h"
 #include "presentation/controls/feedback/TransientLabel.h"
 #include "presentation/controls/layout/VerticalScrollArea.h"
@@ -43,11 +39,8 @@
 #include "presentation/controls/navigation/TabView.h"
 #include "presentation/controls/pagination/PagedWindowLayout.h"
 #include "presentation/controls/text/SummaryLabel.h"
-#include "presentation/controls/text/TextLabel.h"
 #include "presentation/design/surfaces/SurfaceShadow.h"
 #include "presentation/dialogs/Dialogs.h"
-#include "presentation/viewmodels/common/RuntimeWriteText.h"
-#include "presentation/viewmodels/common/ViewModelFactory.h"
 #include "presentation/viewmodels/shell/MainWindowViewModel.h"
 #include "presentation/views/commit/CommitDispatcher.h"
 #include "presentation/views/configuration/global/GlobalStatusPanel.h"

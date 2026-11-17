@@ -8,9 +8,9 @@
 #include <string>
 #include <utility>
 
-#include "foundation/logging/Log.h"
 #include "presentation/models/ItemRoles.h"
 #include "presentation/viewmodels/common/PresentationText.h"
+
 namespace uwf::presentation {
 namespace {
 LogViewModel::LogRow parseLine(const std::string& line) {

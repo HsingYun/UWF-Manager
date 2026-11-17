@@ -10,10 +10,9 @@
 #include <string>
 
 #include "foundation/logging/Log.h"
-#include "foundation/text/StringUtil.h"
 #include "infrastructure/windows/management/wmi/WmiException.h"
 #include "infrastructure/windows/management/wmi/WmiRowUtil.h"
-#include "infrastructure/windows/management/wmi/WmiSession.h"
+#include "infrastructure/windows/management/wmi/WmiRuntime.h"
 #include "infrastructure/windows/registry/RegistryKey.h"
 #include "infrastructure/windows/resources/ComPtr.h"
 #include "infrastructure/windows/text/UnicodeConversion.h"

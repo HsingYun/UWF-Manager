@@ -8,6 +8,7 @@
 #include "presentation/design/theme/DesignSystem.h"
 #include "presentation/design/painting/IconPainting.h"
 #include "presentation/design/painting/TextPainting.h"
+
 namespace uwf::ui {
 QSize countBadgeSize(const QString& text, const QFont& font) { return {std::max(20, qCeil(textLineSize(text, font).width()) + 14), 20}; }
 void paintCountBadge(QPainter& painter, const QRectF& bounds, const QString& text, const QFont& font) {

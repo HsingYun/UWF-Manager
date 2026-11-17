@@ -2,7 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
 
-#include <QObject>
 #include <cstdint>
 #include <memory>
 #include <variant>

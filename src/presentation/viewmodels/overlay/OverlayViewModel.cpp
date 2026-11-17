@@ -9,8 +9,8 @@
 
 #include "foundation/logging/Log.h"
 #include "presentation/viewmodels/common/PresentationText.h"
-#include "presentation/viewmodels/common/PresentationTiming.h"
 #include "presentation/viewmodels/overlay/OverlayUsagePresentation.h"
+
 namespace uwf::presentation {
 using namespace app;
 QString overlayUsageToolTip(const app::OverlayUsageState& state) {

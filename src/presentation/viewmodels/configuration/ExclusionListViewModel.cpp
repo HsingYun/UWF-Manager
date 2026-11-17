@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <utility>
 
-#include "application/configuration/contracts/ConfiguredExclusionIdentity.h"
 #include "application/staging/persistence/FileStagingRegistry.h"
 #include "presentation/models/ItemRoles.h"
 #include "presentation/viewmodels/common/PresentationText.h"

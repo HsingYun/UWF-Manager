@@ -5,6 +5,7 @@
 #include <QPainter>
 
 #include "presentation/design/theme/DesignSystem.h"
+
 namespace uwf::ui {
 BusyIndicator::BusyIndicator(QWidget* parent) : QWidget(parent) {
   setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);

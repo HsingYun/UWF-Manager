@@ -2,7 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "application/commit/CommitWorkflow.h"
 
-#include <QDir>
 #include <algorithm>
 #include <map>
 #include <optional>
@@ -23,9 +22,10 @@ namespace uwf::app {
 namespace {
 class CommitAdmissionSource final : public CommitTraversalSource {
  public:
-  CommitAdmissionSource(const CommitTraversalSource& source, const std::vector<std::string>& exclusions, bool registry, bool alreadyPersistent = false)
+  CommitAdmissionSource(const CommitTraversalSource& source, const std::vector<std::string>& exclusions, const bool registry,
+                        const bool alreadyPersistent = false)
       : m_source(source), m_exclusions(exclusions), m_registry(registry), m_alreadyPersistent(alreadyPersistent) {}
-  std::optional<CommitNode> inspect(const CommitNode& node) const override {
+  [[nodiscard]] std::optional<CommitNode> inspect(const CommitNode& node) const override {
     const auto selected = m_registry || node.fileTarget ? node : bindFileCommitTarget(m_source, node);
     if (!m_registry) validateFileCommitTarget(*selected.fileTarget);
     if (m_alreadyPersistent) {
@@ -50,12 +50,12 @@ class CommitAdmissionSource final : public CommitTraversalSource {
                                 .arg(hit);
     return skipped;
   }
-  QString enumerateChildren(const CommitNode& node, std::stop_token stop, const CommitNodeVisitor& discover) const override {
+  [[nodiscard]] QString enumerateChildren(const CommitNode& node, std::stop_token stop, const CommitNodeVisitor& discover) const override {
     return m_source.enumerateChildren(node, stop, discover);
   }
-  bool exists(const CommitNode& node) const override { return m_source.exists(node); }
-  std::string driveLetterForPath(const QString& path) const override { return m_source.driveLetterForPath(path); }
-  FileCommitTarget resolveFileTarget(const QString& path) const override { return m_source.resolveFileTarget(path); }
+  [[nodiscard]] bool exists(const CommitNode& node) const override { return m_source.exists(node); }
+  [[nodiscard]] std::string driveLetterForPath(const QString& path) const override { return m_source.driveLetterForPath(path); }
+  [[nodiscard]] FileCommitTarget resolveFileTarget(const QString& path) const override { return m_source.resolveFileTarget(path); }
 
  private:
   const CommitTraversalSource& m_source;
@@ -205,7 +205,7 @@ CommitWorkflow::CommitWorkflow(std::shared_ptr<UwfMaintenanceRepository> reposit
 void CommitWorkflow::run(const CommitOperation operation, const CommitTargetKind kind, const QString& path, const QString& valueName) {
   if (path.isEmpty()) return;
   const bool registry = kind == CommitTargetKind::RegistryKey || kind == CommitTargetKind::RegistryValue;
-  const QString target = registry ? paths::expandRegistryHive(path) : QDir::toNativeSeparators(path);
+  const QString target = registry ? paths::expandRegistryHive(path) : paths::windowsSeparators(path);
   m_interaction.run({operation, {kind, target, valueName, {}}}, std::make_shared<PreparedCommitBackend>(m_repository, m_source));
 }
 void CommitWorkflow::commitFilePath(const QString& path) { run(CommitOperation::Persist, CommitTargetKind::File, path); }

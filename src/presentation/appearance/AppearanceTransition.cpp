@@ -2,8 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "presentation/appearance/AppearanceTransition.h"
 
-#include <qt_windows.h>
-
 #include <QApplication>
 #include <QElapsedTimer>
 #include <QEvent>
@@ -16,8 +14,9 @@
 #include <QWidget>
 #include <utility>
 
+#include "design/DesignTokens.h"
 #include "foundation/logging/Log.h"
-#include "presentation/design/theme/DesignSystem.h"
+#include "presentation/platform/DesktopPlatform.h"
 
 namespace uwf::ui {
 namespace {
@@ -70,10 +69,6 @@ class TransitionLayer final : public QWidget {
   QVariantAnimation m_animation;
   qreal m_opacity = 1.0;
 };
-bool animationsEnabled() {
-  BOOL enabled = TRUE;
-  return !SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &enabled, 0) || enabled;
-}
 }  // namespace
 void AppearanceTransition::run(const std::function<void()>& update, const bool animateRequested) {
   static bool active = false;
@@ -89,7 +84,7 @@ void AppearanceTransition::run(const std::function<void()>& update, const bool a
     QPixmap snapshot;
   };
   QList<Frame> frames;
-  const bool animate = animateRequested && animationsEnabled();
+  const bool animate = animateRequested && platform::animationsEnabled();
   for (auto windows = QApplication::topLevelWidgets(); auto* window : std::as_const(windows)) {
     if (!window->isVisible() || window->isMinimized() || !window->updatesEnabled() || window->windowType() == Qt::Popup || window->windowType() == Qt::ToolTip)
       continue;

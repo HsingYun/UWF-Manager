@@ -54,7 +54,7 @@ uwf_check_includes(composition/desktop/ViewModelComposition.cpp "infrastructure/
 uwf_check_includes(composition/desktop/WorkflowComposition.cpp "infrastructure/")
 uwf_check_includes(infrastructure "presentation/|composition/")
 uwf_check_includes(infrastructure/uwf "domain/uwf/solvers/|application/")
-uwf_check_includes(support/uwf "domain/uwf/solvers/|application/uwf/UwfRequestPrecheck" tests)
+uwf_check_includes(support/uwf "domain/uwf/solvers/|application/uwf/UwfRequestPrecheck" support/tests)
 uwf_check_includes(domain/uwf/solvers "domain/uwf/contracts/Backend\\.h|fstream|filesystem|[Ww]indows\\.h|thread|future")
 uwf_check_includes(infrastructure/uwf/routing "application/|infrastructure/windows/|infrastructure/uwf/windows/|Q[A-Za-z]|[Ww]indows\\.h|thread|future")
 uwf_check_includes(infrastructure/windows/management "application/|domain/|infrastructure/uwf/")
@@ -63,9 +63,9 @@ uwf_check_includes(infrastructure/windows/text "application/|domain/|infrastruct
 # Business and presentation tests exercise semantic ports. Protocol fixtures
 # belong to backend/integration suites, not a second upper-layer UWF model.
 set(uwf_test_protocol_dependencies "infrastructure/(uwf/windows/|windows/management/)|support/windows/(RecordingWmiOperations|OverlayWmiFixture)")
-uwf_check_includes(cases/application "${uwf_test_protocol_dependencies}" tests)
-uwf_check_includes(cases/presentation "${uwf_test_protocol_dependencies}" tests)
-uwf_check_includes(support/app "${uwf_test_protocol_dependencies}" tests)
+uwf_check_includes(cases/application "${uwf_test_protocol_dependencies}" support/tests)
+uwf_check_includes(cases/presentation "${uwf_test_protocol_dependencies}" support/tests)
+uwf_check_includes(support/app "${uwf_test_protocol_dependencies}" support/tests)
 
 # Application contracts may depend on other contracts, but never their
 # implementations. Feature folders are organization, not extra runtime layers.
@@ -80,3 +80,20 @@ foreach(source IN LISTS uwf_application_headers)
         endforeach()
     endif()
 endforeach()
+
+# Shared desktop composition and the simulated host may not resolve Windows services.
+uwf_check_includes(composition/desktop/MainWindowComposition.cpp "infrastructure/")
+uwf_check_includes(presentation/platform/qt "infrastructure/windows/|[Ww]indows\\.h|qt_windows\\.h|dwmapi\\.h")
+uwf_check_includes(presentation/platform/windows "domain/uwf/contracts/|infrastructure/(uwf/|windows/management/)|composition/|wbem[a-z]*\\.h")
+uwf_check_includes(presentation/appearance/ThemeManager.cpp "infrastructure/|[Ww]indows\\.h|qt_windows\\.h")
+uwf_check_includes(presentation/appearance/AppearanceTransition.cpp "[Ww]indows\\.h|qt_windows\\.h")
+uwf_check_includes(presentation/views/shell/WindowTitleBar.cpp "[Ww]indows\\.h|qt_windows\\.h")
+uwf_check_includes(simulation "support/|tests/|tools/" support)
+uwf_check_includes(uwf "domain/uwf/solvers/|application/uwf/UwfRequestPrecheck|presentation/|composition/|[Ww]indows\\.h|Q[A-Za-z]" support/simulation)
+uwf_check_includes(app "${uwf_test_protocol_dependencies}|[Ww]indows\\.h" support/simulation)
+uwf_check_includes(tools "support/|tests/" support)
+
+uwf_check_includes(composition/desktop/MainWindowComposition.h "composition/desktop/WindowsDesktopComposition\\.h|infrastructure/")
+uwf_check_includes(preview/qt "infrastructure/windows/|[Ww]indows\\.h|qt_windows\\.h|dwmapi\\.h" support/tools)
+uwf_check_includes(preview/ApplicationPreview.cpp "infrastructure/windows/|[Ww]indows\\.h|qt_windows\\.h|dwmapi\\.h" support/tools)
+uwf_check_includes(preview/PreviewFixtures.h "infrastructure/windows/|[Ww]indows\\.h|qt_windows\\.h" support/tools)

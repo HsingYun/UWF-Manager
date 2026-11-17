@@ -5,14 +5,8 @@
 #include <algorithm>
 
 namespace uwf::ui {
-QStringList DesignSystem::monospaceFamilies() {
-  // CJK fallbacks remain sans serif when the primary monospace font lacks a glyph.
-  return {QStringLiteral("Cascadia Mono"), QStringLiteral("Consolas"), QStringLiteral("Microsoft YaHei UI"), QStringLiteral("Microsoft YaHei")};
-}
 QFont DesignSystem::defaultFont() {
-  QFont font;
-  font.setFamilies(
-      {QStringLiteral("Segoe UI Variable Text"), QStringLiteral("Segoe UI"), QStringLiteral("Microsoft YaHei UI"), QStringLiteral("Microsoft YaHei")});
+  auto font = platformFont();
   font.setPixelSize(design::fontSize);
   font.setHintingPreference(QFont::PreferNoHinting);
   font.setStyleStrategy(QFont::PreferAntialias);

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QObject>
 #include <QVariantAnimation>
 class QWidget;
+
 namespace uwf::ui {
 class ControlAnimation final : public QObject {
   Q_OBJECT

@@ -6,6 +6,8 @@
 
 #include "presentation/design/controls/ControlShape.h"
 #include "presentation/design/surfaces/SurfaceClip.h"
+#include "presentation/design/theme/DesignSystem.h"
+
 namespace uwf::ui {
 Surface::Surface(const design::Color fill, QWidget* parent) : QWidget(parent), m_fill(fill) {
   connect(&DesignSystem::instance(), &DesignSystem::changed, this, qOverload<>(&QWidget::update));

@@ -15,6 +15,7 @@
 
 #include "presentation/design/theme/DesignSystem.h"
 #include "presentation/design/painting/TextPainting.h"
+
 namespace uwf::ui {
 namespace {
 class LineNumbers final : public QWidget {

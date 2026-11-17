@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
-#include <QObject>
-#include <QPointer>
+
 #include <cstdint>
 #include <functional>
 #include <memory>
 #include <optional>
 
 #include "application/configuration/editing/EditorUpdate.h"
-#include "application/overlay/HormEligibility.h"
 #include "application/overlay/contracts/OverlayMaintenance.h"
+
 namespace uwf::app {
 class OverlayMaintenanceEditor final : public QObject {
   Q_OBJECT

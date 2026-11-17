@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QMargins>
 
 class QPainter;
 class QRectF;
 class QWidget;
+
 namespace uwf::ui {
 enum class ShadowKind { Window, Popup, Hud };
 [[nodiscard]] QMargins surfaceShadowMargins(ShadowKind kind);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QObject>
 #include <QTimer>
 #include <cstddef>
@@ -10,6 +11,7 @@
 #include "presentation/viewmodels/common/AsyncTask.h"
 #include "presentation/viewmodels/common/ObservationPause.h"
 #include "presentation/viewmodels/common/PresentationTiming.h"
+
 namespace uwf::presentation {
 [[nodiscard]] QString overlayUsageToolTip(const app::OverlayUsageState& state);
 class OverlayViewModel final : public QObject {

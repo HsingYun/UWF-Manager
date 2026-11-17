@@ -4,7 +4,7 @@
 
 #include <memory>
 
-#include "infrastructure/windows/management/wmi/WmiRuntime.h"
+#include "infrastructure/windows/management/wmi/WmiOperations.h"
 
 namespace uwf::windows {
 

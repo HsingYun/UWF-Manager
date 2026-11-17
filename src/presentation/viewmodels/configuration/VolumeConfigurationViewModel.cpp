@@ -10,6 +10,7 @@
 #include "application/localization/ConfigurationModeText.h"
 #include "foundation/text/ByteFormat.h"
 #include "presentation/viewmodels/common/PresentationText.h"
+
 namespace uwf::presentation {
 QString volumeSupportText(core::VolumeSupport s, const std::string& fileSystem) {
   switch (s) {

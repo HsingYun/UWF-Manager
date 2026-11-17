@@ -13,6 +13,9 @@ namespace uwf {
 // are valid; callers enforce their own NUL restrictions.
 [[nodiscard]] std::optional<std::u16string> utf8ToUtf16(std::string_view text);
 
+// Strict UTF-16 encoding; rejects unpaired surrogates without replacement.
+[[nodiscard]] std::optional<std::string> utf16ToUtf8(std::u16string_view text);
+
 // Validate surrogate pairing, not object-name syntax or NUL restrictions.
 [[nodiscard]] bool isValidUtf16(std::u16string_view text) noexcept;
 

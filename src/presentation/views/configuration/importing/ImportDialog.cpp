@@ -27,7 +27,6 @@
 #include "presentation/controls/layout/FlowLayout.h"
 #include "presentation/controls/layout/Surface.h"
 #include "presentation/controls/navigation/TabView.h"
-#include "presentation/controls/tables/ItemDelegate.h"
 #include "presentation/controls/tables/ResponsiveTableView.h"
 #include "presentation/controls/tables/TablePresentation.h"
 #include "presentation/controls/text/IconView.h"

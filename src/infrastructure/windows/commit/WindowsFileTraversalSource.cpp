@@ -15,6 +15,7 @@
 #include "infrastructure/windows/filesystem/WindowsFileSystem.h"
 #include "infrastructure/windows/storage/WindowsVolumeRepository.h"
 #include "infrastructure/windows/text/UnicodeConversion.h"
+
 namespace uwf::windows {
 using app::ApplicationText;
 using app::CommitNode;

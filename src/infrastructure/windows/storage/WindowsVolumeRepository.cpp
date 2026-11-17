@@ -13,6 +13,7 @@
 
 #include "domain/uwf/policies/UwfConstraints.h"
 #include "foundation/logging/Log.h"
+#include "foundation/paths/DriveLetter.h"
 #include "foundation/text/StringUtil.h"
 #include "infrastructure/uwf/windows/PhysicalVolumeObservation.h"
 #include "infrastructure/windows/errors/WindowsSystemError.h"

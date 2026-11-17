@@ -15,7 +15,6 @@
 
 #include "application/overlay/files/OverlayFileCatalog.h"
 #include "foundation/text/ByteFormat.h"
-#include "infrastructure/windows/shell/WindowsShell.h"
 #include "presentation/appearance/I18n.h"
 #include "presentation/appearance/ThemeManager.h"
 #include "presentation/controls/clipboard/ClipboardText.h"
@@ -32,12 +31,12 @@
 #include "presentation/controls/tables/RecordInspector.h"
 #include "presentation/controls/text/IconView.h"
 #include "presentation/controls/text/TextLabel.h"
-#include "presentation/design/theme/DesignSystem.h"
 #include "presentation/dialogs/DialogLayout.h"
 #include "presentation/dialogs/Dialogs.h"
 #include "presentation/dialogs/InformationDialog.h"
 #include "presentation/models/ItemRoles.h"
 #include "presentation/models/PageProxyModel.h"
+#include "presentation/platform/DesktopPlatform.h"
 
 namespace uwf::ui {
 namespace {
@@ -269,7 +268,7 @@ void OverlayFilesDialog::onContextMenu(const QPoint& pos) {
   menu.exec(m_table->viewport()->mapToGlobal(pos));
 }
 void OverlayFilesDialog::openContainingFolder(const QString& path) {
-  if (!path.isEmpty()) windows::shell::revealInExplorer(path);
+  if (!path.isEmpty()) platform::revealFile(path);
 }
 void OverlayFilesDialog::onExportClicked() {
   if (m_viewModel->entries().isEmpty()) return;

@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QWidget>
 #include <array>
 
 #include "presentation/controls/text/TextLabel.h"
 class QPushButton;
+
 namespace uwf::presentation {
 class PageProxyModel;
 }

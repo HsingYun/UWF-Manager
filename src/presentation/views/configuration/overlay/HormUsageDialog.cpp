@@ -13,7 +13,6 @@
 #include "presentation/appearance/I18n.h"
 #include "presentation/appearance/ThemeManager.h"
 #include "presentation/controls/layout/Surface.h"
-#include "presentation/controls/text/IconView.h"
 #include "presentation/controls/text/TextLabel.h"
 #include "presentation/dialogs/DialogAppearance.h"
 #include "presentation/dialogs/DialogLayout.h"

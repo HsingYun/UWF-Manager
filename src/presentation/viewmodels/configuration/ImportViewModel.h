@@ -6,7 +6,7 @@
 #include <QString>
 #include <functional>
 
-#include "application/configuration/commands/UwfmgrCommandCodec.h"
+#include "application/configuration/commands/UwfmgrCommand.h"
 #include "application/configuration/importing/ImportReport.h"
 #include "application/configuration/importing/RecommendedExclusions.h"
 #include "application/files/contracts/TextFileReader.h"

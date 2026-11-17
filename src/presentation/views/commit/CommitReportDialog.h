@@ -4,8 +4,6 @@
 
 #include <QList>
 #include <QString>
-#include <cstdint>
-#include <optional>
 
 #include "presentation/viewmodels/commit/CommitReportViewModel.h"
 

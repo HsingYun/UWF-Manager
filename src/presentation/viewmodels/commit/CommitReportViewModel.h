@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QAbstractTableModel>
 #include <QList>
 #include <QString>
@@ -9,6 +10,7 @@
 
 #include "application/commit/contracts/CommitPlan.h"
 #include "application/commit/contracts/CommitResult.h"
+
 namespace uwf::presentation {
 enum class CommitRowStatus { Succeeded, Failed };
 struct CommitCounts {

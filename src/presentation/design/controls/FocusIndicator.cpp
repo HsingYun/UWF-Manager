@@ -11,6 +11,7 @@
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QTextEdit>
+
 namespace uwf::ui {
 namespace {
 bool isTextEditingControl(const QWidget* control) {

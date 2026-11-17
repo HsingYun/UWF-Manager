@@ -3,7 +3,6 @@
 #pragma once
 
 #include "domain/uwf/contracts/Backend.h"
-#include "domain/uwf/contracts/UwfStateFacts.h"
 
 namespace uwf::app {
 // Cross-capability behavior consumes the caller's shared observation only.

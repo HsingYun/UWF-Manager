@@ -2,7 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "application/configuration/importing/ConfigurationImporter.h"
 
-#include <QDir>
 #include <array>
 #include <exception>
 #include <optional>
@@ -460,7 +459,7 @@ QList<ImportResult> applyImportCommands(const QList<app::UwfmgrCommand>& cmds, G
           r.detail = FileExclusionRules::rejectionReason(a0, {}, {});
           break;
         }
-        const QString native = QDir::toNativeSeparators(a0);
+        const QString native = paths::windowsSeparators(a0);
         const auto target = paths::splitVolumeFilePath(a0);
         std::shared_ptr<VolumeConfigurationEditing> editor;
         QString pattern = a0;

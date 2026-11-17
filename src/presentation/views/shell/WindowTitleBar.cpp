@@ -2,8 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "presentation/views/shell/WindowTitleBar.h"
 
-#include <windows.h>
-
 #include <QAction>
 #include <QEvent>
 #include <QHBoxLayout>
@@ -17,9 +15,12 @@
 #include "presentation/controls/navigation/CommandMenu.h"
 #include "presentation/controls/text/IconView.h"
 #include "presentation/controls/text/TextLabel.h"
+#include "presentation/design/theme/DesignSystem.h"
+#include "presentation/platform/DesktopPlatform.h"
+
 namespace uwf::ui {
 namespace {
-enum class WindowCommand { Minimize, Maximize, Close };
+using WindowCommand = platform::CaptionCommand;
 class WindowButton final : public QPushButton {
  public:
   WindowButton(const WindowCommand command, QWidget* parent) : QPushButton(parent), m_command(command) {
@@ -27,21 +28,8 @@ class WindowButton final : public QPushButton {
     setFlat(true);
     setProperty("designRole", "quiet");
     setProperty("designRadius", 0);
-    setProperty("nativeCaptionHit", command == WindowCommand::Minimize ? HTMINBUTTON : command == WindowCommand::Maximize ? HTMAXBUTTON : HTCLOSE);
-    connect(this, &QPushButton::clicked, this, [this] {
-      auto* target = window();
-      switch (m_command) {
-        case WindowCommand::Minimize:
-          SendMessageW(reinterpret_cast<HWND>(target->winId()), WM_SYSCOMMAND, SC_MINIMIZE, 0);
-          break;
-        case WindowCommand::Maximize:
-          SendMessageW(reinterpret_cast<HWND>(target->winId()), WM_SYSCOMMAND, target->isMaximized() ? SC_RESTORE : SC_MAXIMIZE, 0);
-          break;
-        case WindowCommand::Close:
-          SendMessageW(reinterpret_cast<HWND>(target->winId()), WM_SYSCOMMAND, SC_CLOSE, 0);
-          break;
-      }
-    });
+    platform::configureCaptionButton(this, command);
+    connect(this, &QPushButton::clicked, this, [this] { platform::invokeCaptionCommand(window(), m_command); });
     window()->installEventFilter(this);
     updateCommandName();
     I18n::bind(this, [this] { updateCommandName(); });

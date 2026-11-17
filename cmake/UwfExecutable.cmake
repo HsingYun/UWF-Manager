@@ -25,6 +25,7 @@ uwf_add_translations(UWF)
 
 qt_add_lupdate(
     SOURCE_TARGETS UWF ${UWF_COMPONENT_TARGETS}
+    SOURCES "${PROJECT_SOURCE_DIR}/support/tools/preview/ApplicationPreview.cpp"
     TS_FILES ${UWF_APP_I18N_TS_FILES}
     OPTIONS -no-obsolete -locations none
 )

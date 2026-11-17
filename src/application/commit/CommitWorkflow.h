@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "application/commit/contracts/CommitInteraction.h"
-#include "application/commit/contracts/CommitPlan.h"
+#include "application/commit/contracts/CommitResult.h"
 #include "application/commit/contracts/CommitTraversalSource.h"
 #include "application/uwf/contracts/UwfMaintenanceRepository.h"
+
 namespace uwf::app {
 class CommitWorkflow final {
  public:

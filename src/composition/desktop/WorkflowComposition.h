@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <functional>
 
 #include "application/enhanced/contracts/EnhancedModeAgentConnection.h"
@@ -9,6 +10,7 @@
 #include "application/uwf/contracts/UwfMaintenanceRepository.h"
 #include "composition/desktop/DesktopPlatformPorts.h"
 #include "presentation/views/shell/WindowWorkflowFactory.h"
+
 namespace uwf::composition {
 using EnhancedModeAgentFactory = std::function<std::unique_ptr<app::EnhancedModeAgentConnection>()>;
 [[nodiscard]] std::shared_ptr<ui::WindowWorkflowFactory> createWindowWorkflowFactory(std::shared_ptr<app::UwfMaintenanceRepository> repository,

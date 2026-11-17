@@ -8,7 +8,7 @@
 #include <QProgressBar>
 #include <QWidget>
 
-#include "presentation/design/theme/DesignSystem.h"
+#include "design/DesignTokens.h"
 
 namespace uwf::ui {
 void ControlAnimation::attach(QWidget* widget) {

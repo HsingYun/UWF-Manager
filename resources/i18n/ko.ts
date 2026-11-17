@@ -5,6 +5,16 @@
 <TS version="2.1" language="ko" sourcelanguage="en">
 <context>
     <name>uwf</name>
+    <message><source>Simulation mode · UWF changes are kept in memory only</source><translation>시뮬레이션 모드 · UWF 변경 사항은 메모리에만 보관됩니다</translation></message>
+    <message><source>Access denied</source><translation>액세스가 거부되었습니다</translation></message>
+    <message><source>Text and scripts (*.txt *.bat *.ps1 *.cmd);;Text files (*.txt);;All files (*)</source><translation>텍스트 및 스크립트 (*.txt *.bat *.ps1 *.cmd);;텍스트 파일 (*.txt);;모든 파일 (*)</translation></message>
+    <message><source>Unable to complete the operation</source><translation>작업을 완료할 수 없습니다</translation></message>
+    <message><source>Select files</source><translation>파일 선택</translation></message>
+    <message><source>Open configuration file</source><translation>구성 파일 열기</translation></message>
+    <message><source>Committed to disk</source><translation>디스크에 커밋됨</translation></message>
+    <message><source>There are pending changes that have not been applied. Continue and discard them?</source><translation>아직 적용되지 않은 변경 사항이 있습니다. 변경 사항을 버리고 계속하시겠습니까?</translation></message>
+    <message><source>Access denied. Check permissions and try again.</source><translation>액세스가 거부되었습니다. 권한을 확인한 후 다시 시도하세요.</translation></message>
+    <message><source>Save file</source><translation>파일 저장</translation></message>
     <message><source>Preview</source><translation>미리 보기</translation></message>
     <message><source>enable</source><translation>사용</translation></message>
     <message><source>disable</source><translation>사용 안 함</translation></message>

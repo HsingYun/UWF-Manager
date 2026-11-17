@@ -33,6 +33,4 @@ struct DesktopPlatformPorts {
   app::OverlayMaintenanceReadOnlyPorts maintenanceObservations{};
 };
 void validateDesktopPlatformPorts(const DesktopPlatformPorts& ports);
-// Host-only production service selection; injectable factories do not call it.
-[[nodiscard]] DesktopPlatformPorts systemDesktopPlatformPorts();
 }  // namespace uwf::composition

@@ -4,13 +4,11 @@
 
 #include <QByteArray>
 #include <QStringDecoder>
-#include <filesystem>
 #include <stdexcept>
 #include <string_view>
 #include <utility>
 
 #include "application/staging/editing/FileStagingPath.h"
-#include "foundation/text/StringUtil.h"
 
 namespace uwf::windows {
 using app::FileStagingEntry;

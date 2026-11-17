@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "application/overlay/contracts/OverlayPolicy.h"
-#include "domain/uwf/model/UwfModel.h"
 
 namespace uwf::app {
 struct ConfigurationPlan;

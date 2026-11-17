@@ -14,12 +14,10 @@
 #include <QSignalBlocker>
 #include <QSizePolicy>
 #include <algorithm>
-#include <format>
 #include <limits>
 #include <utility>
 
 #include "application/localization/OverlayTypeText.h"
-#include "domain/uwf/policies/UwfConstraints.h"
 #include "foundation/text/ByteFormat.h"
 #include "presentation/appearance/I18n.h"
 #include "presentation/appearance/ThemeManager.h"
@@ -32,6 +30,7 @@
 #include "presentation/controls/layout/Surface.h"
 #include "presentation/controls/text/IconView.h"
 #include "presentation/controls/text/TextLabel.h"
+#include "presentation/design/theme/DesignSystem.h"
 #include "presentation/dialogs/DialogAppearance.h"
 #include "presentation/views/overlay/usage/OverlayUsageBar.h"
 

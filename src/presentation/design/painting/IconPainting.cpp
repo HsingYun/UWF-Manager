@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <utility>
 #include "presentation/design/painting/RasterInkBounds.h"
+
 namespace uwf::ui {
 namespace {
 qreal centerOffset(const QRectF& bounds, const QRectF& ink) { return bounds.center().y() - ink.center().y(); }

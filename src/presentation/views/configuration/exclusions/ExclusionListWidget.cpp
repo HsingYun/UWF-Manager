@@ -13,9 +13,7 @@
 #include <QVariant>
 #include <utility>
 
-#include "application/configuration/exclusions/ExclusionDraft.h"
 #include "application/configuration/exclusions/ExclusionEditor.h"
-#include "infrastructure/windows/shell/WindowsShell.h"
 #include "presentation/appearance/I18n.h"
 #include "presentation/appearance/ThemeManager.h"
 #include "presentation/controls/clipboard/ClipboardText.h"
@@ -24,6 +22,7 @@
 #include "presentation/controls/tables/PathEntryListView.h"
 #include "presentation/dialogs/Dialogs.h"
 #include "presentation/models/ItemRoles.h"
+#include "presentation/platform/DesktopPlatform.h"
 
 namespace uwf::ui {
 
@@ -171,7 +170,7 @@ void ExclusionListWidget::openContainingFolder(const QString& entry) const {
   if (!m_viewModel->canBrowseFiles()) return;
   QString abs = entry;
   if (abs.startsWith('\\')) abs = m_viewModel->driveLetter() + abs;
-  windows::shell::revealInExplorer(abs);
+  platform::revealFile(abs);
 }
 
 void ExclusionListWidget::refreshThemedIcons() {

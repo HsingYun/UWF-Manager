@@ -3,8 +3,6 @@
 #include "presentation/viewmodels/overlay/OverlayFilesViewModel.h"
 
 #include <QDateTime>
-#include <QDir>
-#include <QFileInfo>
 #include <QLocale>
 #include <QPointer>
 #include <QTextStream>
@@ -13,12 +11,14 @@
 #include <utility>
 
 #include "application/overlay/files/OverlayFileCatalog.h"
+#include "application/paths/PathPolicy.h"
 #include "foundation/logging/Log.h"
 #include "foundation/paths/DriveLetter.h"
 #include "foundation/text/ByteFormat.h"
 #include "presentation/models/ItemRoles.h"
 #include "presentation/viewmodels/common/PresentationText.h"
 #include "presentation/viewmodels/common/TextFileExport.h"
+
 namespace uwf::presentation {
 using app::OverlayFileEntry;
 namespace {
@@ -210,17 +210,16 @@ QVariant OverlayFilesViewModel::data(const QModelIndex& index, int role) const {
   if (!index.isValid() || index.model() != this || index.column() < 0 || index.column() >= 3 || index.row() < 0 || index.row() >= rowCount()) return {};
   const auto& entry = m_entries[index.row()];
   const QString kind = kindText(app::overlayFileKind(entry));
-  const auto path = QDir::fromNativeSeparators(entry.absolutePath);
   if (role == FullTextRole) return index.column() == 0 ? entry.absolutePath : index.column() == 1 ? kind : formatSize(entry.fileSize);
   if (role == Qt::DisplayRole) {
-    if (index.column() == 0) return QFileInfo(path).fileName();
+    if (index.column() == 0) return app::paths::fileName(entry.absolutePath);
     if (index.column() == 1) return kind;
     if (entry.fileSize == 0) return QStringLiteral("—");
     const QLocale numbers(QLocale::English, QLocale::UnitedStates);
     return entry.fileSize >= 1048576 ? numbers.toString(static_cast<double>(entry.fileSize) / 1048576.0, 'f', 1) + QStringLiteral(" MB")
                                      : numbers.toString(qRound64(static_cast<double>(entry.fileSize) / 1024.0)) + QStringLiteral(" KB");
   }
-  if (role == SecondaryTextRole && index.column() == 0) return QDir::toNativeSeparators(QFileInfo(path).path());
+  if (role == SecondaryTextRole && index.column() == 0) return app::paths::windowsSeparators(app::paths::parentDirectory(entry.absolutePath));
   if (role == Qt::TextAlignmentRole) return static_cast<int>((index.column() == 2 ? Qt::AlignRight : Qt::AlignLeft) | Qt::AlignVCenter);
   if (role == StatusRole && index.column() > 0) return static_cast<int>(ItemStatus::Muted);
   if (role == MonospaceRole) return index.column() == 2;

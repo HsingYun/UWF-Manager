@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "application/localization/ApplicationText.h"
 #include "domain/uwf/policies/ConfigurationModePolicy.h"
+
 namespace uwf::app {
 [[nodiscard]] inline QString configurationModeRestrictionText(const core::ConfigurationWriteRestriction reason) {
   switch (reason) {

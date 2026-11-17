@@ -5,6 +5,7 @@
 #include <QScopeGuard>
 #include <stdexcept>
 #include <utility>
+
 namespace uwf::ui {
 CommitDispatcher::CommitDispatcher(std::unique_ptr<app::CommitWorkflow> workflow, PauseObservation pauseObservation, ActivityChanged activityChanged)
     : m_pauseObservation(std::move(pauseObservation)), m_activityChanged(std::move(activityChanged)), m_workflow(std::move(workflow)) {

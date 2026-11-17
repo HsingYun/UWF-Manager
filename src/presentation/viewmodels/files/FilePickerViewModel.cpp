@@ -635,7 +635,7 @@ void FilePickerViewModel::requestAcceptance() {
             return result;
           }
           if (selectedSaveTarget && !info.exists)
-            return invalid(PresentationText::tr("The selected item no longer exists: %1").arg(QDir::toNativeSeparators(target)));
+            return invalid(PresentationText::tr("The selected item no longer exists: %1").arg(app::paths::windowsSeparators(target)));
           if (!selectedSaveTarget && !validLeafName(app::paths::fileName(target))) return invalid(PresentationText::tr("Enter a valid file name."));
           if (!selectedSaveTarget && QFileInfo(app::paths::fileName(target)).suffix().isEmpty()) {
             for (const auto& pattern : patterns) {
@@ -651,7 +651,7 @@ void FilePickerViewModel::requestAcceptance() {
           if (!parent.exists || !parent.directory) return invalid(PresentationText::tr("The destination folder does not exist."));
           if (info.directory || (!selectedSaveTarget && !validLeafName(app::paths::fileName(target))))
             return invalid(PresentationText::tr("Enter a valid file name."));
-          result.paths.append(QDir::toNativeSeparators(target));
+          result.paths.append(app::paths::windowsSeparators(target));
           info.path = result.paths.constLast();
           result.items.append(info);
           result.status = info.exists ? Acceptance::Replace : Acceptance::Ready;
@@ -660,7 +660,7 @@ void FilePickerViewModel::requestAcceptance() {
         for (const auto& candidate : std::as_const(candidates)) {
           if (token.stop_requested()) return result;
           auto info = browser->inspect(candidate);
-          if (!info.exists) return invalid(PresentationText::tr("The selected item no longer exists: %1").arg(QDir::toNativeSeparators(candidate)));
+          if (!info.exists) return invalid(PresentationText::tr("The selected item no longer exists: %1").arg(app::paths::windowsSeparators(candidate)));
           if (info.directory && mode != Mode::Directory && mode != Mode::Mixed) {
             if (candidates.size() == 1) {
               result.status = Acceptance::Navigate;
@@ -670,7 +670,7 @@ void FilePickerViewModel::requestAcceptance() {
             return invalid(PresentationText::tr("Select files only, or open a folder to browse its contents."));
           }
           if (!info.directory && mode == Mode::Directory) return invalid(PresentationText::tr("Select a folder."));
-          result.paths.append(QDir::toNativeSeparators(candidate));
+          result.paths.append(app::paths::windowsSeparators(candidate));
           info.path = result.paths.constLast();
           result.items.append(std::move(info));
         }

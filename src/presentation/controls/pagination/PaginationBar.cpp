@@ -12,6 +12,7 @@
 #include "presentation/design/painting/IconPainting.h"
 #include "presentation/design/theme/DesignSystem.h"
 #include "presentation/models/PageProxyModel.h"
+
 namespace uwf::ui {
 PaginationBar::PaginationBar(presentation::PageProxyModel& pages, QWidget* parent, const TextStyle textStyle)
     : QWidget(parent), m_summary(new TextLabel({}, textStyle, this)) {

@@ -31,7 +31,6 @@
 #include "presentation/controls/layout/AlignedGraphic.h"
 #include "presentation/controls/layout/Surface.h"
 #include "presentation/controls/navigation/CommandMenu.h"
-#include "presentation/controls/tables/ItemDelegate.h"
 #include "presentation/controls/tables/SelectionListView.h"
 #include "presentation/controls/tables/TablePresentation.h"
 #include "presentation/controls/text/IconView.h"

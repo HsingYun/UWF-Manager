@@ -8,14 +8,12 @@
 #include <type_traits>
 #include <utility>
 
-#include "domain/uwf/policies/ExclusionCoverage.h"
 #include "domain/uwf/policies/ConfigurationModePolicy.h"
 #include "domain/uwf/policies/IndividualCommitPolicy.h"
 #include "domain/uwf/policies/UwfConstraints.h"
 #include "foundation/paths/DriveLetter.h"
 #include "foundation/paths/RegistryPath.h"
 #include "foundation/text/StringUtil.h"
-#include "foundation/text/Utf8.h"
 
 namespace uwf::app {
 namespace {

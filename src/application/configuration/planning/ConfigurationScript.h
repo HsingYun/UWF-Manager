@@ -2,7 +2,7 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
 
-#include "application/configuration/commands/UwfmgrCommandCodec.h"
+#include "application/configuration/commands/UwfmgrCommand.h"
 #include "application/configuration/contracts/ConfigurationPlan.h"
 
 namespace uwf::app {

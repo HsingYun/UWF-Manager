@@ -11,6 +11,7 @@
 #include "presentation/controls/layout/AlignedGraphic.h"
 #include "presentation/design/controls/ControlShape.h"
 #include "presentation/design/theme/DesignSystem.h"
+
 namespace uwf::ui {
 namespace {
 design::Color foreground(const Notice::Tone tone) {

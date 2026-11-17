@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QAbstractTableModel>
 #include <array>
 #include <memory>
@@ -12,6 +13,7 @@
 #include "presentation/viewmodels/common/ContentLoadState.h"
 #include "presentation/viewmodels/common/LoadingGate.h"
 #include "presentation/viewmodels/diagnostics/LogFilterModel.h"
+
 namespace uwf::presentation {
 class LogViewModel final : public QAbstractTableModel {
   Q_OBJECT

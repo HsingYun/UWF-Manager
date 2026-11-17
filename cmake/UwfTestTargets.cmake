@@ -26,7 +26,7 @@ elseif(UWF_OFFSCREEN_PROFILE STREQUAL "hidpi")
 else()
     message(FATAL_ERROR "Unknown UWF_OFFSCREEN_PROFILE: ${UWF_OFFSCREEN_PROFILE}")
 endif()
-configure_file("${PROJECT_SOURCE_DIR}/tests/support/ui/offscreen.json.in"
+configure_file("${PROJECT_SOURCE_DIR}/support/tests/support/ui/offscreen.json.in"
     "${PROJECT_BINARY_DIR}/uwf-offscreen.json" @ONLY)
 
 # Register either a whole executable or selected QtTest functions from it.
@@ -76,7 +76,7 @@ function(uwf_register_test name)
         "-DRESULT_PREFIX=${PROJECT_BINARY_DIR}/test-results/${name}"
         "-DRESULT_CHECKER=$<TARGET_FILE:UwfTestResultCheck>"
         "-DRESULT_CHECK_TIMEOUT=${uwf_result_check_timeout}"
-        -P "${PROJECT_SOURCE_DIR}/tests/tools/results/RunQtTest.cmake"
+        -P "${PROJECT_SOURCE_DIR}/support/tests/tools/results/RunQtTest.cmake"
     )
     # Worker-backed suites also cover native I/O outside QTRY's event polling.
     # Keep a bounded function watchdog independently of the whole-suite budget.
@@ -159,7 +159,7 @@ function(uwf_add_test target)
     qt_add_executable(${target} ${arg_SOURCES})
     target_include_directories(${target} PRIVATE
         "${PROJECT_SOURCE_DIR}/src"
-        "${PROJECT_SOURCE_DIR}/tests"
+        "${PROJECT_SOURCE_DIR}/support/tests"
         ${arg_INCLUDE_DIRECTORIES}
     )
     target_link_libraries(${target} PRIVATE ${arg_LIBRARIES})

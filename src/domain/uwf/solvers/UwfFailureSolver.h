@@ -4,7 +4,6 @@
 
 #include <string>
 #include <variant>
-#include <vector>
 
 #include "domain/uwf/contracts/UwfStateFacts.h"
 

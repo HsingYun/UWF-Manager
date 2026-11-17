@@ -5,10 +5,9 @@
 #include <QColor>
 #include <QRectF>
 #include <QString>
-#include <cstdint>
 
-#include "presentation/views/overlay/hud/OverlayHudPalette.h"
 #include "domain/uwf/model/UwfModel.h"
+#include "presentation/views/overlay/hud/OverlayHudPalette.h"
 
 class QPainter;
 

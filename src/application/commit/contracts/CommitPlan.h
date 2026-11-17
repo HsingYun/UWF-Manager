@@ -2,15 +2,12 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
 
-#include <QList>
 #include <QStringList>
 #include <functional>
-#include <memory>
 #include <optional>
 #include <stop_token>
 #include <string>
 #include <tuple>
-#include <vector>
 
 #include "application/commit/contracts/CommitResult.h"
 #include "application/identity/contracts/ObjectIdentity.h"

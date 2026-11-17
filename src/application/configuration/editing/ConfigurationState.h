@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "application/configuration/editing/ConfigurationDraft.h"
 #include "application/configuration/exclusions/ExclusionDraft.h"
 #include "application/staging/editing/FileStagingConflictPolicy.h"
 #include "domain/uwf/contracts/Types.h"
+
 namespace uwf::app {
 struct GlobalConfigurationState {
   GlobalConfigurationState() { draft.overlay.type = core::OverlayType::RAM; }

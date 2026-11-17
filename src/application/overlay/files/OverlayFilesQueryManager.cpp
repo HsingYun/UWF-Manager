@@ -5,7 +5,6 @@
 #include <QFutureWatcher>
 #include <QPointer>
 #include <QThread>
-#include <algorithm>
 #include <atomic>
 #include <optional>
 #include <stdexcept>

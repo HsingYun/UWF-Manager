@@ -10,6 +10,7 @@
 #include "application/registry/RegistryValueFormat.h"
 #include "presentation/models/ItemRoles.h"
 #include "presentation/viewmodels/common/PresentationText.h"
+
 namespace uwf::presentation {
 namespace {
 enum RegistryType : uint32_t {

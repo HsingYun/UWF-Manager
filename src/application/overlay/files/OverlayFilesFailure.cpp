@@ -3,6 +3,7 @@
 #include "application/overlay/files/OverlayFilesFailure.h"
 
 #include "application/operations/contracts/OperationError.h"
+
 namespace uwf::app {
 OverlayFilesFailure classifyOverlayFilesFailure(std::exception_ptr failure) {
   OverlayFilesFailure result;

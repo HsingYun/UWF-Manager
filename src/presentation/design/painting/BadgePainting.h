@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QFont>
 #include <QIcon>
 #include <QRectF>
 
 #include "design/DesignTokens.h"
 class QPainter;
+
 namespace uwf::ui {
 [[nodiscard]] QSize statusBadgeSize(const QString& text, const QFont& font, const QIcon& icon, int height = 24, int padding = 8);
 [[nodiscard]] QSize countBadgeSize(const QString& text, const QFont& font);

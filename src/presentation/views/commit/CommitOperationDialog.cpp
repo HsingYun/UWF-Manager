@@ -15,6 +15,7 @@
 #include "presentation/controls/layout/Surface.h"
 #include "presentation/controls/text/IconView.h"
 #include "presentation/controls/text/TextLabel.h"
+#include "presentation/design/theme/DesignSystem.h"
 #include "presentation/dialogs/DialogAppearance.h"
 #include "presentation/dialogs/DialogLayout.h"
 #include "presentation/dialogs/Dialogs.h"

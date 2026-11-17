@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "presentation/controls/layout/Surface.h"
 class QAction;
 class QHBoxLayout;
 class QToolButton;
+
 namespace uwf::ui {
 class CommandBar final : public Surface {
   Q_OBJECT

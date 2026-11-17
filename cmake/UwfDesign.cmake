@@ -2,7 +2,7 @@
 # Copyright (c) 2026 HsingYun (iakext@gmail.com)
 include_guard(GLOBAL)
 
-add_executable(UwfDesignCompiler tools/design/DesignCompiler.cpp)
+add_executable(UwfDesignCompiler support/tools/design/DesignCompiler.cpp)
 target_link_libraries(UwfDesignCompiler PRIVATE Qt6::Core)
 uwf_configure_cpp_target(UwfDesignCompiler)
 
@@ -133,9 +133,8 @@ add_library(UwfDesignSystem STATIC
     src/presentation/design/theme/DesignSystem.h
     "${uwf_design_header}"
 )
+target_sources(UwfDesignSystem PRIVATE ${uwf_design_font_sources})
 add_dependencies(UwfDesignSystem UwfDesignTokens)
 target_include_directories(UwfDesignSystem PUBLIC "${PROJECT_SOURCE_DIR}/src" "${PROJECT_BINARY_DIR}/generated")
 target_link_libraries(UwfDesignSystem PUBLIC UwfPresentationModels Qt6::Widgets Qt6::Svg PRIVATE UwfFoundation)
 uwf_configure_production_target(UwfDesignSystem)
-
-option(UWF_BUILD_DESIGN_TOOLS "Build offline UI design preview tools" OFF)

@@ -2,7 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "application/paths/ExclusionCoverage.h"
 
-#include <QDir>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -55,7 +54,7 @@ core::ExclusionEffects fileEffects(const QString& pattern, const QString& target
     return core::fileExclusionEffects(view(storedAddress->relativePath), view(actualAddress->relativePath));
   }
   auto stored = pattern;
-  auto actual = QDir::toNativeSeparators(target);
+  auto actual = paths::windowsSeparators(target);
   if (stored.size() >= 2 && actual.size() >= 2 && stored[1] == u':' && actual[1] == u':') {
     if (!equalObjectNames(QStringView(stored).first(2), QStringView(actual).first(2))) return {};
     stored.remove(0, 2);

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QList>
 #include <QString>
 
 #include "application/diagnostics/contracts/DiagnosticReportTypes.h"
+
 namespace uwf::presentation {
 class DiagnosticReportViewModel final {
  public:

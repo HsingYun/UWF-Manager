@@ -11,7 +11,6 @@
 #include <QVBoxLayout>
 
 #include "presentation/appearance/I18n.h"
-#include "presentation/appearance/ThemeManager.h"
 #include "presentation/controls/feedback/Notice.h"
 #include "presentation/controls/inputs/ComboBoxSelection.h"
 #include "presentation/controls/inputs/SelectBox.h"

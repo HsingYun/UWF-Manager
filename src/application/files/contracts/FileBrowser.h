@@ -4,7 +4,6 @@
 
 #include <QDateTime>
 #include <QString>
-#include <QVector>
 #include <stdexcept>
 #include <stop_token>
 

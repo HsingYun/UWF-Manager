@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "application/configuration/commands/UwfmgrCommandCodec.h"
 #include "application/configuration/execution/ConfigurationPlanExecution.h"
 #include "application/configuration/execution/ConfigurationResult.h"
 #include "application/configuration/volumes/VolumeConfigurationEditor.h"

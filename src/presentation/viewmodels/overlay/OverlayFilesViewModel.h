@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QAbstractTableModel>
 #include <optional>
 
@@ -12,6 +13,7 @@
 #include "presentation/viewmodels/common/AsyncTask.h"
 #include "presentation/viewmodels/common/ContentLoadState.h"
 #include "presentation/viewmodels/common/LoadingGate.h"
+
 namespace uwf::presentation {
 class OverlayFilesViewModel final : public QAbstractTableModel {
   Q_OBJECT

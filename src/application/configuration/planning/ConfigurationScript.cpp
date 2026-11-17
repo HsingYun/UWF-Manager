@@ -3,14 +3,13 @@
 #include "application/configuration/planning/ConfigurationScript.h"
 
 #include <algorithm>
-#include <iterator>
 #include <map>
 #include <set>
 #include <type_traits>
 #include <utility>
 
+#include "application/configuration/commands/UwfmgrCommandCodec.h"
 #include "application/localization/ApplicationText.h"
-#include "application/paths/ExclusionCoverage.h"
 #include "application/paths/PathPolicy.h"
 #include "domain/uwf/contracts/Types.h"
 #include "domain/uwf/policies/OverlayWritePlan.h"

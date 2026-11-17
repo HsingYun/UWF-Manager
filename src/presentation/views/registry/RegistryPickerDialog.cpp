@@ -17,10 +17,7 @@
 #include <QTableView>
 #include <QTreeView>
 #include <QVBoxLayout>
-#include <algorithm>
-#include <exception>
 #include <memory>
-#include <system_error>
 
 #include "presentation/appearance/I18n.h"
 #include "presentation/appearance/ThemeManager.h"
@@ -29,11 +26,9 @@
 #include "presentation/controls/feedback/ContentState.h"
 #include "presentation/controls/layout/FlowLayout.h"
 #include "presentation/controls/layout/Surface.h"
-#include "presentation/controls/layout/VerticalScrollArea.h"
 #include "presentation/controls/navigation/CommandMenu.h"
 #include "presentation/controls/tables/ItemDelegate.h"
 #include "presentation/controls/tables/TablePresentation.h"
-#include "presentation/controls/text/IconView.h"
 #include "presentation/controls/text/TextLabel.h"
 #include "presentation/design/theme/DesignSystem.h"
 #include "presentation/dialogs/DialogAppearance.h"

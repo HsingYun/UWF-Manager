@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <utility>
 
+#include "foundation/paths/RegistryPath.h"
 #include "foundation/text/StringUtil.h"
 #include "infrastructure/windows/errors/WindowsSystemError.h"
 #include "infrastructure/windows/registry/RegistryLimits.h"

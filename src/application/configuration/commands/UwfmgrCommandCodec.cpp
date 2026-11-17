@@ -25,9 +25,9 @@ bool isUwfmgrCommandRepresentable(const UwfmgrCommand& command) {
 
 namespace {
 constexpr std::array<std::string_view, 5> kScriptPreamble{kUwfmgrScriptMarker, "@echo off", "setlocal DisableDelayedExpansion",
-                                                          "for /f \"tokens=2 delims=:\" %%C in ('chcp') do set \"_uwf_codepage=%%C\"", "chcp 65001 >nul"};
+                                                          R"(for /f "tokens=2 delims=:" %%C in ('chcp') do set "_uwf_codepage=%%C")", "chcp 65001 >nul"};
 constexpr std::array<std::string_view, 5> kLegacyScriptPreamble{":: UWF Manager CMD script (UTF-8)", "@echo off", "setlocal DisableDelayedExpansion",
-                                                                "for /f \"tokens=2 delims=:\" %%C in ('chcp') do set \"_uwf_codepage=%%C\"", "chcp 65001 >nul"};
+                                                                R"(for /f "tokens=2 delims=:" %%C in ('chcp') do set "_uwf_codepage=%%C")", "chcp 65001 >nul"};
 constexpr std::array<std::string_view, 3> kScriptEpilogue{"set \"_uwf_exit=%errorlevel%\"", "chcp %_uwf_codepage% >nul", "endlocal & exit /b %_uwf_exit%"};
 constexpr std::string_view utf8Bom = "\xEF\xBB\xBF";
 std::string_view markerDeclaration(std::string_view line) {

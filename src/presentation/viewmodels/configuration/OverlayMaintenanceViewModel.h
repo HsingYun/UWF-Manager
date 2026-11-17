@@ -4,7 +4,6 @@
 
 #include <QObject>
 #include <array>
-#include <cstdint>
 #include <memory>
 #include <vector>
 

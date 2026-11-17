@@ -6,6 +6,7 @@ include_guard(GLOBAL)
 include(UwfSources)
 include(UwfTargetOptions)
 include(UwfVersion)
+uwf_select_platform_adapters()
 include(UwfDesign)
 
 # Include the design library and every component registered below in extraction.
@@ -22,12 +23,15 @@ endfunction()
 
 uwf_add_version(UwfVersion)
 
-uwf_add_component(UwfFoundation UWF_FOUNDATION_SOURCES)
+set(uwf_foundation ${UWF_FOUNDATION_SOURCES} ${uwf_local_time})
+uwf_add_component(UwfFoundation uwf_foundation)
 set_target_properties(UwfFoundation PROPERTIES AUTOMOC OFF AUTOUIC OFF)
-
-uwf_add_component(UwfObjectNameComparison UWF_OBJECT_NAME_COMPARISON_SOURCES)
+uwf_add_component(UwfObjectNameComparison uwf_object_names)
 set_target_properties(UwfObjectNameComparison PROPERTIES AUTOMOC OFF AUTOUIC OFF)
-target_link_libraries(UwfObjectNameComparison PRIVATE kernel32)
+target_link_libraries(UwfObjectNameComparison PRIVATE ${uwf_object_name_libraries})
+uwf_add_component(UwfPathOperations uwf_paths)
+set_target_properties(UwfPathOperations PROPERTIES AUTOMOC OFF AUTOUIC OFF)
+target_link_libraries(UwfPathOperations PUBLIC Qt6::Core)
 
 uwf_add_component(UwfDomain UWF_DOMAIN_SOURCES)
 set_target_properties(UwfDomain PROPERTIES AUTOMOC OFF AUTOUIC OFF)
@@ -57,7 +61,10 @@ uwf_add_component(UwfApplicationContracts UWF_APPLICATION_CONTRACTS_SOURCES)
 target_link_libraries(UwfApplicationContracts PUBLIC UwfDomain Qt6::Core)
 
 uwf_add_component(UwfApplication UWF_APPLICATION_SOURCES)
-target_link_libraries(UwfApplication PUBLIC UwfApplicationContracts PRIVATE UwfVersion UwfObjectNameComparison)
+target_link_libraries(UwfApplication PUBLIC UwfApplicationContracts PRIVATE UwfVersion UwfObjectNameComparison UwfPathOperations)
+uwf_add_component(UwfConfigurationComposition UWF_CONFIGURATION_COMPOSITION_SOURCES)
+set_target_properties(UwfConfigurationComposition PROPERTIES AUTOMOC OFF AUTOUIC OFF)
+target_link_libraries(UwfConfigurationComposition PUBLIC UwfApplication)
 uwf_add_component(UwfAllVolumeProtection UWF_ALL_VOLUME_PROTECTION_SOURCES)
 set_target_properties(UwfAllVolumeProtection PROPERTIES AUTOMOC OFF AUTOUIC OFF)
 target_link_libraries(UwfAllVolumeProtection PUBLIC UwfApplication PRIVATE UwfAllVolumeProtectionSolvers)
@@ -69,47 +76,25 @@ target_link_libraries(UwfPresentationModels PUBLIC Qt6::Core)
 uwf_add_component(UwfViewModels UWF_VIEWMODEL_SOURCES)
 target_link_libraries(UwfViewModels PUBLIC UwfApplication UwfPresentationModels Qt6::Core)
 
-uwf_add_component(UwfWindowsInfrastructure UWF_WINDOWS_INFRASTRUCTURE_SOURCES)
-target_link_libraries(UwfWindowsInfrastructure
-    PUBLIC UwfApplication
-    PRIVATE UwfCompatibilityRuntime UwfObjectNameComparison UwfVersion Qt6::Network advapi32 shell32 userenv wtsapi32 wbemuuid ole32 oleaut32 dxgi powrprof
-)
-if(MSVC OR NOT UWF_SANITIZE)
-    target_link_libraries(UwfWindowsInfrastructure PRIVATE dbghelp)
-endif()
-
-uwf_add_component(UwfViews UWF_VIEW_SOURCES)
+set(uwf_views ${UWF_VIEW_SOURCES} ${uwf_platform_views})
+uwf_add_component(UwfViews uwf_views)
 target_link_libraries(UwfViews
     PUBLIC UwfViewModels UwfDesignSystem Qt6::Widgets Qt6::Svg
-    PRIVATE UwfWindowsInfrastructure UwfVersion advapi32 shell32 user32 shcore dwmapi
+    PRIVATE UwfVersion
 )
 
-uwf_add_component(UwfSystemComposition UWF_SYSTEM_COMPOSITION_SOURCES)
-target_link_libraries(UwfSystemComposition PUBLIC UwfWindowsInfrastructure PRIVATE UwfCompatibilityRuntime UwfRequestPrecheck)
-if(UWF_ENABLE_FAILURE_SOLVER)
-    target_compile_definitions(UwfSystemComposition PRIVATE UWF_ENABLE_FAILURE_SOLVER)
-endif()
-
-uwf_add_component(UwfServiceHost UWF_SERVICE_HOST_SOURCES)
-target_link_libraries(UwfServiceHost PUBLIC UwfSystemComposition)
-
-uwf_add_component(UwfDesktopComposition UWF_DESKTOP_COMPOSITION_SOURCES)
+set(uwf_desktop ${UWF_DESKTOP_COMPOSITION_SOURCES} ${uwf_platform_desktop_sources})
+uwf_add_component(UwfDesktopComposition uwf_desktop)
 target_link_libraries(UwfDesktopComposition
-    PUBLIC UwfViews UwfSystemComposition
-    PRIVATE UwfServiceHost UwfAllVolumeProtection
+    PUBLIC UwfViews
+    PRIVATE UwfAllVolumeProtection UwfConfigurationComposition
 )
 
 uwf_add_component(UwfConsolePresentation UWF_CONSOLE_PRESENTATION_SOURCES)
 set_target_properties(UwfConsolePresentation PROPERTIES AUTOMOC OFF AUTOUIC OFF)
 target_link_libraries(UwfConsolePresentation PUBLIC UwfApplication)
 
-uwf_add_component(UwfConsoleComposition UWF_CONSOLE_COMPOSITION_SOURCES)
-set_target_properties(UwfConsoleComposition PROPERTIES AUTOMOC OFF AUTOUIC OFF)
-target_link_libraries(UwfConsoleComposition PUBLIC UwfSystemComposition PRIVATE UwfConsolePresentation UwfAllVolumeProtection UwfViews)
-
-uwf_add_component(UwfEntryComposition UWF_ENTRY_COMPOSITION_SOURCES)
-set_target_properties(UwfEntryComposition PROPERTIES AUTOMOC OFF AUTOUIC OFF)
-target_link_libraries(UwfEntryComposition PRIVATE UwfDesktopComposition UwfConsoleComposition UwfServiceHost)
+uwf_add_platform_components()
 
 # Explicit ownership prevents a moved file from silently becoming dead source,
 # or being compiled by two layers. Generated headers are outside src.
@@ -129,17 +114,19 @@ foreach(target IN LISTS UWF_COMPONENT_TARGETS)
         endif()
     endforeach()
 endforeach()
+# Inactive platform implementations retain explicit ownership without being built.
+foreach(source IN LISTS uwf_inactive_sources)
+    get_filename_component(absolute "${source}" ABSOLUTE BASE_DIR "${PROJECT_SOURCE_DIR}")
+    if(absolute IN_LIST uwf_registered_files)
+        message(FATAL_ERROR "Production source belongs to multiple components: ${absolute}")
+    endif()
+    list(APPEND uwf_registered_files "${absolute}")
+endforeach()
 foreach(source IN LISTS uwf_production_files)
     if(NOT source IN_LIST uwf_registered_files)
         message(FATAL_ERROR "Production source has no component: ${source}")
     endif()
 endforeach()
-
-if(UWF_BUILD_DESIGN_TOOLS)
-    include(UwfResources)
-    include(UwfTranslations)
-    add_subdirectory(tools/preview "${PROJECT_BINARY_DIR}/preview")
-endif()
 
 # Verify transitive link independence, including LINK_ONLY generator edges.
 # Merely banning a direct solver include would miss an accidental library edge.
@@ -152,7 +139,7 @@ function(uwf_assert_backend_independent target)
             continue()
         endif()
         if(current STREQUAL "UwfContractSolvers" OR current STREQUAL "UwfRequestPrecheck"
-           OR current STREQUAL "UwfAllVolumeProtectionSolvers" OR current STREQUAL "UwfAllVolumeProtection")
+            OR current STREQUAL "UwfAllVolumeProtectionSolvers" OR current STREQUAL "UwfAllVolumeProtection")
             message(FATAL_ERROR "Backend ${target} depends on optional inference: ${current}")
         endif()
         list(APPEND visited "${current}")
@@ -165,4 +152,12 @@ function(uwf_assert_backend_independent target)
     message(STATUS "Backend link independence checked: ${target}")
 endfunction()
 uwf_assert_backend_independent(UwfCompatibilityRuntime)
-uwf_assert_backend_independent(UwfWindowsInfrastructure)
+foreach(backend IN LISTS uwf_platform_backends)
+    uwf_assert_backend_independent(${backend})
+endforeach()
+
+if(UWF_BUILD_DESIGN_TOOLS)
+    include(UwfResources)
+    include(UwfTranslations)
+    add_subdirectory(support/tools/preview "${PROJECT_BINARY_DIR}/preview")
+endif()

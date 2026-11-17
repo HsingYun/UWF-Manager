@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <stop_token>
 
 #include "application/registry/contracts/RegistryValueInfo.h"
+
 namespace uwf::app {
 // Read-only observations run with owned inputs. Cancellation is cooperative
 // between platform calls; an in-flight operating-system call may finish first.

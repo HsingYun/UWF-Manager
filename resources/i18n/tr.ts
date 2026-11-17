@@ -5,6 +5,16 @@
 <TS version="2.1" language="tr" sourcelanguage="en">
 <context>
     <name>uwf</name>
+    <message><source>Simulation mode · UWF changes are kept in memory only</source><translation>Simülasyon modu · UWF değişiklikleri yalnızca bellekte tutulur</translation></message>
+    <message><source>Access denied</source><translation>Erişim reddedildi</translation></message>
+    <message><source>Text and scripts (*.txt *.bat *.ps1 *.cmd);;Text files (*.txt);;All files (*)</source><translation>Metin ve betikler (*.txt *.bat *.ps1 *.cmd);;Metin dosyaları (*.txt);;Tüm dosyalar (*)</translation></message>
+    <message><source>Unable to complete the operation</source><translation>İşlem tamamlanamıyor</translation></message>
+    <message><source>Select files</source><translation>Dosyaları seç</translation></message>
+    <message><source>Open configuration file</source><translation>Yapılandırma dosyasını aç</translation></message>
+    <message><source>Committed to disk</source><translation>Diske kaydedildi</translation></message>
+    <message><source>There are pending changes that have not been applied. Continue and discard them?</source><translation>Henüz uygulanmamış bekleyen değişiklikler var. Devam edip bunları iptal etmek istiyor musunuz?</translation></message>
+    <message><source>Access denied. Check permissions and try again.</source><translation>Erişim reddedildi. İzinleri kontrol edip yeniden deneyin.</translation></message>
+    <message><source>Save file</source><translation>Dosyayı kaydet</translation></message>
     <message><source>Preview</source><translation>Önizleme</translation></message>
     <message><source>enable</source><translation>etkinleştir</translation></message>
     <message><source>disable</source><translation>devre dışı bırak</translation></message>

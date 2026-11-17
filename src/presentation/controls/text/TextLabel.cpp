@@ -13,6 +13,7 @@
 
 #include "presentation/design/painting/TextPainting.h"
 #include "presentation/design/theme/DesignSystem.h"
+
 namespace uwf::ui {
 namespace {
 QPoint rasterOrigin(const QWidget& widget) {

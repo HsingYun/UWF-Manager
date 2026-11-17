@@ -2,7 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "application/overlay/files/OverlayFileCatalog.h"
 
-#include <QDir>
 #include <QStringView>
 #include <algorithm>
 #include <array>
@@ -12,6 +11,7 @@
 #include <utility>
 
 #include "application/identity/contracts/ObjectIdentity.h"
+#include "application/paths/PathPolicy.h"
 
 namespace uwf::app {
 namespace {
@@ -47,7 +47,7 @@ void normalizeOverlayEntry(const QString& driveLetter, OverlayFileEntry& e) {
   if (streamColon > searchFrom) s = s.left(streamColon);
 
   if (s.startsWith(QChar('\\'))) s = driveLetter + s;
-  e.absolutePath = QDir::toNativeSeparators(s);
+  e.absolutePath = paths::windowsSeparators(s);
 
   e.isSystemMetadata = ntfsMetadataPath(e.absolutePath);
 }

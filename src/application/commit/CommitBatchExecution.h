@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "application/commit/contracts/CommitBatchRequest.h"
+
 namespace uwf::app {
 struct CommitBatchProgress {
   std::function<bool(int)> continueAt;

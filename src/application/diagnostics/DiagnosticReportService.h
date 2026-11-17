@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "application/diagnostics/contracts/DiagnosticReportTypes.h"
+#include "application/diagnostics/contracts/SystemInformationSource.h"
 #include "application/enhanced/contracts/EnhancedModeStatus.h"
 #include "application/uwf/contracts/UwfCapability.h"
-#include "application/diagnostics/contracts/SystemInformationSource.h"
 #include "domain/uwf/model/UwfModel.h"
+
 namespace uwf::app {
 class DiagnosticReportService final {
  public:

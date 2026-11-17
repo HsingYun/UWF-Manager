@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "application/commit/CommitBatchExecution.h"
 #include "application/commit/contracts/CommitBatchRequest.h"
 #include "presentation/viewmodels/commit/CommitReportViewModel.h"
+
 namespace uwf::presentation {
 class CommitBatchViewModel final {
  public:

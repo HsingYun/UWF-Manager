@@ -14,14 +14,12 @@
 #include <utility>
 
 #include "application/settings/UserConfig.h"
-#include "application/staging/contracts/FileStagingStore.h"
-#include "application/startup/ApplicationCommand.h"
 #include "application/startup/StartupOptions.h"
-#include "composition/desktop/MainWindowComposition.h"
+#include "composition/desktop/WindowsDesktopComposition.h"
 #include "composition/uwf/SystemCapability.h"
 #include "foundation/logging/Log.h"
 #include "infrastructure/windows/compatibility/SystemCheck.h"
-#include "infrastructure/windows/management/wmi/WmiSession.h"
+#include "infrastructure/windows/management/wmi/WmiRuntime.h"
 #include "infrastructure/windows/process/SecureSingleInstance.h"
 #include "infrastructure/windows/settings/IniUserConfig.h"
 #include "presentation/appearance/I18n.h"

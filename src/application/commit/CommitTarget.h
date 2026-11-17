@@ -3,7 +3,6 @@
 #pragma once
 
 #include <QString>
-#include <cstdint>
 #include <exception>
 #include <optional>
 #include <stdexcept>

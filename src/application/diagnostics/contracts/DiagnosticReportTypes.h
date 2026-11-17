@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
-#include <QString>
+
 #include <QStringList>
 #include <optional>
 #include <string>
 #include <vector>
 
 #include "application/diagnostics/contracts/SystemInformation.h"
+
 namespace uwf::app {
 struct DiagnosticSessionSummary {
   bool filterEnabled = false;

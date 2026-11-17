@@ -7,8 +7,10 @@
 #include <stdexcept>
 #include <utility>
 
+#include "application/overlay/HormEligibility.h"
 #include "domain/uwf/model/UwfModel.h"
 #include "domain/uwf/policies/ConfigurationModePolicy.h"
+
 namespace uwf::app {
 namespace {
 template <class Work>

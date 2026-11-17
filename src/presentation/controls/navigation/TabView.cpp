@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "presentation/design/theme/DesignSystem.h"
+
 namespace uwf::ui {
 namespace {
 void preservePageScroll(QWidget* page, const std::shared_ptr<bool>& enabled) {

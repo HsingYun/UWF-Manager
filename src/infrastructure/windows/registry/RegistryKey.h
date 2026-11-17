@@ -15,7 +15,6 @@
 #include <vector>
 
 #include "application/registry/contracts/RegistryValueInfo.h"
-#include "foundation/paths/RegistryPath.h"
 
 namespace uwf::regkey {
 

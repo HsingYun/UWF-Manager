@@ -11,7 +11,7 @@
 #include <cstdint>
 
 namespace uwf::windows::backends::native {
-// Captured x64 ATL output ABI, enabled only for a matched CodeView profile.
+// Native x64 ATL output ABI, assumed stable across DLL versions.
 // Items are BSTRs; the buffer requires the producing module's bound CRT free.
 struct StringArray {
   BSTR* items = nullptr;

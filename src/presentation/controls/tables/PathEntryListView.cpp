@@ -18,6 +18,7 @@
 #include "presentation/design/theme/DesignSystem.h"
 #include "presentation/models/ItemRoles.h"
 #include "presentation/models/PageProxyModel.h"
+
 namespace uwf::ui {
 namespace {
 constexpr int statusWidth = 120;

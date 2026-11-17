@@ -69,24 +69,4 @@ FARPROC SystemLibrary::importedSymbol(const std::string_view name) const noexcep
   }
   return found;
 }
-bool SystemLibrary::matchesCodeView(const GUID& guid, const DWORD age) const noexcept {
-  const auto image = moduleImage(m_module.get());
-  const auto* nt = imageHeaders(image);
-  if (!nt || nt->OptionalHeader.NumberOfRvaAndSizes <= IMAGE_DIRECTORY_ENTRY_DEBUG) return false;
-  const auto debug = nt->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_DEBUG];
-  const auto count = static_cast<std::size_t>(debug.Size) / sizeof(IMAGE_DEBUG_DIRECTORY);
-  struct CodeView {
-    DWORD signature;
-    GUID guid;
-    DWORD age;
-  };
-  constexpr DWORD rsdsSignature = 0x53445352;
-  for (std::size_t index = 0; index < count; ++index) {
-    const auto* record = imageObject<IMAGE_DEBUG_DIRECTORY>(image, static_cast<std::size_t>(debug.VirtualAddress) + index * sizeof(IMAGE_DEBUG_DIRECTORY));
-    if (!record || record->Type != IMAGE_DEBUG_TYPE_CODEVIEW || record->SizeOfData < sizeof(CodeView)) continue;
-    const auto* identity = imageObject<CodeView>(image, record->AddressOfRawData);
-    if (identity && identity->signature == rsdsSignature && identity->age == age && IsEqualGUID(identity->guid, guid)) return true;
-  }
-  return false;
-}
 }  // namespace uwf::windows

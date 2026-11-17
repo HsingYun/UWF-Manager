@@ -10,6 +10,7 @@
 
 class QPushButton;
 class QVBoxLayout;
+
 namespace uwf::presentation {
 class OverlaySettingsEditViewModel;
 }

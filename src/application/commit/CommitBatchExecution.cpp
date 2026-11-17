@@ -3,6 +3,7 @@
 #include "application/commit/CommitBatchExecution.h"
 
 #include "application/commit/contracts/CommitBatchRequest.h"
+
 namespace uwf::app {
 CommitBatchOutcome executeCommitBatch(const CommitBatchRequest& batch, const CommitBatchProgress& progress) {
   CommitBatchOutcome outcome;

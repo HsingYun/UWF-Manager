@@ -3,6 +3,7 @@
 #include "application/registry/RegistryValueFormat.h"
 
 #include <format>
+
 namespace uwf::app {
 std::string valueTypeName(uint32_t type) {
   switch (type) {

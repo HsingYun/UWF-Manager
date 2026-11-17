@@ -4,9 +4,7 @@
 
 #include <QWidget>
 #include <memory>
-#include <optional>
 
-#include "domain/uwf/model/UwfModel.h"
 #include "presentation/viewmodels/configuration/VolumeStatusViewModel.h"
 
 class QLabel;

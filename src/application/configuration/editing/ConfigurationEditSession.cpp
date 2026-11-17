@@ -6,7 +6,6 @@
 #include <cstdint>
 #include <deque>
 #include <set>
-#include <stdexcept>
 #include <utility>
 
 #include "application/configuration/contracts/ConfigurationActions.h"

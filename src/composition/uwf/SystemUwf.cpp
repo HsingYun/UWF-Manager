@@ -201,7 +201,7 @@ std::shared_ptr<compat::Uwf> systemUwf() {
         const auto environment = windows::windowsConfigurationEnvironment();
         return uwfWithStateRefresh(std::make_shared<compat::FallbackUwf>(std::vector<std::shared_ptr<compat::Backend>>{
                                        std::make_shared<windows::backends::WmiUwfBackend>(&windows::embeddedWmiSession),
-                                       std::make_shared<windows::backends::CspUwfBackend>(), windows::backends::createNativeUwfBackend()}),
+                                       std::make_shared<windows::backends::CspUwfBackend>(), std::make_shared<windows::backends::NativeUwfBackend>()}),
                                    environment, true, windows::systemVolumeRepository());
       },
       windows::systemMtaExecutor());

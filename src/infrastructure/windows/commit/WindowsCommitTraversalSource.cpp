@@ -2,10 +2,7 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "infrastructure/windows/commit/WindowsCommitTraversalSource.h"
 
-#include <stdexcept>
-
 #include "application/commit/contracts/CommitTraversalSource.h"
-#include "application/localization/ApplicationText.h"
 #include "infrastructure/windows/commit/WindowsFileTraversalSource.h"
 #include "infrastructure/windows/registry/RegistryKey.h"
 

@@ -5,9 +5,7 @@
 #include <algorithm>
 #include <atomic>
 #include <format>
-#include <functional>
 #include <iterator>
-#include <type_traits>
 #include <utility>
 
 #include "foundation/logging/Log.h"

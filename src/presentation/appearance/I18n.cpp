@@ -7,7 +7,6 @@
 #include <QLocale>
 #include <QTranslator>
 #include <algorithm>
-#include <array>
 
 #include "presentation/appearance/AppearanceTransition.h"
 #include "foundation/logging/Log.h"

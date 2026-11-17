@@ -20,7 +20,7 @@
 #include <cmath>
 #include <numbers>
 
-#include "presentation/appearance/I18n.h"
+#include "presentation/appearance/ThemeManager.h"
 #include "presentation/controls/feedback/HoverToolTip.h"
 #include "presentation/viewmodels/overlay/OverlayViewModel.h"
 #include "presentation/views/overlay/coordination/OverlayContextMenu.h"

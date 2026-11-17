@@ -18,6 +18,7 @@
 #include "presentation/controls/pagination/PagedWindowLayout.h"
 #include "presentation/design/controls/ItemViewGeometry.h"
 #include "presentation/models/PageProxyModel.h"
+
 namespace uwf::ui {
 namespace {
 class OverlayScrollBar final : public QScrollBar {

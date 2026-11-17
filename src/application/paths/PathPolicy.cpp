@@ -3,10 +3,9 @@
 #include "application/paths/PathPolicy.h"
 
 #include <QDir>
-#include <QFileInfo>
 #include <QStringView>
-#include <filesystem>
 
+#include "application/paths/contracts/WindowsPathOperations.h"
 #include "domain/uwf/contracts/Types.h"
 #include "foundation/paths/DriveLetter.h"
 #include "foundation/paths/RegistryPath.h"
@@ -14,9 +13,7 @@
 
 namespace uwf::app::paths {
 namespace {
-bool hasWindowsNamespace(const QString& native) {
-  return native.startsWith(QLatin1String(R"(\\?\)")) || native.startsWith(QLatin1String(R"(\\.\)"));
-}
+bool hasWindowsNamespace(const QString& native) { return native.startsWith(QLatin1String(R"(\\?\)")) || native.startsWith(QLatin1String(R"(\\.\)")); }
 qsizetype namespaceRootLength(const QString& native) {
   if (const auto address = splitVolumeFilePath(native)) {
     if (address->relativePath.startsWith(u'\\')) return native.size() - address->relativePath.size() + 1;
@@ -45,13 +42,12 @@ std::optional<VolumeFilePath> splitVolumeFilePath(const QString& path) {
   return std::nullopt;
 }
 std::optional<VolumeFilePath> parseLocalFilePath(const QString& path) {
-  if (path.isEmpty() || path.contains(QChar::Null) || !isValidUtf16(QStringView(path)) ||
-      !std::filesystem::path(path.toStdWString()).is_absolute() || path.startsWith(QLatin1String(R"(\\.\)")))
+  if (path.isEmpty() || path.contains(QChar::Null) || !isValidUtf16(QStringView(path)) || !platform::fullyQualified(path) ||
+      path.startsWith(QLatin1String(R"(\\.\)")))
     return std::nullopt;
   const auto address = splitVolumeFilePath(path);
   if (!address) return std::nullopt;
-  if (path.startsWith(QLatin1String(R"(\\?\)")) &&
-      (!address->relativePath.startsWith(u'\\') || address->relativePath.startsWith(QLatin1String("\\\\"))))
+  if (path.startsWith(QLatin1String(R"(\\?\)")) && (!address->relativePath.startsWith(u'\\') || address->relativePath.startsWith(QLatin1String("\\\\"))))
     return std::nullopt;
   return address;
 }
@@ -72,14 +68,15 @@ QString volumeFilePath(const VolumeFilePath& path) {
   if (!root.empty() && root.back() == '\\') root.pop_back();
   return QString::fromStdString(root) + path.relativePath;
 }
+QString windowsSeparators(QString path) { return platform::nativeSeparators(path); }
 QString normalize(const QString& path) {
   if (path.isEmpty()) return {};
-  const auto native = QDir::toNativeSeparators(path);
+  const auto native = platform::nativeSeparators(path);
   // Qt's fromNativeSeparators removes the extended namespace prefix. Preserve
   // explicitly addressed Windows objects, including their literal suffix, so
   // every caller keeps the same volume address through staging and execution.
   if (hasWindowsNamespace(native)) return native;
-  return QDir::toNativeSeparators(QDir::cleanPath(QDir::fromNativeSeparators(path)));
+  return platform::nativeSeparators(platform::clean(platform::portableSeparators(path)));
 }
 QString normalize(const QString& path, const QString& driveLetter) {
   const auto normalized = normalize(path);
@@ -88,12 +85,12 @@ QString normalize(const QString& path, const QString& driveLetter) {
 }
 QString fileSystemPath(const QString& path) {
   if (path.isEmpty()) return {};
-  const auto native = QDir::toNativeSeparators(path);
-  return hasWindowsNamespace(native) ? native : QDir::cleanPath(QDir::fromNativeSeparators(path));
+  const auto native = platform::nativeSeparators(path);
+  return hasWindowsNamespace(native) ? native : platform::clean(platform::portableSeparators(path));
 }
 QString parentDirectory(const QString& path) {
   auto address = fileSystemPath(path);
-  if (!hasWindowsNamespace(address)) return QDir::cleanPath(QFileInfo(address).absolutePath());
+  if (!hasWindowsNamespace(address)) return platform::clean(platform::parent(address));
   const auto rootLength = namespaceRootLength(address);
   while (address.size() > rootLength && address.endsWith(u'\\')) address.chop(1);
   if (address.size() <= rootLength) return address;
@@ -102,26 +99,25 @@ QString parentDirectory(const QString& path) {
 }
 QString fileName(const QString& path) {
   const auto address = fileSystemPath(path);
-  return hasWindowsNamespace(address) ? address.mid(address.lastIndexOf(u'\\') + 1) : QFileInfo(address).fileName();
+  return hasWindowsNamespace(address) ? address.mid(address.lastIndexOf(u'\\') + 1) : platform::fileName(address);
 }
 QString joinFilePath(const QString& directory, const QString& name) {
   const auto child = fileSystemPath(name);
   const auto parent = fileSystemPath(directory);
-  const auto nativeChild = QDir::toNativeSeparators(name);
+  const auto nativeChild = platform::nativeSeparators(name);
   if (hasWindowsNamespace(parent) && nativeChild.startsWith(u'\\') && !nativeChild.startsWith(QLatin1String("\\\\")))
     return parent.left(namespaceRootLength(parent)) + nativeChild.mid(1);
-  if (hasWindowsNamespace(child) || QDir::isAbsolutePath(child)) return child;
-  if (!hasWindowsNamespace(parent)) return fileSystemPath(QDir(parent).filePath(name));
+  if (hasWindowsNamespace(child) || platform::absolute(child)) return child;
+  if (!hasWindowsNamespace(parent)) return fileSystemPath(platform::join(parent, name));
   return parent + (parent.endsWith(u'\\') ? QString{} : QStringLiteral("\\")) + nativeChild;
 }
 QString absoluteFilePath(const QString& path, const QString& directory) {
   const auto address = fileSystemPath(path);
   if (hasWindowsNamespace(address)) return address;
   const auto parent = fileSystemPath(directory.isEmpty() ? QDir::currentPath() : directory);
-  if (hasWindowsNamespace(parent) && !address.startsWith(QLatin1String("//")) &&
-      !(address.size() >= 2 && address[1] == u':')) {
+  if (hasWindowsNamespace(parent) && !address.startsWith(QLatin1String("//")) && !(address.size() >= 2 && address[1] == u':')) {
     auto result = parent;
-    const auto relative = QDir::toNativeSeparators(path);
+    const auto relative = platform::nativeSeparators(path);
     if (relative.startsWith(u'\\')) result = parent.left(namespaceRootLength(parent));
     // Interpret navigation components only in a relative user request. Explicit
     // namespace addresses and enumerated object names retain their literal tail.
@@ -134,13 +130,13 @@ QString absoluteFilePath(const QString& path, const QString& directory) {
     }
     return result;
   }
-  return fileSystemPath(QDir::isAbsolutePath(address) ? address : QDir(parent).absoluteFilePath(address));
+  return fileSystemPath(platform::absolute(address) ? address : platform::resolve(parent, address));
 }
 ObjectIdentity identity(const QString& path) { return ObjectIdentity(normalize(path)); }
 QString expandRegistryHive(const QString& path) { return QString::fromStdU16String(regkey::expandHive(QStringView(path))); }
 bool contains(const QString& parent, const QString& path) {
-  QString root = expandRegistryHive(QDir::toNativeSeparators(parent));
-  const QString target = expandRegistryHive(QDir::toNativeSeparators(path));
+  QString root = expandRegistryHive(platform::nativeSeparators(parent));
+  const QString target = expandRegistryHive(platform::nativeSeparators(path));
   while (root.endsWith(u'\\') || root.endsWith(u'/')) root.chop(1);
   if (root.isEmpty()) return false;
   if (equalObjectNames(target, root)) return true;

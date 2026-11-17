@@ -7,12 +7,9 @@
 #include <wbemidl.h>
 #include <windows.h>
 
-#include <algorithm>
 #include <atomic>
 #include <bit>
-#include <charconv>
 #include <chrono>
-#include <cmath>
 #include <exception>
 #include <format>
 #include <limits>
@@ -25,10 +22,10 @@
 #include <utility>
 
 #include "foundation/logging/Log.h"
-#include "foundation/text/StringUtil.h"
 #include "infrastructure/windows/management/wmi/WmiException.h"
 #include "infrastructure/windows/management/wmi/WmiMethodCompletion.h"
 #include "infrastructure/windows/management/wmi/WmiNamespaces.h"
+#include "infrastructure/windows/management/wmi/WmiRuntime.h"
 #include "infrastructure/windows/resources/ComPtr.h"
 #include "infrastructure/windows/text/UnicodeConversion.h"
 

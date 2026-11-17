@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QList>
 #include <QString>
 #include <QStringList>
 #include <cstddef>
-#include <functional>
 #include <map>
 #include <stop_token>
 #include <vector>

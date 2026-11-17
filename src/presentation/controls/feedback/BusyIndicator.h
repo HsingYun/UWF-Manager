@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QVariantAnimation>
 #include <QWidget>
 
 #include "design/DesignTokens.h"
+
 namespace uwf::ui {
 class BusyIndicator final : public QWidget {
   Q_OBJECT

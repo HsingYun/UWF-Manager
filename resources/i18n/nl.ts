@@ -5,6 +5,16 @@
 <TS version="2.1" language="nl" sourcelanguage="en">
 <context>
     <name>uwf</name>
+    <message><source>Simulation mode · UWF changes are kept in memory only</source><translation>Simulatiemodus · UWF-wijzigingen worden alleen in het geheugen bewaard</translation></message>
+    <message><source>Access denied</source><translation>Toegang geweigerd</translation></message>
+    <message><source>Text and scripts (*.txt *.bat *.ps1 *.cmd);;Text files (*.txt);;All files (*)</source><translation>Tekst en scripts (*.txt *.bat *.ps1 *.cmd);;Tekstbestanden (*.txt);;Alle bestanden (*)</translation></message>
+    <message><source>Unable to complete the operation</source><translation>Kan de bewerking niet voltooien</translation></message>
+    <message><source>Select files</source><translation>Bestanden selecteren</translation></message>
+    <message><source>Open configuration file</source><translation>Configuratiebestand openen</translation></message>
+    <message><source>Committed to disk</source><translation>Op schijf vastgelegd</translation></message>
+    <message><source>There are pending changes that have not been applied. Continue and discard them?</source><translation>Er zijn wijzigingen die nog niet zijn toegepast. Wilt u doorgaan en deze verwerpen?</translation></message>
+    <message><source>Access denied. Check permissions and try again.</source><translation>Toegang geweigerd. Controleer de machtigingen en probeer het opnieuw.</translation></message>
+    <message><source>Save file</source><translation>Bestand opslaan</translation></message>
     <message><source>Preview</source><translation>Voorbeeld</translation></message>
     <message><source>enable</source><translation>inschakelen</translation></message>
     <message><source>disable</source><translation>uitschakelen</translation></message>

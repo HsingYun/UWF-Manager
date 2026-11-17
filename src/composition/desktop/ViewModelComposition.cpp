@@ -16,6 +16,7 @@
 #include "composition/uwf/ConfigurationComposition.h"
 #include "presentation/appearance/I18n.h"
 #include "presentation/viewmodels/common/PresentationText.h"
+
 namespace uwf::composition {
 namespace {
 class ApplicationViewModelFactory final : public presentation::ViewModelFactory {

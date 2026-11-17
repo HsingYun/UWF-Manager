@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QAbstractTableModel>
 #include <QStringView>
 #include <optional>
 
 #include "application/registry/contracts/RegistryValueInfo.h"
+
 namespace uwf::presentation {
 class RegistryValueModel final : public QAbstractTableModel {
   Q_OBJECT

@@ -7,6 +7,7 @@
 #include <QResizeEvent>
 #include <QToolButton>
 #include <utility>
+
 namespace uwf::ui {
 CommandBar::CommandBar(QWidget* parent) : Surface(design::Color::Window, parent), m_layout(new QHBoxLayout(this)) {
   setProperty("windowDragSurface", true);

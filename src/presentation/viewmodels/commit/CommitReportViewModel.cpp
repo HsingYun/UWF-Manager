@@ -6,6 +6,7 @@
 #include "foundation/logging/Log.h"
 #include "presentation/models/ItemRoles.h"
 #include "presentation/viewmodels/common/PresentationText.h"
+
 namespace uwf::presentation {
 namespace {
 QString commitTargetName(const app::CommitNode& target) {

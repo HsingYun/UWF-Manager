@@ -8,9 +8,7 @@
 #include <QWidget>
 #include <memory>
 #include <optional>
-#include <string>
 
-#include "application/configuration/exclusions/ExclusionDraft.h"
 #include "domain/uwf/model/UwfModel.h"
 #include "presentation/viewmodels/common/ViewModelFactory.h"
 #include "presentation/viewmodels/configuration/VolumeConfigurationViewModel.h"

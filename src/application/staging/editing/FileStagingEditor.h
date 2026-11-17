@@ -6,10 +6,8 @@
 #include <cstdint>
 #include <memory>
 
-#include "application/commit/contracts/CommitPlan.h"
 #include "application/commit/contracts/CommitTraversalSource.h"
 #include "application/staging/contracts/FileStagingEditing.h"
-#include "application/staging/contracts/FileStagingStore.h"
 #include "application/staging/editing/FileStagingDraft.h"
 
 namespace uwf::app {

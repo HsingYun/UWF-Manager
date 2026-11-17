@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "application/staging/contracts/FileStagingStorage.h"
+
 namespace uwf::windows {
 class RegistryFileStagingStore final : public app::FileStagingStorage {
  public:

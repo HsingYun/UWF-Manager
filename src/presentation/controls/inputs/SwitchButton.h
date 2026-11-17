@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QAbstractButton>
 #include <QVariantAnimation>
 
 #include "design/DesignTokens.h"
+
 namespace uwf::ui {
 class SwitchButton : public QAbstractButton {
   Q_OBJECT

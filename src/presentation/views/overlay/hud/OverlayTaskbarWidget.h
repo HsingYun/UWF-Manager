@@ -3,7 +3,6 @@
 #pragma once
 
 #include <QPointer>
-#include <cstdint>
 #include <memory>
 
 #include "presentation/views/overlay/coordination/OverlayHubView.h"

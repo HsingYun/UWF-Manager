@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "application/configuration/commands/UwfmgrCommandCodec.h"
 #include "foundation/text/Utf8.h"
 #include "presentation/models/ItemRoles.h"
 #include "presentation/viewmodels/common/PresentationText.h"

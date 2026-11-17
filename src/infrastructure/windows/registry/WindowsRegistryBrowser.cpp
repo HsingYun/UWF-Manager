@@ -3,6 +3,7 @@
 #include "infrastructure/windows/registry/WindowsRegistryBrowser.h"
 
 #include "infrastructure/windows/registry/RegistryKey.h"
+
 namespace uwf::windows {
 namespace {
 class WindowsRegistryBrowser final : public app::RegistryBrowser {

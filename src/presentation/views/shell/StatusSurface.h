@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "presentation/controls/layout/Surface.h"
 class QLabel;
 class QPushButton;
+
 namespace uwf::ui {
 class TextLabel;
 class IconView;

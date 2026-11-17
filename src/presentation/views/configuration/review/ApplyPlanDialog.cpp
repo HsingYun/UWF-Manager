@@ -15,7 +15,6 @@
 #include <QVBoxLayout>
 #include <utility>
 
-#include "application/configuration/planning/ConfigurationScript.h"
 #include "presentation/appearance/I18n.h"
 #include "presentation/appearance/ThemeManager.h"
 #include "presentation/controls/feedback/BusyIndicator.h"
@@ -25,13 +24,10 @@
 #include "presentation/controls/feedback/StatusBadge.h"
 #include "presentation/controls/inputs/CodeEditor.h"
 #include "presentation/controls/layout/Surface.h"
-#include "presentation/controls/layout/VerticalScrollArea.h"
 #include "presentation/controls/navigation/Disclosure.h"
 #include "presentation/controls/navigation/TabView.h"
 #include "presentation/controls/tables/RecyclingListView.h"
-#include "presentation/controls/text/IconView.h"
 #include "presentation/controls/text/TextLabel.h"
-#include "presentation/design/theme/DesignSystem.h"
 #include "presentation/dialogs/DialogAppearance.h"
 #include "presentation/dialogs/DialogLayout.h"
 #include "presentation/dialogs/Dialogs.h"

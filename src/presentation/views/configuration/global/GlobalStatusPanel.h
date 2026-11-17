@@ -4,10 +4,8 @@
 
 #include <QWidget>
 #include <memory>
-#include <optional>
 #include <vector>
 
-#include "domain/uwf/model/UwfModel.h"
 #include "presentation/viewmodels/configuration/GlobalConfigurationViewModel.h"
 #include "presentation/viewmodels/configuration/OverlayAdvancedViewModel.h"
 

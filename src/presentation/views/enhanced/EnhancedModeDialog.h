@@ -4,7 +4,6 @@
 
 #include <QString>
 #include <array>
-#include <optional>
 
 #include "presentation/dialogs/PanelDialog.h"
 #include "presentation/viewmodels/enhanced/EnhancedModeViewModel.h"

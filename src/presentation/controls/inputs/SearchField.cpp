@@ -6,6 +6,7 @@
 
 #include "presentation/design/theme/DesignSystem.h"
 #include "presentation/design/painting/IconPainting.h"
+
 namespace uwf::ui {
 SearchField::SearchField(QWidget* parent) : QLineEdit(parent) {
   auto type = font();

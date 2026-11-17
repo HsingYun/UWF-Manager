@@ -2,8 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "presentation/appearance/ThemeManager.h"
 
-#include <windows.h>
-
 #include <QAbstractEventDispatcher>
 #include <QApplication>
 #include <QElapsedTimer>
@@ -12,36 +10,17 @@
 #include <QHash>
 #include <QPalette>
 #include <QStyleHints>
-#include <exception>
-#include <string_view>
 #include <utility>
 
 #include "foundation/logging/Log.h"
-#include "infrastructure/windows/registry/RegistryKey.h"
 #include "presentation/appearance/AppearanceTransition.h"
 #include "presentation/controls/navigation/ContextMenus.h"
 #include "presentation/design/painting/IconPainting.h"
 #include "presentation/design/theme/DesignStyle.h"
 #include "presentation/design/theme/DesignSystem.h"
+#include "presentation/platform/DesktopPlatform.h"
 
 namespace uwf::ui {
-
-namespace {
-
-app::Theme readSystemTheme(std::string_view valueName) noexcept {
-  try {
-    return regkey::readDword(R"(HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize)", valueName).value_or(0) == 0
-               ? app::Theme::Dark
-               : app::Theme::Light;
-  } catch (const std::exception& error) {
-    UWF_LOG_W("theme") << "system theme unavailable: fallback=dark error=" << error.what();
-  } catch (...) {
-    UWF_LOG_W("theme") << "system theme unavailable: fallback=dark error=non-standard-exception";
-  }
-  return app::Theme::Dark;
-}
-
-}  // namespace
 
 ThemeManager& ThemeManager::instance() {
   static ThemeManager mgr;
@@ -106,16 +85,13 @@ void ThemeManager::requestToggle() {
 
 app::Theme ThemeManager::detectSystemTheme() {
   // A missing AppsUseLightTheme value uses the dark fallback.
-  return readSystemTheme("AppsUseLightTheme");
+  return platform::systemTheme(false);
 }
 
-app::Theme ThemeManager::detectSystemShellTheme() { return readSystemTheme("SystemUsesLightTheme"); }
+app::Theme ThemeManager::detectSystemShellTheme() { return platform::systemTheme(true); }
 
 bool ThemeManager::nativeEventFilter(const QByteArray& eventType, void* message, qintptr*) {
-  if (eventType != "windows_generic_MSG" && eventType != "windows_dispatcher_MSG") return false;
-
-  const auto* msg = static_cast<const MSG*>(message);
-  if (msg && (msg->message == WM_SETTINGCHANGE || msg->message == WM_THEMECHANGED)) refreshSystemTheme();
+  if (platform::isThemeChangeEvent(eventType, message)) refreshSystemTheme();
   return false;
 }
 

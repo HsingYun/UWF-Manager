@@ -15,6 +15,7 @@
 #include "application/localization/OverlayTypeText.h"
 #include "presentation/viewmodels/common/PresentationText.h"
 #include "presentation/viewmodels/configuration/MaintenanceValidationText.h"
+
 namespace uwf::presentation {
 OverlayMaintenanceViewModel::OverlayMaintenanceViewModel(std::shared_ptr<app::OverlayMaintenanceActions> actions, QObject* parent)
     : OverlayMaintenanceViewModel(std::move(actions), std::make_shared<app::OverlayMaintenanceEditor>(), parent) {}

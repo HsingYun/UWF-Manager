@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "application/diagnostics/contracts/SystemInformationSource.h"
+
 namespace uwf::windows {
 class WindowsSystemInformationSource final : public app::SystemInformationSource {
  public:

@@ -6,8 +6,6 @@
 #include <string>
 #include <vector>
 
-#include "foundation/paths/DriveLetter.h"
-
 namespace uwf::drive {
 
 class DriveLetterResolutionError final : public std::runtime_error {

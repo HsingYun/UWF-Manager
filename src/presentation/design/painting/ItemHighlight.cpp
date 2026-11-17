@@ -7,7 +7,7 @@
 #include <QWidget>
 #include <utility>
 
-#include "presentation/design/theme/DesignSystem.h"
+#include "design/DesignTokens.h"
 
 namespace uwf::ui {
 ItemHighlight::ItemHighlight(QWidget* viewport) : QObject(viewport) {

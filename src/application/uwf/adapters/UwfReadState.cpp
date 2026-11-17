@@ -3,14 +3,12 @@
 #include "application/uwf/adapters/UwfReadState.h"
 #include "domain/uwf/policies/ConfigurationModePolicy.h"
 
-#include <algorithm>
 #include <map>
 #include <stdexcept>
 #include <utility>
 
 #include "application/uwf/adapters/UwfCall.h"
 #include "domain/uwf/policies/IndividualCommitPolicy.h"
-#include "domain/uwf/policies/VolumeIdentityPolicy.h"
 #include "foundation/paths/DriveLetter.h"
 
 namespace uwf::app {

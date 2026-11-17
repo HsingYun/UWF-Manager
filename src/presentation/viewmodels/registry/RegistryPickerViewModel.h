@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QAbstractItemModel>
 #include <QMetaType>
 #include <cstdint>
@@ -12,6 +13,7 @@
 #include "application/registry/contracts/RegistryBrowser.h"
 #include "presentation/viewmodels/common/AsyncTask.h"
 #include "presentation/viewmodels/registry/RegistryValueModel.h"
+
 namespace uwf::presentation {
 class RegistryPickerViewModel final : public QAbstractItemModel {
   Q_OBJECT

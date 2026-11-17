@@ -11,7 +11,6 @@
 #include <QPushButton>
 #include <utility>
 
-#include "infrastructure/windows/shell/WindowsShell.h"
 #include "presentation/appearance/I18n.h"
 #include "presentation/appearance/ThemeManager.h"
 #include "presentation/controls/clipboard/ClipboardText.h"
@@ -20,6 +19,7 @@
 #include "presentation/controls/tables/PathEntryListView.h"
 #include "presentation/dialogs/Dialogs.h"
 #include "presentation/models/ItemRoles.h"
+#include "presentation/platform/DesktopPlatform.h"
 
 namespace uwf::ui {
 
@@ -74,7 +74,7 @@ FileStagingWidget::FileStagingWidget(std::shared_ptr<presentation::FileStagingVi
     const QString path = index.data(presentation::PathRole).toString();
     CommandMenu menu(this);
     auto* open = menu.addAction(ThemeManager::instance().icon(":/icons/folder.svg"), I18n::tr("Open containing folder"));
-    connect(open, &QAction::triggered, this, [path] { windows::shell::revealInExplorer(path); });
+    connect(open, &QAction::triggered, this, [path] { platform::revealFile(path); });
     auto* copy = menu.addAction(ThemeManager::instance().icon(":/icons/copy.svg"), I18n::tr("Copy file path"));
     connect(copy, &QAction::triggered, this, [this] {
       QStringList paths;

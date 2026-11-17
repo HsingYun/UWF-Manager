@@ -7,7 +7,6 @@
 #include <QVector>
 #include <memory>
 #include <optional>
-#include <vector>
 
 #include "application/uwf/contracts/UwfCapability.h"
 

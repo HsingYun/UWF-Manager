@@ -12,6 +12,7 @@ class QComboBox;
 class QResizeEvent;
 class QGridLayout;
 class QHBoxLayout;
+
 namespace uwf::ui {
 class BusyIndicator;
 class DialogLayout;

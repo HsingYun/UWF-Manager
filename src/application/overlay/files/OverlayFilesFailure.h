@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QString>
 #include <exception>
 
 #include "application/operations/contracts/OperationError.h"
+
 namespace uwf::app {
 // The read may still be executing in the provider. This is independent of
 // mutation effects: enumeration remains read-only.

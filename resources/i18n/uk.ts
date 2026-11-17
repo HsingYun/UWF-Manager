@@ -5,6 +5,16 @@
 <TS version="2.1" language="uk" sourcelanguage="en">
 <context>
     <name>uwf</name>
+    <message><source>Simulation mode · UWF changes are kept in memory only</source><translation>Режим симуляції · Зміни UWF зберігаються лише в пам’яті</translation></message>
+    <message><source>Access denied</source><translation>Доступ заборонено</translation></message>
+    <message><source>Text and scripts (*.txt *.bat *.ps1 *.cmd);;Text files (*.txt);;All files (*)</source><translation>Текст і сценарії (*.txt *.bat *.ps1 *.cmd);;Текстові файли (*.txt);;Усі файли (*)</translation></message>
+    <message><source>Unable to complete the operation</source><translation>Не вдалося завершити операцію</translation></message>
+    <message><source>Select files</source><translation>Вибрати файли</translation></message>
+    <message><source>Open configuration file</source><translation>Відкрити файл конфігурації</translation></message>
+    <message><source>Committed to disk</source><translation>Збережено на диску</translation></message>
+    <message><source>There are pending changes that have not been applied. Continue and discard them?</source><translation>Є ще не застосовані зміни. Продовжити й відкинути їх?</translation></message>
+    <message><source>Access denied. Check permissions and try again.</source><translation>Доступ заборонено. Перевірте дозволи й повторіть спробу.</translation></message>
+    <message><source>Save file</source><translation>Зберегти файл</translation></message>
     <message><source>Preview</source><translation>Попередній перегляд</translation></message>
     <message><source>enable</source><translation>увімкнути</translation></message>
     <message><source>disable</source><translation>вимкнути</translation></message>

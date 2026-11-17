@@ -63,6 +63,36 @@ std::optional<std::u16string> utf8ToUtf16(const std::string_view text) {
   return result;
 }
 
+std::optional<std::string> utf16ToUtf8(const std::u16string_view text) {
+  if (!isValidUtf16(text)) return std::nullopt;
+  std::string result;
+  result.reserve(text.size());
+  const auto append = [&](const std::uint32_t byte) { result.push_back(static_cast<char>(static_cast<unsigned char>(byte))); };
+  for (std::size_t index = 0; index < text.size(); ++index) {
+    std::uint32_t scalar = text[index];
+    if (scalar >= 0xd800 && scalar <= 0xdbff) {
+      const auto low = static_cast<std::uint32_t>(text[++index]);
+      scalar = 0x10000u + ((scalar - 0xd800u) << 10) + low - 0xdc00u;
+    }
+    if (scalar < 0x80) {
+      append(scalar);
+    } else if (scalar < 0x800) {
+      append(0xc0u | (scalar >> 6));
+      append(0x80u | (scalar & 0x3fu));
+    } else if (scalar < 0x10000) {
+      append(0xe0u | (scalar >> 12));
+      append(0x80u | ((scalar >> 6) & 0x3fu));
+      append(0x80u | (scalar & 0x3fu));
+    } else {
+      append(0xf0u | (scalar >> 18));
+      append(0x80u | ((scalar >> 12) & 0x3fu));
+      append(0x80u | ((scalar >> 6) & 0x3fu));
+      append(0x80u | (scalar & 0x3fu));
+    }
+  }
+  return result;
+}
+
 std::string truncateUtf8(const std::string_view text, const std::size_t maxBytes, std::string_view suffix) {
   if (text.size() <= maxBytes) return std::string(text);
   if (suffix.size() > maxBytes) suffix = {};

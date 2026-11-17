@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QListView>
 #include <QPersistentModelIndex>
+
 namespace uwf::ui {
 class SelectionListView : public QListView {
  public:

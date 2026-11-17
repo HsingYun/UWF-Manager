@@ -10,7 +10,6 @@
 #include "application/localization/ApplicationText.h"
 #include "application/paths/ExclusionCoverage.h"
 #include "application/paths/PathPolicy.h"
-#include "application/staging/contracts/FileStagingStore.h"
 #include "application/staging/editing/FileStagingConflictPolicy.h"
 #include "application/staging/persistence/FileStagingRegistry.h"
 #include "domain/uwf/contracts/Types.h"

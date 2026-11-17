@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QComboBox>
 #include <QPointer>
 class QListView;
+
 namespace uwf::ui {
 class SelectPopup;
 class SelectBox final : public QComboBox {

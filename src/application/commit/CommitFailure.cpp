@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "application/commit/CommitFailure.h"
+
 namespace uwf::app {
 CommitFailureKind classifyCommitFailure(const OperationFailureKind kind) {
   switch (kind) {

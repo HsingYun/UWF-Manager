@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "presentation/viewmodels/commit/CommitBatchViewModel.h"
+
 namespace uwf::presentation {
 void CommitBatchViewModel::run(const app::CommitBatchProgress& progress) {
   m_rows.clear();

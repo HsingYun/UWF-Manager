@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QMenu>
 #include <QPointer>
+
 namespace uwf::ui {
 class CommandMenu : public QMenu {
   Q_OBJECT

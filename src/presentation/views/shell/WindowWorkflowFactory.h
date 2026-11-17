@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <memory>
 
 #include "application/uwf/contracts/UwfCapability.h"
 #include "presentation/viewmodels/shell/MainWindowViewModel.h"
 #include "presentation/views/commit/CommitDispatcher.h"
 class QWidget;
+
 namespace uwf::ui {
 class WindowWorkflowFactory {
  public:

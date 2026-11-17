@@ -6,7 +6,6 @@
 
 #include <filesystem>
 #include <string>
-#include <string_view>
 
 #include "foundation/logging/Log.h"
 #include "foundation/text/StringUtil.h"

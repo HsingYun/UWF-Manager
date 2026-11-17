@@ -11,6 +11,7 @@
 #include <array>
 #include <cstddef>
 #include <initializer_list>
+#include <memory>
 #include <new>
 #include <stdexcept>
 #include <type_traits>
@@ -30,8 +31,6 @@ using ExportMap = std::unordered_map<std::string_view, NativeUwfProcedure>;
 constexpr std::string_view backendName = "Native";
 constexpr std::string_view arrayFreeImport = "free";
 constexpr std::string_view arrayDeleteImport = "??_V@YAXPEAX@Z";
-constexpr GUID verifiedArrayGuid{0x5aa74f07, 0xa677, 0x0a94, {0x5e, 0xe8, 0xb0, 0x39, 0xd9, 0xe3, 0xeb, 0x13}};
-constexpr DWORD verifiedArrayAge = 1;
 static_assert(sizeof(HRESULT) == 4 && sizeof(ULONG) == 4 && sizeof(bool) == 1 && sizeof(wchar_t) == 2);
 
 struct PropertyApi {
@@ -193,8 +192,6 @@ NativeUwfBindings systemBindings() {
     return reinterpret_cast<NativeUwfProcedure>(library->resolve(std::string(symbol).c_str()));
   };
   bindings.resolveImport = [library](const std::string_view symbol) { return reinterpret_cast<NativeUwfProcedure>(library->importedSymbol(symbol)); };
-  bindings.stringArrayAbiVerified = library->matchesCodeView(verifiedArrayGuid, verifiedArrayAge);
-  if (bindings.stringArrayAbiVerified) bindings.observationProfile = NativeObservationProfile::Captured20261101;
   return bindings;
 }
 
@@ -223,7 +220,7 @@ class StringArray final {
   native::StringArray* output() { return &m_array; }
   std::vector<std::string> strings() const {
     if (m_array.count < 0 || m_array.capacity < m_array.count || (m_array.count != 0 && !m_array.items))
-      throw NativeFailure{ErrorKind::Protocol, "ATL::CSimpleArray", E_UNEXPECTED, "The native string array violates its verified ABI"};
+      throw NativeFailure{ErrorKind::Protocol, "ATL::CSimpleArray", E_UNEXPECTED, "The native string array violates the expected ABI"};
     std::vector<std::string> result;
     result.reserve(static_cast<std::size_t>(m_array.count));
     for (std::int32_t index = 0; index < m_array.count; ++index) {
@@ -474,14 +471,8 @@ Capability NativeUwfBackend::probeRaw(const Request& request) const {
       if (found == m_exports.end() || !found->second) return {Support::Unsupported, "Missing native export: " + std::string(symbol)};
     }
     const auto* boolean = std::get_if<GetBoolean>(&request);
-    if (boolean && boolean->property == BooleanProperty::PersistTscal) {
-      if (m_bindings.observationProfile == NativeObservationProfile::Captured20261101)
-        return {Support::Unsupported, "The captured native TSCAL getter has an unmatched critical-section leave"};
-      if (m_bindings.observationProfile != NativeObservationProfile::CompleteInjectedOutputs)
-        return {Support::Unsupported, "The installed native module's observation semantics have not been verified"};
-    }
-    if (required.stringArray && !m_bindings.stringArrayAbiVerified)
-      return {Support::Unsupported, "The installed module's ATL string-array ABI has not been verified"};
+    if (boolean && boolean->property == BooleanProperty::PersistTscal && !m_bindings.supportsTscalObservation)
+      return {Support::Unsupported, "The native TSCAL getter has a known unmatched critical-section leave"};
     if (required.stringArray && !m_free) return {Support::Unsupported, "The native string-array allocator cannot be matched to its deallocator"};
     if (required.driveLetter && !m_deleteArray) return {Support::Unsupported, "The native drive-letter allocator cannot be matched to its deallocator"};
     return {Support::Supported, {}};
@@ -555,5 +546,4 @@ Response NativeUwfBackend::writeSwapfile(const std::string& volume, const std::u
     return Response::fail(ErrorKind::Failed, error.what(), calls.dispatchedWrite ? Effect::Uncertain : Effect::None);
   }
 }
-std::shared_ptr<compat::Backend> createNativeUwfBackend() { return std::make_shared<NativeUwfBackend>(); }
 }  // namespace uwf::windows::backends

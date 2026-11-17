@@ -5,6 +5,7 @@
 #include <QPainter>
 
 #include "presentation/design/painting/BadgePainting.h"
+
 namespace uwf::ui {
 StatusBadge::StatusBadge(QWidget* parent) : TextLabel({}, TextStyle::Eyebrow, parent) { setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed); }
 void StatusBadge::setTone(const design::Color foreground, const design::Color background) {

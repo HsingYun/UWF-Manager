@@ -5,6 +5,16 @@
 <TS version="2.1" language="pl" sourcelanguage="en">
 <context>
     <name>uwf</name>
+    <message><source>Simulation mode · UWF changes are kept in memory only</source><translation>Tryb symulacji · Zmiany UWF są przechowywane tylko w pamięci</translation></message>
+    <message><source>Access denied</source><translation>Odmowa dostępu</translation></message>
+    <message><source>Text and scripts (*.txt *.bat *.ps1 *.cmd);;Text files (*.txt);;All files (*)</source><translation>Tekst i skrypty (*.txt *.bat *.ps1 *.cmd);;Pliki tekstowe (*.txt);;Wszystkie pliki (*)</translation></message>
+    <message><source>Unable to complete the operation</source><translation>Nie można ukończyć operacji</translation></message>
+    <message><source>Select files</source><translation>Wybierz pliki</translation></message>
+    <message><source>Open configuration file</source><translation>Otwórz plik konfiguracji</translation></message>
+    <message><source>Committed to disk</source><translation>Zapisano na dysku</translation></message>
+    <message><source>There are pending changes that have not been applied. Continue and discard them?</source><translation>Istnieją oczekujące zmiany, które nie zostały jeszcze zastosowane. Kontynuować i je odrzucić?</translation></message>
+    <message><source>Access denied. Check permissions and try again.</source><translation>Odmowa dostępu. Sprawdź uprawnienia i spróbuj ponownie.</translation></message>
+    <message><source>Save file</source><translation>Zapisz plik</translation></message>
     <message><source>Preview</source><translation>Podgląd</translation></message>
     <message><source>enable</source><translation>włącz</translation></message>
     <message><source>disable</source><translation>wyłącz</translation></message>

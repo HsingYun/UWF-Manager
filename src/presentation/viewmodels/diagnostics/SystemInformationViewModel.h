@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QStringList>
 #include <memory>
 #include <stdexcept>
@@ -9,6 +10,7 @@
 #include "application/diagnostics/DiagnosticReportService.h"
 #include "presentation/viewmodels/diagnostics/DiagnosticReportFormatter.h"
 #include "presentation/viewmodels/diagnostics/DiagnosticReportViewModel.h"
+
 namespace uwf::presentation {
 class SystemInformationViewModel final {
  public:

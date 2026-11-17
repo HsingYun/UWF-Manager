@@ -10,7 +10,6 @@
 #include <QPushButton>
 #include <QTextDocument>
 #include <QVBoxLayout>
-#include <utility>
 
 #include "presentation/appearance/I18n.h"
 #include "presentation/appearance/ThemeManager.h"

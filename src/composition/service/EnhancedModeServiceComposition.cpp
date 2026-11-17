@@ -12,7 +12,7 @@
 #include "composition/uwf/SystemCapability.h"
 #include "foundation/logging/Log.h"
 #include "infrastructure/windows/commit/WindowsCommitTraversalSource.h"
-#include "infrastructure/windows/management/wmi/WmiSession.h"
+#include "infrastructure/windows/management/wmi/WmiRuntime.h"
 #include "infrastructure/windows/service/EnhancedModeServiceRuntime.h"
 #include "infrastructure/windows/staging/RegistryFileStagingStore.h"
 

@@ -10,7 +10,6 @@
 #include "application/uwf/adapters/UwfCall.h"
 #include "application/uwf/adapters/UwfReadState.h"
 #include "domain/uwf/contracts/UwfStateFacts.h"
-#include "domain/uwf/policies/VolumeIdentityPolicy.h"
 
 namespace uwf::app {
 namespace {

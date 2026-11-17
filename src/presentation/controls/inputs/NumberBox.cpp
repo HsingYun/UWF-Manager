@@ -9,6 +9,7 @@
 
 #include "design/DesignTokens.h"
 #include "presentation/controls/text/TextLabel.h"
+
 namespace uwf::ui {
 NumberBox::NumberBox(QWidget* parent) : QDoubleSpinBox(parent) {
   // Every uint32 value is exactly representable as a double. Keep integer

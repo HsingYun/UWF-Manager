@@ -2,8 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #include "presentation/dialogs/DialogWindow.h"
 
-#include <windows.h>
-
 #include <QContextMenuEvent>
 #include <QEvent>
 #include <QFont>

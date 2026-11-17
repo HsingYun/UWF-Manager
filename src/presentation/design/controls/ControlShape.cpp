@@ -5,6 +5,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <algorithm>
+
 namespace uwf::ui {
 void paintControlShape(QPainter& painter, const QRectF& rect, const qreal radius, const QColor& fill, const QColor& border, const QColor& bottomBorder) {
   if (rect.isEmpty()) return;

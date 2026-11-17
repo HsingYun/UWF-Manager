@@ -2,8 +2,6 @@
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
 
-#include <QObject>
-#include <QPointer>
 #include <array>
 #include <cstdint>
 #include <functional>

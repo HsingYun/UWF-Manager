@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QWidget>
 
-#include "presentation/design/theme/DesignSystem.h"
+#include "design/DesignTokens.h"
+
 namespace uwf::ui {
 class SurfaceClip;
 class Surface : public QWidget {

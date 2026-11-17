@@ -4,7 +4,6 @@
 #include "domain/uwf/policies/ConfigurationModePolicy.h"
 
 #include <algorithm>
-#include <functional>
 #include <iterator>
 #include <limits>
 #include <map>
@@ -16,7 +15,6 @@
 #include "application/uwf/adapters/UwfReadState.h"
 #include "domain/uwf/contracts/UwfStateFacts.h"
 #include "domain/uwf/policies/AllVolumeProtectionProjection.h"
-#include "domain/uwf/policies/UwfConstraints.h"
 #include "foundation/concurrency/AtomicSnapshot.h"
 
 namespace uwf::app {

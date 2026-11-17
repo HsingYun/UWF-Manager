@@ -4,6 +4,7 @@
 
 #include <QApplication>
 #include <QMouseEvent>
+
 namespace uwf::ui {
 SelectionListView::SelectionListView(QWidget* parent) : QListView(parent) {
   setUniformItemSizes(true);

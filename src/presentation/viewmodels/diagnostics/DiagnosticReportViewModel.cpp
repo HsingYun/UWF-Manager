@@ -8,6 +8,7 @@
 #include "application/localization/OverlayTypeText.h"
 #include "presentation/viewmodels/common/PresentationText.h"
 #include "presentation/viewmodels/diagnostics/DiagnosticReportFormatter.h"
+
 namespace uwf::presentation {
 DiagnosticReportViewModel::DiagnosticReportViewModel(QString report) : m_report(std::move(report)) {}
 DiagnosticReportViewModel::DiagnosticReportViewModel(const app::DiagnosticReportData& report, const quint32 totalRamMb)

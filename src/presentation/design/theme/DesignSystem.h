@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QColor>
 #include <QFont>
 #include <QObject>
@@ -27,6 +28,7 @@ class DesignSystem final : public QObject {
   void changed();
 
  private:
+  [[nodiscard]] static QFont platformFont();
   bool m_light = false;
 };
 }  // namespace uwf::ui

@@ -13,6 +13,7 @@
 #include "presentation/viewmodels/common/PresentationText.h"
 #include "presentation/viewmodels/common/PresentationTiming.h"
 #include "presentation/viewmodels/common/AutomaticCommitText.h"
+
 namespace uwf::presentation {
 using namespace app;
 namespace {

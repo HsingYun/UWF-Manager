@@ -5,6 +5,16 @@
 <TS version="2.1" language="ja" sourcelanguage="en">
 <context>
     <name>uwf</name>
+    <message><source>Simulation mode · UWF changes are kept in memory only</source><translation>シミュレーションモード · UWF の変更はメモリ内にのみ保持されます</translation></message>
+    <message><source>Access denied</source><translation>アクセスが拒否されました</translation></message>
+    <message><source>Text and scripts (*.txt *.bat *.ps1 *.cmd);;Text files (*.txt);;All files (*)</source><translation>テキストとスクリプト (*.txt *.bat *.ps1 *.cmd);;テキストファイル (*.txt);;すべてのファイル (*)</translation></message>
+    <message><source>Unable to complete the operation</source><translation>操作を完了できません</translation></message>
+    <message><source>Select files</source><translation>ファイルを選択</translation></message>
+    <message><source>Open configuration file</source><translation>構成ファイルを開く</translation></message>
+    <message><source>Committed to disk</source><translation>ディスクにコミットしました</translation></message>
+    <message><source>There are pending changes that have not been applied. Continue and discard them?</source><translation>まだ適用されていない変更があります。変更を破棄して続行しますか？</translation></message>
+    <message><source>Access denied. Check permissions and try again.</source><translation>アクセスが拒否されました。アクセス許可を確認して、もう一度お試しください。</translation></message>
+    <message><source>Save file</source><translation>ファイルを保存</translation></message>
     <message><source>Preview</source><translation>プレビュー</translation></message>
     <message><source>enable</source><translation>有効にする</translation></message>
     <message><source>disable</source><translation>無効にする</translation></message>

@@ -10,6 +10,7 @@
 #include <iterator>
 #include <mutex>
 
+#include "foundation/logging/LocalTime.h"
 #include "foundation/text/Utf8.h"
 
 namespace uwf {
@@ -33,8 +34,7 @@ std::string timestamp() {
   const auto now = system_clock::now();
   const auto t = system_clock::to_time_t(now);
   const auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
-  std::tm tm{};
-  localtime_s(&tm, &t);
+  const auto tm = detail::localTime(t);
   return std::format("{:02}:{:02}:{:02}.{:03}", tm.tm_hour, tm.tm_min, tm.tm_sec, static_cast<int>(ms.count()));
 }
 

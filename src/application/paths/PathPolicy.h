@@ -26,9 +26,11 @@ using VolumeIdentities = std::map<QString, std::string, ObjectNameLess>;
 // Explicit application addresses only. Provider exclusion strings are literal
 // patterns owned by a separate volume; do not infer an address from their text.
 [[nodiscard]] std::optional<VolumeFilePath> resolveVolumeFilePath(const QString& path, const VolumeIdentities& volumes = {},
-                                                               std::string_view relativeVolume = {});
+                                                                  std::string_view relativeVolume = {});
 // Add an unambiguous address shell while retaining the complete literal suffix.
 [[nodiscard]] QString volumeFilePath(const VolumeFilePath& path);
+// These addresses describe Windows objects, independently of the development host.
+[[nodiscard]] QString windowsSeparators(QString path);
 [[nodiscard]] QString normalize(const QString& path);
 // Resolve volume-rooted file paths (\Data) against the selected drive before normalization.
 [[nodiscard]] QString normalize(const QString& path, const QString& driveLetter);

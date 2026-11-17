@@ -7,6 +7,7 @@
 #include <cctype>
 #include <string_view>
 
+#include "foundation/paths/DriveLetter.h"
 #include "infrastructure/windows/errors/WindowsSystemError.h"
 #include "infrastructure/windows/text/UnicodeConversion.h"
 

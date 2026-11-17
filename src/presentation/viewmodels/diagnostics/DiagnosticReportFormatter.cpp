@@ -3,6 +3,7 @@
 #include "presentation/viewmodels/diagnostics/DiagnosticReportFormatter.h"
 
 #include <QStringList>
+
 namespace uwf::presentation {
 namespace {
 QString yesNo(const bool value) { return value ? QStringLiteral("yes") : QStringLiteral("no"); }

@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QTabWidget>
 #include <memory>
+
 namespace uwf::ui {
 class TabView final : public QTabWidget {
  public:

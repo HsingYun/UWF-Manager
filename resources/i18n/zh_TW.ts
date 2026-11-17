@@ -5,6 +5,16 @@
 <TS version="2.1" language="zh_TW" sourcelanguage="en">
 <context>
     <name>uwf</name>
+    <message><source>Simulation mode · UWF changes are kept in memory only</source><translation>模擬模式 · UWF 變更僅保存在記憶體中</translation></message>
+    <message><source>Access denied</source><translation>拒絕存取</translation></message>
+    <message><source>Text and scripts (*.txt *.bat *.ps1 *.cmd);;Text files (*.txt);;All files (*)</source><translation>文字與指令碼 (*.txt *.bat *.ps1 *.cmd);;文字檔案 (*.txt);;所有檔案 (*)</translation></message>
+    <message><source>Unable to complete the operation</source><translation>無法完成操作</translation></message>
+    <message><source>Select files</source><translation>選取檔案</translation></message>
+    <message><source>Open configuration file</source><translation>開啟設定檔</translation></message>
+    <message><source>Committed to disk</source><translation>已提交至磁碟</translation></message>
+    <message><source>There are pending changes that have not been applied. Continue and discard them?</source><translation>還有尚未套用的變更。要繼續並捨棄這些變更嗎？</translation></message>
+    <message><source>Access denied. Check permissions and try again.</source><translation>拒絕存取。請檢查權限後再試一次。</translation></message>
+    <message><source>Save file</source><translation>儲存檔案</translation></message>
     <message><source>Preview</source><translation>檢閱</translation></message>
     <message><source>enable</source><translation>啟用</translation></message>
     <message><source>disable</source><translation>停用</translation></message>

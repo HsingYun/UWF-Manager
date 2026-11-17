@@ -7,6 +7,7 @@ include_guard(GLOBAL)
 
 set(UWF_FOUNDATION_SOURCES
     src/foundation/concurrency/AtomicSnapshot.h
+    src/foundation/logging/LocalTime.h
     src/foundation/logging/Log.cpp
     src/foundation/logging/Log.h
     src/foundation/paths/DriveLetter.cpp
@@ -20,6 +21,19 @@ set(UWF_FOUNDATION_SOURCES
     src/foundation/text/StringUtil.h
     src/foundation/text/Utf8.cpp
     src/foundation/text/Utf8.h
+)
+
+set(UWF_WINDOWS_LOCAL_TIME_SOURCES
+    src/foundation/logging/windows/LocalTime.cpp
+)
+set(UWF_POSIX_LOCAL_TIME_SOURCES
+    src/foundation/logging/posix/LocalTime.cpp
+)
+set(UWF_WINDOWS_DESIGN_FONT_SOURCES
+    src/presentation/design/theme/windows/DesignFonts.cpp
+)
+set(UWF_QT_DESIGN_FONT_SOURCES
+    src/presentation/design/theme/qt/DesignFonts.cpp
 )
 
 
@@ -94,6 +108,7 @@ set(UWF_REQUEST_PRECHECK_SOURCES
 
 
 set(UWF_APPLICATION_CONTRACTS_SOURCES
+    src/application/paths/contracts/WindowsPathOperations.h
     src/application/commit/contracts/CommitBatchRequest.h
     src/application/commit/contracts/CommitInteraction.h
     src/application/commit/contracts/CommitPlan.h
@@ -519,9 +534,12 @@ set(UWF_WINDOWS_INFRASTRUCTURE_SOURCES
 )
 
 
-set(UWF_SYSTEM_COMPOSITION_SOURCES
+set(UWF_CONFIGURATION_COMPOSITION_SOURCES
     src/composition/uwf/ConfigurationComposition.cpp
     src/composition/uwf/ConfigurationComposition.h
+)
+
+set(UWF_SYSTEM_COMPOSITION_SOURCES
     src/composition/uwf/MaintenanceComposition.cpp
     src/composition/uwf/MaintenanceComposition.h
     src/composition/uwf/SystemCapability.cpp
@@ -538,7 +556,6 @@ set(UWF_VIEW_SOURCES
     src/presentation/appearance/I18n.h
     src/presentation/appearance/ThemeManager.cpp
     src/presentation/appearance/ThemeManager.h
-    src/presentation/appearance/WindowAppearance.cpp
     src/presentation/appearance/WindowAppearance.h
     src/presentation/dialogs/DialogAppearance.cpp
     src/presentation/dialogs/DialogAppearance.h
@@ -604,7 +621,6 @@ set(UWF_VIEW_SOURCES
     src/presentation/views/overlay/coordination/OverlayContextMenu.h
     src/presentation/views/overlay/coordination/OverlayHub.cpp
     src/presentation/views/overlay/coordination/OverlayHub.h
-    src/presentation/views/overlay/coordination/OverlayHubFactory.cpp
     src/presentation/views/overlay/coordination/OverlayHubFactory.h
     src/presentation/views/overlay/coordination/OverlayHubView.cpp
     src/presentation/views/overlay/coordination/OverlayHubView.h
@@ -612,6 +628,32 @@ set(UWF_VIEW_SOURCES
     src/presentation/views/overlay/coordination/OverlayPresentationController.h
     src/presentation/views/overlay/files/OverlayFilesDialog.cpp
     src/presentation/views/overlay/files/OverlayFilesDialog.h
+    src/presentation/views/overlay/usage/OverlayUsageBar.cpp
+    src/presentation/views/overlay/usage/OverlayUsageBar.h
+    src/presentation/views/overlay/usage/UsageBarGeometry.h
+    src/presentation/views/power/PowerActionDialog.cpp
+    src/presentation/views/power/PowerActionDialog.h
+    src/presentation/views/power/PowerInteractionAdapter.cpp
+    src/presentation/views/power/PowerInteractionAdapter.h
+    src/presentation/views/registry/RegistryPickerDialog.cpp
+    src/presentation/views/registry/RegistryPickerDialog.h
+    src/presentation/views/shell/HoverHintController.cpp
+    src/presentation/views/shell/HoverHintController.h
+    src/presentation/views/shell/MainWindow.cpp
+    src/presentation/views/shell/MainWindow.h
+    src/presentation/views/shell/StatusSurface.cpp
+    src/presentation/views/shell/StatusSurface.h
+    src/presentation/views/shell/TrayController.h
+    src/presentation/views/shell/WindowChromeController.h
+    src/presentation/views/shell/WindowTitleBar.cpp
+    src/presentation/views/shell/WindowTitleBar.h
+    src/presentation/views/shell/WindowWorkflowFactory.h
+    src/presentation/views/staging/FileStagingWidget.cpp
+    src/presentation/views/staging/FileStagingWidget.h
+    src/presentation/platform/DesktopPlatform.h
+)
+
+set(UWF_WINDOWS_VIEW_SOURCES
     src/presentation/views/overlay/hud/OverlayFloatingWidget.cpp
     src/presentation/views/overlay/hud/OverlayFloatingWidget.h
     src/presentation/views/overlay/hud/OverlayHudPalette.h
@@ -629,30 +671,19 @@ set(UWF_VIEW_SOURCES
     src/presentation/views/overlay/taskbar/Win11TaskbarLayoutStrategy.cpp
     src/presentation/views/overlay/taskbar/Win11TaskbarLayoutStrategy.h
     src/presentation/views/overlay/taskbar/Win11TaskbarLayoutStrategyImpl.h
-    src/presentation/views/overlay/usage/OverlayUsageBar.cpp
-    src/presentation/views/overlay/usage/OverlayUsageBar.h
-    src/presentation/views/overlay/usage/UsageBarGeometry.h
-    src/presentation/views/power/PowerActionDialog.cpp
-    src/presentation/views/power/PowerActionDialog.h
-    src/presentation/views/power/PowerInteractionAdapter.cpp
-    src/presentation/views/power/PowerInteractionAdapter.h
-    src/presentation/views/registry/RegistryPickerDialog.cpp
-    src/presentation/views/registry/RegistryPickerDialog.h
-    src/presentation/views/shell/HoverHintController.cpp
-    src/presentation/views/shell/HoverHintController.h
-    src/presentation/views/shell/MainWindow.cpp
-    src/presentation/views/shell/MainWindow.h
-    src/presentation/views/shell/StatusSurface.cpp
-    src/presentation/views/shell/StatusSurface.h
-    src/presentation/views/shell/TrayController.cpp
-    src/presentation/views/shell/TrayController.h
-    src/presentation/views/shell/WindowChromeController.cpp
-    src/presentation/views/shell/WindowChromeController.h
-    src/presentation/views/shell/WindowTitleBar.cpp
-    src/presentation/views/shell/WindowTitleBar.h
-    src/presentation/views/shell/WindowWorkflowFactory.h
-    src/presentation/views/staging/FileStagingWidget.cpp
-    src/presentation/views/staging/FileStagingWidget.h
+    src/presentation/platform/windows/DesktopPlatform.cpp
+    src/presentation/platform/windows/WindowAppearance.cpp
+    src/presentation/platform/windows/WindowChromeController.cpp
+    src/presentation/platform/windows/TrayController.cpp
+    src/presentation/platform/windows/OverlayHubFactory.cpp
+)
+
+set(UWF_QT_VIEW_SOURCES
+    src/presentation/platform/qt/DesktopPlatform.cpp
+    src/presentation/platform/qt/WindowAppearance.cpp
+    src/presentation/platform/qt/WindowChromeController.cpp
+    src/presentation/platform/qt/TrayController.cpp
+    src/presentation/platform/qt/OverlayHubFactory.cpp
 )
 
 
@@ -663,8 +694,6 @@ set(UWF_SERVICE_HOST_SOURCES
 
 
 set(UWF_DESKTOP_COMPOSITION_SOURCES
-    src/composition/desktop/DesktopApplication.cpp
-    src/composition/desktop/DesktopApplication.h
     src/composition/desktop/DesktopPlatformPorts.cpp
     src/composition/desktop/DesktopPlatformPorts.h
     src/composition/desktop/MainWindowComposition.cpp
@@ -673,6 +702,23 @@ set(UWF_DESKTOP_COMPOSITION_SOURCES
     src/composition/desktop/ViewModelComposition.h
     src/composition/desktop/WorkflowComposition.cpp
     src/composition/desktop/WorkflowComposition.h
+)
+
+set(UWF_WINDOWS_DESKTOP_COMPOSITION_SOURCES
+    src/composition/desktop/DesktopApplication.cpp
+    src/composition/desktop/DesktopApplication.h
+    src/composition/desktop/WindowsDesktopComposition.cpp
+    src/composition/desktop/WindowsDesktopComposition.h
+)
+
+set(UWF_WINDOWS_PATH_OPERATIONS_SOURCES
+    src/infrastructure/windows/filesystem/WindowsPathOperations.cpp
+)
+set(UWF_SIMULATED_PATH_OPERATIONS_SOURCES
+    src/infrastructure/simulated/WindowsPathOperations.cpp
+)
+set(UWF_SIMULATED_OBJECT_NAME_COMPARISON_SOURCES
+    src/infrastructure/simulated/ObjectNameComparison.cpp
 )
 
 set(UWF_CONSOLE_PRESENTATION_SOURCES

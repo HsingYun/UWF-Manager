@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QIcon>
 #include <QLayout>
 
@@ -8,6 +9,7 @@
 
 class QHBoxLayout;
 class QPushButton;
+
 namespace uwf::ui {
 class ContentHintBox;
 class TextLabel;

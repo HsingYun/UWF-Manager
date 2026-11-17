@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <memory>
 
 #include "application/state/contracts/ApplicationStateSource.h"
@@ -16,6 +17,7 @@
 #include "presentation/viewmodels/settings/UserConfigExportViewModel.h"
 #include "presentation/viewmodels/shell/MainWindowViewModel.h"
 #include "presentation/viewmodels/staging/FileStagingViewModel.h"
+
 namespace uwf::app {
 class FileStagingDraft;
 class FileStagingConflictPolicy;

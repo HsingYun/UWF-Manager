@@ -3,6 +3,7 @@
 #include "application/diagnostics/ProcessLogSource.h"
 
 #include "foundation/logging/Log.h"
+
 namespace uwf::app {
 std::vector<std::string> ProcessLogSource::recentLines() const { return recentLogLines(); }
 void ProcessLogSource::clear() { clearLogLines(); }

@@ -173,8 +173,7 @@ QList<CommitNode> CommitPlan::targets() const {
     }
   }
   if (request.operation == CommitOperation::DeleteAndPersist)
-    std::stable_sort(result.begin(), result.end(),
-                     [](const CommitNode& a, const CommitNode& b) { return scopePath(a).count(u'\\') > scopePath(b).count(u'\\'); });
+    std::ranges::stable_sort(result, [](const CommitNode& a, const CommitNode& b) { return scopePath(a).count(u'\\') > scopePath(b).count(u'\\'); });
   return result;
 }
 CommitPlan prepareCommit(const CommitRequest& request, const CommitTraversalSource& source, CommitPlan plan, const std::stop_token stop,

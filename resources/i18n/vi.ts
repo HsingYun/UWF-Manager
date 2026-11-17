@@ -5,6 +5,16 @@
 <TS version="2.1" language="vi" sourcelanguage="en">
 <context>
     <name>uwf</name>
+    <message><source>Simulation mode · UWF changes are kept in memory only</source><translation>Chế độ mô phỏng · Các thay đổi UWF chỉ được lưu trong bộ nhớ</translation></message>
+    <message><source>Access denied</source><translation>Truy cập bị từ chối</translation></message>
+    <message><source>Text and scripts (*.txt *.bat *.ps1 *.cmd);;Text files (*.txt);;All files (*)</source><translation>Văn bản và tập lệnh (*.txt *.bat *.ps1 *.cmd);;Tệp văn bản (*.txt);;Tất cả tệp (*)</translation></message>
+    <message><source>Unable to complete the operation</source><translation>Không thể hoàn tất thao tác</translation></message>
+    <message><source>Select files</source><translation>Chọn tệp</translation></message>
+    <message><source>Open configuration file</source><translation>Mở tệp cấu hình</translation></message>
+    <message><source>Committed to disk</source><translation>Đã lưu vào đĩa</translation></message>
+    <message><source>There are pending changes that have not been applied. Continue and discard them?</source><translation>Có các thay đổi đang chờ chưa được áp dụng. Tiếp tục và loại bỏ các thay đổi này?</translation></message>
+    <message><source>Access denied. Check permissions and try again.</source><translation>Truy cập bị từ chối. Kiểm tra quyền và thử lại.</translation></message>
+    <message><source>Save file</source><translation>Lưu tệp</translation></message>
     <message><source>Preview</source><translation>Xem trước</translation></message>
     <message><source>enable</source><translation>bật</translation></message>
     <message><source>disable</source><translation>tắt</translation></message>

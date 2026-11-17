@@ -6,7 +6,6 @@
 #include <QPointer>
 #include <QScopedValueRollback>
 #include <QTimer>
-#include <algorithm>
 #include <system_error>
 
 #include "application/identity/contracts/ObjectIdentity.h"
@@ -16,6 +15,7 @@
 #include "foundation/text/Utf8.h"
 #include "presentation/models/ItemRoles.h"
 #include "presentation/viewmodels/common/PresentationText.h"
+
 namespace uwf::presentation {
 namespace {
 bool validRegistryText(const QString& text) { return !text.contains(QChar::Null) && isValidUtf16(QStringView(text)); }

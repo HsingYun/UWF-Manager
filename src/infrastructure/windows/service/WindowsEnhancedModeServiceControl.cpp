@@ -10,7 +10,6 @@
 
 #include <QDir>
 #include <QScopeGuard>
-#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cwchar>

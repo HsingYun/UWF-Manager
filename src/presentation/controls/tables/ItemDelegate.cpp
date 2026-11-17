@@ -14,6 +14,7 @@
 #include "presentation/design/painting/TextPainting.h"
 #include "presentation/design/theme/DesignSystem.h"
 #include "presentation/models/ItemRoles.h"
+
 namespace uwf::ui {
 namespace {
 QColor itemStatusColor(const presentation::ItemStatus status) {

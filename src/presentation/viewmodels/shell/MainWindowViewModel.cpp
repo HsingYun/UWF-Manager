@@ -23,6 +23,7 @@
 #include "presentation/viewmodels/common/PresentationText.h"
 #include "presentation/viewmodels/common/RuntimeWriteText.h"
 #include "presentation/viewmodels/common/ViewModelFactory.h"
+
 namespace uwf::presentation {
 MainWindowViewModel::MainWindowViewModel(app::ApplicationStateSource& source, app::UwfCapability capability, std::shared_ptr<app::FileStagingDraft> staging,
                                          app::DriveResolver resolveDrive, std::shared_ptr<const app::FileBrowser> files)

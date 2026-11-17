@@ -9,6 +9,7 @@
 #include "presentation/viewmodels/common/ViewModelFactory.h"
 #include "presentation/views/commit/CommitInteractionAdapter.h"
 #include "presentation/views/power/PowerInteractionAdapter.h"
+
 namespace uwf::composition {
 namespace {
 class ApplicationWindowWorkflowFactory final : public ui::WindowWorkflowFactory {

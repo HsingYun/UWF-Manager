@@ -5,6 +5,16 @@
 <TS version="2.1" language="id" sourcelanguage="en">
 <context>
     <name>uwf</name>
+    <message><source>Simulation mode · UWF changes are kept in memory only</source><translation>Mode simulasi · Perubahan UWF hanya disimpan di memori</translation></message>
+    <message><source>Access denied</source><translation>Akses ditolak</translation></message>
+    <message><source>Text and scripts (*.txt *.bat *.ps1 *.cmd);;Text files (*.txt);;All files (*)</source><translation>Teks dan skrip (*.txt *.bat *.ps1 *.cmd);;File teks (*.txt);;Semua file (*)</translation></message>
+    <message><source>Unable to complete the operation</source><translation>Tidak dapat menyelesaikan operasi</translation></message>
+    <message><source>Select files</source><translation>Pilih file</translation></message>
+    <message><source>Open configuration file</source><translation>Buka file konfigurasi</translation></message>
+    <message><source>Committed to disk</source><translation>Disimpan ke disk</translation></message>
+    <message><source>There are pending changes that have not been applied. Continue and discard them?</source><translation>Ada perubahan tertunda yang belum diterapkan. Lanjutkan dan buang perubahan tersebut?</translation></message>
+    <message><source>Access denied. Check permissions and try again.</source><translation>Akses ditolak. Periksa izin dan coba lagi.</translation></message>
+    <message><source>Save file</source><translation>Simpan file</translation></message>
     <message><source>Preview</source><translation>Pratinjau</translation></message>
     <message><source>enable</source><translation>aktifkan</translation></message>
     <message><source>disable</source><translation>nonaktifkan</translation></message>

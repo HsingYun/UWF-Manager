@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QElapsedTimer>
 #include <QObject>
 #include <QTimer>
@@ -8,6 +9,7 @@
 
 #include "presentation/viewmodels/power/PowerDialogState.h"
 #include "presentation/viewmodels/common/AutomaticCommitText.h"
+
 namespace uwf::presentation {
 
 class PowerDialogViewModel final : public QObject {

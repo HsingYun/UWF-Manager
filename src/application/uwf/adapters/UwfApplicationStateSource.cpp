@@ -9,6 +9,7 @@
 #include "application/uwf/adapters/UwfOverlayOperations.h"
 #include "application/uwf/adapters/UwfReadState.h"
 #include "foundation/concurrency/AtomicSnapshot.h"
+
 namespace uwf::app {
 namespace {
 class SystemApplicationStateSource final : public ApplicationStateSource {

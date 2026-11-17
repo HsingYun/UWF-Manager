@@ -6,6 +6,7 @@
 #include "infrastructure/windows/registry/RegistryCommitPlan.h"
 #include "infrastructure/windows/registry/RegistryKey.h"
 #include "infrastructure/windows/staging/RegistryFileStagingCodec.h"
+
 namespace uwf::windows {
 QList<app::FileStagingEntry> RegistryFileStagingStore::load() const {
   const auto records = regkey::readMultiString(app::kFileStagingRegistryKey, app::kFileStagingEntriesValue);

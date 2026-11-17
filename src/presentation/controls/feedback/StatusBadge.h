@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QIcon>
 
 #include "presentation/controls/text/TextLabel.h"
+
 namespace uwf::ui {
 class StatusBadge final : public TextLabel {
  public:

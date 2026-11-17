@@ -6,7 +6,6 @@
 
 #include <array>
 #include <memory>
-#include <string_view>
 
 #include "foundation/text/StringUtil.h"
 #include "infrastructure/uwf/errors/WindowsUwfError.h"

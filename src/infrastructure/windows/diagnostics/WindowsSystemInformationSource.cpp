@@ -13,6 +13,7 @@
 #include "infrastructure/windows/errors/WindowsErrorText.h"
 #include "infrastructure/windows/filesystem/paths/VolumePaths.h"
 #include "infrastructure/windows/security/ProcessTokenDiagnostics.h"
+
 namespace uwf::windows {
 namespace {
 QString systemTimeZoneText() {

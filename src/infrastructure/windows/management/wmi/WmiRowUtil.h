@@ -8,7 +8,7 @@
 #include <vector>
 
 #include "infrastructure/windows/management/wmi/WmiException.h"
-#include "infrastructure/windows/management/wmi/WmiOperations.h"
+#include "infrastructure/windows/management/wmi/WmiTypes.h"
 
 namespace uwf::windows::wmi::row {
 

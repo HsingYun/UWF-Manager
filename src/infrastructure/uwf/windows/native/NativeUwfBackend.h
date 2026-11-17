@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <functional>
-#include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -14,18 +13,14 @@
 namespace uwf::windows::backends {
 using NativeUwfProcedure = void (*)();
 
-// Symbol presence alone does not establish output semantics. Production matches
-// the captured CodeView identity; injected bindings may assert complete outputs
-// only when their implementation guarantees them.
-enum class NativeObservationProfile { Unverified, Captured20261101, CompleteInjectedOutputs };
-
 // Production resolvers retain the System32 module lease; injected bindings need
 // no installed UWF feature.
 struct NativeUwfBindings {
   std::function<NativeUwfProcedure(std::string_view)> resolveExport;
   std::function<NativeUwfProcedure(std::string_view)> resolveImport;
-  bool stringArrayAbiVerified = false;
-  NativeObservationProfile observationProfile = NativeObservationProfile::Unverified;
+  // The native TSCAL getter has a known unmatched critical-section leave.
+  // Only injected implementations that avoid this defect may opt in.
+  bool supportsTscalObservation = false;
   std::string unavailableReason;
   std::int64_t unavailableCode = 0;
 };
@@ -50,5 +45,4 @@ class NativeUwfBackend final : public compat::Backend {
   NativeUwfProcedure m_deleteArray = nullptr;
 };
 
-[[nodiscard]] std::shared_ptr<compat::Backend> createNativeUwfBackend();
 }  // namespace uwf::windows::backends

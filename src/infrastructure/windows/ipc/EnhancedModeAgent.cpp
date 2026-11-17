@@ -12,7 +12,6 @@
 #include <limits>
 #include <optional>
 #include <span>
-#include <string>
 #include <vector>
 
 #include "foundation/logging/Log.h"

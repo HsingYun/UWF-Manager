@@ -5,10 +5,6 @@
 #include <QString>
 #include <chrono>
 #include <cstddef>
-#include <functional>
-#include <optional>
-#include <utility>
-#include <variant>
 
 #include "application/power/contracts/PowerTypes.h"
 

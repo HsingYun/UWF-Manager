@@ -199,18 +199,18 @@ bool isHelp(const std::string_view value) { return value == "help" || value == "
 std::optional<std::string> volumeOperand(const std::string& input) {
   if (input.empty()) return std::nullopt;
   std::string_view body = input;
-  if (body.starts_with("\\\\?\\") || body.starts_with("\\\\.\\")) body.remove_prefix(4);
+  if (body.starts_with(R"(\\?\)") || body.starts_with(R"(\\.\)")) body.remove_prefix(4);
   if ((body.size() == 1 || (body.size() == 2 && body[1] == ':') || (body.size() == 3 && body[1] == ':' && body[2] == '\\')) &&
       ((body[0] >= 'a' && body[0] <= 'z') || (body[0] >= 'A' && body[0] <= 'Z'))) {
     return drive::normalize(std::string(body));
   }
   const auto lower = toLowerAscii(input);
-  if (lower.starts_with("\\\\?\\volume{")) {
+  if (lower.starts_with(R"(\\?\volume{)")) {
     auto path = input;
     if (path.back() != '\\') path += '\\';
     if (const auto id = compat::parseVolumeId(path)) return compat::volumePath(*id);
   }
-  constexpr std::string_view devicePrefix = "\\\\?\\globalroot\\device\\harddiskvolume";
+  constexpr std::string_view devicePrefix = R"(\\?\globalroot\device\harddiskvolume)";
   if (lower.starts_with(devicePrefix)) {
     auto number = std::string_view(lower).substr(devicePrefix.size());
     if (!number.empty() && number.back() == '\\') number.remove_suffix(1);

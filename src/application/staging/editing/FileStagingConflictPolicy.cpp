@@ -10,7 +10,6 @@
 #include "application/paths/ExclusionCoverage.h"
 #include "application/paths/PathPolicy.h"
 #include "domain/uwf/contracts/Types.h"
-#include "foundation/paths/DriveLetter.h"
 
 namespace uwf::app {
 

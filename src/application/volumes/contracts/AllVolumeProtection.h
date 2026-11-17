@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include <QString>
 #include <optional>
 #include <stop_token>
 #include <vector>
 
 #include "application/operations/contracts/OperationError.h"
+
 namespace uwf::app {
 struct AllVolumeProtectionSnapshot {
   std::optional<bool> nextAllProtected;

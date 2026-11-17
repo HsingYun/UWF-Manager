@@ -10,7 +10,6 @@
 #include <map>
 #include <optional>
 
-#include "application/identity/contracts/ObjectIdentity.h"
 #include "application/staging/contracts/FileStagingTypes.h"
 
 namespace uwf::app {

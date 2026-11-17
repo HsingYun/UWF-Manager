@@ -5,6 +5,16 @@
 <TS version="2.1" language="ar" sourcelanguage="en">
 <context>
     <name>uwf</name>
+    <message><source>Simulation mode · UWF changes are kept in memory only</source><translation>وضع المحاكاة · تُحفظ تغييرات UWF في الذاكرة فقط</translation></message>
+    <message><source>Access denied</source><translation>تم رفض الوصول</translation></message>
+    <message><source>Text and scripts (*.txt *.bat *.ps1 *.cmd);;Text files (*.txt);;All files (*)</source><translation>نصوص وبرامج نصية (*.txt *.bat *.ps1 *.cmd);;ملفات نصية (*.txt);;كل الملفات (*)</translation></message>
+    <message><source>Unable to complete the operation</source><translation>تعذر إكمال العملية</translation></message>
+    <message><source>Select files</source><translation>تحديد الملفات</translation></message>
+    <message><source>Open configuration file</source><translation>فتح ملف التكوين</translation></message>
+    <message><source>Committed to disk</source><translation>تم الحفظ على القرص</translation></message>
+    <message><source>There are pending changes that have not been applied. Continue and discard them?</source><translation>هناك تغييرات معلقة لم تُطبّق بعد. هل تريد المتابعة وتجاهلها؟</translation></message>
+    <message><source>Access denied. Check permissions and try again.</source><translation>تم رفض الوصول. تحقق من الأذونات وحاول مرة أخرى.</translation></message>
+    <message><source>Save file</source><translation>حفظ الملف</translation></message>
     <message><source>Preview</source><translation>معاينة</translation></message>
     <message><source>enable</source><translation>تمكين</translation></message>
     <message><source>disable</source><translation>تعطيل</translation></message>

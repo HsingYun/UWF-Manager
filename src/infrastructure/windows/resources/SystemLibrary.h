@@ -20,7 +20,6 @@ class SystemLibrary final {
   // Return the actual bound import, allowing callers to release an output with
   // the allocator used by the producer rather than their own C runtime.
   [[nodiscard]] FARPROC importedSymbol(std::string_view name) const noexcept;
-  [[nodiscard]] bool matchesCodeView(const GUID& guid, DWORD age) const noexcept;
 
  private:
   struct Deleter {

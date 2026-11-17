@@ -28,6 +28,7 @@
 #include "presentation/design/surfaces/PopupAppearance.h"
 #include "presentation/design/surfaces/PopupPlacement.h"
 #include "presentation/design/painting/TextPainting.h"
+
 namespace uwf::ui {
 namespace {
 class OptionDelegate final : public QStyledItemDelegate {

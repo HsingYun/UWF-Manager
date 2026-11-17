@@ -10,6 +10,7 @@
 #include "presentation/design/controls/ControlAnimation.h"
 #include "presentation/design/controls/ControlShape.h"
 #include "presentation/design/theme/DesignSystem.h"
+
 namespace uwf::ui {
 SwitchButton::SwitchButton(QWidget* parent) : QAbstractButton(parent) {
   setCheckable(true);

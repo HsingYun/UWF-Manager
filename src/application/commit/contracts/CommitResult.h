@@ -3,7 +3,6 @@
 #pragma once
 
 #include <QString>
-#include <cstdint>
 #include <optional>
 
 #include "application/operations/contracts/OperationError.h"

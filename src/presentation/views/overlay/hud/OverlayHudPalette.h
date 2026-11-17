@@ -4,7 +4,7 @@
 
 #include <QColor>
 
-#include "presentation/appearance/ThemeManager.h"
+#include "application/settings/UiPreferences.h"
 
 namespace uwf::ui {
 

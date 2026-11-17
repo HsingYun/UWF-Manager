@@ -13,6 +13,7 @@ class QListView;
 class QPushButton;
 class QStackedWidget;
 class QTableView;
+
 namespace uwf::presentation {
 class FilePickerViewModel;
 }

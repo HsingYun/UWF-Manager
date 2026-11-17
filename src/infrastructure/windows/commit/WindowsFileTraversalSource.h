@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 HsingYun (iakext@gmail.com)
 #pragma once
+
 #include "application/commit/contracts/CommitPlan.h"
 #include "application/commit/contracts/CommitTraversalSource.h"
+
 namespace uwf::windows {
 // The shared filesystem adapter for manual commits and automatic file staging.
 class WindowsFileTraversalSource final : public app::CommitTraversalSource {
